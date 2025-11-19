@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://bjfkxuy5hxd11"]
+[gd_scene load_steps=12 format=3 uid="uid://bjfkxuy5hxd11"]
 
 [ext_resource type="Script" uid="uid://dqvrma8a6jrqb" path="res://scenes/crate.gd" id="1_74u5o"]
 [ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="2_1kl6c"]
@@ -9,45 +9,12 @@
 [ext_resource type="Texture2D" uid="uid://quuqh5wt57i1" path="res://assets/Separated/Destructible Objects Sprite Sheet.png" id="5_dfg3k"]
 [ext_resource type="AudioStream" uid="uid://bkbbtse858d2x" path="res://assets/Audios/crate-break-1-93926.mp3" id="8_juhn0"]
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_dfg3k"]
-atlas = ExtResource("5_dfg3k")
-region = Rect2(192, 128, 64, 64)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_juhn0"]
-atlas = ExtResource("5_dfg3k")
-region = Rect2(192, 256, 64, 64)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_ipbef"]
-atlas = ExtResource("5_dfg3k")
-region = Rect2(320, 128, 64, 64)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_xu2ic"]
-atlas = ExtResource("5_dfg3k")
-region = Rect2(320, 256, 64, 64)
-
 [sub_resource type="AtlasTexture" id="AtlasTexture_wsrlu"]
 atlas = ExtResource("5_dfg3k")
 region = Rect2(64, 128, 64, 64)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_m32jw"]
 animations = [{
-"frames": [{
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_dfg3k")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_juhn0")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ipbef")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_xu2ic")
-}],
-"loop": false,
-"name": &"break",
-"speed": 5.0
-}, {
 "frames": [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_wsrlu")
@@ -71,10 +38,8 @@ HeartScene = ExtResource("4_juhn0")
 position = Vector2(0, -7)
 scale = Vector2(0.8, 0.8)
 sprite_frames = SubResource("SpriteFrames_m32jw")
-animation = &"break"
+animation = &"idle"
 autoplay = "idle"
-frame = 3
-frame_progress = 1.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -6.5)

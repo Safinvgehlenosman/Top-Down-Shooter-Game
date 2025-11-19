@@ -4,14 +4,32 @@ extends Area2D
 @export var AmmoScene: PackedScene
 @export var HeartScene: PackedScene  # optional
 
+@export var hit_flash_time: float = 0.1
+var hit_flash_timer: float = 0.0
+var base_modulate: Color
+
 var destroyed: bool = false
 
-@onready var anim: AnimatedSprite2D = $AnimatedSprite2D
+@onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var collision: CollisionShape2D = $CollisionShape2D
 
 func _ready() -> void:
-	if anim:
-		anim.play("idle")  # your idle crate frame
+	if animated_sprite:
+		animated_sprite.play("idle")  # your idle crate frame
+	base_modulate = animated_sprite.modulate   # <--- add this
+
+func _process(delta: float) -> void:
+	_update_hit_feedback(delta)
+
+
+
+func _update_hit_feedback(delta: float) -> void:
+	# sprite flash
+	if hit_flash_timer > 0.0:
+		hit_flash_timer -= delta
+		if hit_flash_timer <= 0.0:
+			animated_sprite.modulate = base_modulate
+
 
 func _spawn_loot() -> void:
 	var roll := randf()
@@ -50,16 +68,21 @@ func _break_and_despawn() -> void:
 	if collision:
 		collision.disabled = true
 
-	# flash red
-	modulate = Color(1, 0.3, 0.3)
+	# flash red + start timer
+	animated_sprite.modulate = Color(1, 0.4, 0.4, 1)
+	hit_flash_timer = hit_flash_time
+
+	# scale pop
 	scale = Vector2(1.1, 1.1)
+	await get_tree().create_timer(0.4).timeout
 
-	await get_tree().create_timer(0.8).timeout
+	# shrink a bit before death
+	scale = Vector2(1, 1)
+	await get_tree().create_timer(0.4).timeout
 
-	# spawn loot
 	_spawn_loot()
-
 	queue_free()
+
 
 
 func _on_area_entered(area: Area2D) -> void:
