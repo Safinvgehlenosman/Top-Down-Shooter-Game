@@ -139,7 +139,21 @@ func fire_laser() -> void:
 	ammo = max(ammo - 1, 0)
 	update_ammo_bar()
 
-	$SFX_Shoot.play()
+# --- SHOTGUN / ALT FIRE SFX ---
+	var shot := $SFX_Shoot_Shotgun
+
+# Main deep blast
+	shot.pitch_scale = 0.7
+	shot.play()
+
+# Extra layers for oomph (optional but feels great)
+	for i in range(2):
+		shot.pitch_scale = randf_range(0.35, 0.55)
+		shot.play()
+
+
+
+	
 
 	var bullet_count: int = GameConfig.alt_fire_bullet_count
 	var spread_degrees: float = GameConfig.alt_fire_spread_degrees

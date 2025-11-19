@@ -110,6 +110,10 @@ scale = Vector2(0.99999976, 0.99999976)
 stream = ExtResource("10_y4r1p")
 bus = &"SFX"
 
+[node name="SFX_Shoot_Shotgun" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("10_y4r1p")
+bus = &"SFX"
+
 [node name="SFX_Hurt" type="AudioStreamPlayer2D" parent="."]
 stream = ExtResource("11_d2wvv")
 volume_db = -10.0
