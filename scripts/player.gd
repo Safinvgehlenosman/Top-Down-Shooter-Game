@@ -6,9 +6,13 @@ const BulletScene := preload("res://scenes/bullet.tscn")
 @export var health_bar_path: NodePath
 @export var health_sprites: Array[Texture2D] = []
 
+@export var ammo_bar_path: NodePath
+@export var ammo_sprites: Array[Texture2D] = []
+
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var muzzle: Marker2D = $Gun/Muzzle
 var health_bar: TextureRect
+var ammo_bar: TextureRect
 var alt_fire_cooldown_timer: float = 0.0
 
 
@@ -19,9 +23,11 @@ var fire_rate: float
 var knockback_strength: float
 var knockback_duration: float
 var invincible_time: float
+var max_ammo: int
 
 # State
 var health: int = 0
+var ammo: int = 0
 var coins: int = 0
 var fire_timer: float = 0.0
 
@@ -37,6 +43,7 @@ var is_dead: bool = false
 
 func _ready() -> void:
 	# Pull config from global GameConfig
+	max_ammo           = GameConfig.player_max_ammo
 	speed              = GameConfig.player_move_speed
 	max_health         = GameConfig.player_max_health
 	fire_rate          = GameConfig.player_fire_rate
@@ -48,6 +55,10 @@ func _ready() -> void:
 	health = max_health
 	health_bar = get_node(health_bar_path)
 	update_health_bar()
+	
+	ammo = max_ammo
+	ammo_bar = get_node(ammo_bar_path)
+	update_ammo_bar()
 
 
 func _physics_process(delta: float) -> void:
@@ -109,14 +120,21 @@ func _process_shooting(delta: float) -> void:
 	if Input.is_action_pressed("shoot") and fire_timer <= 0.0:
 		shoot()
 		fire_timer = fire_rate
-		
-	# Alt fire (right mouse / laser)
-	if Input.is_action_just_pressed("alt_fire") and alt_fire_cooldown_timer <= 0.0:
+
+	# Alt fire (right mouse / shotgun)
+	if Input.is_action_just_pressed("alt_fire") \
+			and alt_fire_cooldown_timer <= 0.0 \
+			and ammo > 0:                      # 👈 need ammo
 		fire_laser()
 		alt_fire_cooldown_timer = GameConfig.alt_fire_cooldown
 
 
+
 func fire_laser() -> void:
+	# spend ammo
+	ammo = max(ammo - 1, 0)
+	update_ammo_bar()
+
 	$SFX_Shoot.play()
 
 	var bullet_count: int = GameConfig.alt_fire_bullet_count
@@ -139,6 +157,11 @@ func fire_laser() -> void:
 	var recoil_dir: Vector2 = -base_dir
 	knockback = recoil_dir * GameConfig.alt_fire_recoil_strength
 	knockback_timer = GameConfig.alt_fire_recoil_duration
+	
+	var cam := get_tree().get_first_node_in_group("camera")
+	if cam and cam.has_method("shake"):
+		cam.shake(GameConfig.knockback_shake_strength, GameConfig.knockback_shake_duration)
+
 
 
 
@@ -251,3 +274,10 @@ func update_health_bar() -> void:
 
 	var idx: int = clampi(health, 0, health_sprites.size() - 1)
 	health_bar.texture = health_sprites[idx]
+
+func update_ammo_bar() -> void:
+	if ammo_bar == null or ammo_sprites.is_empty():
+		return
+
+	var idx: int = clampi(ammo, 0, ammo_sprites.size() - 1)
+	ammo_bar.texture = ammo_sprites[idx]

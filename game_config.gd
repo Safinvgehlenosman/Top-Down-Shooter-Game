@@ -7,6 +7,7 @@ extends Node
 @export var player_knockback_strength: float = 250.0
 @export var player_knockback_duration: float = 0.15
 @export var player_invincible_time: float = 0.3
+@export var player_max_ammo: int = 5   # 👈 add this
 
 @export_category("Bullet / Weapons")
 @export var bullet_speed: float = 500.0
@@ -27,6 +28,10 @@ extends Node
 @export var hit_shake_duration: float = 0.18
 @export var hit_flash_duration: float = 0.15
 @export var hit_flash_max_alpha: float = 0.15
+
+@export_category("Shotgun Knockback")
+@export var knockback_shake_strength: float = 8.0
+@export var knockback_shake_duration: float = 0.18
 
 @export_category("Alt Fire (Laser)")
 @export var alt_fire_cooldown: float = 10.0

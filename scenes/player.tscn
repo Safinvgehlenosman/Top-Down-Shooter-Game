@@ -70,7 +70,10 @@ scale = Vector2(1.4, 1.4)
 collision_layer = 2
 collision_mask = 25
 script = ExtResource("1_g2els")
+health_bar_path = null
 health_sprites = Array[Texture2D]([ExtResource("2_ur7pv"), ExtResource("3_y4r1p"), ExtResource("4_d2wvv"), ExtResource("5_3v2ag"), ExtResource("6_jej6c"), ExtResource("7_f1ej7")])
+ammo_bar_path = null
+ammo_sprites = null
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(0, -8)

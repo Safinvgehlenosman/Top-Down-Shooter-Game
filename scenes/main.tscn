@@ -1,16 +1,22 @@
-[gd_scene load_steps=24 format=3 uid="uid://d244sf3fl6oc2"]
+[gd_scene load_steps=30 format=3 uid="uid://d244sf3fl6oc2"]
 
 [ext_resource type="PackedScene" uid="uid://cwdo73t7wn5pp" path="res://scenes/player.tscn" id="1_o5qli"]
 [ext_resource type="Script" uid="uid://brvgav35e1cb5" path="res://scripts/main.gd" id="1_o6xl0"]
 [ext_resource type="Texture2D" uid="uid://ddnj3o5q184op" path="res://assets/TilesetSheet.png" id="2_0wfyh"]
 [ext_resource type="Script" uid="uid://bhexx6mj1xv3q" path="res://addons/phantom_camera/scripts/phantom_camera/phantom_camera_2d.gd" id="2_eb6dy"]
 [ext_resource type="Script" uid="uid://be1y1fhgbt80f" path="res://scripts/camera_shake.gd" id="3_85g3d"]
+[ext_resource type="Texture2D" uid="uid://cv6k0b8rcq486" path="res://assets/Ammo Bar/ammo_0.png" id="3_og1vs"]
 [ext_resource type="PackedScene" uid="uid://0gile0fujjql" path="res://scenes/slime.tscn" id="3_sugp2"]
 [ext_resource type="Script" uid="uid://8umksf8e80fw" path="res://addons/phantom_camera/scripts/resources/tween_resource.gd" id="3_trceg"]
+[ext_resource type="Texture2D" uid="uid://b7mbrlj24vlc" path="res://assets/Ammo Bar/ammo_1.png" id="4_2wyq8"]
 [ext_resource type="PackedScene" uid="uid://chcumh0nhsngk" path="res://scenes/crosshair.tscn" id="4_jyhfs"]
 [ext_resource type="Script" uid="uid://bd046eokvcnu2" path="res://addons/phantom_camera/scripts/phantom_camera_host/phantom_camera_host.gd" id="4_ya4ey"]
 [ext_resource type="Texture2D" uid="uid://crcvb7pieh4iv" path="res://assets/HP Bar/hp_5.png" id="5_tbgi4"]
+[ext_resource type="Texture2D" uid="uid://b2tqhxwbh03o6" path="res://assets/Ammo Bar/ammo_2.png" id="5_vxglm"]
+[ext_resource type="Texture2D" uid="uid://cvig5kcfppfxs" path="res://assets/Ammo Bar/ammo_3.png" id="6_2f3dj"]
+[ext_resource type="Texture2D" uid="uid://gx75ntcp6w1e" path="res://assets/Ammo Bar/ammo_4.png" id="7_yq6so"]
 [ext_resource type="Texture2D" uid="uid://m68jet2usaem" path="res://assets/Separated/Sprite-0002.png" id="8_0ld40"]
+[ext_resource type="Texture2D" uid="uid://bfuiagrrydhb7" path="res://assets/Ammo Bar/ammo_5.png" id="8_fv21b"]
 [ext_resource type="Script" uid="uid://bun2ukfdgaq3m" path="res://scripts/screen_flash.gd" id="8_tipki"]
 [ext_resource type="Script" uid="uid://dpqjf535o4wfs" path="res://scripts/screen_flash_heal.gd" id="9_85g3d"]
 [ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="10_jkv2x"]
@@ -236,6 +242,8 @@ script = ExtResource("1_o6xl0")
 [node name="Player" parent="." instance=ExtResource("1_o5qli")]
 position = Vector2(86, 92)
 health_bar_path = NodePath("../UI/TextureRect")
+ammo_bar_path = NodePath("../UI/TextureRect2")
+ammo_sprites = Array[Texture2D]([ExtResource("3_og1vs"), ExtResource("4_2wyq8"), ExtResource("5_vxglm"), ExtResource("6_2f3dj"), ExtResource("7_yq6so"), ExtResource("8_fv21b")])
 
 [node name="Camera2D" type="Camera2D" parent="." groups=["camera"]]
 physics_interpolation_mode = 1
