@@ -1,0 +1,43 @@
+[gd_scene load_steps=7 format=3 uid="uid://bjfkxuy5hxd11"]
+
+[ext_resource type="Script" uid="uid://dqvrma8a6jrqb" path="res://scenes/crate.gd" id="1_74u5o"]
+[ext_resource type="Texture2D" uid="uid://bapn3pfovv85k" path="res://assets/16x16 Assorted RPG Icons/all-assets-preview.png" id="1_b66cd"]
+[ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="2_1kl6c"]
+[ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="2_dwt0d"]
+[ext_resource type="Texture2D" uid="uid://co6g1qtmr654o" path="res://assets/Separated/new_gradient_texture_2d.tres" id="3_kn6iu"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_b66cd"]
+size = Vector2(14, 13)
+
+[node name="Crate" type="Area2D" groups=["crate"]]
+collision_mask = 32
+script = ExtResource("1_74u5o")
+CoinScene = ExtResource("2_1kl6c")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(0, -7)
+texture = ExtResource("1_b66cd")
+region_enabled = true
+region_rect = Rect2(528, 144, 16, 16)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -6.5)
+shape = SubResource("RectangleShape2D_b66cd")
+
+[node name="Sprite2D2" type="Sprite2D" parent="."]
+modulate = Color(0, 0, 0, 0.11764706)
+z_index = -1
+position = Vector2(5.9604645e-07, 0)
+scale = Vector2(1.3333333, 1)
+texture = ExtResource("2_dwt0d")
+region_enabled = true
+region_rect = Rect2(201.99591, 204.99461, 12.041901, 5.0242004)
+
+[node name="PointLight2D" type="PointLight2D" parent="."]
+position = Vector2(5.9604645e-07, 0)
+scale = Vector2(1.3333333, 1)
+color = Color(1, 0.76862746, 0.30588236, 0.49803922)
+texture = ExtResource("3_kn6iu")
+texture_scale = 0.5
+
+[connection signal="area_entered" from="." to="." method="_on_area_entered"]

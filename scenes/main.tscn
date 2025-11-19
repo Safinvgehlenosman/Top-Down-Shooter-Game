@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3 uid="uid://d244sf3fl6oc2"]
+[gd_scene load_steps=31 format=3 uid="uid://d244sf3fl6oc2"]
 
 [ext_resource type="PackedScene" uid="uid://cwdo73t7wn5pp" path="res://scenes/player.tscn" id="1_o5qli"]
 [ext_resource type="Script" uid="uid://brvgav35e1cb5" path="res://scripts/main.gd" id="1_o6xl0"]
@@ -25,6 +25,7 @@
 [ext_resource type="FontFile" uid="uid://4xsaqwwtj2c1" path="res://assets/Fonts/PixelOperator8.ttf" id="12_dp3eg"]
 [ext_resource type="Script" uid="uid://c2yqcdrh4ns2s" path="res://scenes/pause_screen.gd" id="13_dp3eg"]
 [ext_resource type="Script" uid="uid://cptts8mc7wnqs" path="res://scripts/game_manager.gd" id="14_a8y0u"]
+[ext_resource type="PackedScene" uid="uid://bjfkxuy5hxd11" path="res://scenes/crate.tscn" id="26_2wyq8"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_sugp2"]
 texture = ExtResource("2_0wfyh")
@@ -427,14 +428,8 @@ color = Color(0.502743, 0.502743, 0.502743, 1)
 [node name="Slime3" parent="Enemies" instance=ExtResource("3_sugp2")]
 position = Vector2(402, 93)
 
-[node name="Slime4" parent="Enemies" instance=ExtResource("3_sugp2")]
-position = Vector2(219.00003, 57)
-
 [node name="Slime5" parent="Enemies" instance=ExtResource("3_sugp2")]
 position = Vector2(521, 58)
-
-[node name="Slime6" parent="Enemies" instance=ExtResource("3_sugp2")]
-position = Vector2(215, 131)
 
 [node name="CameraManager" type="Node" parent="." node_paths=PackedStringArray("player", "Camera_Room0", "Camera_Room1")]
 process_mode = 3
@@ -475,6 +470,15 @@ metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 process_mode = 3
 script = ExtResource("14_a8y0u")
 death_screen_path = NodePath("../UI/DeathScreen")
+
+[node name="Crate" parent="." instance=ExtResource("26_2wyq8")]
+position = Vector2(253, 94)
+
+[node name="Crate2" parent="." instance=ExtResource("26_2wyq8")]
+position = Vector2(165, 40)
+
+[node name="Crate3" parent="." instance=ExtResource("26_2wyq8")]
+position = Vector2(169, 148)
 
 [connection signal="pressed" from="UI/DeathScreen/Content/RestartButton" to="UI/DeathScreen" method="_on_restart_button_pressed"]
 [connection signal="pressed" from="UI/DeathScreen/Content/QuitButton" to="UI/DeathScreen" method="_on_quit_button_pressed"]
