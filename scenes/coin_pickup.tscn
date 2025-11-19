@@ -1,0 +1,82 @@
+[gd_scene load_steps=12 format=3 uid="uid://cxo8ho16py78a"]
+
+[ext_resource type="Script" uid="uid://dogjq8nj1w25k" path="res://scripts/coin_pickup.gd" id="1_x00gn"]
+[ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="2_yu1o2"]
+[ext_resource type="AudioStream" uid="uid://b1jxtbwxuvrds" path="res://assets/Audios/CoinFall.wav" id="3_yu1o2"]
+[ext_resource type="AudioStream" uid="uid://s21q2vmi6db6" path="res://assets/Audios/CoinCollect.wav" id="4_jfem2"]
+[ext_resource type="Texture2D" uid="uid://co6g1qtmr654o" path="res://assets/Separated/new_gradient_texture_2d.tres" id="5_pf647"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f4i30"]
+atlas = ExtResource("2_yu1o2")
+region = Rect2(32, 160, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gfo33"]
+atlas = ExtResource("2_yu1o2")
+region = Rect2(64, 160, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wdevu"]
+atlas = ExtResource("2_yu1o2")
+region = Rect2(96, 160, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7qbvm"]
+atlas = ExtResource("2_yu1o2")
+region = Rect2(128, 160, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_0c6if"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_f4i30")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gfo33")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wdevu")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7qbvm")
+}],
+"loop": true,
+"name": &"coin",
+"speed": 5.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_fqx1b"]
+radius = 3.0
+
+[node name="CoinPickup" type="Area2D"]
+position = Vector2(0, -4)
+collision_layer = 16
+collision_mask = 2
+script = ExtResource("1_x00gn")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_0c6if")
+animation = &"coin"
+autoplay = "coin"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_fqx1b")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+modulate = Color(0, 0, 0, 0.11764706)
+z_index = -1
+position = Vector2(0, 3)
+scale = Vector2(0.8333333, 1)
+texture = ExtResource("2_yu1o2")
+region_enabled = true
+region_rect = Rect2(201.99591, 204.99461, 12.041901, 5.0242004)
+
+[node name="SFX_Spawn" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("3_yu1o2")
+
+[node name="SFX_Collect" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("4_jfem2")
+
+[node name="PointLight2D" type="PointLight2D" parent="."]
+color = Color(1, 0.78431374, 0.14509805, 1)
+texture = ExtResource("5_pf647")
+texture_scale = 0.5
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

@@ -1,0 +1,121 @@
+[gd_scene load_steps=20 format=3 uid="uid://cwdo73t7wn5pp"]
+
+[ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="1_3vyb7"]
+[ext_resource type="Script" uid="uid://c08yjacbakryb" path="res://scripts/player.gd" id="1_g2els"]
+[ext_resource type="Texture2D" uid="uid://cx3fqcxwujmo1" path="res://assets/HP Bar/hp_0.png" id="2_ur7pv"]
+[ext_resource type="Script" uid="uid://7xp6tv2fkwuf" path="res://scripts/gun.gd" id="3_qhqgy"]
+[ext_resource type="Texture2D" uid="uid://bba31p8ijubvj" path="res://assets/HP Bar/hp_1.png" id="3_y4r1p"]
+[ext_resource type="Texture2D" uid="uid://c80fhkr3outrn" path="res://assets/HP Bar/hp_2.png" id="4_d2wvv"]
+[ext_resource type="Texture2D" uid="uid://dyful3suiujk0" path="res://assets/HP Bar/hp_3.png" id="5_3v2ag"]
+[ext_resource type="Texture2D" uid="uid://bcxhsnm66xy7q" path="res://assets/HP Bar/hp_4.png" id="6_jej6c"]
+[ext_resource type="Texture2D" uid="uid://crcvb7pieh4iv" path="res://assets/HP Bar/hp_5.png" id="7_f1ej7"]
+[ext_resource type="AudioStream" uid="uid://bux0mdx48mneh" path="res://assets/Audios/Shoot.wav" id="10_y4r1p"]
+[ext_resource type="AudioStream" uid="uid://c8cwf2bwmi50v" path="res://assets/Audios/Hit.wav" id="11_d2wvv"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_g2els"]
+atlas = ExtResource("1_3vyb7")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qhqgy"]
+atlas = ExtResource("1_3vyb7")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dqkch"]
+atlas = ExtResource("1_3vyb7")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qlg0r"]
+atlas = ExtResource("1_3vyb7")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_tuyoq"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_g2els")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qhqgy")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dqkch")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qlg0r")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_fjrip"]
+radius = 3.0
+height = 10.0
+
+[sub_resource type="Gradient" id="Gradient_kmthg"]
+offsets = PackedFloat32Array(0.016129032, 0.8064516, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_d2wvv"]
+gradient = SubResource("Gradient_kmthg")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.517094, 0.52136755)
+fill_to = Vector2(0.76495725, 0.7777778)
+
+[node name="Player" type="CharacterBody2D" groups=["player"]]
+z_index = 100
+scale = Vector2(1.4, 1.4)
+collision_layer = 2
+collision_mask = 25
+script = ExtResource("1_g2els")
+health_sprites = Array[Texture2D]([ExtResource("2_ur7pv"), ExtResource("3_y4r1p"), ExtResource("4_d2wvv"), ExtResource("5_3v2ag"), ExtResource("6_jej6c"), ExtResource("7_f1ej7")])
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(0, -8)
+sprite_frames = SubResource("SpriteFrames_tuyoq")
+animation = &"idle"
+autoplay = "idle"
+frame_progress = 0.157999
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -5)
+shape = SubResource("CapsuleShape2D_fjrip")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+modulate = Color(0, 0, 0, 0.11764706)
+z_index = -1
+position = Vector2(7.1054274e-15, 0)
+scale = Vector2(0.76282054, 0.75000006)
+texture = ExtResource("1_3vyb7")
+region_enabled = true
+region_rect = Rect2(201.99591, 204.99461, 12.041901, 5.0242004)
+
+[node name="Gun" type="Node2D" parent="."]
+position = Vector2(2.3841858e-07, -3.5714288)
+script = ExtResource("3_qhqgy")
+
+[node name="Sprite2D" type="Sprite2D" parent="Gun"]
+position = Vector2(3.5714285, 4.768371e-07)
+texture = ExtResource("1_3vyb7")
+region_enabled = true
+region_rect = Rect2(8, 104, 16, 16)
+
+[node name="Muzzle" type="Marker2D" parent="Gun"]
+position = Vector2(4.999999, -0.7142854)
+scale = Vector2(0.99999976, 0.99999976)
+
+[node name="SFX_Shoot" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("10_y4r1p")
+bus = &"SFX"
+
+[node name="SFX_Hurt" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("11_d2wvv")
+volume_db = -10.0
+bus = &"SFX"
+
+[node name="PointLight2D" type="PointLight2D" parent="."]
+color = Color(0.9254902, 0.8745098, 0.39215687, 1)
+texture = SubResource("GradientTexture2D_d2wvv")
+texture_scale = 0.5

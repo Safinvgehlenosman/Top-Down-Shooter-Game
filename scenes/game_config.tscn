@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=3 uid="uid://1216mwkti48e"]
+
+[ext_resource type="Script" uid="uid://bw48oscmspj6u" path="res://game_config.gd" id="1_tw0mp"]
+
+[node name="GameConfig" type="Node"]
+script = ExtResource("1_tw0mp")
+player_fire_rate = 0.5
+bullet_speed = 1.0
+slime_heart_drop_chance = 0.5
+pickup_magnet_range = 40.0
+pickup_magnet_strength = 150.0
+alt_fire_cooldown = 0.5
+alt_fire_spread_degrees = 10.0
+alt_fire_recoil_strength = 200.0
+death_slowmo_duration = 0.5

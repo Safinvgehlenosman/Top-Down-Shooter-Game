@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3 uid="uid://dvcbwpkobalqs"]
+
+[ext_resource type="AudioStream" uid="uid://cu18kkb8ojrft" path="res://assets/Audios/Sci-Fi 1 Loop.mp3" id="1_nbeep"]
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer"]
+stream = ExtResource("1_nbeep")
+autoplay = true
+bus = &"BG"
+parameters/looping = true

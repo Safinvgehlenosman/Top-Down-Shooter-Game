@@ -1,0 +1,20 @@
+[gd_scene load_steps=4 format=3 uid="uid://chcumh0nhsngk"]
+
+[ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="1_6blvt"]
+[ext_resource type="Script" uid="uid://cik6u8kpiaycg" path="res://scripts/crosshair.gd" id="1_norqy"]
+[ext_resource type="Texture2D" uid="uid://co6g1qtmr654o" path="res://assets/Separated/new_gradient_texture_2d.tres" id="3_qnjby"]
+
+[node name="Crosshair" type="Node2D" groups=["crosshair"]]
+z_index = 4096
+script = ExtResource("1_norqy")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("1_6blvt")
+region_enabled = true
+region_rect = Rect2(72, 104, 16, 16)
+
+[node name="PointLight2D" type="PointLight2D" parent="."]
+color = Color(1, 0.2, 0.28235295, 1)
+energy = 0.5
+texture = ExtResource("3_qnjby")
+texture_scale = 0.2

@@ -1,0 +1,35 @@
+[gd_scene load_steps=6 format=3 uid="uid://b5vf6h1xj2eqo"]
+
+[ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="1_4dc3y"]
+[ext_resource type="Script" uid="uid://go7nddya8t6w" path="res://scripts/heart_pickup.gd" id="1_m16xc"]
+[ext_resource type="AudioStream" uid="uid://pe47wnik3isg" path="res://assets/Audios/one_beep-99630.mp3" id="3_grbqr"]
+[ext_resource type="Texture2D" uid="uid://co6g1qtmr654o" path="res://assets/Separated/new_gradient_texture_2d.tres" id="4_grbqr"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_4dc3y"]
+radius = 4.0
+height = 8.0
+
+[node name="HeartPickup" type="Area2D"]
+z_index = -1
+collision_layer = 16
+collision_mask = 2
+script = ExtResource("1_m16xc")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("1_4dc3y")
+region_enabled = true
+region_rect = Rect2(40, 104, 16, 16)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CapsuleShape2D_4dc3y")
+
+[node name="SFX_Pickup" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("3_grbqr")
+bus = &"SFX"
+
+[node name="PointLight2D" type="PointLight2D" parent="."]
+color = Color(0.91764706, 0.19607843, 0.23529412, 1)
+texture = ExtResource("4_grbqr")
+texture_scale = 0.5
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
