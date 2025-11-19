@@ -135,10 +135,6 @@ func fire_laser() -> void:
 		bullet.direction = dir
 		get_tree().current_scene.add_child(bullet)
 
-	# self-damage (alt fire cost)
-	invincible_timer = 0.0
-	take_damage(GameConfig.alt_fire_self_damage)
-
 	# recoil: push player opposite of shot direction
 	var recoil_dir: Vector2 = -base_dir
 	knockback = recoil_dir * GameConfig.alt_fire_recoil_strength
