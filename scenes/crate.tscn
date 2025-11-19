@@ -1,12 +1,61 @@
-[gd_scene load_steps=9 format=3 uid="uid://bjfkxuy5hxd11"]
+[gd_scene load_steps=16 format=3 uid="uid://bjfkxuy5hxd11"]
 
 [ext_resource type="Script" uid="uid://dqvrma8a6jrqb" path="res://scenes/crate.gd" id="1_74u5o"]
-[ext_resource type="Texture2D" uid="uid://bapn3pfovv85k" path="res://assets/16x16 Assorted RPG Icons/all-assets-preview.png" id="1_b66cd"]
 [ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="2_1kl6c"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="2_dwt0d"]
 [ext_resource type="PackedScene" uid="uid://4g03mky1wrrw" path="res://scenes/ammo_pickup.tscn" id="3_dfg3k"]
 [ext_resource type="Texture2D" uid="uid://co6g1qtmr654o" path="res://assets/Separated/new_gradient_texture_2d.tres" id="3_kn6iu"]
 [ext_resource type="PackedScene" uid="uid://b5vf6h1xj2eqo" path="res://scenes/heart_pickup.tscn" id="4_juhn0"]
+[ext_resource type="Texture2D" uid="uid://quuqh5wt57i1" path="res://assets/Separated/Destructible Objects Sprite Sheet.png" id="5_dfg3k"]
+[ext_resource type="AudioStream" uid="uid://bkbbtse858d2x" path="res://assets/Audios/crate-break-1-93926.mp3" id="8_juhn0"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dfg3k"]
+atlas = ExtResource("5_dfg3k")
+region = Rect2(192, 128, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_juhn0"]
+atlas = ExtResource("5_dfg3k")
+region = Rect2(192, 256, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ipbef"]
+atlas = ExtResource("5_dfg3k")
+region = Rect2(320, 128, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xu2ic"]
+atlas = ExtResource("5_dfg3k")
+region = Rect2(320, 256, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wsrlu"]
+atlas = ExtResource("5_dfg3k")
+region = Rect2(64, 128, 64, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_m32jw"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dfg3k")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_juhn0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ipbef")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xu2ic")
+}],
+"loop": false,
+"name": &"break",
+"speed": 7.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wsrlu")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_b66cd"]
 size = Vector2(14, 13)
@@ -18,11 +67,14 @@ CoinScene = ExtResource("2_1kl6c")
 AmmoScene = ExtResource("3_dfg3k")
 HeartScene = ExtResource("4_juhn0")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(0, -7)
-texture = ExtResource("1_b66cd")
-region_enabled = true
-region_rect = Rect2(528, 144, 16, 16)
+scale = Vector2(0.8, 0.8)
+sprite_frames = SubResource("SpriteFrames_m32jw")
+animation = &"break"
+autoplay = "idle"
+frame = 3
+frame_progress = 1.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -6.5)
@@ -43,5 +95,9 @@ scale = Vector2(1.3333333, 1)
 color = Color(1, 0.76862746, 0.30588236, 0.49803922)
 texture = ExtResource("3_kn6iu")
 texture_scale = 0.5
+
+[node name="SFX_Break" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("8_juhn0")
+bus = &"SFX"
 
 [connection signal="area_entered" from="." to="." method="_on_area_entered"]

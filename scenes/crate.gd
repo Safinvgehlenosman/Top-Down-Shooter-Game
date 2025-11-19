@@ -4,6 +4,14 @@ extends Area2D
 @export var AmmoScene: PackedScene
 @export var HeartScene: PackedScene  # optional
 
+var destroyed: bool = false
+
+@onready var anim: AnimatedSprite2D = $AnimatedSprite2D
+@onready var collision: CollisionShape2D = $CollisionShape2D
+
+func _ready() -> void:
+	if anim:
+		anim.play("idle")  # your idle crate frame
 
 func _spawn_loot() -> void:
 	var roll := randf()
@@ -38,9 +46,31 @@ func _spawn_loot() -> void:
 			get_tree().current_scene.add_child(heart)
 
 
+func _break_and_despawn() -> void:
+	# stop future collisions
+	if collision:
+		collision.disabled = true
 
+	# play break animation
+	if anim:
+		anim.play("break")
+		await anim.animation_finished
+
+	# AFTER animation finishes → spawn loot
+	_spawn_loot()
+
+	# remove crate
+	queue_free()
 
 func _on_area_entered(area: Area2D) -> void:
+	if destroyed:
+		return
+
 	if area.is_in_group("bullet"):
-		_spawn_loot()
-		queue_free()
+		destroyed = true
+		$SFX_Break.play()
+
+		# optional: remove bullet on impact
+		area.queue_free()
+
+		_break_and_despawn()

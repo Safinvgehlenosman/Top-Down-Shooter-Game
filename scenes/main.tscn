@@ -428,6 +428,9 @@ color = Color(0.502743, 0.502743, 0.502743, 1)
 [node name="Slime3" parent="Enemies" instance=ExtResource("3_sugp2")]
 position = Vector2(402, 93)
 
+[node name="Slime4" parent="Enemies" instance=ExtResource("3_sugp2")]
+position = Vector2(217.00003, 138)
+
 [node name="Slime5" parent="Enemies" instance=ExtResource("3_sugp2")]
 position = Vector2(521, 58)
 
@@ -474,13 +477,16 @@ death_screen_path = NodePath("../UI/DeathScreen")
 [node name="Crates" type="Node" parent="."]
 
 [node name="Crate" parent="Crates" instance=ExtResource("26_2wyq8")]
-position = Vector2(253, 94)
+position = Vector2(350, 45)
+
+[node name="Crate4" parent="Crates" instance=ExtResource("26_2wyq8")]
+position = Vector2(549, 140)
 
 [node name="Crate2" parent="Crates" instance=ExtResource("26_2wyq8")]
-position = Vector2(165, 40)
+position = Vector2(244, 43)
 
 [node name="Crate3" parent="Crates" instance=ExtResource("26_2wyq8")]
-position = Vector2(169, 148)
+position = Vector2(52, 149)
 
 [connection signal="pressed" from="UI/DeathScreen/Content/RestartButton" to="UI/DeathScreen" method="_on_restart_button_pressed"]
 [connection signal="pressed" from="UI/DeathScreen/Content/QuitButton" to="UI/DeathScreen" method="_on_quit_button_pressed"]

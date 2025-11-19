@@ -1,15 +1,27 @@
-[gd_scene load_steps=6 format=3 uid="uid://4g03mky1wrrw"]
+[gd_scene load_steps=7 format=3 uid="uid://4g03mky1wrrw"]
 
 [ext_resource type="Script" uid="uid://eo5qiktu83ys" path="res://scenes/ammo_pickup.gd" id="1_3k870"]
 [ext_resource type="Texture2D" uid="uid://crenssjg3xtfu" path="res://assets/Separated/ammo.png" id="1_jrhku"]
 [ext_resource type="AudioStream" uid="uid://pe47wnik3isg" path="res://assets/Audios/one_beep-99630.mp3" id="2_3k870"]
-[ext_resource type="Texture2D" uid="uid://co6g1qtmr654o" path="res://assets/Separated/new_gradient_texture_2d.tres" id="3_hg4qr"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_jrhku"]
 size = Vector2(4, 7)
 
+[sub_resource type="Gradient" id="Gradient_kmthg"]
+offsets = PackedFloat32Array(0.016129032, 0.8064516, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_jrhku"]
+gradient = SubResource("Gradient_kmthg")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.517094, 0.52136755)
+fill_to = Vector2(0.76495725, 0.7777778)
+
 [node name="AmmoPickup" type="Area2D"]
 z_index = -1
+position = Vector2(0, -4)
 collision_layer = 16
 collision_mask = 2
 script = ExtResource("1_3k870")
@@ -27,8 +39,10 @@ stream = ExtResource("2_3k870")
 bus = &"SFX"
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
-color = Color(0.91764706, 0.19607843, 0.23529412, 1)
-texture = ExtResource("3_hg4qr")
+z_index = 10
+color = Color(0.76862746, 0.14117648, 0.1882353, 1)
+energy = 0.5
+texture = SubResource("GradientTexture2D_jrhku")
 texture_scale = 0.5
 
 [connection signal="body_entered" from="." to="." method="_on_body_entered"]
