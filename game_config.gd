@@ -44,3 +44,8 @@ extends Node
 @export_category("Death / Game Over")
 @export var death_slowmo_scale: float = 0.2
 @export var death_slowmo_duration: float = 1.5
+
+@export_category("Crate Loot")
+@export var crate_coin_drop_chance: float = 0.6
+@export var crate_ammo_drop_chance: float = 0.3
+@export var crate_heart_drop_chance: float = 0.0  # optional, if you want hearts from crates

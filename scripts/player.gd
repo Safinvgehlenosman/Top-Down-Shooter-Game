@@ -128,6 +128,10 @@ func _process_shooting(delta: float) -> void:
 		fire_laser()
 		alt_fire_cooldown_timer = GameConfig.alt_fire_cooldown
 
+func add_ammo(amount: int) -> void:
+	ammo = clampi(ammo + amount, 0, max_ammo)
+	update_ammo_bar()
+	print("Ammo:", ammo)
 
 
 func fire_laser() -> void:

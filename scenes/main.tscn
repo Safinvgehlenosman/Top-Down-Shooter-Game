@@ -471,13 +471,15 @@ process_mode = 3
 script = ExtResource("14_a8y0u")
 death_screen_path = NodePath("../UI/DeathScreen")
 
-[node name="Crate" parent="." instance=ExtResource("26_2wyq8")]
+[node name="Crates" type="Node" parent="."]
+
+[node name="Crate" parent="Crates" instance=ExtResource("26_2wyq8")]
 position = Vector2(253, 94)
 
-[node name="Crate2" parent="." instance=ExtResource("26_2wyq8")]
+[node name="Crate2" parent="Crates" instance=ExtResource("26_2wyq8")]
 position = Vector2(165, 40)
 
-[node name="Crate3" parent="." instance=ExtResource("26_2wyq8")]
+[node name="Crate3" parent="Crates" instance=ExtResource("26_2wyq8")]
 position = Vector2(169, 148)
 
 [connection signal="pressed" from="UI/DeathScreen/Content/RestartButton" to="UI/DeathScreen" method="_on_restart_button_pressed"]
