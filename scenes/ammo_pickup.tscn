@@ -1,6 +1,6 @@
 [gd_scene load_steps=7 format=3 uid="uid://4g03mky1wrrw"]
 
-[ext_resource type="Script" uid="uid://eo5qiktu83ys" path="res://scenes/ammo_pickup.gd" id="1_3k870"]
+[ext_resource type="Script" uid="uid://eo5qiktu83ys" path="res://scripts/ammo_pickup.gd" id="1_3k870"]
 [ext_resource type="Texture2D" uid="uid://crenssjg3xtfu" path="res://assets/Separated/ammo.png" id="1_jrhku"]
 [ext_resource type="AudioStream" uid="uid://pe47wnik3isg" path="res://assets/Audios/one_beep-99630.mp3" id="2_3k870"]
 

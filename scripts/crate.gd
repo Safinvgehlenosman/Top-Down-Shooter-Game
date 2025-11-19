@@ -73,11 +73,11 @@ func _break_and_despawn() -> void:
 	hit_flash_timer = hit_flash_time
 
 	# scale pop
-	scale = Vector2(1.1, 1.1)
+	scale = Vector2(1.6, 1.6)
 	await get_tree().create_timer(0.4).timeout
 
 	# shrink a bit before death
-	scale = Vector2(1, 1)
+	scale = Vector2(1.4, 1.4)
 	await get_tree().create_timer(0.4).timeout
 
 	_spawn_loot()

@@ -1,6 +1,6 @@
 [gd_scene load_steps=12 format=3 uid="uid://bjfkxuy5hxd11"]
 
-[ext_resource type="Script" uid="uid://dqvrma8a6jrqb" path="res://scenes/crate.gd" id="1_74u5o"]
+[ext_resource type="Script" uid="uid://dqvrma8a6jrqb" path="res://scripts/crate.gd" id="1_74u5o"]
 [ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="2_1kl6c"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="2_dwt0d"]
 [ext_resource type="PackedScene" uid="uid://4g03mky1wrrw" path="res://scenes/ammo_pickup.tscn" id="3_dfg3k"]
@@ -25,9 +25,11 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_b66cd"]
-size = Vector2(14, 13)
+size = Vector2(8.571428, 8.571429)
 
 [node name="Crate" type="Area2D" groups=["crate"]]
+position = Vector2(0, 2.9999998)
+scale = Vector2(1.4, 1.4)
 collision_mask = 32
 script = ExtResource("1_74u5o")
 CoinScene = ExtResource("2_1kl6c")
@@ -42,14 +44,15 @@ animation = &"idle"
 autoplay = "idle"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, -6.5)
+position = Vector2(-8.514945e-08, -7.1428556)
+scale = Vector2(0.99999964, 0.99999964)
 shape = SubResource("RectangleShape2D_b66cd")
 
 [node name="Sprite2D2" type="Sprite2D" parent="."]
 modulate = Color(0, 0, 0, 0.11764706)
 z_index = -1
-position = Vector2(5.9604645e-07, 0)
-scale = Vector2(1.3333333, 1)
+position = Vector2(0, -2.142857)
+scale = Vector2(1.2023808, 0.78571427)
 texture = ExtResource("2_dwt0d")
 region_enabled = true
 region_rect = Rect2(201.99591, 204.99461, 12.041901, 5.0242004)
