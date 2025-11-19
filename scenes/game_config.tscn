@@ -4,6 +4,7 @@
 
 [node name="GameConfig" type="Node"]
 script = ExtResource("1_tw0mp")
+player_move_speed = 150.0
 player_fire_rate = 0.5
 bullet_speed = 1.0
 slime_heart_drop_chance = 0.5

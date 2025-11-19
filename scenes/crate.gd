@@ -47,20 +47,20 @@ func _spawn_loot() -> void:
 
 
 func _break_and_despawn() -> void:
-	# stop future collisions
 	if collision:
 		collision.disabled = true
 
-	# play break animation
-	if anim:
-		anim.play("break")
-		await anim.animation_finished
+	# flash red
+	modulate = Color(1, 0.3, 0.3)
+	scale = Vector2(1.1, 1.1)
 
-	# AFTER animation finishes → spawn loot
+	await get_tree().create_timer(0.8).timeout
+
+	# spawn loot
 	_spawn_loot()
 
-	# remove crate
 	queue_free()
+
 
 func _on_area_entered(area: Area2D) -> void:
 	if destroyed:
