@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3 uid="uid://b4fgncv3abcol"]
+[gd_scene load_steps=7 format=3 uid="uid://b4fgncv3abcol"]
 
+[ext_resource type="Script" uid="uid://d1rbg528xkxj6" path="res://scripts/exit_door.gd" id="1_lxrmt"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="1_syxuu"]
 [ext_resource type="AudioStream" uid="uid://owqtcbpubn64" path="res://assets/Audios/Win.wav" id="2_yk4m6"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_syxuu"]
-size = Vector2(8, 11)
+size = Vector2(8, 10)
 
 [sub_resource type="Gradient" id="Gradient_kmthg"]
 offsets = PackedFloat32Array(0.016129032, 0.8064516, 1)
@@ -20,6 +21,8 @@ fill_to = Vector2(0.76495725, 0.7777778)
 
 [node name="ExitDoor" type="Area2D"]
 position = Vector2(0, -6)
+collision_mask = 2
+script = ExtResource("1_lxrmt")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = ExtResource("1_syxuu")
@@ -34,7 +37,7 @@ region_enabled = true
 region_rect = Rect2(202, 205, 12, 5)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, 0.5)
+position = Vector2(0, 1)
 shape = SubResource("RectangleShape2D_syxuu")
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
@@ -45,3 +48,5 @@ texture_scale = 0.5
 [node name="SFX_Spawn" type="AudioStreamPlayer2D" parent="."]
 stream = ExtResource("2_yk4m6")
 bus = &"SFX"
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

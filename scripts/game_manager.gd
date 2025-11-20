@@ -9,18 +9,19 @@ var is_in_death_sequence: bool = false
 var exit_door: Area2D
 var door_open: bool = false
 
-func _process(delta: float) -> void:
+
+func _process(_delta: float) -> void:
 	if not door_open and get_tree().get_nodes_in_group("enemy").is_empty():
 		_open_exit_door()
 
 
 func _open_exit_door() -> void:
+	if door_open:
+		return
 	door_open = true
-	if exit_door:
-		exit_door.visible = true
-		exit_door.monitoring = true
-		# later: play SFX, animation, etc.
-		exit_door.get_node("SFX_Spawn").play()
+	if exit_door and exit_door.has_method("open"):
+		exit_door.open()
+
 
 
 
@@ -34,8 +35,6 @@ func _ready() -> void:
 		exit_door = get_node(exit_door_path)
 		if exit_door:
 			exit_door.visible = false
-			exit_door.monitoring = false
-
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"): # Esc
@@ -62,7 +61,6 @@ func on_player_died() -> void:
 	var t := get_tree().create_timer(GameConfig.death_slowmo_duration)
 	_show_death_screen_after_timer(t)
 	
-
 func _show_death_screen_after_timer(timer: SceneTreeTimer) -> void:
 	await timer.timeout
 
