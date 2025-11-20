@@ -1,4 +1,4 @@
-[gd_scene load_steps=33 format=4 uid="uid://d244sf3fl6oc2"]
+[gd_scene load_steps=35 format=4 uid="uid://d244sf3fl6oc2"]
 
 [ext_resource type="PackedScene" uid="uid://cwdo73t7wn5pp" path="res://scenes/player.tscn" id="1_o5qli"]
 [ext_resource type="Script" uid="uid://brvgav35e1cb5" path="res://scripts/main.gd" id="1_o6xl0"]
@@ -26,6 +26,7 @@
 [ext_resource type="Script" uid="uid://c2yqcdrh4ns2s" path="res://scripts/pause_screen.gd" id="13_dp3eg"]
 [ext_resource type="Script" uid="uid://cptts8mc7wnqs" path="res://scripts/game_manager.gd" id="14_a8y0u"]
 [ext_resource type="PackedScene" uid="uid://bjfkxuy5hxd11" path="res://scenes/crate.tscn" id="26_2wyq8"]
+[ext_resource type="Shader" uid="uid://dvsnojk5qp2bx" path="res://scenes/main.gdshader" id="27_vxglm"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_sugp2"]
 texture = ExtResource("2_0wfyh")
@@ -254,6 +255,16 @@ size = Vector2(0, 48)
 script = ExtResource("3_trceg")
 duration = 0.7
 transition = 2
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_2f3dj"]
+shader = ExtResource("27_vxglm")
+shader_parameter/scanline_intensity = 0.0
+shader_parameter/noise_intensity = 0.150000007125
+shader_parameter/distortion = 0.0010000000475
+shader_parameter/time_scale = 0.50000002375
+shader_parameter/vignette_strength = 0.4
+shader_parameter/vignette_radius = 0.9
+shader_parameter/vignette_softness = 0.35
 
 [node name="Game" type="Node2D"]
 script = ExtResource("1_o6xl0")
@@ -510,11 +521,25 @@ position = Vector2(350, 45)
 [node name="Crate4" parent="Crates" instance=ExtResource("26_2wyq8")]
 position = Vector2(549, 140)
 
+[node name="Crate5" parent="Crates" instance=ExtResource("26_2wyq8")]
+position = Vector2(549, 140)
+
 [node name="Crate2" parent="Crates" instance=ExtResource("26_2wyq8")]
 position = Vector2(244, 43)
 
 [node name="Crate3" parent="Crates" instance=ExtResource("26_2wyq8")]
 position = Vector2(52, 149)
+
+[node name="VHSLayer" type="CanvasLayer" parent="."]
+
+[node name="VHSOverlay" type="ColorRect" parent="VHSLayer"]
+material = SubResource("ShaderMaterial_2f3dj")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 1, 1, 0)
 
 [connection signal="pressed" from="UI/DeathScreen/Content/RestartButton" to="UI/DeathScreen" method="_on_restart_button_pressed"]
 [connection signal="pressed" from="UI/DeathScreen/Content/QuitButton" to="UI/DeathScreen" method="_on_quit_button_pressed"]

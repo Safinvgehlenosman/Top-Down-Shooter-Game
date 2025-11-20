@@ -58,6 +58,7 @@ region_enabled = true
 region_rect = Rect2(201.99591, 204.99461, 12.041901, 5.0242004)
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
+visible = false
 position = Vector2(5.9604645e-07, 0)
 scale = Vector2(1.3333333, 1)
 color = Color(1, 0.76862746, 0.30588236, 0.49803922)
