@@ -339,6 +339,7 @@ color = Color(0.05490196, 1, 0, 0)
 script = ExtResource("16_kqn1b")
 
 [node name="DeathScreen" type="CanvasLayer" parent="UI"]
+layer = 20
 visible = false
 script = ExtResource("17_y6uxt")
 button_paths = Array[NodePath]([NodePath("Content/RestartButton"), NodePath("Content/QuitButton")])
@@ -386,6 +387,7 @@ text = "Quit"
 
 [node name="PauseScreen" type="CanvasLayer" parent="UI" groups=["pause"]]
 process_mode = 3
+layer = 10
 visible = false
 script = ExtResource("20_tv75f")
 button_paths = Array[NodePath]([NodePath("RestartButton"), NodePath("QuitButton")])

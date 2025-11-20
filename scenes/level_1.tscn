@@ -339,6 +339,7 @@ color = Color(0.05490196, 1, 0, 0)
 script = ExtResource("16_8jqp6")
 
 [node name="DeathScreen" type="CanvasLayer" parent="UI"]
+layer = 20
 visible = false
 script = ExtResource("17_jscgt")
 button_paths = Array[NodePath]([NodePath("Content/RestartButton"), NodePath("Content/QuitButton")])
@@ -386,6 +387,7 @@ text = "Quit"
 
 [node name="PauseScreen" type="CanvasLayer" parent="UI" groups=["pause"]]
 process_mode = 3
+layer = 10
 visible = false
 script = ExtResource("20_awarj")
 button_paths = Array[NodePath]([NodePath("RestartButton"), NodePath("QuitButton")])
@@ -446,11 +448,15 @@ offset_bottom = 171.0
 texture = ExtResource("20_mbb35")
 
 [node name="CoinLabel" type="Label" parent="UI/CoinUI"]
-layout_mode = 0
-offset_left = 28.0
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -9.0
 offset_top = 9.0
-offset_right = 81.0
-offset_bottom = 35.0
+offset_right = -8.0
+offset_bottom = 25.0
+grow_horizontal = 2
 size_flags_horizontal = 8
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 10
@@ -464,11 +470,15 @@ offset_bottom = 130.0
 texture = ExtResource("21_mbb35")
 
 [node name="AmmoLabel" type="Label" parent="UI/AmmoUI"]
-layout_mode = 0
-offset_left = 28.0
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 6.0
 offset_top = 9.0
-offset_right = 81.0
-offset_bottom = 35.0
+offset_right = 7.0
+offset_bottom = 25.0
+grow_horizontal = 2
 size_flags_horizontal = 8
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 10

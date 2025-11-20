@@ -17,6 +17,7 @@ shader_parameter/vignette_softness = 0.35
 
 [node name="StartScreen" type="CanvasLayer" groups=["pause"]]
 process_mode = 3
+layer = 0
 script = ExtResource("1_he1sj")
 button_paths = Array[NodePath]([NodePath("StartButton"), NodePath("QuitButton")])
 
@@ -71,9 +72,11 @@ horizontal_alignment = 1
 
 [node name="VHSLayer" type="CanvasLayer" parent="."]
 process_mode = 3
+visible = false
 
 [node name="VHSOverlay" type="ColorRect" parent="VHSLayer"]
 process_mode = 3
+visible = false
 material = SubResource("ShaderMaterial_hm208")
 anchors_preset = 15
 anchor_right = 1.0

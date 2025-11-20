@@ -15,6 +15,7 @@ func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	start_button.grab_focus()
 	_setup_menu_buttons()
+	
 
 func _setup_menu_buttons() -> void:
 	buttons.clear()
