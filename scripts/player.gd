@@ -43,13 +43,18 @@ var is_dead: bool = false
 # --- AIM / INPUT MODE ------------------------------------------------
 
 const AIM_DEADZONE: float = 0.25
+const AIM_CURSOR_SPEED: float = 600.0  # tweak speed of controller cursor
+const AIM_SMOOTH: float = 10.0  # higher = snappier, lower = floatier
+
 
 enum AimMode { MOUSE, CONTROLLER }
 var aim_mode: AimMode = AimMode.MOUSE
 
 var aim_dir: Vector2 = Vector2.RIGHT
+
+# one shared cursor for mouse + controller
+var aim_cursor_pos: Vector2 = Vector2.ZERO
 var last_mouse_pos: Vector2 = Vector2.ZERO
-var last_stick: Vector2 = Vector2.RIGHT
 
 
 # --------------------------------------------------------------------
@@ -76,7 +81,8 @@ func _ready() -> void:
 	update_ammo_bar()
 	
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-	last_mouse_pos = get_global_mouse_position()
+	aim_cursor_pos = get_global_mouse_position()
+	last_mouse_pos = aim_cursor_pos
 
 
 # --------------------------------------------------------------------
@@ -94,7 +100,7 @@ func _physics_process(delta: float) -> void:
 
 	_update_timers(delta)
 	_process_movement(delta)
-	_update_aim_direction()
+	_update_aim_direction(delta)
 	_process_aim()
 	_process_shooting(delta)
 
@@ -137,30 +143,39 @@ func _process_movement(_delta: float) -> void:
 	move_and_slide()
 
 
-# 🔑 CORE: choose input mode & update aim_dir
-func _update_aim_direction() -> void:
-	# 1) Check controller stick
+# choose input mode & update aim_dir
+func _update_aim_direction(delta: float) -> void:
 	var stick := Input.get_vector("aim_left", "aim_right", "aim_up", "aim_down")
+	var mouse_pos := get_global_mouse_position()
+
+	# 1) Controller input → move virtual cursor
 	if stick.length() >= AIM_DEADZONE:
-		# switch to controller mode when stick is used
 		aim_mode = AimMode.CONTROLLER
-		last_stick = stick.normalized()
+		stick = stick.normalized()
 
-	# 2) Check mouse movement
-	var current_mouse := get_global_mouse_position()
-	if current_mouse.distance_to(last_mouse_pos) > 1.0:
-		# mouse moved -> switch to mouse mode
-		aim_mode = AimMode.MOUSE
-		last_mouse_pos = current_mouse
+		var target_pos: Vector2 = aim_cursor_pos + stick * AIM_CURSOR_SPEED * delta
+		var t: float = clamp(AIM_SMOOTH * delta, 0.0, 1.0)
 
-	# 3) Compute aim_dir based on current mode
-	match aim_mode:
-		AimMode.CONTROLLER:
-			aim_dir = last_stick
-		AimMode.MOUSE:
-			var mouse_vec := current_mouse - global_position
-			if mouse_vec.length() > 0.001:
-				aim_dir = mouse_vec.normalized()
+		aim_cursor_pos = aim_cursor_pos.lerp(target_pos, t)
+
+
+
+	# 2) Mouse movement → override cursor
+	else:
+		if mouse_pos.distance_to(last_mouse_pos) > 0.5:
+			aim_mode = AimMode.MOUSE
+			aim_cursor_pos = mouse_pos
+			last_mouse_pos = mouse_pos
+
+	# 3) Keep cursor inside viewport
+	var vp := get_viewport()
+	aim_cursor_pos.x = clamp(aim_cursor_pos.x, 0.0, vp.size.x)
+	aim_cursor_pos.y = clamp(aim_cursor_pos.y, 0.0, vp.size.y)
+
+	# 4) Aim direction: from player to cursor
+	var vec := aim_cursor_pos - global_position
+	if vec.length() > 0.001:
+		aim_dir = vec.normalized()
 
 
 func _process_aim() -> void:
@@ -176,20 +191,13 @@ func _process_aim() -> void:
 		gun.rotation = aim_dir.angle()
 
 
-# Crosshair follows aim:
-# - Mouse: exactly at cursor
-# - Controller: fixed distance from player in aim_dir
+# Crosshair follows shared cursor (mouse + controller)
 func _update_crosshair() -> void:
 	var crosshair := get_tree().get_first_node_in_group("crosshair")
 	if crosshair == null:
 		return
 
-	match aim_mode:
-		AimMode.CONTROLLER:
-			var distance := 35  # tweak for feel
-			crosshair.global_position = global_position + aim_dir * distance
-		AimMode.MOUSE:
-			crosshair.global_position = get_global_mouse_position()
+	crosshair.global_position = aim_cursor_pos
 
 
 # --------------------------------------------------------------------
