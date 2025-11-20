@@ -92,11 +92,10 @@ func _ready() -> void:
 	health_bar = get_node(health_bar_path)
 	update_health_bar()
 	
-	ammo_bar = get_node(ammo_bar_path)
 	update_ammo_bar()
 	
 	# Aim setup (same as before)
-	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 	aim_cursor_pos = get_global_mouse_position()
 	last_mouse_pos = get_viewport().get_mouse_position()
 
@@ -106,9 +105,9 @@ func _ready() -> void:
 # PROCESS
 # --------------------------------------------------------------------
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	coin_label.text = str(GameState.coins)
-	ammo_label.text = str(GameState.ammo, "/5")
+	ammo_label.text = "%d/%d" % [GameState.ammo, GameState.max_ammo]
 	_update_crosshair()
 
 
@@ -349,7 +348,6 @@ func take_damage(amount: int) -> void:
 	# amount can be negative: damage = minus, heal = plus
 	health = clampi(health - amount, 0, max_health)
 	GameState.health = health              # 👈 sync run state here
-	print("Player health =", health)
 
 	update_health_bar()
 
@@ -370,7 +368,6 @@ func apply_knockback(from_position: Vector2) -> void:
 
 func die() -> void:
 	is_dead = true
-	print("Player died")
 
 	# Disable gun logic so it stops rotating/aiming
 	if has_node("Gun"):

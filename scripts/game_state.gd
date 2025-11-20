@@ -37,7 +37,6 @@ func start_new_run() -> void:
 
 func add_coins(amount: int) -> void:
 	coins += amount
-	print("Coins:", coins)
 	emit_signal("coins_changed", coins)
 
 

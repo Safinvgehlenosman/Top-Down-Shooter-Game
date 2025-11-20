@@ -20,9 +20,7 @@ var is_collected: bool = false   # <-- new
 
 
 func _ready() -> void:
-	print("COIN CONFIG → range:", GameConfig.pickup_magnet_range,
-		" strength:", GameConfig.pickup_magnet_strength)
-
+	pass
 
 func launch() -> void:
 	# random horizontal direction for the hop

@@ -19,8 +19,7 @@ var is_collected: bool = false   # <-- added
 
 
 func _ready() -> void:
-	print("HEART CONFIG → range:", GameConfig.pickup_magnet_range,
-		" strength:", GameConfig.pickup_magnet_strength)
+	pass
 
 
 func launch() -> void:

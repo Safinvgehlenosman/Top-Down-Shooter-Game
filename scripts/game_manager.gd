@@ -51,11 +51,16 @@ func _toggle_pause() -> void:
 		pause_menu.visible = get_tree().paused
 
 		if get_tree().paused:
-			var first_button := pause_menu.get_node("RestartButton") # adjust path
+			var first_button := pause_menu.get_node("RestartButton")
 			if first_button:
 				first_button.grab_focus()
 
-	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	# Show mouse when paused, hide mouse when unpaused
+	if get_tree().paused:
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	else:
+		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+
 
 
 func on_player_died() -> void:

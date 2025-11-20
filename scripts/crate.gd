@@ -96,4 +96,4 @@ func _on_area_entered(area: Area2D) -> void:
 		# optional: remove bullet on impact
 		area.queue_free()
 
-		_break_and_despawn()
+		call_deferred("_break_and_despawn")
