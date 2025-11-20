@@ -1,12 +1,24 @@
-[gd_scene load_steps=4 format=3 uid="uid://dv8w4r5bwomco"]
+[gd_scene load_steps=6 format=3 uid="uid://dv8w4r5bwomco"]
 
 [ext_resource type="Script" uid="uid://cwmceg8v4sax2" path="res://scripts/start_screen.gd" id="1_he1sj"]
 [ext_resource type="FontFile" uid="uid://4xsaqwwtj2c1" path="res://assets/Fonts/PixelOperator8.ttf" id="1_o7i0r"]
 [ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="2_he1sj"]
+[ext_resource type="Shader" uid="uid://dvsnojk5qp2bx" path="res://scenes/main.gdshader" id="4_r2jwc"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hm208"]
+shader = ExtResource("4_r2jwc")
+shader_parameter/scanline_intensity = 0.0
+shader_parameter/noise_intensity = 0.150000007125
+shader_parameter/distortion = 0.0010000000475
+shader_parameter/time_scale = 0.50000002375
+shader_parameter/vignette_strength = 0.4
+shader_parameter/vignette_radius = 0.9
+shader_parameter/vignette_softness = 0.35
 
 [node name="StartScreen" type="CanvasLayer" groups=["pause"]]
 process_mode = 3
 script = ExtResource("1_he1sj")
+button_paths = Array[NodePath]([NodePath("StartButton"), NodePath("QuitButton")])
 
 [node name="ColorRect" type="ColorRect" parent="."]
 anchors_preset = 15
@@ -17,6 +29,7 @@ grow_vertical = 2
 color = Color(0.11764706, 0.11764706, 0.11764706, 1)
 
 [node name="StartButton" type="Button" parent="."]
+process_mode = 3
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -29,9 +42,10 @@ offset_bottom = 12.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_fonts/font = ExtResource("1_o7i0r")
-text = "START"
+text = "Start"
 
 [node name="QuitButton" type="Button" parent="."]
+process_mode = 3
 offset_left = 546.0
 offset_top = 352.34
 offset_right = 604.0
@@ -54,3 +68,17 @@ theme_override_fonts/font = ExtResource("2_he1sj")
 theme_override_font_sizes/font_size = 64
 text = "START MENU"
 horizontal_alignment = 1
+
+[node name="VHSLayer" type="CanvasLayer" parent="."]
+process_mode = 3
+
+[node name="VHSOverlay" type="ColorRect" parent="VHSLayer"]
+process_mode = 3
+material = SubResource("ShaderMaterial_hm208")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 0)

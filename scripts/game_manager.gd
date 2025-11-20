@@ -5,6 +5,9 @@ extends Node
 var death_screen: CanvasLayer
 var is_in_death_sequence: bool = false
 
+@onready var restart_button: Button = $"../UI/PauseScreen/RestartButton"
+@onready var death_restart_button: Button = $"../UI/DeathScreen/Content/RestartButton"
+
 @export var exit_door_path: NodePath
 var exit_door: Area2D
 var door_open: bool = false
@@ -41,12 +44,19 @@ func _unhandled_input(event: InputEvent) -> void:
 		_toggle_pause()
 
 func _toggle_pause() -> void:
-	get_tree().paused = !get_tree().paused  # flips true/false each time
+	get_tree().paused = !get_tree().paused
 	
 	var pause_menu := get_tree().get_first_node_in_group("pause")
 	if pause_menu:
 		pause_menu.visible = get_tree().paused
-		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+
+		if get_tree().paused:
+			var first_button := pause_menu.get_node("RestartButton") # adjust path
+			if first_button:
+				first_button.grab_focus()
+
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+
 
 func on_player_died() -> void:
 	if is_in_death_sequence:
@@ -64,11 +74,11 @@ func on_player_died() -> void:
 func _show_death_screen_after_timer(timer: SceneTreeTimer) -> void:
 	await timer.timeout
 
-	# Freeze gameplay
 	Engine.time_scale = 0.0
 
 	if death_screen:
 		death_screen.visible = true
+		if death_restart_button:
+			death_restart_button.grab_focus()
 
-	# 👉 show OS cursor on death screen
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)

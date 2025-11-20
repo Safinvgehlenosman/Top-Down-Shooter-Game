@@ -6,17 +6,16 @@ const BulletScene := preload("res://scenes/bullet.tscn")
 @export var health_bar_path: NodePath
 @export var health_sprites: Array[Texture2D] = []
 
-@onready var coin_label: Label = $"../UI/CoinContainer/CoinLabel"
-
 @export var ammo_bar_path: NodePath
 @export var ammo_sprites: Array[Texture2D] = []
 
+@onready var coin_label: Label = $"../UI/CoinContainer/CoinLabel"
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var muzzle: Marker2D = $Gun/Muzzle
+
 var health_bar: TextureRect
 var ammo_bar: TextureRect
 var alt_fire_cooldown_timer: float = 0.0
-
 
 # Runtime stats (filled from GameConfig in _ready)
 var speed: float
@@ -41,6 +40,21 @@ var invincible_timer: float = 0.0
 
 var is_dead: bool = false
 
+# --- AIM / INPUT MODE ------------------------------------------------
+
+const AIM_DEADZONE: float = 0.25
+
+enum AimMode { MOUSE, CONTROLLER }
+var aim_mode: AimMode = AimMode.MOUSE
+
+var aim_dir: Vector2 = Vector2.RIGHT
+var last_mouse_pos: Vector2 = Vector2.ZERO
+var last_stick: Vector2 = Vector2.RIGHT
+
+
+# --------------------------------------------------------------------
+# READY
+# --------------------------------------------------------------------
 
 func _ready() -> void:
 	# Pull config from global GameConfig
@@ -60,10 +74,18 @@ func _ready() -> void:
 	ammo = max_ammo
 	ammo_bar = get_node(ammo_bar_path)
 	update_ammo_bar()
+	
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	last_mouse_pos = get_global_mouse_position()
 
 
-func _process(_delta: float) -> void:
+# --------------------------------------------------------------------
+# PROCESS
+# --------------------------------------------------------------------
+
+func _process(delta: float) -> void:
 	coin_label.text = str(GameState.coins)
+	_update_crosshair()
 
 
 func _physics_process(delta: float) -> void:
@@ -72,11 +94,14 @@ func _physics_process(delta: float) -> void:
 
 	_update_timers(delta)
 	_process_movement(delta)
+	_update_aim_direction()
 	_process_aim()
 	_process_shooting(delta)
 
 
-# --- TIMERS ---------------------------------------------------------
+# --------------------------------------------------------------------
+# TIMERS
+# --------------------------------------------------------------------
 
 func _update_timers(delta: float) -> void:
 	if invincible_timer > 0.0:
@@ -91,7 +116,9 @@ func _update_timers(delta: float) -> void:
 		alt_fire_cooldown_timer -= delta
 
 
-# --- MOVEMENT & AIM -------------------------------------------------
+# --------------------------------------------------------------------
+# MOVEMENT & AIM
+# --------------------------------------------------------------------
 
 func _process_movement(_delta: float) -> void:
 	var input_dir := Vector2.ZERO
@@ -110,15 +137,64 @@ func _process_movement(_delta: float) -> void:
 	move_and_slide()
 
 
+# 🔑 CORE: choose input mode & update aim_dir
+func _update_aim_direction() -> void:
+	# 1) Check controller stick
+	var stick := Input.get_vector("aim_left", "aim_right", "aim_up", "aim_down")
+	if stick.length() >= AIM_DEADZONE:
+		# switch to controller mode when stick is used
+		aim_mode = AimMode.CONTROLLER
+		last_stick = stick.normalized()
+
+	# 2) Check mouse movement
+	var current_mouse := get_global_mouse_position()
+	if current_mouse.distance_to(last_mouse_pos) > 1.0:
+		# mouse moved -> switch to mouse mode
+		aim_mode = AimMode.MOUSE
+		last_mouse_pos = current_mouse
+
+	# 3) Compute aim_dir based on current mode
+	match aim_mode:
+		AimMode.CONTROLLER:
+			aim_dir = last_stick
+		AimMode.MOUSE:
+			var mouse_vec := current_mouse - global_position
+			if mouse_vec.length() > 0.001:
+				aim_dir = mouse_vec.normalized()
+
+
 func _process_aim() -> void:
-	var mouse_pos := get_global_mouse_position()
-	if mouse_pos.x > global_position.x:
+	# Flip player sprite
+	if aim_dir.x > 0.0:
 		animated_sprite.flip_h = false
-	elif mouse_pos.x < global_position.x:
+	elif aim_dir.x < 0.0:
 		animated_sprite.flip_h = true
 
+	# Rotate gun to face aim_dir (works for mouse + controller)
+	if has_node("Gun"):
+		var gun := $Gun
+		gun.rotation = aim_dir.angle()
 
-# --- SHOOTING -------------------------------------------------------
+
+# Crosshair follows aim:
+# - Mouse: exactly at cursor
+# - Controller: fixed distance from player in aim_dir
+func _update_crosshair() -> void:
+	var crosshair := get_tree().get_first_node_in_group("crosshair")
+	if crosshair == null:
+		return
+
+	match aim_mode:
+		AimMode.CONTROLLER:
+			var distance := 35  # tweak for feel
+			crosshair.global_position = global_position + aim_dir * distance
+		AimMode.MOUSE:
+			crosshair.global_position = get_global_mouse_position()
+
+
+# --------------------------------------------------------------------
+# SHOOTING
+# --------------------------------------------------------------------
 
 func _process_shooting(delta: float) -> void:
 	fire_timer -= delta
@@ -129,9 +205,10 @@ func _process_shooting(delta: float) -> void:
 	# Alt fire (right mouse / shotgun)
 	if Input.is_action_just_pressed("alt_fire") \
 			and alt_fire_cooldown_timer <= 0.0 \
-			and ammo > 0:                      # 👈 need ammo
+			and ammo > 0:
 		fire_laser()
 		alt_fire_cooldown_timer = GameConfig.alt_fire_cooldown
+
 
 func add_ammo(amount: int) -> void:
 	ammo = clampi(ammo + amount, 0, max_ammo)
@@ -144,27 +221,23 @@ func fire_laser() -> void:
 	ammo = max(ammo - 1, 0)
 	update_ammo_bar()
 
-# --- SHOTGUN / ALT FIRE SFX ---
+	# --- SHOTGUN / ALT FIRE SFX ---
 	var shot := $SFX_Shoot_Shotgun
 
-# Main deep blast
+	# Main deep blast
 	shot.pitch_scale = 0.7
 	shot.play()
 
-# Extra layers for oomph (optional but feels great)
-	for i in range(2):
+	# Extra layers for oomph
+	for i in range(4):
 		shot.pitch_scale = randf_range(0.35, 0.55)
 		shot.play()
-
-
-
-	
 
 	var bullet_count: int = GameConfig.alt_fire_bullet_count
 	var spread_degrees: float = GameConfig.alt_fire_spread_degrees
 	var spread_radians: float = deg_to_rad(spread_degrees)
 
-	var base_dir: Vector2 = (get_global_mouse_position() - muzzle.global_position).normalized()
+	var base_dir: Vector2 = aim_dir
 	var start_index: float = -float(bullet_count - 1) / 2.0
 
 	for i in range(bullet_count):
@@ -186,22 +259,21 @@ func fire_laser() -> void:
 		cam.shake(GameConfig.knockback_shake_strength, GameConfig.knockback_shake_duration)
 
 
-
-
 func shoot() -> void:
 	$SFX_Shoot.play()
 
 	var bullet := BulletScene.instantiate()
 	bullet.global_position = muzzle.global_position
 
-	var dir := (get_global_mouse_position() - muzzle.global_position).normalized()
+	var dir := aim_dir
 	bullet.direction = dir
 
-	# bullet damage & speed are now configured on Bullet itself via GameConfig
 	get_tree().current_scene.add_child(bullet)
 
 
-# --- FEEDBACK (HIT / HEAL) -----------------------------------------
+# --------------------------------------------------------------------
+# FEEDBACK (HIT / HEAL)
+# --------------------------------------------------------------------
 
 func _play_hit_feedback() -> void:
 	# Camera shake
@@ -222,7 +294,9 @@ func _play_heal_feedback() -> void:
 		flash.flash()
 
 
-# --- HEALTH & DAMAGE -----------------------------------------------
+# --------------------------------------------------------------------
+# HEALTH & DAMAGE
+# --------------------------------------------------------------------
 
 func take_damage(amount: int) -> void:
 	if is_dead:
@@ -232,12 +306,10 @@ func take_damage(amount: int) -> void:
 
 	# DAMAGE (amount > 0)
 	if amount > 0:
-		# Only block with i-frames on real damage
 		if invincible_timer > 0.0:
 			return
 		invincible_timer = invincible_time
 
-		# Audio + visual feedback
 		$SFX_Hurt.play()
 		_play_hit_feedback()
 
@@ -245,13 +317,12 @@ func take_damage(amount: int) -> void:
 	elif amount < 0:
 		_play_heal_feedback()
 
-	# Update health (damage = minus, heal = plus because amount can be negative)
+	# amount can be negative: damage = minus, heal = plus
 	health = clampi(health - amount, 0, max_health)
 	print("Player health =", health)
 
 	update_health_bar()
 
-	# Only trigger death from real damage
 	if amount > 0 and health <= 0:
 		die()
 
@@ -260,11 +331,10 @@ func add_coin() -> void:
 	GameState.add_coins(1)
 
 
-
 func apply_knockback(from_position: Vector2) -> void:
 	var dir := (global_position - from_position).normalized()
 	knockback = dir * knockback_strength
-	knockback_timer = knockback_duration   # start knockback window
+	knockback_timer = knockback_duration
 
 
 func die() -> void:
@@ -273,22 +343,22 @@ func die() -> void:
 
 	# Disable gun logic so it stops rotating/aiming
 	if has_node("Gun"):
-		var gun = $Gun
+		var gun := $Gun
 		gun.process_mode = Node.PROCESS_MODE_DISABLED
 
-	# If you have a separate crosshair scene in a group, hide it too
+	# Hide crosshair
 	var crosshair := get_tree().get_first_node_in_group("crosshair")
 	if crosshair:
 		crosshair.visible = false
-		# optionally:
-		# crosshair.process_mode = Node.PROCESS_MODE_DISABLED
 
 	var gm := get_tree().get_first_node_in_group("game_manager")
 	if gm and gm.has_method("on_player_died"):
 		gm.on_player_died()
 
 
-
+# --------------------------------------------------------------------
+# UI BARS
+# --------------------------------------------------------------------
 
 func update_health_bar() -> void:
 	if health_bar == null or health_sprites.is_empty():
@@ -296,6 +366,7 @@ func update_health_bar() -> void:
 
 	var idx: int = clampi(health, 0, health_sprites.size() - 1)
 	health_bar.texture = health_sprites[idx]
+
 
 func update_ammo_bar() -> void:
 	if ammo_bar == null or ammo_sprites.is_empty():
