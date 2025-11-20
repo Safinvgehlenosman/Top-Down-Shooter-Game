@@ -8,14 +8,18 @@ var door_open: bool = false
 func _ready() -> void:
 	monitoring = true
 	monitorable = true
-	print("ExitDoor ready. Monitoring:", monitoring, " Mask:", collision_mask)
+	print("ExitDoor ready:",
+		"self =", self,
+		"scene =", get_tree().current_scene.name,
+		"target_scene =", target_scene)
 
 func open() -> void:
 	door_open = true
 	visible = true
 	$SFX_Spawn.play()
 
-func _on_ExitDoor_body_entered(body: Node2D) -> void:
+
+func _on_body_entered(body: Node2D) -> void:
 	print("DOOR (local) entered by:", body)
 	if not door_open:
 		print("door not open yet, ignore")
@@ -29,3 +33,4 @@ func _on_ExitDoor_body_entered(body: Node2D) -> void:
 
 	print("changing to:", target_scene)
 	get_tree().change_scene_to_file(target_scene)
+	

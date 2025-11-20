@@ -579,7 +579,6 @@ color = Color(1, 1, 1, 0)
 [node name="ExitDoor" parent="." instance=ExtResource("29_mx6g7")]
 visible = false
 position = Vector2(444, 289)
-monitoring = false
 target_scene = "uid://dv8w4r5bwomco"
 
 [connection signal="pressed" from="UI/DeathScreen/Content/RestartButton" to="UI/DeathScreen" method="_on_restart_button_pressed"]

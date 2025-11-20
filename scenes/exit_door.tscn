@@ -23,6 +23,7 @@ fill_to = Vector2(0.76495725, 0.7777778)
 position = Vector2(0, -6)
 collision_mask = 2
 script = ExtResource("1_lxrmt")
+target_scene = "uid://di8m4h203nmno"
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = ExtResource("1_syxuu")
