@@ -1,4 +1,4 @@
-[gd_scene load_steps=35 format=4 uid="uid://d244sf3fl6oc2"]
+[gd_scene load_steps=36 format=4 uid="uid://d244sf3fl6oc2"]
 
 [ext_resource type="PackedScene" uid="uid://cwdo73t7wn5pp" path="res://scenes/player.tscn" id="1_o5qli"]
 [ext_resource type="Script" uid="uid://brvgav35e1cb5" path="res://scripts/main.gd" id="1_o6xl0"]
@@ -25,6 +25,7 @@
 [ext_resource type="FontFile" uid="uid://4xsaqwwtj2c1" path="res://assets/Fonts/PixelOperator8.ttf" id="12_dp3eg"]
 [ext_resource type="Script" uid="uid://c2yqcdrh4ns2s" path="res://scripts/pause_screen.gd" id="13_dp3eg"]
 [ext_resource type="Script" uid="uid://cptts8mc7wnqs" path="res://scripts/game_manager.gd" id="14_a8y0u"]
+[ext_resource type="Texture2D" uid="uid://55msc8hn2qb3" path="res://assets/Separated/singlecoin.png" id="21_2f3dj"]
 [ext_resource type="PackedScene" uid="uid://bjfkxuy5hxd11" path="res://scenes/crate.tscn" id="26_2wyq8"]
 [ext_resource type="Shader" uid="uid://dvsnojk5qp2bx" path="res://scenes/main.gdshader" id="27_vxglm"]
 
@@ -271,8 +272,8 @@ script = ExtResource("1_o6xl0")
 
 [node name="Player" parent="." instance=ExtResource("1_o5qli")]
 position = Vector2(86, 92)
-health_bar_path = NodePath("../UI/TextureRect")
-ammo_bar_path = NodePath("../UI/TextureRect2")
+health_bar_path = NodePath("../UI/HPBar")
+ammo_bar_path = NodePath("../UI/AmmoBar")
 ammo_sprites = Array[Texture2D]([ExtResource("3_og1vs"), ExtResource("4_2wyq8"), ExtResource("5_vxglm"), ExtResource("6_2f3dj"), ExtResource("7_yq6so"), ExtResource("8_fv21b")])
 
 [node name="Camera2D" type="Camera2D" parent="." groups=["camera"]]
@@ -310,7 +311,7 @@ texture_scale = 0.3
 
 [node name="UI" type="CanvasLayer" parent="."]
 
-[node name="TextureRect" type="TextureRect" parent="UI"]
+[node name="HPBar" type="TextureRect" parent="UI"]
 texture_filter = 1
 texture_repeat = 1
 offset_right = 40.0
@@ -319,7 +320,7 @@ scale = Vector2(8, 8)
 texture = ExtResource("5_tbgi4")
 stretch_mode = 2
 
-[node name="TextureRect2" type="TextureRect" parent="UI"]
+[node name="AmmoBar" type="TextureRect" parent="UI"]
 texture_filter = 1
 texture_repeat = 1
 anchors_preset = 3
@@ -356,18 +357,11 @@ grow_vertical = 2
 color = Color(0.05490196, 1, 0, 0)
 script = ExtResource("9_85g3d")
 
-[node name="DeathScreen" type="Control" parent="UI"]
+[node name="DeathScreen" type="CanvasLayer" parent="UI"]
 visible = false
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 script = ExtResource("10_muem4")
 
 [node name="ColorRect" type="ColorRect" parent="UI/DeathScreen"]
-layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -376,7 +370,6 @@ grow_vertical = 2
 color = Color(0.11858138, 0.11858138, 0.11858138, 1)
 
 [node name="Content" type="VBoxContainer" parent="UI/DeathScreen"]
-layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -459,6 +452,20 @@ theme_override_font_sizes/font_size = 64
 text = "PAUSED"
 horizontal_alignment = 1
 
+[node name="CoinContainer" type="MarginContainer" parent="UI"]
+offset_left = -5.0
+offset_top = 112.0
+offset_right = 35.0
+offset_bottom = 152.0
+
+[node name="TextureRect" type="TextureRect" parent="UI/CoinContainer"]
+layout_mode = 2
+texture = ExtResource("21_2f3dj")
+
+[node name="CoinLabel" type="Label" parent="UI/CoinContainer"]
+layout_mode = 2
+size_flags_horizontal = 8
+
 [node name="CanvasModulate" type="CanvasModulate" parent="."]
 color = Color(0.502743, 0.502743, 0.502743, 1)
 
@@ -531,14 +538,17 @@ position = Vector2(244, 43)
 position = Vector2(52, 149)
 
 [node name="VHSLayer" type="CanvasLayer" parent="."]
+process_mode = 3
 
 [node name="VHSOverlay" type="ColorRect" parent="VHSLayer"]
+process_mode = 3
 material = SubResource("ShaderMaterial_2f3dj")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 color = Color(1, 1, 1, 0)
 
 [connection signal="pressed" from="UI/DeathScreen/Content/RestartButton" to="UI/DeathScreen" method="_on_restart_button_pressed"]

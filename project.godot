@@ -20,6 +20,7 @@ config/icon="res://assets/icon.svg"
 GlobalAudioStreamPlayer="*res://scenes/audio_stream_player.tscn"
 GameConfig="*res://scenes/game_config.tscn"
 PhantomCameraManager="*res://addons/phantom_camera/scripts/managers/phantom_camera_manager.gd"
+GameState="*res://scripts/game_state.gd"
 
 [display]
 

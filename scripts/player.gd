@@ -6,6 +6,8 @@ const BulletScene := preload("res://scenes/bullet.tscn")
 @export var health_bar_path: NodePath
 @export var health_sprites: Array[Texture2D] = []
 
+@onready var coin_label: Label = $"../UI/CoinContainer/CoinLabel"
+
 @export var ammo_bar_path: NodePath
 @export var ammo_sprites: Array[Texture2D] = []
 
@@ -28,7 +30,6 @@ var max_ammo: int
 # State
 var health: int = 0
 var ammo: int = 0
-var coins: int = 0
 var fire_timer: float = 0.0
 
 # Knockback
@@ -59,6 +60,10 @@ func _ready() -> void:
 	ammo = max_ammo
 	ammo_bar = get_node(ammo_bar_path)
 	update_ammo_bar()
+
+
+func _process(delta: float) -> void:
+	coin_label.text = str(GameState.coins)
 
 
 func _physics_process(delta: float) -> void:
@@ -252,9 +257,8 @@ func take_damage(amount: int) -> void:
 
 
 func add_coin() -> void:
-	coins += 1
-	print("Coins:", coins)
-	# hook for future UI update (coins bar / shop etc.)
+	GameState.add_coins(1)
+
 
 
 func apply_knockback(from_position: Vector2) -> void:

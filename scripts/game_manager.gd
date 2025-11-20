@@ -2,7 +2,7 @@ extends Node
 
 @export var death_screen_path: NodePath
 
-var death_screen: CanvasItem
+var death_screen: CanvasLayer
 var is_in_death_sequence: bool = false
 
 

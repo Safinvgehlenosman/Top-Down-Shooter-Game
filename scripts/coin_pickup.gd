@@ -75,7 +75,7 @@ func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):
 		is_collected = true
 
-		body.add_coin()
+		GameState.add_coins(1)
 
 		# disable interaction & hide while sound plays
 		if collision:
