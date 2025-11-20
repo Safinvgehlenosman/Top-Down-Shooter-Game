@@ -20,7 +20,7 @@
 [ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="18_r72fi"]
 [ext_resource type="FontFile" uid="uid://4xsaqwwtj2c1" path="res://assets/Fonts/PixelOperator8.ttf" id="19_00rct"]
 [ext_resource type="Script" uid="uid://c2yqcdrh4ns2s" path="res://scripts/pause_screen.gd" id="20_tv75f"]
-[ext_resource type="Texture2D" uid="uid://55msc8hn2qb3" path="res://assets/Separated/singlecoin.png" id="21_0qg6v"]
+[ext_resource type="Texture2D" uid="uid://dm4ejbplutega" path="res://assets/Separated/coinUI.png" id="21_73m23"]
 [ext_resource type="PackedScene" uid="uid://0gile0fujjql" path="res://scenes/slime.tscn" id="22_osflp"]
 [ext_resource type="Script" uid="uid://nld8o3fmkyqn" path="res://scripts/camera_manager.gd" id="23_ngxfi"]
 [ext_resource type="Script" uid="uid://bhexx6mj1xv3q" path="res://addons/phantom_camera/scripts/phantom_camera/phantom_camera_2d.gd" id="24_kq2c3"]
@@ -434,19 +434,23 @@ theme_override_font_sizes/font_size = 64
 text = "PAUSED"
 horizontal_alignment = 1
 
-[node name="CoinContainer" type="MarginContainer" parent="UI"]
-offset_left = -5.0
-offset_top = 112.0
-offset_right = 35.0
-offset_bottom = 152.0
+[node name="CoinUI" type="TextureRect" parent="UI"]
+offset_top = 120.0
+offset_right = 106.0
+offset_bottom = 171.0
+texture = ExtResource("21_73m23")
 
-[node name="TextureRect" type="TextureRect" parent="UI/CoinContainer"]
-layout_mode = 2
-texture = ExtResource("21_0qg6v")
-
-[node name="CoinLabel" type="Label" parent="UI/CoinContainer"]
-layout_mode = 2
+[node name="CoinLabel" type="Label" parent="UI/CoinUI"]
+layout_mode = 0
+offset_left = 28.0
+offset_top = 9.0
+offset_right = 81.0
+offset_bottom = 35.0
 size_flags_horizontal = 8
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 10
+theme_override_constants/shadow_outline_size = 10
+theme_override_fonts/font = ExtResource("18_r72fi")
 
 [node name="CanvasModulate" type="CanvasModulate" parent="."]
 color = Color(0.502743, 0.502743, 0.502743, 1)

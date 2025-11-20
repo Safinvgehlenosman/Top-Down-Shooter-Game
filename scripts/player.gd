@@ -9,7 +9,8 @@ const BulletScene := preload("res://scenes/bullet.tscn")
 @export var ammo_bar_path: NodePath
 @export var ammo_sprites: Array[Texture2D] = []
 
-@onready var coin_label: Label = $"../UI/CoinContainer/CoinLabel"
+@onready var ammo_label: Label = $"../UI/AmmoUI/AmmoLabel"
+@onready var coin_label: Label = $"../UI/CoinUI/CoinLabel"
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var muzzle: Marker2D = $Gun/Muzzle
 
@@ -107,6 +108,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	coin_label.text = str(GameState.coins)
+	ammo_label.text = str(GameState.ammo, "/5")
 	_update_crosshair()
 
 
@@ -237,8 +239,7 @@ func _process_shooting(delta: float) -> void:
 func add_ammo(amount: int) -> void:
 	ammo = clampi(ammo + amount, 0, max_ammo)
 	GameState.ammo = ammo          # 👈 keep GameState in sync
-	update_ammo_bar()
-	print("Ammo:", ammo)
+	
 
 
 
