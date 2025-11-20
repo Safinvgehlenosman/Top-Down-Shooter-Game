@@ -43,7 +43,7 @@ var is_dead: bool = false
 # --- AIM / INPUT MODE ------------------------------------------------
 
 const AIM_DEADZONE: float = 0.25
-const AIM_CURSOR_SPEED: float = 600.0  # tweak speed of controller cursor
+const AIM_CURSOR_SPEED: float = 800.0  # tweak speed of controller cursor
 const AIM_SMOOTH: float = 10.0  # higher = snappier, lower = floatier
 
 
@@ -62,7 +62,7 @@ var last_mouse_pos: Vector2 = Vector2.ZERO
 # --------------------------------------------------------------------
 
 func _ready() -> void:
-	# Pull config from global GameConfig
+	# Pull config from global GameConfig (design values)
 	max_ammo           = GameConfig.player_max_ammo
 	speed              = GameConfig.player_move_speed
 	max_health         = GameConfig.player_max_health
@@ -71,18 +71,34 @@ func _ready() -> void:
 	knockback_duration = GameConfig.player_knockback_duration
 	invincible_time    = GameConfig.player_invincible_time
 
-	# Init health & UI
-	health = max_health
+	# --- Sync with GameState (current run data) ---
+
+	# If GameState hasn't been initialized yet (first load),
+	# give it default values for this run.
+	if GameState.max_health == 0:
+		GameState.max_health = max_health
+		GameState.health = max_health
+
+	if GameState.max_ammo == 0:
+		GameState.max_ammo = max_ammo
+		GameState.ammo = max_ammo
+
+	# Use the values from the current run
+	health = GameState.health
+	ammo = GameState.ammo
+
+	# Init UI with current run values
 	health_bar = get_node(health_bar_path)
 	update_health_bar()
 	
-	ammo = max_ammo
 	ammo_bar = get_node(ammo_bar_path)
 	update_ammo_bar()
 	
+	# Aim setup (same as before)
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	aim_cursor_pos = get_global_mouse_position()
-	last_mouse_pos = aim_cursor_pos
+	last_mouse_pos = get_viewport().get_mouse_position()
+
 
 
 # --------------------------------------------------------------------
@@ -220,14 +236,18 @@ func _process_shooting(delta: float) -> void:
 
 func add_ammo(amount: int) -> void:
 	ammo = clampi(ammo + amount, 0, max_ammo)
+	GameState.ammo = ammo          # 👈 keep GameState in sync
 	update_ammo_bar()
 	print("Ammo:", ammo)
+
 
 
 func fire_laser() -> void:
 	# spend ammo
 	ammo = max(ammo - 1, 0)
+	GameState.ammo = ammo          # 👈 sync after we change it
 	update_ammo_bar()
+
 
 	# --- SHOTGUN / ALT FIRE SFX ---
 	var shot := $SFX_Shoot_Shotgun
@@ -327,12 +347,14 @@ func take_damage(amount: int) -> void:
 
 	# amount can be negative: damage = minus, heal = plus
 	health = clampi(health - amount, 0, max_health)
+	GameState.health = health              # 👈 sync run state here
 	print("Player health =", health)
 
 	update_health_bar()
 
 	if amount > 0 and health <= 0:
 		die()
+
 
 
 func add_coin() -> void:

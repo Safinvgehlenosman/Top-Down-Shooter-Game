@@ -51,6 +51,8 @@ func _move_focus(direction: int) -> void:
 func _on_restart_button_pressed() -> void:
 	Engine.time_scale = 1.0
 	get_tree().reload_current_scene()
+	GameState.start_new_run()
+
 
 func _on_quit_button_pressed() -> void:
 	Engine.time_scale = 1.0
