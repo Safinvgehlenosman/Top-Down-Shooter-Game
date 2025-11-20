@@ -5,12 +5,37 @@ extends Node
 var death_screen: CanvasLayer
 var is_in_death_sequence: bool = false
 
+@export var exit_door_path: NodePath
+var exit_door: Area2D
+var door_open: bool = false
+
+func _process(delta: float) -> void:
+	if not door_open and get_tree().get_nodes_in_group("enemy").is_empty():
+		_open_exit_door()
+
+
+func _open_exit_door() -> void:
+	door_open = true
+	if exit_door:
+		exit_door.visible = true
+		exit_door.monitoring = true
+		# later: play SFX, animation, etc.
+		exit_door.get_node("SFX_Spawn").play()
+
+
 
 func _ready() -> void:
 	if death_screen_path != NodePath():
 		death_screen = get_node(death_screen_path)
 		if death_screen:
 			death_screen.visible = false
+	
+	if exit_door_path != NodePath():
+		exit_door = get_node(exit_door_path)
+		if exit_door:
+			exit_door.visible = false
+			exit_door.monitoring = false
+
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"): # Esc

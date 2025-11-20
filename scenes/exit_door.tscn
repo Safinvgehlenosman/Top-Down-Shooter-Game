@@ -1,0 +1,47 @@
+[gd_scene load_steps=6 format=3 uid="uid://b4fgncv3abcol"]
+
+[ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="1_syxuu"]
+[ext_resource type="AudioStream" uid="uid://owqtcbpubn64" path="res://assets/Audios/Win.wav" id="2_yk4m6"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_syxuu"]
+size = Vector2(8, 11)
+
+[sub_resource type="Gradient" id="Gradient_kmthg"]
+offsets = PackedFloat32Array(0.016129032, 0.8064516, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_yk4m6"]
+gradient = SubResource("Gradient_kmthg")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.517094, 0.52136755)
+fill_to = Vector2(0.76495725, 0.7777778)
+
+[node name="ExitDoor" type="Area2D"]
+position = Vector2(0, -6)
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("1_syxuu")
+region_enabled = true
+region_rect = Rect2(171, 170, 11, 12)
+
+[node name="Sprite2D" type="Sprite2D" parent="Sprite2D"]
+z_index = -1
+position = Vector2(0, 6)
+texture = ExtResource("1_syxuu")
+region_enabled = true
+region_rect = Rect2(202, 205, 12, 5)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 0.5)
+shape = SubResource("RectangleShape2D_syxuu")
+
+[node name="PointLight2D" type="PointLight2D" parent="."]
+color = Color(0.9254902, 0.8745098, 0.39215687, 1)
+texture = SubResource("GradientTexture2D_yk4m6")
+texture_scale = 0.5
+
+[node name="SFX_Spawn" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("2_yk4m6")
+bus = &"SFX"
