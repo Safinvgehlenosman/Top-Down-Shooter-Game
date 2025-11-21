@@ -1,6 +1,6 @@
 extends CanvasLayer
 
-signal shop_closed
+#signal shop_closed
 
 @onready var continue_button := $Panel/ContinueButton
 @onready var cards := $Panel/Cards
@@ -8,10 +8,30 @@ signal shop_closed
 
 var upgrades := [
 	{
+		"id": "max_ammo_plus_1",
+		"price": 1,
+		"icon": preload("res://assets/Separated/ammo.png"),
+		"text": "+1 Max Ammo"
+	},
+	{
+		"id": "fire_rate_plus_10",
+		"price": 1,
+		"icon": preload("res://assets/Separated/singlebullet.png"), # or reuse ammo icon for now
+		"text": "Shoot 10% faster"
+	},
+	{
+		"id": "shotgun_pellet_plus_1",
+		"price": 1,
+		"icon": preload("res://assets/Separated/ammo.png"), # placeholder
+		"text": "+1 Shotgun Projectile"
+	},
+
+	# keep the old ones too (they just won't show yet with only 3 cards)
+	{
 		"id": "hp_refill",
 		"price": 1,
 		"icon": preload("res://assets/Separated/singleheart.png"),
-		"text": "Refill HP to max"
+		"text": "Refill HP"
 	},
 	{
 		"id": "max_hp_plus_1",
@@ -26,6 +46,7 @@ var upgrades := [
 		"text": "Refill Ammo"
 	}
 ]
+
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS

@@ -20,7 +20,7 @@ var health_bar: TextureRect
 var ammo_bar: TextureRect
 var alt_fire_cooldown_timer: float = 0.0
 
-# Runtime stats (filled from GameConfig in _ready)
+# Runtime stats (filled from GameConfig / GameState in _ready)
 var speed: float
 var max_health: int
 var fire_rate: float
@@ -49,7 +49,6 @@ const AIM_DEADZONE: float = 0.25
 const AIM_CURSOR_SPEED: float = 800.0  # tweak speed of controller cursor
 const AIM_SMOOTH: float = 10.0  # higher = snappier, lower = floatier
 
-
 enum AimMode { MOUSE, CONTROLLER }
 var aim_mode: AimMode = AimMode.MOUSE
 
@@ -65,41 +64,54 @@ var last_mouse_pos: Vector2 = Vector2.ZERO
 # --------------------------------------------------------------------
 
 func _ready() -> void:
-	# Pull config from global GameConfig (design values)
-	max_ammo           = GameConfig.player_max_ammo
+	# Design defaults from GameConfig
 	speed              = GameConfig.player_move_speed
-	max_health         = GameConfig.player_max_health
-	fire_rate          = GameConfig.player_fire_rate
 	knockback_strength = GameConfig.player_knockback_strength
 	knockback_duration = GameConfig.player_knockback_duration
 	invincible_time    = GameConfig.player_invincible_time
 
+	var design_max_health: int = GameConfig.player_max_health
+	var design_max_ammo: int = GameConfig.player_max_ammo
+	var design_fire_rate: float = GameConfig.player_fire_rate
+	var design_pellets: int = GameConfig.alt_fire_bullet_count
+
 	# --- Sync with GameState (current run data) ---
 
-	# If GameState hasn't been initialized yet (first load),
-	# give it default values for this run.
+	# Initialize GameState once (first run)
 	if GameState.max_health == 0:
-		GameState.max_health = max_health
-		GameState.health = max_health
+		GameState.max_health = design_max_health
+		GameState.health = design_max_health
 
 	if GameState.max_ammo == 0:
-		GameState.max_ammo = max_ammo
-		GameState.ammo = max_ammo
+		GameState.max_ammo = design_max_ammo
+		GameState.ammo = design_max_ammo
 
-	# Use the values from the current run
+	if GameState.fire_rate <= 0.0:
+		GameState.fire_rate = design_fire_rate
+
+	if GameState.shotgun_pellets <= 0:
+		GameState.shotgun_pellets = design_pellets
+
+	# Local copies from current run
+	max_health = GameState.max_health
 	health = GameState.health
+
+	max_ammo = GameState.max_ammo
 	ammo = GameState.ammo
 
+	fire_rate = GameState.fire_rate
+
 	# Init UI with current run values
+	health_bar = get_node(health_bar_path)
+	ammo_bar = get_node(ammo_bar_path)
+
 	update_health_bar()
-	
 	update_ammo_bar()
-	
-	# Aim setup (same as before)
+
+	# Aim setup
 	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 	aim_cursor_pos = get_global_mouse_position()
 	last_mouse_pos = get_viewport().get_mouse_position()
-
 
 
 # --------------------------------------------------------------------
@@ -135,7 +147,7 @@ func _update_timers(delta: float) -> void:
 		knockback_timer -= delta
 	else:
 		knockback = Vector2.ZERO
-	
+
 	if alt_fire_cooldown_timer > 0.0:
 		alt_fire_cooldown_timer -= delta
 
@@ -175,8 +187,6 @@ func _update_aim_direction(delta: float) -> void:
 		var t: float = clamp(AIM_SMOOTH * delta, 0.0, 1.0)
 
 		aim_cursor_pos = aim_cursor_pos.lerp(target_pos, t)
-
-
 
 	# 2) Mouse movement → override cursor
 	else:
@@ -224,6 +234,10 @@ func _update_crosshair() -> void:
 
 func _process_shooting(delta: float) -> void:
 	fire_timer -= delta
+
+	# always use current run fire_rate from GameState (upgrades can change it)
+	fire_rate = GameState.fire_rate
+
 	if Input.is_action_pressed("shoot") and fire_timer <= 0.0:
 		shoot()
 		fire_timer = fire_rate
@@ -238,17 +252,15 @@ func _process_shooting(delta: float) -> void:
 
 func add_ammo(amount: int) -> void:
 	ammo = clampi(ammo + amount, 0, max_ammo)
-	GameState.ammo = ammo          # 👈 keep GameState in sync
-	
-
+	GameState.ammo = ammo
+	update_ammo_bar()
 
 
 func fire_laser() -> void:
 	# spend ammo
 	ammo = max(ammo - 1, 0)
-	GameState.ammo = ammo          # 👈 sync after we change it
+	GameState.ammo = ammo
 	update_ammo_bar()
-
 
 	# --- SHOTGUN / ALT FIRE SFX ---
 	var shot := $SFX_Shoot_Shotgun
@@ -262,7 +274,8 @@ func fire_laser() -> void:
 		shot.pitch_scale = randf_range(0.35, 0.55)
 		shot.play()
 
-	var bullet_count: int = GameConfig.alt_fire_bullet_count
+	# use upgraded pellet count from GameState
+	var bullet_count: int = GameState.shotgun_pellets
 	var spread_degrees: float = GameConfig.alt_fire_spread_degrees
 	var spread_radians: float = deg_to_rad(spread_degrees)
 
@@ -282,7 +295,7 @@ func fire_laser() -> void:
 	var recoil_dir: Vector2 = -base_dir
 	knockback = recoil_dir * GameConfig.alt_fire_recoil_strength
 	knockback_timer = GameConfig.alt_fire_recoil_duration
-	
+
 	var cam := get_tree().get_first_node_in_group("camera")
 	if cam and cam.has_method("shake"):
 		cam.shake(GameConfig.knockback_shake_strength, GameConfig.knockback_shake_duration)
@@ -347,7 +360,6 @@ func take_damage(amount: int) -> void:
 		_play_heal_feedback()
 
 	# amount can be negative: damage = minus, heal = plus
-# amount can be negative: damage = minus, heal = plus
 	GameState.health = clampi(
 		GameState.health - amount,
 		0,
@@ -357,10 +369,8 @@ func take_damage(amount: int) -> void:
 
 	update_health_bar()
 
-
 	if amount > 0 and health <= 0:
 		die()
-
 
 
 func add_coin() -> void:
@@ -400,7 +410,8 @@ func update_health_bar() -> void:
 		hp_fill.max_value = GameState.max_health
 		hp_fill.value = GameState.health
 
-	hp_label.text = "%d/%d" % [GameState.health, GameState.max_health]
+	if hp_label:
+		hp_label.text = "%d/%d" % [GameState.health, GameState.max_health]
 
 	if health_bar == null or health_sprites.is_empty():
 		return

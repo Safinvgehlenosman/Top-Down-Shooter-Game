@@ -14,6 +14,9 @@ var max_ammo: int = 0
 var ammo: int = 0
 
 
+var fire_rate: float = 0.0          # normal fire cooldown (seconds between shots)
+var shotgun_pellets: int = 0        # how many pellets the alt-fire uses
+
 func _ready() -> void:
 	# Optional: auto-start a run when the game boots
 	start_new_run()
@@ -30,12 +33,31 @@ func apply_upgrade(id: String) -> void:
 		"ammo_refill":
 			ammo = max_ammo
 
+		"max_ammo_plus_1":
+			max_ammo += 1
+			ammo = max_ammo
+
+		"fire_rate_plus_10":
+			# 10% faster → 10% shorter cooldown
+			if fire_rate > 0.0:
+				fire_rate *= 0.9
+
+		"shotgun_pellet_plus_1":
+			shotgun_pellets += 1
+
+		_:
+			print("Unknown upgrade id:", id)
+
+
 
 
 func start_new_run() -> void:
 	# Pull defaults from GameConfig (same place your Player uses)
 	max_health = GameConfig.player_max_health
 	health = max_health
+	
+	fire_rate = GameConfig.player_fire_rate
+	shotgun_pellets = GameConfig.alt_fire_bullet_count
 
 	max_ammo = GameConfig.player_max_ammo
 	ammo = max_ammo
