@@ -85,16 +85,8 @@ func _ready() -> void:
 		GameState.shotgun_pellets = design_pellets
 
 	# Local copies from current run
-	max_health = GameState.max_health
-	health = GameState.health
+	sync_from_gamestate()
 
-	max_ammo = GameState.max_ammo
-	ammo = GameState.ammo
-
-	fire_rate = GameState.fire_rate
-
-	# Init UI with current run values
-	update_health_bar()
 
 	# Aim setup
 	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
@@ -233,7 +225,7 @@ func _process_shooting(delta: float) -> void:
 	# Alt fire (right mouse / shotgun)
 	if Input.is_action_just_pressed("alt_fire") \
 			and alt_fire_cooldown_timer <= 0.0 \
-			and ammo > 0:
+			and GameState.ammo > 0:
 		fire_laser()
 		alt_fire_cooldown_timer = GameConfig.alt_fire_cooldown
 
@@ -409,3 +401,16 @@ func update_health_bar() -> void:
 
 	if hp_label:
 		hp_label.text = "%d/%d" % [GameState.health, GameState.max_health]
+
+func sync_from_gamestate() -> void:
+	# Core stats
+	max_health = GameState.max_health
+	health = GameState.health
+
+	max_ammo = GameState.max_ammo
+	ammo = GameState.ammo
+
+	fire_rate = GameState.fire_rate
+
+	# Update HP UI to match
+	update_health_bar()

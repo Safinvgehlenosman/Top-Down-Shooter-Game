@@ -231,8 +231,14 @@ func load_next_level() -> void:
 	current_level += 1
 	_load_room()
 
+	# 👇 NEW: refresh HP UI
+	var hp_ui := get_tree().get_first_node_in_group("hp_ui")
+	if hp_ui and hp_ui.has_method("refresh_from_state"):
+		hp_ui.refresh_from_state()
+
 	if game_ui:
 		game_ui.visible = true         # show HUD again
+
 
 
 func _unhandled_input(event: InputEvent) -> void:

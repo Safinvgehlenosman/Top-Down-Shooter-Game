@@ -48,6 +48,10 @@ func apply_upgrade(id: String) -> void:
 		_:
 			print("Unknown upgrade id:", id)
 
+	# 👇 NEW: after any upgrade, sync player + UI
+	_sync_player_from_state()
+
+
 
 
 
@@ -83,3 +87,8 @@ func set_health(value: int) -> void:
 func set_ammo(value: int) -> void:
 	ammo = clampi(value, 0, max_ammo)
 	emit_signal("ammo_changed", ammo, max_ammo)
+
+func _sync_player_from_state() -> void:
+	var player := get_tree().get_first_node_in_group("player")
+	if player and player.has_method("sync_from_gamestate"):
+		player.sync_from_gamestate()
