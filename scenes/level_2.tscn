@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=4 uid="uid://di8m4h203nmno"]
+[gd_scene load_steps=30 format=4 uid="uid://di8m4h203nmno"]
 
 [ext_resource type="Script" uid="uid://brvgav35e1cb5" path="res://scripts/main.gd" id="1_73m23"]
 [ext_resource type="PackedScene" uid="uid://cwdo73t7wn5pp" path="res://scenes/player.tscn" id="2_45kkt"]
@@ -14,6 +14,7 @@
 [ext_resource type="Texture2D" uid="uid://ddnj3o5q184op" path="res://assets/TilesetSheet.png" id="11_gxp3h"]
 [ext_resource type="PackedScene" uid="uid://chcumh0nhsngk" path="res://scenes/crosshair.tscn" id="12_qku3a"]
 [ext_resource type="PackedScene" uid="uid://rn582fpm5gls" path="res://scenes/game_manager.tscn" id="21_k6a82"]
+[ext_resource type="PackedScene" uid="uid://dxcqijbcprgnd" path="res://scenes/shop_ui.tscn" id="22_1sb0y"]
 [ext_resource type="PackedScene" uid="uid://0gile0fujjql" path="res://scenes/slime.tscn" id="22_osflp"]
 [ext_resource type="Script" uid="uid://nld8o3fmkyqn" path="res://scripts/camera_manager.gd" id="23_ngxfi"]
 [ext_resource type="Script" uid="uid://bhexx6mj1xv3q" path="res://addons/phantom_camera/scripts/phantom_camera/phantom_camera_2d.gd" id="24_kq2c3"]
@@ -415,10 +416,13 @@ color = Color(1, 1, 1, 0)
 visible = false
 position = Vector2(444, 289)
 target_scene = "uid://dv8w4r5bwomco"
+use_shop = false
 
 [node name="GameManager" parent="." instance=ExtResource("21_k6a82")]
-shop_path = NodePath("")
+shop_path = NodePath("../ShopUI")
 ui_root_path = NodePath("../UI")
+
+[node name="ShopUI" parent="." instance=ExtResource("22_1sb0y")]
 
 [connection signal="body_entered" from="CameraManager/CameraNodes/room0-1" to="CameraManager" method="_on_room_01_body_entered"]
 [connection signal="body_entered" from="CameraManager/CameraNodes/room0-2" to="CameraManager" method="_on_room_02_body_entered"]
