@@ -2,7 +2,7 @@ extends Node
 
 @export var death_screen_path: NodePath
 @export var shop_path: NodePath
-@export var exit_door_path: NodePath
+@export var exit_door_path: NodePath      # not really used now, but ok to leave
 @export var ui_root_path: NodePath
 
 @export var slime_scene: PackedScene
@@ -12,8 +12,6 @@ extends Node
 @export var room_scenes: Array[PackedScene] = []
 
 var current_level: int = 1
-
-
 
 # 70% slime, 30% crate by default. Rest = nothing.
 @export_range(0.0, 1.0, 0.01) var slime_chance: float = 0.7
@@ -25,11 +23,9 @@ var current_room: Node2D
 var alive_enemies: int = 0
 var door_spawn_point: Node2D = null
 var current_exit_door: Node2D = null
-
-
+var room_spawn_points: Array[Node2D] = []
 
 var game_ui: CanvasLayer
-
 var next_scene_path: String = ""
 
 var shop_ui: CanvasLayer
@@ -65,7 +61,6 @@ func _ready() -> void:
 	_load_room()
 
 
-
 func _load_room() -> void:
 	# clear previous room if there was one
 	if current_room and current_room.is_inside_tree():
@@ -75,6 +70,7 @@ func _load_room() -> void:
 	current_exit_door = null
 	alive_enemies = 0
 	door_spawn_point = null
+	room_spawn_points.clear()
 
 	var scene_for_level := _pick_room_scene_for_level(current_level)
 	if scene_for_level == null:
@@ -85,10 +81,24 @@ func _load_room() -> void:
 	room_container.add_child(current_room)
 
 	_spawn_room_content()
+	_move_player_to_room_spawn()
 
 
+func _move_player_to_room_spawn() -> void:
+	var player := get_tree().get_first_node_in_group("player")
+	if not player or not current_room:
+		return
 
-func _pick_room_scene_for_level(level: int) -> PackedScene:
+	if not current_room.has_method("get_player_spawn_point"):
+		push_warning("Current room has no get_player_spawn_point() method")
+		return
+
+	var spawn_point: Node2D = current_room.get_player_spawn_point()
+	if spawn_point:
+		player.global_position = spawn_point.global_position
+
+
+func _pick_room_scene_for_level(_level: int) -> PackedScene:
 	if room_scenes.is_empty():
 		return null
 
@@ -96,28 +106,30 @@ func _pick_room_scene_for_level(level: int) -> PackedScene:
 	return room_scenes[randi() % room_scenes.size()]
 
 
-
-
 func _spawn_room_content() -> void:
 	if current_room == null:
 		return
 
-	var spawn_points = current_room.get_spawn_points()
-	if spawn_points.is_empty():
-		push_warning("Room has no spawn points")
+	if not current_room.has_method("get_spawn_points"):
+		push_warning("Current room has no get_spawn_points() method")
 		return
 
-	# randomize order and reserve one point for door later
-	spawn_points.shuffle()
-	door_spawn_point = spawn_points.pop_back()
+	room_spawn_points = current_room.get_spawn_points()
+	if room_spawn_points.is_empty():
+		push_warning("Room '%s' has no spawn points" % current_room.name)
+		return
+
+	room_spawn_points.shuffle()
+
+	# reserve one spawn for the door
+	door_spawn_point = room_spawn_points.pop_back()
 
 	alive_enemies = 0
 
-	for spawn in spawn_points:
+	for spawn in room_spawn_points:
 		var r := randf()
 
 		if r <= slime_chance and slime_scene:
-			# slime only
 			var slime := slime_scene.instantiate()
 			slime.global_position = spawn.global_position
 			current_room.add_child(slime)
@@ -128,15 +140,12 @@ func _spawn_room_content() -> void:
 				slime.died.connect(_on_enemy_died)
 
 		elif r <= slime_chance + crate_chance and crate_scene:
-			# crate only
 			var crate := crate_scene.instantiate()
 			crate.global_position = spawn.global_position
 			current_room.add_child(crate)
 		else:
-			# empty, nothing spawned on this marker
 			pass
 
-	# if for some reason no enemies spawned, spawn the door right away
 	if alive_enemies == 0:
 		_spawn_exit_door()
 
@@ -146,6 +155,7 @@ func _on_enemy_died() -> void:
 	if alive_enemies == 0:
 		_spawn_exit_door()
 
+
 func _spawn_exit_door() -> void:
 	if current_exit_door != null:
 		return # already spawned
@@ -154,19 +164,25 @@ func _spawn_exit_door() -> void:
 		push_warning("No exit_door_scene assigned")
 		return
 
+	# Failsafe: if door_spawn_point is somehow null, pick one now.
 	if door_spawn_point == null:
-		push_warning("No door_spawn_point set (not enough markers?)")
-		return
+		var candidates: Array[Node2D] = room_spawn_points
+		if candidates.is_empty() and current_room and current_room.has_method("get_spawn_points"):
+			candidates = current_room.get_spawn_points()
+
+		if candidates.is_empty():
+			push_warning("Tried to spawn door but room has no spawn points at all")
+			return
+
+		candidates.shuffle()
+		door_spawn_point = candidates[0]
 
 	current_exit_door = exit_door_scene.instantiate()
 	current_exit_door.global_position = door_spawn_point.global_position
 	current_room.add_child(current_exit_door)
 
-	# automatically play its "open" logic if it has one
 	if current_exit_door.has_method("open"):
 		current_exit_door.open()
-
-	
 
 
 func _process(_delta: float) -> void:
@@ -187,7 +203,6 @@ func on_player_reached_exit() -> void:
 		return
 
 	_open_shop()
-
 
 
 func _open_shop() -> void:
@@ -218,7 +233,6 @@ func load_next_level() -> void:
 
 	if game_ui:
 		game_ui.visible = true         # show HUD again
-
 
 
 func _unhandled_input(event: InputEvent) -> void:

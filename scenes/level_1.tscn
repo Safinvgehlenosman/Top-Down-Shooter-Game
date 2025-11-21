@@ -61,4 +61,6 @@ follow_mode = 2
 follow_target = NodePath("../Player")
 zoom = Vector2(3, 3)
 tween_resource = SubResource("Resource_2os1m")
+follow_damping = true
+follow_damping_value = Vector2(0.1, 0.18)
 metadata/_custom_type_script = "uid://bhexx6mj1xv3q"

@@ -55,11 +55,15 @@ func _ready() -> void:
 	continue_button.pressed.connect(_on_continue_pressed)
 
 func _setup_cards() -> void:
-	# make a shuffled copy
+	# --- 1. Disconnect previous signals to avoid duplicates ---
+	for card in cards.get_children():
+		if card.purchased.is_connected(_on_card_purchased):
+			card.purchased.disconnect(_on_card_purchased)
+
+	# --- 2. Shuffle & assign new upgrades ---
 	var pool := upgrades.duplicate()
 	pool.shuffle()
 
-	# choose as many upgrades as there are cards (usually 3)
 	var count: int = min(cards.get_child_count(), pool.size())
 
 	for i in range(count):
@@ -67,7 +71,11 @@ func _setup_cards() -> void:
 		var data = pool[i]
 
 		card.setup(data)
-		card.purchased.connect(_on_card_purchased)
+
+		# Only connect once
+		if not card.purchased.is_connected(_on_card_purchased):
+			card.purchased.connect(_on_card_purchased)
+
 
 
 func _update_coin_label() -> void:

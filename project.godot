@@ -37,6 +37,7 @@ player=""
 crosshair=""
 shop=""
 exit_door=""
+player_spawn=""
 
 [input]
 
