@@ -13,11 +13,11 @@
 [ext_resource type="Script" uid="uid://bd046eokvcnu2" path="res://addons/phantom_camera/scripts/phantom_camera_host/phantom_camera_host.gd" id="10_0na3t"]
 [ext_resource type="Texture2D" uid="uid://ddnj3o5q184op" path="res://assets/TilesetSheet.png" id="11_gxp3h"]
 [ext_resource type="PackedScene" uid="uid://chcumh0nhsngk" path="res://scenes/crosshair.tscn" id="12_qku3a"]
+[ext_resource type="PackedScene" uid="uid://rn582fpm5gls" path="res://scenes/game_manager.tscn" id="21_k6a82"]
 [ext_resource type="PackedScene" uid="uid://0gile0fujjql" path="res://scenes/slime.tscn" id="22_osflp"]
 [ext_resource type="Script" uid="uid://nld8o3fmkyqn" path="res://scripts/camera_manager.gd" id="23_ngxfi"]
 [ext_resource type="Script" uid="uid://bhexx6mj1xv3q" path="res://addons/phantom_camera/scripts/phantom_camera/phantom_camera_2d.gd" id="24_kq2c3"]
 [ext_resource type="Script" uid="uid://8umksf8e80fw" path="res://addons/phantom_camera/scripts/resources/tween_resource.gd" id="25_v8uj3"]
-[ext_resource type="Script" uid="uid://cptts8mc7wnqs" path="res://scripts/game_manager.gd" id="26_ujbrj"]
 [ext_resource type="PackedScene" uid="uid://bjfkxuy5hxd11" path="res://scenes/crate.tscn" id="27_m6wqs"]
 [ext_resource type="Shader" uid="uid://dvsnojk5qp2bx" path="res://scenes/main.gdshader" id="28_vfjea"]
 [ext_resource type="PackedScene" uid="uid://b4fgncv3abcol" path="res://scenes/exit_door.tscn" id="29_mx6g7"]
@@ -368,11 +368,6 @@ tween_resource = SubResource("Resource_trceg")
 tween_on_load = false
 metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 
-[node name="GameManager" type="Node" parent="." groups=["game_manager"]]
-process_mode = 3
-script = ExtResource("26_ujbrj")
-exit_door_path = NodePath("../ExitDoor")
-
 [node name="Crates" type="Node" parent="."]
 
 [node name="Crate" parent="Crates" instance=ExtResource("27_m6wqs")]
@@ -420,6 +415,10 @@ color = Color(1, 1, 1, 0)
 visible = false
 position = Vector2(444, 289)
 target_scene = "uid://dv8w4r5bwomco"
+
+[node name="GameManager" parent="." instance=ExtResource("21_k6a82")]
+shop_path = NodePath("")
+ui_root_path = NodePath("../UI")
 
 [connection signal="body_entered" from="CameraManager/CameraNodes/room0-1" to="CameraManager" method="_on_room_01_body_entered"]
 [connection signal="body_entered" from="CameraManager/CameraNodes/room0-2" to="CameraManager" method="_on_room_02_body_entered"]

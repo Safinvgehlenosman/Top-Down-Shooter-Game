@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3 uid="uid://rn582fpm5gls"]
+
+[ext_resource type="Script" uid="uid://cptts8mc7wnqs" path="res://scripts/game_manager.gd" id="1_hwd4i"]
+
+[node name="GameManager" type="Node" groups=["game_manager"]]
+process_mode = 3
+script = ExtResource("1_hwd4i")
+death_screen_path = NodePath("../UI/DeathScreen")
+shop_path = null
+exit_door_path = NodePath("../ExitDoor")

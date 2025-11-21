@@ -18,6 +18,19 @@ func _ready() -> void:
 	# Optional: auto-start a run when the game boots
 	start_new_run()
 
+func apply_upgrade(id: String) -> void:
+	match id:
+		"hp_refill":
+			health = max_health
+
+		"max_hp_plus_1":
+			max_health += 1
+			health = max_health
+
+		"ammo_refill":
+			ammo = max_ammo
+
+
 
 func start_new_run() -> void:
 	# Pull defaults from GameConfig (same place your Player uses)

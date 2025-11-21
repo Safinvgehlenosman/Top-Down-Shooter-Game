@@ -16,4 +16,6 @@ alt_fire_spread_degrees = 10.0
 alt_fire_self_damage = 0
 alt_fire_recoil_strength = 200.0
 death_slowmo_duration = 0.5
+crate_coin_drop_chance = 0.8
+crate_ammo_drop_chance = 0.1
 crate_heart_drop_chance = 0.1

@@ -35,6 +35,7 @@ enabled=PackedStringArray("res://addons/phantom_camera/plugin.cfg")
 
 player=""
 crosshair=""
+shop=""
 
 [input]
 

@@ -1,16 +1,46 @@
 extends Node
 
 @export var death_screen_path: NodePath
+@export var shop_path: NodePath
+@export var exit_door_path: NodePath
+@export var ui_root_path: NodePath
 
+var game_ui: CanvasLayer
+
+var next_scene_path: String = ""
+
+var shop_ui: CanvasLayer
 var death_screen: CanvasLayer
 var is_in_death_sequence: bool = false
+
+var exit_door: Area2D
+var door_open: bool = false
 
 @onready var restart_button: Button = $"../UI/PauseScreen/RestartButton"
 @onready var death_restart_button: Button = $"../UI/DeathScreen/Content/RestartButton"
 
-@export var exit_door_path: NodePath
-var exit_door: Area2D
-var door_open: bool = false
+
+func _ready() -> void:
+	# Death screen
+	if death_screen_path != NodePath():
+		death_screen = get_node(death_screen_path)
+		if death_screen:
+			death_screen.visible = false
+
+	# Exit door
+	if exit_door_path != NodePath():
+		exit_door = get_node(exit_door_path)
+		if exit_door:
+			exit_door.visible = false
+
+	# Shop UI
+	if shop_path != NodePath():
+		shop_ui = get_node(shop_path)
+		if shop_ui:
+			shop_ui.visible = false
+	
+	if ui_root_path != NodePath():
+		game_ui = get_node(ui_root_path)
 
 
 func _process(_delta: float) -> void:
@@ -26,22 +56,47 @@ func _open_exit_door() -> void:
 		exit_door.open()
 
 
+# Called by the exit door when the player reaches it
+func on_player_reached_exit(target_scene: String) -> void:
+	if is_in_death_sequence:
+		return
+
+	next_scene_path = target_scene
+	_open_shop()
 
 
-func _ready() -> void:
-	if death_screen_path != NodePath():
-		death_screen = get_node(death_screen_path)
-		if death_screen:
-			death_screen.visible = false
-	
-	if exit_door_path != NodePath():
-		exit_door = get_node(exit_door_path)
-		if exit_door:
-			exit_door.visible = false
+func _open_shop() -> void:
+	get_tree().paused = true
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+
+	if shop_ui:
+		shop_ui.visible = true
+		if shop_ui.has_method("refresh_from_state"):
+			shop_ui.refresh_from_state()
+			
+	if game_ui:
+		game_ui.visible = false        # 👈 hide HUD while in shop
+
+
+func load_next_level() -> void:
+	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+
+	if shop_ui:
+		shop_ui.visible = false
+
+	get_tree().paused = false
+
+	if next_scene_path != "":
+		get_tree().change_scene_to_file(next_scene_path)
+		
+	if game_ui:
+		game_ui.visible = true         # 👈 show HUD again
+
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"): # Esc
 		_toggle_pause()
+
 
 func _toggle_pause() -> void:
 	get_tree().paused = !get_tree().paused
@@ -62,7 +117,6 @@ func _toggle_pause() -> void:
 		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 
 
-
 func on_player_died() -> void:
 	if is_in_death_sequence:
 		return
@@ -75,7 +129,8 @@ func on_player_died() -> void:
 	# Start a one-shot timer for the slowmo duration
 	var t := get_tree().create_timer(GameConfig.death_slowmo_duration)
 	_show_death_screen_after_timer(t)
-	
+
+
 func _show_death_screen_after_timer(timer: SceneTreeTimer) -> void:
 	await timer.timeout
 

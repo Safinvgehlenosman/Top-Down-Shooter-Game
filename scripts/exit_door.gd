@@ -23,5 +23,8 @@ func _on_body_entered(body: Node2D) -> void:
 	if target_scene == "":
 		return
 
-	get_tree().change_scene_to_file(target_scene)
+	var gm := get_tree().get_first_node_in_group("game_manager")
+	if gm and gm.has_method("on_player_reached_exit"):
+		gm.on_player_reached_exit(target_scene)
+
 	

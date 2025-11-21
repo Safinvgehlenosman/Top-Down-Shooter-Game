@@ -1,0 +1,100 @@
+[gd_scene load_steps=5 format=3 uid="uid://dxcqijbcprgnd"]
+
+[ext_resource type="Script" uid="uid://bn0417mbctyd3" path="res://scenes/shop_ui.gd" id="1_18xnp"]
+[ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="1_oixfk"]
+[ext_resource type="Texture2D" uid="uid://d1defhln5t7rq" path="res://assets/Separated/CoinsUI.png" id="2_18xnp"]
+[ext_resource type="PackedScene" uid="uid://755tjml7mgfa" path="res://scenes/upgrade_card.tscn" id="4_crtus"]
+
+[node name="ShopUI" type="CanvasLayer" groups=["shop"]]
+process_mode = 3
+script = ExtResource("1_18xnp")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.38431373)
+
+[node name="Panel" type="TextureRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TitleLabel" type="Label" parent="Panel"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -128.0
+offset_top = 60.0
+offset_right = 128.0
+offset_bottom = 124.00006
+grow_horizontal = 2
+theme_override_fonts/font = ExtResource("1_oixfk")
+theme_override_font_sizes/font_size = 64
+text = "SHOP"
+
+[node name="Cards" type="HBoxContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -209.0
+offset_right = 209.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 289
+
+[node name="UpgradeCard" parent="Panel/Cards" instance=ExtResource("4_crtus")]
+layout_mode = 2
+
+[node name="UpgradeCard2" parent="Panel/Cards" instance=ExtResource("4_crtus")]
+layout_mode = 2
+
+[node name="UpgradeCard3" parent="Panel/Cards" instance=ExtResource("4_crtus")]
+layout_mode = 2
+
+[node name="ContinueButton" type="Button" parent="Panel"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -66.0
+offset_top = 225.02002
+offset_right = 66.0
+offset_bottom = 249.0202
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("1_oixfk")
+text = "CONTINUE"
+
+[node name="CoinUI" type="TextureRect" parent="."]
+offset_left = 403.0
+offset_top = 544.0
+offset_right = 509.0
+offset_bottom = 595.0
+texture = ExtResource("2_18xnp")
+
+[node name="CoinLabel" type="Label" parent="CoinUI"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -9.0
+offset_top = 9.0
+offset_right = -8.0
+offset_bottom = 25.0
+grow_horizontal = 2
+size_flags_horizontal = 8
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 10
+theme_override_constants/shadow_outline_size = 10
+theme_override_fonts/font = ExtResource("1_oixfk")

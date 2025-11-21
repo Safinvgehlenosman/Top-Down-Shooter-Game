@@ -392,7 +392,7 @@ func die() -> void:
 func update_health_bar() -> void:
 	if hp_fill:
 		hp_fill.max_value = GameState.max_health
-		hp_fill.value = lerp(hp_fill.value, GameState.health, 0.2)
+		hp_fill.value = GameState.health
 
 	hp_label.text = "%d/%d" % [GameState.health, GameState.max_health]
 

@@ -1,0 +1,64 @@
+[gd_scene load_steps=5 format=3 uid="uid://755tjml7mgfa"]
+
+[ext_resource type="Script" uid="uid://ctoagax75h2sy" path="res://upgrade_card.gd" id="1_0hv3p"]
+[ext_resource type="FontFile" uid="uid://4xsaqwwtj2c1" path="res://assets/Fonts/PixelOperator8.ttf" id="2_igsks"]
+[ext_resource type="Texture2D" uid="uid://55msc8hn2qb3" path="res://assets/Separated/singlecoin.png" id="3_33rkj"]
+[ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="4_sav2r"]
+
+[node name="UpgradeCard" type="Control"]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("1_0hv3p")
+
+[node name="PriceArea" type="HBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="TextureRect" type="TextureRect" parent="PriceArea"]
+layout_mode = 2
+
+[node name="PriceLabel" type="Label" parent="PriceArea/TextureRect"]
+layout_mode = 0
+offset_left = 38.0
+offset_top = 12.0
+offset_right = 56.0
+offset_bottom = 28.0
+theme_override_fonts/font = ExtResource("2_igsks")
+
+[node name="CoinIcon" type="TextureRect" parent="PriceArea/TextureRect"]
+layout_mode = 0
+offset_left = 4.0
+offset_right = 44.0
+offset_bottom = 40.0
+texture = ExtResource("3_33rkj")
+expand_mode = 2
+
+[node name="Icon" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 50.0
+offset_right = 52.0
+offset_bottom = 82.0
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="."]
+layout_mode = 0
+offset_left = 81.0
+offset_top = 49.0
+offset_right = 127.0
+offset_bottom = 72.0
+theme_override_fonts/font = ExtResource("2_igsks")
+
+[node name="Button" type="Button" parent="."]
+layout_mode = 0
+offset_left = 35.0
+offset_top = 101.0
+offset_right = 91.0
+offset_bottom = 125.0
+theme_override_fonts/font = ExtResource("4_sav2r")
+text = "BUY"
