@@ -347,10 +347,16 @@ func take_damage(amount: int) -> void:
 		_play_heal_feedback()
 
 	# amount can be negative: damage = minus, heal = plus
-	health = clampi(health - amount, 0, max_health)
-	GameState.health = health              # 👈 sync run state here
+# amount can be negative: damage = minus, heal = plus
+	GameState.health = clampi(
+		GameState.health - amount,
+		0,
+		GameState.max_health
+	)
+	health = GameState.health
 
 	update_health_bar()
+
 
 	if amount > 0 and health <= 0:
 		die()

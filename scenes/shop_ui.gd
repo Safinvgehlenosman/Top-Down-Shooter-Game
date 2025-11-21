@@ -9,19 +9,19 @@ signal shop_closed
 var upgrades := [
 	{
 		"id": "hp_refill",
-		"price": 5,
+		"price": 1,
 		"icon": preload("res://assets/Separated/singleheart.png"),
 		"text": "Refill HP to max"
 	},
 	{
 		"id": "max_hp_plus_1",
-		"price": 12,
+		"price": 1,
 		"icon": preload("res://assets/Separated/singleheart.png"),
 		"text": "+1 Max HP"
 	},
 	{
 		"id": "ammo_refill",
-		"price": 5,
+		"price": 1,
 		"icon": preload("res://assets/Separated/ammo.png"),
 		"text": "Refill Ammo"
 	}
