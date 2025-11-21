@@ -72,6 +72,7 @@ func _open_shop() -> void:
 	if shop_ui:
 		shop_ui.visible = true
 		if shop_ui.has_method("refresh_from_state"):
+			shop_ui._setup_cards()
 			shop_ui.refresh_from_state()
 			
 	if game_ui:

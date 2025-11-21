@@ -71,7 +71,7 @@ func _on_body_entered(body: Node2D) -> void:
 		
 		if body.has_method("add_ammo"):
 			body.add_ammo(1)  # or 2, 3, whatever one pickup should give
-			body.update_ammo_bar()
+
 
 
 		# immediately kill collisions + visuals + light

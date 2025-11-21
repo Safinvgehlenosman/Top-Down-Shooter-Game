@@ -3,12 +3,6 @@ extends CharacterBody2D
 const BulletScene := preload("res://scenes/bullet.tscn")
 
 # UI
-@export var health_bar_path: NodePath
-@export var health_sprites: Array[Texture2D] = []
-
-@export var ammo_bar_path: NodePath
-@export var ammo_sprites: Array[Texture2D] = []
-
 @onready var hp_fill: TextureProgressBar = $"../UI/HPBar/HPFill"
 @onready var hp_label: Label = $"../UI/HPLabel"
 @onready var ammo_label: Label = $"../UI/AmmoUI/AmmoLabel"
@@ -16,8 +10,6 @@ const BulletScene := preload("res://scenes/bullet.tscn")
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var muzzle: Marker2D = $Gun/Muzzle
 
-var health_bar: TextureRect
-var ammo_bar: TextureRect
 var alt_fire_cooldown_timer: float = 0.0
 
 # Runtime stats (filled from GameConfig / GameState in _ready)
@@ -102,11 +94,7 @@ func _ready() -> void:
 	fire_rate = GameState.fire_rate
 
 	# Init UI with current run values
-	health_bar = get_node(health_bar_path)
-	ammo_bar = get_node(ammo_bar_path)
-
 	update_health_bar()
-	update_ammo_bar()
 
 	# Aim setup
 	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
@@ -253,14 +241,12 @@ func _process_shooting(delta: float) -> void:
 func add_ammo(amount: int) -> void:
 	ammo = clampi(ammo + amount, 0, max_ammo)
 	GameState.ammo = ammo
-	update_ammo_bar()
 
 
 func fire_laser() -> void:
 	# spend ammo
 	ammo = max(ammo - 1, 0)
 	GameState.ammo = ammo
-	update_ammo_bar()
 
 	# --- SHOTGUN / ALT FIRE SFX ---
 	var shot := $SFX_Shoot_Shotgun
@@ -293,7 +279,18 @@ func fire_laser() -> void:
 
 	# recoil: push player opposite of shot direction
 	var recoil_dir: Vector2 = -base_dir
-	knockback = recoil_dir * GameConfig.alt_fire_recoil_strength
+
+	# more pellets = more recoil
+	var base_pellets: int = GameConfig.alt_fire_bullet_count
+	var current_pellets: int = GameState.shotgun_pellets
+	var extra_pellets: int = max(current_pellets - base_pellets, 0)
+
+	# each extra pellet adds 10% recoil (tweak this value)
+	var recoil_multiplier: float = 1.0 + float(extra_pellets) * 0.10
+
+	var recoil_strength: float = GameConfig.alt_fire_recoil_strength * recoil_multiplier
+
+	knockback = recoil_dir * recoil_strength
 	knockback_timer = GameConfig.alt_fire_recoil_duration
 
 	var cam := get_tree().get_first_node_in_group("camera")
@@ -412,17 +409,3 @@ func update_health_bar() -> void:
 
 	if hp_label:
 		hp_label.text = "%d/%d" % [GameState.health, GameState.max_health]
-
-	if health_bar == null or health_sprites.is_empty():
-		return
-
-	var idx: int = clampi(health, 0, health_sprites.size() - 1)
-	health_bar.texture = health_sprites[idx]
-
-
-func update_ammo_bar() -> void:
-	if ammo_bar == null or ammo_sprites.is_empty():
-		return
-
-	var idx: int = clampi(ammo, 0, ammo_sprites.size() - 1)
-	ammo_bar.texture = ammo_sprites[idx]

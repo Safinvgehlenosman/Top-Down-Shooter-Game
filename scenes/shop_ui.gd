@@ -55,11 +55,20 @@ func _ready() -> void:
 	continue_button.pressed.connect(_on_continue_pressed)
 
 func _setup_cards() -> void:
-	var count: int = min(cards.get_child_count(), upgrades.size())
+	# make a shuffled copy
+	var pool := upgrades.duplicate()
+	pool.shuffle()
+
+	# choose as many upgrades as there are cards (usually 3)
+	var count: int = min(cards.get_child_count(), pool.size())
+
 	for i in range(count):
 		var card = cards.get_child(i)
-		card.setup(upgrades[i])
+		var data = pool[i]
+
+		card.setup(data)
 		card.purchased.connect(_on_card_purchased)
+
 
 func _update_coin_label() -> void:
 	coin_label.text = str(GameState.coins)
