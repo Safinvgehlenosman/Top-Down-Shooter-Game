@@ -13,5 +13,5 @@ exit_door_path = NodePath("../ExitDoor")
 slime_scene = ExtResource("2_eaq8r")
 crate_scene = ExtResource("3_ternb")
 exit_door_scene = ExtResource("4_q8mjp")
-slime_chance = 0.3
-crate_chance = 0.7
+slime_chance = 0.4
+crate_chance = 0.6

@@ -2,6 +2,8 @@ extends CanvasLayer
 
 @onready var start_button: Button = $StartButton
 @onready var quit_button: Button = $QuitButton
+@onready var fullscreen_button: Button = $FullscreenButton
+
 
 @export var button_paths: Array[NodePath] = []
 
@@ -12,10 +14,19 @@ var focused_index: int = 0
 func _ready() -> void:
 	start_button.pressed.connect(_on_start_button_pressed)
 	quit_button.pressed.connect(_on_quit_button_pressed)
+	fullscreen_button.pressed.connect(_on_fullscreen_button_pressed)
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	start_button.grab_focus()
 	_setup_menu_buttons()
 	
+func _on_fullscreen_button_pressed() -> void:
+	var w := get_window()
+	if w.mode == Window.MODE_FULLSCREEN:
+		w.mode = Window.MODE_WINDOWED
+	else:
+		w.mode = Window.MODE_FULLSCREEN
+
+
 
 func _setup_menu_buttons() -> void:
 	buttons.clear()

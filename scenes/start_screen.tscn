@@ -54,6 +54,15 @@ offset_bottom = 376.34
 theme_override_fonts/font = ExtResource("1_o7i0r")
 text = "Quit"
 
+[node name="FullscreenButton" type="Button" parent="."]
+process_mode = 3
+offset_left = 996.0
+offset_top = 604.0
+offset_right = 1136.0
+offset_bottom = 628.0
+theme_override_fonts/font = ExtResource("1_o7i0r")
+text = "Fullscreen"
+
 [node name="TitleLabel" type="Label" parent="."]
 anchors_preset = 5
 anchor_left = 0.5
