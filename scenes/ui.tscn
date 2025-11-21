@@ -1,0 +1,225 @@
+[gd_scene load_steps=11 format=3 uid="uid://c7fcp73v6wu5d"]
+
+[ext_resource type="Texture2D" uid="uid://crcvb7pieh4iv" path="res://assets/HP Bar/hp_5.png" id="1_cgfq5"]
+[ext_resource type="Script" uid="uid://bun2ukfdgaq3m" path="res://scripts/screen_flash.gd" id="2_7dvkv"]
+[ext_resource type="Texture2D" uid="uid://wvuudlu11n78" path="res://assets/Separated/progressbarfill2.png" id="2_vdcm2"]
+[ext_resource type="Script" uid="uid://dpqjf535o4wfs" path="res://scripts/screen_flash_heal.gd" id="3_vdcm2"]
+[ext_resource type="Script" uid="uid://c5rit853wljdq" path="res://scripts/death_screen.gd" id="4_6rmj2"]
+[ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="5_vsj0x"]
+[ext_resource type="FontFile" uid="uid://4xsaqwwtj2c1" path="res://assets/Fonts/PixelOperator8.ttf" id="6_qsv74"]
+[ext_resource type="Script" uid="uid://c2yqcdrh4ns2s" path="res://scripts/pause_screen.gd" id="7_h1mc3"]
+[ext_resource type="Texture2D" uid="uid://d1defhln5t7rq" path="res://assets/Separated/CoinsUI.png" id="8_cof4p"]
+[ext_resource type="Texture2D" uid="uid://bfmuu7477yfan" path="res://assets/Separated/AmmoUI.png" id="9_f7tlh"]
+
+[node name="UI" type="CanvasLayer"]
+
+[node name="HPBar" type="TextureRect" parent="."]
+texture_filter = 1
+texture_repeat = 1
+offset_right = 22.0
+offset_bottom = 10.0
+scale = Vector2(8, 8)
+texture = ExtResource("1_cgfq5")
+stretch_mode = 2
+
+[node name="HPFill" type="TextureProgressBar" parent="HPBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 1.0
+offset_top = 6.0
+offset_right = -2.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 2
+max_value = 5.0
+value = 3.0
+texture_progress = ExtResource("2_vdcm2")
+tint_progress = Color(1, 0, 0.078431375, 1)
+
+[node name="HPLabel" type="Label" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -469.0
+offset_top = -310.0
+offset_right = -468.0
+offset_bottom = -294.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 8
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 10
+theme_override_constants/shadow_outline_size = 10
+theme_override_fonts/font = ExtResource("5_vsj0x")
+
+[node name="Flash" type="ColorRect" parent="." groups=["screen_flash"]]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 0.015686275, 0.21960784, 0)
+script = ExtResource("2_7dvkv")
+
+[node name="FlashHeal" type="ColorRect" parent="." groups=["screen_flash_heal"]]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.05490196, 1, 0, 0)
+script = ExtResource("3_vdcm2")
+
+[node name="DeathScreen" type="CanvasLayer" parent="."]
+layer = 20
+visible = false
+script = ExtResource("4_6rmj2")
+button_paths = Array[NodePath]([NodePath("Content/RestartButton"), NodePath("Content/QuitButton")])
+
+[node name="ColorRect" type="ColorRect" parent="DeathScreen"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.11858138, 0.11858138, 0.11858138, 1)
+
+[node name="Content" type="VBoxContainer" parent="DeathScreen"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -232.0
+offset_top = -32.0
+offset_right = 232.0
+offset_bottom = 32.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TitleLabel" type="Label" parent="DeathScreen/Content"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_fonts/font = ExtResource("5_vsj0x")
+theme_override_font_sizes/font_size = 64
+text = "YOU DIED"
+
+[node name="RestartButton" type="Button" parent="DeathScreen/Content"]
+process_mode = 3
+layout_mode = 2
+theme_override_fonts/font = ExtResource("6_qsv74")
+text = "Restart"
+
+[node name="QuitButton" type="Button" parent="DeathScreen/Content"]
+process_mode = 3
+layout_mode = 2
+theme_override_fonts/font = ExtResource("6_qsv74")
+text = "Quit"
+
+[node name="PauseScreen" type="CanvasLayer" parent="." groups=["pause"]]
+process_mode = 3
+layer = 10
+visible = false
+script = ExtResource("7_h1mc3")
+button_paths = Array[NodePath]([NodePath("RestartButton"), NodePath("QuitButton")])
+
+[node name="ColorRect" type="ColorRect" parent="PauseScreen"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.11764706, 0.11764706, 0.11764706, 1)
+
+[node name="RestartButton" type="Button" parent="PauseScreen"]
+process_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -51.0
+offset_top = -12.0
+offset_right = 51.0
+offset_bottom = 12.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("6_qsv74")
+text = "Restart"
+
+[node name="QuitButton" type="Button" parent="PauseScreen"]
+process_mode = 3
+offset_left = 546.0
+offset_top = 352.34
+offset_right = 604.0
+offset_bottom = 376.34
+theme_override_fonts/font = ExtResource("6_qsv74")
+text = "Quit"
+
+[node name="TitleLabel" type="Label" parent="PauseScreen"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -232.0
+offset_top = 236.01
+offset_right = 232.0
+offset_bottom = 300.0103
+grow_horizontal = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_fonts/font = ExtResource("5_vsj0x")
+theme_override_font_sizes/font_size = 64
+text = "PAUSED"
+horizontal_alignment = 1
+
+[node name="CoinUI" type="TextureRect" parent="."]
+offset_top = 115.0
+offset_right = 106.0
+offset_bottom = 166.0
+texture = ExtResource("8_cof4p")
+
+[node name="CoinLabel" type="Label" parent="CoinUI"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -9.0
+offset_top = 9.0
+offset_right = -8.0
+offset_bottom = 25.0
+grow_horizontal = 2
+size_flags_horizontal = 8
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 10
+theme_override_constants/shadow_outline_size = 10
+theme_override_fonts/font = ExtResource("5_vsj0x")
+
+[node name="AmmoUI" type="TextureRect" parent="."]
+offset_top = 80.0
+offset_right = 106.0
+offset_bottom = 131.0
+texture = ExtResource("9_f7tlh")
+
+[node name="AmmoLabel" type="Label" parent="AmmoUI"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 6.0
+offset_top = 9.0
+offset_right = 7.0
+offset_bottom = 25.0
+grow_horizontal = 2
+size_flags_horizontal = 8
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 10
+theme_override_constants/shadow_outline_size = 10
+theme_override_fonts/font = ExtResource("5_vsj0x")
+
+[connection signal="pressed" from="DeathScreen/Content/RestartButton" to="DeathScreen" method="_on_restart_button_pressed"]
+[connection signal="pressed" from="DeathScreen/Content/QuitButton" to="DeathScreen" method="_on_quit_button_pressed"]

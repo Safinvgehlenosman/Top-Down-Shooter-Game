@@ -9,6 +9,8 @@ const BulletScene := preload("res://scenes/bullet.tscn")
 @export var ammo_bar_path: NodePath
 @export var ammo_sprites: Array[Texture2D] = []
 
+@onready var hp_fill: TextureProgressBar = $"../UI/HPBar/HPFill"
+@onready var hp_label: Label = $"../UI/HPLabel"
 @onready var ammo_label: Label = $"../UI/AmmoUI/AmmoLabel"
 @onready var coin_label: Label = $"../UI/CoinUI/CoinLabel"
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
@@ -89,7 +91,6 @@ func _ready() -> void:
 	ammo = GameState.ammo
 
 	# Init UI with current run values
-	health_bar = get_node(health_bar_path)
 	update_health_bar()
 	
 	update_ammo_bar()
@@ -389,6 +390,12 @@ func die() -> void:
 # --------------------------------------------------------------------
 
 func update_health_bar() -> void:
+	if hp_fill:
+		hp_fill.max_value = GameState.max_health
+		hp_fill.value = lerp(hp_fill.value, GameState.health, 0.2)
+
+	hp_label.text = "%d/%d" % [GameState.health, GameState.max_health]
+
 	if health_bar == null or health_sprites.is_empty():
 		return
 

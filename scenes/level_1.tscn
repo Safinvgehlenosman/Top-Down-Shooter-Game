@@ -1,4 +1,4 @@
-[gd_scene load_steps=37 format=4 uid="uid://s7do308xihbw"]
+[gd_scene load_steps=29 format=4 uid="uid://s7do308xihbw"]
 
 [ext_resource type="Script" uid="uid://brvgav35e1cb5" path="res://scripts/main.gd" id="1_mbb35"]
 [ext_resource type="PackedScene" uid="uid://cwdo73t7wn5pp" path="res://scenes/player.tscn" id="2_iw4em"]
@@ -12,15 +12,7 @@
 [ext_resource type="Script" uid="uid://bd046eokvcnu2" path="res://addons/phantom_camera/scripts/phantom_camera_host/phantom_camera_host.gd" id="10_v8pws"]
 [ext_resource type="Texture2D" uid="uid://ddnj3o5q184op" path="res://assets/TilesetSheet.png" id="11_rscm6"]
 [ext_resource type="PackedScene" uid="uid://chcumh0nhsngk" path="res://scenes/crosshair.tscn" id="12_wom8k"]
-[ext_resource type="Texture2D" uid="uid://crcvb7pieh4iv" path="res://assets/HP Bar/hp_5.png" id="13_wa552"]
-[ext_resource type="Script" uid="uid://bun2ukfdgaq3m" path="res://scripts/screen_flash.gd" id="15_bamb7"]
-[ext_resource type="Script" uid="uid://dpqjf535o4wfs" path="res://scripts/screen_flash_heal.gd" id="16_8jqp6"]
-[ext_resource type="Script" uid="uid://c5rit853wljdq" path="res://scripts/death_screen.gd" id="17_jscgt"]
-[ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="18_0bysi"]
-[ext_resource type="FontFile" uid="uid://4xsaqwwtj2c1" path="res://assets/Fonts/PixelOperator8.ttf" id="19_y0ove"]
-[ext_resource type="Script" uid="uid://c2yqcdrh4ns2s" path="res://scripts/pause_screen.gd" id="20_awarj"]
-[ext_resource type="Texture2D" uid="uid://d1defhln5t7rq" path="res://assets/Separated/CoinsUI.png" id="20_mbb35"]
-[ext_resource type="Texture2D" uid="uid://bfmuu7477yfan" path="res://assets/Separated/AmmoUI.png" id="21_mbb35"]
+[ext_resource type="PackedScene" uid="uid://c7fcp73v6wu5d" path="res://scenes/ui.tscn" id="13_so66j"]
 [ext_resource type="PackedScene" uid="uid://0gile0fujjql" path="res://scenes/slime.tscn" id="22_3x5jj"]
 [ext_resource type="Script" uid="uid://nld8o3fmkyqn" path="res://scripts/camera_manager.gd" id="23_75ls7"]
 [ext_resource type="Script" uid="uid://bhexx6mj1xv3q" path="res://addons/phantom_camera/scripts/phantom_camera/phantom_camera_2d.gd" id="24_gwsl1"]
@@ -271,6 +263,8 @@ shader_parameter/vignette_softness = 0.35
 [node name="Level1" type="Node2D"]
 script = ExtResource("1_mbb35")
 
+[node name="UI" parent="." instance=ExtResource("13_so66j")]
+
 [node name="Player" parent="." instance=ExtResource("2_iw4em")]
 position = Vector2(86, 92)
 health_bar_path = NodePath("../UI/HPBar")
@@ -308,182 +302,6 @@ texture = SubResource("GradientTexture2D_2wyq8")
 texture_scale = 0.3
 
 [node name="Crosshair" parent="." instance=ExtResource("12_wom8k")]
-
-[node name="UI" type="CanvasLayer" parent="."]
-
-[node name="HPBar" type="TextureRect" parent="UI"]
-texture_filter = 1
-texture_repeat = 1
-offset_right = 40.0
-offset_bottom = 40.0
-scale = Vector2(8, 8)
-texture = ExtResource("13_wa552")
-stretch_mode = 2
-
-[node name="Flash" type="ColorRect" parent="UI" groups=["screen_flash"]]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(1, 0.015686275, 0.21960784, 0)
-script = ExtResource("15_bamb7")
-
-[node name="FlashHeal" type="ColorRect" parent="UI" groups=["screen_flash_heal"]]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.05490196, 1, 0, 0)
-script = ExtResource("16_8jqp6")
-
-[node name="DeathScreen" type="CanvasLayer" parent="UI"]
-layer = 20
-visible = false
-script = ExtResource("17_jscgt")
-button_paths = Array[NodePath]([NodePath("Content/RestartButton"), NodePath("Content/QuitButton")])
-
-[node name="ColorRect" type="ColorRect" parent="UI/DeathScreen"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.11858138, 0.11858138, 0.11858138, 1)
-
-[node name="Content" type="VBoxContainer" parent="UI/DeathScreen"]
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -232.0
-offset_top = -32.0
-offset_right = 232.0
-offset_bottom = 32.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="TitleLabel" type="Label" parent="UI/DeathScreen/Content"]
-layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 0
-theme_override_fonts/font = ExtResource("18_0bysi")
-theme_override_font_sizes/font_size = 64
-text = "YOU DIED"
-
-[node name="RestartButton" type="Button" parent="UI/DeathScreen/Content"]
-process_mode = 3
-layout_mode = 2
-theme_override_fonts/font = ExtResource("19_y0ove")
-text = "Restart"
-
-[node name="QuitButton" type="Button" parent="UI/DeathScreen/Content"]
-process_mode = 3
-layout_mode = 2
-theme_override_fonts/font = ExtResource("19_y0ove")
-text = "Quit"
-
-[node name="PauseScreen" type="CanvasLayer" parent="UI" groups=["pause"]]
-process_mode = 3
-layer = 10
-visible = false
-script = ExtResource("20_awarj")
-button_paths = Array[NodePath]([NodePath("RestartButton"), NodePath("QuitButton")])
-
-[node name="ColorRect" type="ColorRect" parent="UI/PauseScreen"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.11764706, 0.11764706, 0.11764706, 1)
-
-[node name="RestartButton" type="Button" parent="UI/PauseScreen"]
-process_mode = 3
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -51.0
-offset_top = -12.0
-offset_right = 51.0
-offset_bottom = 12.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_fonts/font = ExtResource("19_y0ove")
-text = "Restart"
-
-[node name="QuitButton" type="Button" parent="UI/PauseScreen"]
-process_mode = 3
-offset_left = 546.0
-offset_top = 352.34
-offset_right = 604.0
-offset_bottom = 376.34
-theme_override_fonts/font = ExtResource("19_y0ove")
-text = "Quit"
-
-[node name="TitleLabel" type="Label" parent="UI/PauseScreen"]
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -232.0
-offset_top = 236.01
-offset_right = 232.0
-offset_bottom = 300.0103
-grow_horizontal = 2
-size_flags_horizontal = 0
-size_flags_vertical = 0
-theme_override_fonts/font = ExtResource("18_0bysi")
-theme_override_font_sizes/font_size = 64
-text = "PAUSED"
-horizontal_alignment = 1
-
-[node name="CoinUI" type="TextureRect" parent="UI"]
-offset_top = 120.0
-offset_right = 106.0
-offset_bottom = 171.0
-texture = ExtResource("20_mbb35")
-
-[node name="CoinLabel" type="Label" parent="UI/CoinUI"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -9.0
-offset_top = 9.0
-offset_right = -8.0
-offset_bottom = 25.0
-grow_horizontal = 2
-size_flags_horizontal = 8
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 10
-theme_override_constants/shadow_outline_size = 10
-theme_override_fonts/font = ExtResource("18_0bysi")
-
-[node name="AmmoUI" type="TextureRect" parent="UI"]
-offset_top = 79.0
-offset_right = 106.0
-offset_bottom = 130.0
-texture = ExtResource("21_mbb35")
-
-[node name="AmmoLabel" type="Label" parent="UI/AmmoUI"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = 6.0
-offset_top = 9.0
-offset_right = 7.0
-offset_bottom = 25.0
-grow_horizontal = 2
-size_flags_horizontal = 8
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 10
-theme_override_constants/shadow_outline_size = 10
-theme_override_fonts/font = ExtResource("18_0bysi")
 
 [node name="CanvasModulate" type="CanvasModulate" parent="."]
 color = Color(0.502743, 0.502743, 0.502743, 1)
@@ -604,8 +422,6 @@ color = Color(1, 1, 1, 0)
 visible = false
 position = Vector2(444, 289)
 
-[connection signal="pressed" from="UI/DeathScreen/Content/RestartButton" to="UI/DeathScreen" method="_on_restart_button_pressed"]
-[connection signal="pressed" from="UI/DeathScreen/Content/QuitButton" to="UI/DeathScreen" method="_on_quit_button_pressed"]
 [connection signal="body_entered" from="CameraManager/CameraNodes/room0-1" to="CameraManager" method="_on_room_01_body_entered"]
 [connection signal="body_entered" from="CameraManager/CameraNodes/room0-2" to="CameraManager" method="_on_room_02_body_entered"]
 [connection signal="body_entered" from="CameraManager/CameraNodes/room0-3" to="CameraManager" method="_on_room_01_body_entered"]
