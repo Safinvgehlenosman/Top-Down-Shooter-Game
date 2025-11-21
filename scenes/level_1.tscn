@@ -404,13 +404,13 @@ position = Vector2(244, 43)
 position = Vector2(52, 149)
 
 [node name="Crate10" parent="Crates" instance=ExtResource("27_qb2q0")]
-position = Vector2(383, 31)
+position = Vector2(398, 66)
 
 [node name="Crate11" parent="Crates" instance=ExtResource("27_qb2q0")]
-position = Vector2(582, 126)
+position = Vector2(503, 154.99998)
 
 [node name="Crate12" parent="Crates" instance=ExtResource("27_qb2q0")]
-position = Vector2(582, 126)
+position = Vector2(542, 107.99999)
 
 [node name="Crate13" parent="Crates" instance=ExtResource("27_qb2q0")]
 position = Vector2(394, 229)
@@ -425,7 +425,7 @@ position = Vector2(546, 309)
 position = Vector2(567.00006, 331.00003)
 
 [node name="Crate17" parent="Crates" instance=ExtResource("27_qb2q0")]
-position = Vector2(277, 29)
+position = Vector2(213, 66)
 
 [node name="Crate18" parent="Crates" instance=ExtResource("27_qb2q0")]
 position = Vector2(85, 135)
@@ -449,6 +449,7 @@ visible = false
 position = Vector2(444, 289)
 
 [node name="ShopUI" parent="." instance=ExtResource("3_tr1x6")]
+visible = false
 
 [connection signal="body_entered" from="CameraManager/CameraNodes/room0-1" to="CameraManager" method="_on_room_01_body_entered"]
 [connection signal="body_entered" from="CameraManager/CameraNodes/room0-2" to="CameraManager" method="_on_room_02_body_entered"]

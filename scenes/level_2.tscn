@@ -423,6 +423,7 @@ shop_path = NodePath("../ShopUI")
 ui_root_path = NodePath("../UI")
 
 [node name="ShopUI" parent="." instance=ExtResource("22_1sb0y")]
+visible = false
 
 [connection signal="body_entered" from="CameraManager/CameraNodes/room0-1" to="CameraManager" method="_on_room_01_body_entered"]
 [connection signal="body_entered" from="CameraManager/CameraNodes/room0-2" to="CameraManager" method="_on_room_02_body_entered"]

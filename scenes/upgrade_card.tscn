@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3 uid="uid://755tjml7mgfa"]
+[gd_scene load_steps=6 format=3 uid="uid://755tjml7mgfa"]
 
 [ext_resource type="Script" uid="uid://ctoagax75h2sy" path="res://upgrade_card.gd" id="1_0hv3p"]
 [ext_resource type="FontFile" uid="uid://4xsaqwwtj2c1" path="res://assets/Fonts/PixelOperator8.ttf" id="2_igsks"]
 [ext_resource type="Texture2D" uid="uid://55msc8hn2qb3" path="res://assets/Separated/singlecoin.png" id="3_33rkj"]
 [ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="4_sav2r"]
+[ext_resource type="AudioStream" uid="uid://s21q2vmi6db6" path="res://assets/Audios/CoinCollect.wav" id="5_igsks"]
 
 [node name="UpgradeCard" type="Control"]
 process_mode = 3
@@ -62,3 +63,6 @@ offset_right = 91.0
 offset_bottom = 125.0
 theme_override_fonts/font = ExtResource("4_sav2r")
 text = "BUY"
+
+[node name="SFX_Collect" type="AudioStreamPlayer" parent="Button"]
+stream = ExtResource("5_igsks")

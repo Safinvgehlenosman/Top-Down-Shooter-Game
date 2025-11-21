@@ -6,6 +6,7 @@ signal purchased
 @export var price: int = 0
 @export var icon: Texture2D
 @export var description: String = ""
+@onready var sfx_collect: AudioStreamPlayer = $Button/SFX_Collect
 
 @onready var price_label: Label = $PriceArea/TextureRect/PriceLabel
 @onready var icon_rect: TextureRect = $Icon
@@ -46,3 +47,4 @@ func _on_buy_pressed() -> void:
 
 	emit_signal("purchased")
 	_refresh()
+	sfx_collect.play()
