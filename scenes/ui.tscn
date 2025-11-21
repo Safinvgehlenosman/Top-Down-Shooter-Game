@@ -14,7 +14,7 @@
 
 [node name="UI" type="CanvasLayer"]
 
-[node name="HPBar" type="TextureRect" parent="."]
+[node name="HPBar" type="TextureRect" parent="." groups=["hp_ui"]]
 texture_filter = 1
 texture_repeat = 1
 offset_right = 22.0
