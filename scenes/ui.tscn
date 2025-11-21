@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://c7fcp73v6wu5d"]
+[gd_scene load_steps=12 format=3 uid="uid://c7fcp73v6wu5d"]
 
 [ext_resource type="Texture2D" uid="uid://crcvb7pieh4iv" path="res://assets/HP Bar/hp_5.png" id="1_cgfq5"]
 [ext_resource type="Script" uid="uid://bun2ukfdgaq3m" path="res://scripts/screen_flash.gd" id="2_7dvkv"]
@@ -10,6 +10,7 @@
 [ext_resource type="Script" uid="uid://c2yqcdrh4ns2s" path="res://scripts/pause_screen.gd" id="7_h1mc3"]
 [ext_resource type="Texture2D" uid="uid://d1defhln5t7rq" path="res://assets/Separated/CoinsUI.png" id="8_cof4p"]
 [ext_resource type="Texture2D" uid="uid://bfmuu7477yfan" path="res://assets/Separated/AmmoUI.png" id="9_f7tlh"]
+[ext_resource type="PackedScene" uid="uid://bngmwso5qhlyx" path="res://scenes/vhs_layer.tscn" id="11_vdcm2"]
 
 [node name="UI" type="CanvasLayer"]
 
@@ -220,6 +221,8 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 10
 theme_override_constants/shadow_outline_size = 10
 theme_override_fonts/font = ExtResource("5_vsj0x")
+
+[node name="VHSLayer" parent="." instance=ExtResource("11_vdcm2")]
 
 [connection signal="pressed" from="DeathScreen/Content/RestartButton" to="DeathScreen" method="_on_restart_button_pressed"]
 [connection signal="pressed" from="DeathScreen/Content/QuitButton" to="DeathScreen" method="_on_quit_button_pressed"]

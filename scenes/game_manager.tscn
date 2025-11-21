@@ -1,10 +1,19 @@
-[gd_scene load_steps=2 format=3 uid="uid://rn582fpm5gls"]
+[gd_scene load_steps=6 format=3 uid="uid://rn582fpm5gls"]
 
 [ext_resource type="Script" uid="uid://cptts8mc7wnqs" path="res://scripts/game_manager.gd" id="1_hwd4i"]
+[ext_resource type="PackedScene" uid="uid://0gile0fujjql" path="res://scenes/slime.tscn" id="2_eaq8r"]
+[ext_resource type="PackedScene" uid="uid://bjfkxuy5hxd11" path="res://scenes/crate.tscn" id="3_ternb"]
+[ext_resource type="PackedScene" uid="uid://b4fgncv3abcol" path="res://scenes/exit_door.tscn" id="4_q8mjp"]
+[ext_resource type="PackedScene" uid="uid://m8ghb1xpuu1e" path="res://scenes/rooms/room_01.tscn" id="5_jdad8"]
 
 [node name="GameManager" type="Node" groups=["game_manager"]]
 process_mode = 3
 script = ExtResource("1_hwd4i")
 death_screen_path = NodePath("../UI/DeathScreen")
-shop_path = null
 exit_door_path = NodePath("../ExitDoor")
+slime_scene = ExtResource("2_eaq8r")
+crate_scene = ExtResource("3_ternb")
+exit_door_scene = ExtResource("4_q8mjp")
+room_scene = ExtResource("5_jdad8")
+slime_chance = 0.3
+crate_chance = 0.7

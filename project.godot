@@ -36,6 +36,7 @@ enabled=PackedStringArray("res://addons/phantom_camera/plugin.cfg")
 player=""
 crosshair=""
 shop=""
+exit_door=""
 
 [input]
 
@@ -144,6 +145,10 @@ aim_down={
 2d_physics/layer_4="EnemyHitbox"
 2d_physics/layer_5="Pickup"
 2d_physics/layer_6="Bullet"
+
+[physics]
+
+common/physics_interpolation=true
 
 [rendering]
 

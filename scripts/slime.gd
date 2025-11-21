@@ -1,5 +1,8 @@
 extends CharacterBody2D
 
+signal died
+
+
 # Core stats (default from GameConfig, still overridable in Inspector)
 @export var speed: float              = GameConfig.slime_move_speed
 @export var max_health: int           = GameConfig.slime_max_health
@@ -226,6 +229,7 @@ func _die_after_sound() -> void:
 		await sfx_death.finished
 
 	_spawn_loot()
+	emit_signal("died")
 	queue_free()
 
 
