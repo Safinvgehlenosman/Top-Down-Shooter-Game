@@ -1,50 +1,51 @@
-[gd_scene load_steps=22 format=3 uid="uid://0gile0fujjql"]
+[gd_scene load_steps=23 format=3 uid="uid://cqim488pqgwa"]
 
-[ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="1_371uh"]
-[ext_resource type="Script" uid="uid://dwrplk25tpc2x" path="res://scripts/green_slime.gd" id="1_pjw23"]
-[ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="2_gstla"]
-[ext_resource type="AudioStream" uid="uid://dl8r8jnncqnmf" path="res://assets/Audios/Hurt.wav" id="3_n6pvg"]
-[ext_resource type="PackedScene" uid="uid://b5vf6h1xj2eqo" path="res://scenes/heart_pickup.tscn" id="3_v5wyi"]
-[ext_resource type="AudioStream" uid="uid://6jgtwphqqvnt" path="res://assets/Audios/SlimeLand.wav" id="4_pjw23"]
+[ext_resource type="Script" uid="uid://cwadqyd2jrm74" path="res://scenes/purple_slime.gd" id="1_o0hry"]
+[ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="2_5vw4l"]
+[ext_resource type="PackedScene" uid="uid://c1ddwf2sacphd" path="res://scenes/enemyprojectile.tscn" id="2_818gd"]
+[ext_resource type="PackedScene" uid="uid://b5vf6h1xj2eqo" path="res://scenes/heart_pickup.tscn" id="3_kw5n6"]
+[ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="4_4btqv"]
+[ext_resource type="AudioStream" uid="uid://dl8r8jnncqnmf" path="res://assets/Audios/Hurt.wav" id="5_bf0kl"]
+[ext_resource type="AudioStream" uid="uid://6jgtwphqqvnt" path="res://assets/Audios/SlimeLand.wav" id="6_vuyyj"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_p2gj0"]
-atlas = ExtResource("1_371uh")
+atlas = ExtResource("4_4btqv")
 region = Rect2(128, 96, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_n6pvg"]
-atlas = ExtResource("1_371uh")
+atlas = ExtResource("4_4btqv")
 region = Rect2(160, 96, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_pjw23"]
-atlas = ExtResource("1_371uh")
+atlas = ExtResource("4_4btqv")
 region = Rect2(192, 96, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_2npkn"]
-atlas = ExtResource("1_371uh")
+atlas = ExtResource("4_4btqv")
 region = Rect2(224, 96, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_fd6lc"]
-atlas = ExtResource("1_371uh")
+atlas = ExtResource("4_4btqv")
 region = Rect2(0, 128, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_gstla"]
-atlas = ExtResource("1_371uh")
+atlas = ExtResource("4_4btqv")
 region = Rect2(32, 128, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_v5wyi"]
-atlas = ExtResource("1_371uh")
+atlas = ExtResource("4_4btqv")
 region = Rect2(64, 128, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0l8pv"]
-atlas = ExtResource("1_371uh")
+atlas = ExtResource("4_4btqv")
 region = Rect2(96, 128, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_vnioy"]
-atlas = ExtResource("1_371uh")
+atlas = ExtResource("4_4btqv")
 region = Rect2(128, 128, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_2xjuo"]
-atlas = ExtResource("1_371uh")
+atlas = ExtResource("4_4btqv")
 region = Rect2(160, 128, 32, 32)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_a02ik"]
@@ -103,16 +104,19 @@ fill = 1
 fill_from = Vector2(0.517094, 0.52136755)
 fill_to = Vector2(0.76495725, 0.7777778)
 
-[node name="Slime" type="CharacterBody2D" groups=["enemy"]]
+[node name="PurpleSlime" type="CharacterBody2D" groups=["enemy"]]
 scale = Vector2(1.2, 1.2)
 collision_layer = 4
-script = ExtResource("1_pjw23")
-speed = 60.0
-max_health = 5
-CoinScene = ExtResource("2_gstla")
-HeartScene = ExtResource("3_v5wyi")
+script = ExtResource("1_o0hry")
+projectile_scene = ExtResource("2_818gd")
+shoot_interval = 1.5
+speed = 40.0
+max_health = 10
+CoinScene = ExtResource("2_5vw4l")
+HeartScene = ExtResource("3_kw5n6")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+modulate = Color(1.3602756, 0.19492589, 1.1188816, 1)
 position = Vector2(0, -5)
 sprite_frames = SubResource("SpriteFrames_a02ik")
 animation = &"moving"
@@ -125,7 +129,7 @@ shape = SubResource("CircleShape2D_pu8ps")
 [node name="Sprite2D" type="Sprite2D" parent="."]
 modulate = Color(0, 0, 0, 0.11764706)
 z_index = -1
-texture = ExtResource("1_371uh")
+texture = ExtResource("4_4btqv")
 region_enabled = true
 region_rect = Rect2(201.99591, 204.99461, 12.041901, 5.0242004)
 
@@ -138,21 +142,21 @@ position = Vector2(0, -4.1666665)
 shape = SubResource("CircleShape2D_p2gj0")
 
 [node name="SFX_Hurt" type="AudioStreamPlayer2D" parent="."]
-stream = ExtResource("3_n6pvg")
+stream = ExtResource("5_bf0kl")
 bus = &"SFX"
 
 [node name="SFX_Death" type="AudioStreamPlayer2D" parent="."]
-stream = ExtResource("3_n6pvg")
+stream = ExtResource("5_bf0kl")
 pitch_scale = 0.5
 bus = &"SFX"
 
 [node name="SFX_Land" type="AudioStreamPlayer2D" parent="."]
-stream = ExtResource("4_pjw23")
+stream = ExtResource("6_vuyyj")
 bus = &"SFX"
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
 position = Vector2(0, -4.1666665)
-color = Color(0.3529412, 1, 0, 1)
+color = Color(0.41568628, 0.1254902, 0.35686275, 1)
 energy = 1.5
 texture = SubResource("GradientTexture2D_fd6lc")
 texture_scale = 0.3

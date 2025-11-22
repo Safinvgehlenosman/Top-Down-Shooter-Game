@@ -2,11 +2,10 @@ extends CharacterBody2D
 
 signal died
 
-
-# Core stats (default from GameConfig, still overridable in Inspector)
-@export var speed: float              = GameConfig.slime_move_speed
-@export var max_health: int           = GameConfig.slime_max_health
-@export var heart_drop_chance: float  = GameConfig.slime_heart_drop_chance  # 0–1
+# Core stats (tweak per slime in Inspector)
+@export var speed: float = GameConfig.slime_move_speed
+@export var max_health: int = GameConfig.slime_max_health
+@export var heart_drop_chance: float = GameConfig.slime_heart_drop_chance
 
 # Movement / behaviour tuning
 @export var separation_radius: float = 24.0      # how close slimes can get to each other
@@ -30,12 +29,11 @@ signal died
 var last_anim: StringName = ""
 var last_frame: int = -1
 
-
 # Internal state
 var health: int = 0
 var player: Node2D
 var base_modulate: Color
-var original_light_color: Color  # <-- new: store whatever the light color is in the inspector
+var original_light_color: Color  # store whatever the light color is in the inspector
 
 # Hit flash timers
 @export var hit_flash_time: float = 0.1
@@ -63,12 +61,8 @@ func _ready() -> void:
 
 	base_modulate = animated_sprite.modulate
 
-	# store whatever color you set on the PointLight2D in the inspector
 	if hit_light:
 		original_light_color = hit_light.color
-
-	# ensure drop chance is synced with config (but still overridable per slime)
-	heart_drop_chance = GameConfig.slime_heart_drop_chance
 
 	animated_sprite.play("moving")
 
@@ -137,9 +131,7 @@ func _update_ai(delta: float) -> void:
 			separation += diff.normalized() * (1.0 - dist / separation_radius)
 
 	velocity += separation * separation_strength * speed
-
-	# (Optional) keep the collision-steering from before here if you liked it.
-
+	# you can re-add collision steering here later if you want
 
 
 func _can_see_player() -> bool:
@@ -153,26 +145,18 @@ func _can_see_player() -> bool:
 		player.global_position
 	)
 
-	# Exclude this slime from the ray
 	query.exclude = [self]
-
-	# Use the same collision mask the slime uses
 	query.collision_mask = collision_mask
-
-	# Only collide with bodies (tiles, player, crates…)
 	query.collide_with_bodies = true
 	query.collide_with_areas = false
 
 	var result := space_state.intersect_ray(query)
 
-	# No collision → we see the player clearly
 	if result.is_empty():
 		return true
 
-	# If the first thing we hit IS the player → we also see them
 	var collider = result.get("collider")
 	return collider == player
-
 
 
 # --- VISUAL / AUDIO FEEDBACK ---------------------------------------
@@ -188,7 +172,6 @@ func _update_hit_feedback(delta: float) -> void:
 	if hit_light and hit_light_timer > 0.0:
 		hit_light_timer -= delta
 		if hit_light_timer <= 0.0 and health > 0:
-			# restore whatever color the light had in the inspector
 			hit_light.color = original_light_color
 
 
@@ -199,7 +182,6 @@ func _update_animation_sfx() -> void:
 	var current_anim: StringName = animated_sprite.animation
 	var current_frame: int = animated_sprite.frame
 
-	# Play land SFX only once when we ENTER frame 1 of "moving"
 	if current_anim == "moving" \
 		and current_frame == 9 \
 		and (last_anim != current_anim or last_frame != current_frame):
@@ -212,7 +194,6 @@ func _update_animation_sfx() -> void:
 	last_frame = current_frame
 
 
-
 # --- DAMAGE & DEATH ------------------------------------------------
 
 func take_damage(amount: int) -> void:
@@ -221,18 +202,16 @@ func take_damage(amount: int) -> void:
 	if amount <= 0:
 		return
 
-	# being hit always aggro's the slime
 	aggro = true
 
 	health = max(health - amount, 0)
 
-	# --- SPRITE FLASH ---
+	# sprite flash
 	animated_sprite.modulate = Color(1, 0.4, 0.4, 1)
 	hit_flash_timer = hit_flash_time
 
-	# --- LIGHT FLASH ---
+	# light flash
 	if hit_light:
-		# turn light red on hit
 		hit_light.color = Color(1.0, 0.25, 0.25, 1.0)
 		hit_light_timer = hit_light_flash_time
 
@@ -241,9 +220,8 @@ func take_damage(amount: int) -> void:
 			sfx_hurt.stop()
 			sfx_hurt.play()
 	else:
-		is_dead = true  # mark it as dead so we stop interacting
+		is_dead = true
 
-		# final hit: keep light solid red (no timer revert because health == 0)
 		if hit_light:
 			hit_light.color = Color(1.0, 0.25, 0.25, 1.0)
 
@@ -255,14 +233,12 @@ func take_damage(amount: int) -> void:
 
 
 func die() -> void:
-	# stop colliding / animating, but keep _physics_process running for flashes
 	collision_shape.set_deferred("disabled", true)
 	animated_sprite.stop()
 	_die_after_sound()
 
 
 func _die_after_sound() -> void:
-	# Wait for death SFX, then drop loot and free
 	if sfx_death:
 		await sfx_death.finished
 
@@ -272,14 +248,12 @@ func _die_after_sound() -> void:
 
 
 func _spawn_loot() -> void:
-	# heart?
 	if HeartScene and randf() < heart_drop_chance:
 		var heart := HeartScene.instantiate()
 		heart.global_position = global_position
 		get_tree().current_scene.add_child(heart)
 		return
 
-	# otherwise coin
 	if CoinScene:
 		var coin := CoinScene.instantiate()
 		coin.global_position = global_position

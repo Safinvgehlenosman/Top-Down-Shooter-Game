@@ -14,7 +14,7 @@ extends Node
 @export var bullet_base_damage: int = 1
 
 @export_category("Slime")
-@export var slime_move_speed: float = 80.0
+@export var slime_move_speed: float = 0.0
 @export var slime_max_health: int = 3
 @export var slime_contact_damage: int = 1
 @export var slime_heart_drop_chance: float = 0.2
