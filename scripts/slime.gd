@@ -95,11 +95,13 @@ func _update_ai(delta: float) -> void:
 	var to_player: Vector2 = player.global_position - global_position
 	var distance: float = to_player.length()
 
-	# Once the player gets close enough, stay aggro forever
-	if distance <= aggro_radius:
+	# Only aggro if player is close AND visible
+	if distance <= aggro_radius and _can_see_player():
 		aggro = true
 
-	if aggro:
+	var can_see := _can_see_player()
+
+	if aggro and can_see:
 		# Chase with a little sideways strafe
 		var forward: Vector2 = to_player.normalized()
 		var right: Vector2 = Vector2(-forward.y, forward.x)
@@ -108,7 +110,7 @@ func _update_ai(delta: float) -> void:
 		var dir: Vector2 = (forward + strafe).normalized()
 		velocity = dir * speed
 	else:
-		# Simple wander when not aggro
+		# Simple wander (used when not aggro OR aggro but lost sight)
 		wander_timer -= delta
 		if wander_timer <= 0.0:
 			wander_timer = wander_change_interval
@@ -135,6 +137,42 @@ func _update_ai(delta: float) -> void:
 			separation += diff.normalized() * (1.0 - dist / separation_radius)
 
 	velocity += separation * separation_strength * speed
+
+	# (Optional) keep the collision-steering from before here if you liked it.
+
+
+
+func _can_see_player() -> bool:
+	if not player:
+		return false
+
+	var space_state := get_world_2d().direct_space_state
+
+	var query := PhysicsRayQueryParameters2D.create(
+		global_position,
+		player.global_position
+	)
+
+	# Exclude this slime from the ray
+	query.exclude = [self]
+
+	# Use the same collision mask the slime uses
+	query.collision_mask = collision_mask
+
+	# Only collide with bodies (tiles, player, crates…)
+	query.collide_with_bodies = true
+	query.collide_with_areas = false
+
+	var result := space_state.intersect_ray(query)
+
+	# No collision → we see the player clearly
+	if result.is_empty():
+		return true
+
+	# If the first thing we hit IS the player → we also see them
+	var collider = result.get("collider")
+	return collider == player
+
 
 
 # --- VISUAL / AUDIO FEEDBACK ---------------------------------------
