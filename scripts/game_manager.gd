@@ -94,6 +94,9 @@ func _load_room() -> void:
 	door_spawn_point = null
 	room_spawn_points.clear()
 
+	# NEW: adjust spawn weights for current_level
+	_update_enemy_weights_for_level()
+
 	var scene_for_level := _pick_room_scene_for_level(current_level)
 	if scene_for_level == null:
 		push_warning("No room_scenes assigned on GameManager")
@@ -104,6 +107,7 @@ func _load_room() -> void:
 
 	_spawn_room_content()
 	_move_player_to_room_spawn()
+
 
 
 func _move_player_to_room_spawn() -> void:
@@ -189,7 +193,10 @@ func _spawn_room_content() -> void:
 				var enemy := enemy_scene.instantiate()
 				enemy.global_position = spawn.global_position
 
-				# later we'll call enemy.apply_level(current_level) here
+				# NEW: scale stats by current level if the enemy supports it
+				if enemy.has_method("apply_level"):
+					enemy.apply_level(current_level)
+
 				current_room.add_child(enemy)
 
 				alive_enemies += 1
@@ -197,6 +204,7 @@ func _spawn_room_content() -> void:
 				if enemy.has_signal("died"):
 					enemy.died.connect(_on_enemy_died)
 			continue
+
 
 		# --- CRATE ---------------------------------------------------
 		if r < enemy_chance + crate_chance and crate_scene:
@@ -210,6 +218,42 @@ func _spawn_room_content() -> void:
 
 	if alive_enemies == 0:
 		_spawn_exit_door()
+
+func _update_enemy_weights_for_level() -> void:
+	if enemy_scenes.is_empty():
+		return
+
+	# make sure weights array is big enough
+	if enemy_weights.size() < enemy_scenes.size():
+		enemy_weights.resize(enemy_scenes.size())
+
+	# default all weights to 1.0
+	for i in range(enemy_weights.size()):
+		enemy_weights[i] = 1.0
+
+	# Now customize first two (green & purple) based on level
+	if current_level < 5:
+		# early game: mostly green, purple rare
+		if enemy_scenes.size() > 0:
+			enemy_weights[0] = 1.0    # green
+		if enemy_scenes.size() > 1:
+			enemy_weights[1] = 0.2    # purple
+
+	elif current_level < 10:
+		# mid game: equal-ish
+		if enemy_scenes.size() > 0:
+			enemy_weights[0] = 1.0
+		if enemy_scenes.size() > 1:
+			enemy_weights[1] = 1.0
+
+	else:
+		# late game: more purple than green
+		if enemy_scenes.size() > 0:
+			enemy_weights[0] = 0.5
+		if enemy_scenes.size() > 1:
+			enemy_weights[1] = 1.5
+
+
 
 
 # --- ENEMY DEATH / DOOR SPAWN --------------------------------------

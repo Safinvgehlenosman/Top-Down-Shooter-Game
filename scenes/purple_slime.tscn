@@ -112,6 +112,8 @@ projectile_scene = ExtResource("2_818gd")
 shoot_interval = 1.5
 speed = 40.0
 max_health = 7
+health_growth_per_level = 0.03
+damage_growth_per_level = 0.05
 CoinScene = ExtResource("2_5vw4l")
 HeartScene = ExtResource("3_kw5n6")
 

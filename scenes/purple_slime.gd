@@ -6,6 +6,10 @@ extends "res://scripts/base_slime.gd"
 @export var projectile_speed: float = 140.0
 @export var shoot_range: float = 220.0
 
+
+
+
+
 var shoot_timer: float = 0.0
 
 

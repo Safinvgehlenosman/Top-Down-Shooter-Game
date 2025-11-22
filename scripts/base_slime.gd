@@ -6,6 +6,12 @@ signal died
 @export var speed: float = GameConfig.slime_move_speed
 @export var max_health: int = GameConfig.slime_max_health
 @export var heart_drop_chance: float = GameConfig.slime_heart_drop_chance
+@export var contact_damage: int = GameConfig.slime_contact_damage
+
+# How much we grow per level (0.15 = +15% per level)
+@export var health_growth_per_level: float = 0.05
+@export var damage_growth_per_level: float = 0.10
+
 
 # Movement / behaviour tuning
 @export var separation_radius: float = 24.0      # how close slimes can get to each other
@@ -65,6 +71,29 @@ func _ready() -> void:
 		original_light_color = hit_light.color
 
 	animated_sprite.play("moving")
+
+
+func apply_level(level: int) -> void:
+	# level 1 = no scaling
+	var level_offset = max(level - 1, 0)
+
+	if level_offset <= 0:
+		health = max_health
+		return
+
+	# HP scaling
+	if health_growth_per_level != 0.0:
+		var hp_mult = 1.0 + health_growth_per_level * level_offset
+		max_health = int(round(max_health * hp_mult))
+		health = max_health
+	else:
+		health = max_health
+
+	# Damage scaling
+	if damage_growth_per_level != 0.0:
+		var dmg_mult = 1.0 + damage_growth_per_level * level_offset
+		contact_damage = int(round(contact_damage * dmg_mult))
+
 
 
 func _physics_process(delta: float) -> void:
@@ -267,7 +296,7 @@ func _on_hitbox_body_entered(body: Node2D) -> void:
 		return
 
 	if body.is_in_group("player") and body.has_method("take_damage"):
-		body.take_damage(GameConfig.slime_contact_damage)
+		body.take_damage(contact_damage)
 
 		if body.has_method("apply_knockback"):
 			body.apply_knockback(global_position)
