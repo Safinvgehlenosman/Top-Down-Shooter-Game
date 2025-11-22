@@ -102,6 +102,7 @@ func _process(_delta: float) -> void:
 	coin_label.text = str(GameState.coins)
 	ammo_label.text = "%d/%d" % [GameState.ammo, GameState.max_ammo]
 	_update_crosshair()
+	
 
 
 func _physics_process(delta: float) -> void:
@@ -257,7 +258,8 @@ func fire_laser() -> void:
 	var spread_degrees: float = GameConfig.alt_fire_spread_degrees
 	var spread_radians: float = deg_to_rad(spread_degrees)
 
-	var base_dir: Vector2 = aim_dir
+	var mouse_pos := get_global_mouse_position()
+	var base_dir: Vector2 = (mouse_pos - muzzle.global_position).normalized()
 	var start_index: float = -float(bullet_count - 1) / 2.0
 
 	for i in range(bullet_count):
@@ -296,10 +298,12 @@ func shoot() -> void:
 	var bullet := BulletScene.instantiate()
 	bullet.global_position = muzzle.global_position
 
-	var dir := aim_dir
+	var mouse_pos := get_global_mouse_position()
+	var dir := (mouse_pos - muzzle.global_position).normalized()
 	bullet.direction = dir
 
 	get_tree().current_scene.add_child(bullet)
+
 
 
 # --------------------------------------------------------------------
