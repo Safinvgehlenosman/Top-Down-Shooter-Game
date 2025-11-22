@@ -1,0 +1,163 @@
+[gd_scene load_steps=23 format=3 uid="uid://cvdf1gtv3y6pb"]
+
+[ext_resource type="Script" uid="uid://dvweoy7ell6cp" path="res://scenes/blue_slime.gd" id="1_7qf5q"]
+[ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="2_ullxd"]
+[ext_resource type="PackedScene" uid="uid://b5vf6h1xj2eqo" path="res://scenes/heart_pickup.tscn" id="3_vx4o0"]
+[ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="4_i8e30"]
+[ext_resource type="Texture2D" uid="uid://brflkgxc2wxdb" path="res://assets/blueslime.png" id="4_ullxd"]
+[ext_resource type="AudioStream" uid="uid://dl8r8jnncqnmf" path="res://assets/Audios/Hurt.wav" id="5_igu51"]
+[ext_resource type="AudioStream" uid="uid://6jgtwphqqvnt" path="res://assets/Audios/SlimeLand.wav" id="6_vwtyt"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vx4o0"]
+atlas = ExtResource("4_ullxd")
+region = Rect2(128, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_i8e30"]
+atlas = ExtResource("4_ullxd")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_igu51"]
+atlas = ExtResource("4_ullxd")
+region = Rect2(192, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vwtyt"]
+atlas = ExtResource("4_ullxd")
+region = Rect2(224, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xro7v"]
+atlas = ExtResource("4_ullxd")
+region = Rect2(0, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rkabi"]
+atlas = ExtResource("4_ullxd")
+region = Rect2(32, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_myx1i"]
+atlas = ExtResource("4_ullxd")
+region = Rect2(64, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_r7blx"]
+atlas = ExtResource("4_ullxd")
+region = Rect2(96, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_adrbw"]
+atlas = ExtResource("4_ullxd")
+region = Rect2(128, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1a634"]
+atlas = ExtResource("4_ullxd")
+region = Rect2(160, 32, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_a02ik"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vx4o0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_i8e30")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_igu51")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vwtyt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xro7v")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rkabi")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_myx1i")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_r7blx")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_adrbw")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1a634")
+}],
+"loop": true,
+"name": &"moving",
+"speed": 7.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_pu8ps"]
+radius = 4.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_p2gj0"]
+radius = 6.6666665
+
+[sub_resource type="Gradient" id="Gradient_kmthg"]
+offsets = PackedFloat32Array(0.016129032, 0.8064516, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_fd6lc"]
+gradient = SubResource("Gradient_kmthg")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.517094, 0.52136755)
+fill_to = Vector2(0.76495725, 0.7777778)
+
+[node name="BlueSlime" type="CharacterBody2D" groups=["enemy"]]
+scale = Vector2(0.8, 0.8)
+collision_layer = 4
+script = ExtResource("1_7qf5q")
+speed = 120.0
+max_health = 1
+CoinScene = ExtResource("2_ullxd")
+HeartScene = ExtResource("3_vx4o0")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(0, -5)
+sprite_frames = SubResource("SpriteFrames_a02ik")
+animation = &"moving"
+autoplay = "moving"
+frame_progress = 0.28867084
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -4)
+shape = SubResource("CircleShape2D_pu8ps")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+modulate = Color(0, 0, 0, 0.11764706)
+z_index = -1
+texture = ExtResource("4_i8e30")
+region_enabled = true
+region_rect = Rect2(201.99591, 204.99461, 12.041901, 5.0242004)
+
+[node name="Hitbox" type="Area2D" parent="."]
+collision_layer = 8
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+position = Vector2(0, -4.1666665)
+shape = SubResource("CircleShape2D_p2gj0")
+
+[node name="SFX_Hurt" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("5_igu51")
+bus = &"SFX"
+
+[node name="SFX_Death" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("5_igu51")
+pitch_scale = 0.5
+bus = &"SFX"
+
+[node name="SFX_Land" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("6_vwtyt")
+bus = &"SFX"
+
+[node name="PointLight2D" type="PointLight2D" parent="."]
+position = Vector2(0, -4.1666665)
+color = Color(0, 0.39607844, 1, 1)
+energy = 1.5
+texture = SubResource("GradientTexture2D_fd6lc")
+texture_scale = 0.3
+
+[connection signal="frame_changed" from="AnimatedSprite2D" to="." method="_on_animated_sprite_2d_frame_changed"]
+[connection signal="body_entered" from="Hitbox" to="." method="_on_hitbox_body_entered"]

@@ -4,7 +4,6 @@ extends Node
 @export var shop_path: NodePath
 @export var exit_door_path: NodePath      # not really used now, but ok to leave
 @export var ui_root_path: NodePath
-  # NEW: label in UI that shows the level
 
 @export var crate_scene: PackedScene
 
@@ -14,13 +13,13 @@ extends Node
 # --- ENEMY SPAWN TABLE ----------------------------------------------
 
 # All enemy types that can spawn
+# Index 0 = GREEN, 1 = PURPLE, 2 = BLUE (by convention)
 @export var enemy_scenes: Array[PackedScene] = []
 @export var enemy_weights: Array[float] = []   # ideally same size as enemy_scenes
 
 # 70% crate, 30% "some enemy" by default
 @export_range(0.0, 1.0, 0.01) var enemy_chance: float = 0.3
 @export_range(0.0, 1.0, 0.01) var crate_chance: float = 0.7
-
 
 var current_level: int = 1
 
@@ -41,7 +40,6 @@ var is_in_death_sequence: bool = false
 
 var exit_door: Area2D
 var door_open: bool = false
-
 
 @onready var restart_button: Button = $"../UI/PauseScreen/RestartButton"
 @onready var death_restart_button: Button = $"../UI/DeathScreen/Content/RestartButton"
@@ -65,10 +63,8 @@ func _ready() -> void:
 	if ui_root_path != NodePath():
 		game_ui = get_node(ui_root_path)
 
-	# NEW: level label
-
 	current_level = 1
-	_update_level_ui()  # NEW: show "Floor 1" (or whatever) at start
+	_update_level_ui()
 	_load_room()
 
 
@@ -78,7 +74,6 @@ func _update_level_ui() -> void:
 	var label := get_tree().get_first_node_in_group("level_label") as Label
 	if label:
 		label.text = "%d" % current_level
-
 
 
 # --- ROOM / LEVEL LOADING -------------------------------------------
@@ -94,7 +89,7 @@ func _load_room() -> void:
 	door_spawn_point = null
 	room_spawn_points.clear()
 
-	# NEW: adjust spawn weights for current_level
+	# adjust spawn weights for current_level
 	_update_enemy_weights_for_level()
 
 	var scene_for_level := _pick_room_scene_for_level(current_level)
@@ -107,7 +102,6 @@ func _load_room() -> void:
 
 	_spawn_room_content()
 	_move_player_to_room_spawn()
-
 
 
 func _move_player_to_room_spawn() -> void:
@@ -193,18 +187,16 @@ func _spawn_room_content() -> void:
 				var enemy := enemy_scene.instantiate()
 				enemy.global_position = spawn.global_position
 
-				# NEW: scale stats by current level if the enemy supports it
+				# scale stats by current level if the enemy supports it
 				if enemy.has_method("apply_level"):
 					enemy.apply_level(current_level)
 
 				current_room.add_child(enemy)
-
 				alive_enemies += 1
 
 				if enemy.has_signal("died"):
 					enemy.died.connect(_on_enemy_died)
 			continue
-
 
 		# --- CRATE ---------------------------------------------------
 		if r < enemy_chance + crate_chance and crate_scene:
@@ -219,41 +211,59 @@ func _spawn_room_content() -> void:
 	if alive_enemies == 0:
 		_spawn_exit_door()
 
+
+# --- ENEMY WEIGHT SCALING -------------------------------------------
+
 func _update_enemy_weights_for_level() -> void:
 	if enemy_scenes.is_empty():
 		return
 
-	# make sure weights array is big enough
+	# Make sure weights array is big enough
 	if enemy_weights.size() < enemy_scenes.size():
 		enemy_weights.resize(enemy_scenes.size())
 
-	# default all weights to 1.0
+	# Default all weights to 0.0 (we'll set only what we care about)
 	for i in range(enemy_weights.size()):
-		enemy_weights[i] = 1.0
+		enemy_weights[i] = 0.0
 
-	# Now customize first two (green & purple) based on level
+	# We assume:
+	# 0 = Green, 1 = Purple, 2 = Blue
+	# If you change the order in the inspector, update this logic.
+
+	# --- Levels 1–4: only green + blue, even split, no purple ---
 	if current_level < 5:
-		# early game: mostly green, purple rare
-		if enemy_scenes.size() > 0:
-			enemy_weights[0] = 1.0    # green
-		if enemy_scenes.size() > 1:
-			enemy_weights[1] = 0.2    # purple
-
-	elif current_level < 10:
-		# mid game: equal-ish
-		if enemy_scenes.size() > 0:
-			enemy_weights[0] = 1.0
-		if enemy_scenes.size() > 1:
-			enemy_weights[1] = 1.0
-
-	else:
-		# late game: more purple than green
-		if enemy_scenes.size() > 0:
+		if enemy_weights.size() > 0:  # green
 			enemy_weights[0] = 0.5
-		if enemy_scenes.size() > 1:
-			enemy_weights[1] = 1.5
+		if enemy_weights.size() > 2:  # blue
+			enemy_weights[2] = 0.5
+		# purple (1) stays at 0
 
+	# --- Levels 5–14: smoothly transition toward final mix ---
+	elif current_level < 15:
+		var t: float = float(current_level - 5) / 10.0  # 0 at 5, 1 at 15
 
+		# Early target:  green 0.5, blue 0.5, purple 0.0
+		# Final target:  green 0.3, blue 0.4, purple 0.3
+		if enemy_weights.size() > 0:  # green
+			enemy_weights[0] = lerp(0.5, 0.3, t)
+		if enemy_weights.size() > 2:  # blue
+			enemy_weights[2] = lerp(0.5, 0.4, t)
+		if enemy_weights.size() > 1:  # purple
+			enemy_weights[1] = lerp(0.0, 0.3, t)
+
+	# --- Levels 15+: final distribution: 30% G, 40% B, 30% P ---
+	else:
+		if enemy_weights.size() > 0:  # green
+			enemy_weights[0] = 0.3
+		if enemy_weights.size() > 2:  # blue
+			enemy_weights[2] = 0.4
+		if enemy_weights.size() > 1:  # purple
+			enemy_weights[1] = 0.3
+
+	# Any extra enemy_scenes beyond index 2 can be given a small default weight
+	for i in range(3, enemy_weights.size()):
+		if enemy_weights[i] <= 0.0:
+			enemy_weights[i] = 0.2  # tiny chance for future enemies
 
 
 # --- ENEMY DEATH / DOOR SPAWN --------------------------------------
@@ -324,7 +334,7 @@ func _open_shop() -> void:
 		if shop_ui.has_method("refresh_from_state"):
 			shop_ui._setup_cards()
 			shop_ui.refresh_from_state()
-			
+
 	if game_ui:
 		game_ui.visible = false        # hide HUD while in shop
 
@@ -339,7 +349,7 @@ func load_next_level() -> void:
 
 	# increase level, then reroll a room
 	current_level += 1
-	_update_level_ui()   # NEW: refresh level text
+	_update_level_ui()
 	_load_room()
 
 	# refresh HP UI
@@ -360,7 +370,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _toggle_pause() -> void:
 	get_tree().paused = !get_tree().paused
-	
+
 	var pause_menu := get_tree().get_first_node_in_group("pause")
 	if pause_menu:
 		pause_menu.visible = get_tree().paused
