@@ -11,7 +11,7 @@
 [ext_resource type="PackedScene" uid="uid://m8ghb1xpuu1e" path="res://scenes/rooms/room_01.tscn" id="11_go7sj"]
 [ext_resource type="PackedScene" uid="uid://0gile0fujjql" path="res://scenes/slime.tscn" id="12_7nomh"]
 [ext_resource type="PackedScene" uid="uid://chcumh0nhsngk" path="res://scenes/crosshair.tscn" id="12_wom8k"]
-[ext_resource type="PackedScene" uid="uid://cvdf1gtv3y6pb" path="res://scenes/blue_slime.tscn" id="13_7nomh"]
+[ext_resource type="PackedScene" path="res://scenes/blue_slime.tscn" id="13_7nomh"]
 [ext_resource type="PackedScene" uid="uid://c7fcp73v6wu5d" path="res://scenes/ui.tscn" id="13_so66j"]
 [ext_resource type="PackedScene" uid="uid://rn582fpm5gls" path="res://scenes/game_manager.tscn" id="18_so66j"]
 [ext_resource type="Script" uid="uid://bhexx6mj1xv3q" path="res://addons/phantom_camera/scripts/phantom_camera/phantom_camera_2d.gd" id="24_gwsl1"]
