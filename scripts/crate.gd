@@ -74,11 +74,11 @@ func _break_and_despawn() -> void:
 
 	# scale pop
 	scale = Vector2(1.6, 1.6)
-	await get_tree().create_timer(0.4).timeout
+	await get_tree().create_timer(0.2).timeout
 
 	# shrink a bit before death
 	scale = Vector2(1.4, 1.4)
-	await get_tree().create_timer(0.4).timeout
+	await get_tree().create_timer(0.2).timeout
 
 	_spawn_loot()
 	queue_free()
