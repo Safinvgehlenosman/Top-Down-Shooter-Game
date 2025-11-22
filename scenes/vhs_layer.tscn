@@ -5,10 +5,10 @@
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_2f3dj"]
 shader = ExtResource("1_x6edm")
 shader_parameter/scanline_intensity = 0.0
-shader_parameter/noise_intensity = 0.150000007125
-shader_parameter/distortion = 0.0010000000475
-shader_parameter/time_scale = 0.50000002375
-shader_parameter/vignette_strength = 0.4
+shader_parameter/noise_intensity = 0.154000007315
+shader_parameter/distortion = 0.0
+shader_parameter/time_scale = 0.10800000512999999
+shader_parameter/vignette_strength = 0.18800000893
 shader_parameter/vignette_radius = 0.9
 shader_parameter/vignette_softness = 0.35
 

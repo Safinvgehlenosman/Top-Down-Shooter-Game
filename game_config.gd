@@ -7,7 +7,7 @@ extends Node
 @export var player_knockback_strength: float = 250.0
 @export var player_knockback_duration: float = 0.15
 @export var player_invincible_time: float = 0.3
-@export var player_max_ammo: int = 10   # 👈 add this
+@export var player_max_ammo: int = 6   # 👈 add this
 
 @export_category("Bullet / Weapons")
 @export var bullet_speed: float = 500.0

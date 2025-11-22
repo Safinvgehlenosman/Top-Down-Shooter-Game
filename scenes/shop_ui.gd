@@ -9,19 +9,19 @@ extends CanvasLayer
 var upgrades := [
 	{
 		"id": "max_ammo_plus_1",
-		"price": 1,
+		"price": 5,
 		"icon": preload("res://assets/Separated/ammo.png"),
 		"text": "+1 Max Ammo"
 	},
 	{
 		"id": "fire_rate_plus_10",
-		"price": 1,
+		"price": 5,
 		"icon": preload("res://assets/Separated/singlebullet.png"), # or reuse ammo icon for now
-		"text": "Shoot 10% faster"
+		"text": "Shoot 5% faster"
 	},
 	{
 		"id": "shotgun_pellet_plus_1",
-		"price": 1,
+		"price": 5,
 		"icon": preload("res://assets/Separated/ammo.png"), # placeholder
 		"text": "+1 Shotgun Projectile"
 	},
@@ -29,19 +29,19 @@ var upgrades := [
 	# keep the old ones too (they just won't show yet with only 3 cards)
 	{
 		"id": "hp_refill",
-		"price": 1,
+		"price": 3,
 		"icon": preload("res://assets/Separated/singleheart.png"),
 		"text": "Refill HP"
 	},
 	{
 		"id": "max_hp_plus_1",
-		"price": 1,
+		"price": 5,
 		"icon": preload("res://assets/Separated/singleheart.png"),
 		"text": "+1 Max HP"
 	},
 	{
 		"id": "ammo_refill",
-		"price": 1,
+		"price": 3,
 		"icon": preload("res://assets/Separated/ammo.png"),
 		"text": "Refill Ammo"
 	}

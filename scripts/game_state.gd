@@ -40,7 +40,7 @@ func apply_upgrade(id: String) -> void:
 		"fire_rate_plus_10":
 			# 10% faster → 10% shorter cooldown
 			if fire_rate > 0.0:
-				fire_rate *= 0.9
+				fire_rate *= 0.95
 
 		"shotgun_pellet_plus_1":
 			shotgun_pellets += 1

@@ -108,7 +108,7 @@ scale = Vector2(1.2, 1.2)
 collision_layer = 4
 script = ExtResource("1_pjw23")
 speed = 60.0
-max_health = 5
+max_health = 3
 CoinScene = ExtResource("2_gstla")
 HeartScene = ExtResource("3_v5wyi")
 

@@ -60,7 +60,7 @@ autowrap_mode = 2
 z_index = 10
 layout_mode = 0
 offset_top = 147.0
-offset_right = 160.0
+offset_right = 235.0
 offset_bottom = 174.0
 theme_override_fonts/font = ExtResource("4_sav2r")
 text = "BUY"
@@ -68,15 +68,14 @@ text = "BUY"
 [node name="SFX_Collect" type="AudioStreamPlayer" parent="Button"]
 stream = ExtResource("5_igsks")
 
-[node name="ColorRect" type="ColorRect" parent="Button"]
+[node name="ColorRect" type="ColorRect" parent="."]
 process_mode = 3
 process_priority = -1
 process_physics_priority = -1
 physics_interpolation_mode = 0
-visible = false
 z_index = -4096
 layout_mode = 0
-offset_top = -147.0
-offset_right = 160.0
-offset_bottom = 27.0
+offset_right = 235.0
+offset_bottom = 174.0
+mouse_filter = 2
 color = Color(0, 0, 0, 0.45490196)

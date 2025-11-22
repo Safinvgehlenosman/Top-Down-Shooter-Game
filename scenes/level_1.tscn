@@ -52,6 +52,8 @@ ui_root_path = NodePath("../UI")
 room_scenes = Array[PackedScene]([ExtResource("11_go7sj"), ExtResource("9_go7sj"), ExtResource("10_7gny6")])
 enemy_scenes = Array[PackedScene]([ExtResource("12_7nomh"), ExtResource("11_6dial")])
 enemy_weights = Array[float]([0.0, 0.0])
+enemy_chance = 0.5
+crate_chance = 0.5
 
 [node name="ShopUI" parent="." instance=ExtResource("3_tr1x6")]
 visible = false
