@@ -1,8 +1,7 @@
-[gd_scene load_steps=8 format=4 uid="uid://m8ghb1xpuu1e"]
+[gd_scene load_steps=7 format=4 uid="uid://m8ghb1xpuu1e"]
 
 [ext_resource type="Texture2D" uid="uid://ddnj3o5q184op" path="res://assets/TilesetSheet.png" id="1_5wsos"]
 [ext_resource type="Script" uid="uid://maxvyl6l376d" path="res://scenes/rooms/room_01.gd" id="1_bbo4o"]
-[ext_resource type="PackedScene" uid="uid://cqim488pqgwa" path="res://scenes/purple_slime.tscn" id="3_apclf"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_bbo4o"]
 texture = ExtResource("1_5wsos")
@@ -281,6 +280,3 @@ position = Vector2(538, 237)
 
 [node name="PlayerSpawn" type="Marker2D" parent="." groups=["player_spawn"]]
 position = Vector2(112, 88)
-
-[node name="PurpleSlime" parent="." instance=ExtResource("3_apclf")]
-position = Vector2(233, 91)

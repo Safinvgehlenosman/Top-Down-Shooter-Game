@@ -4,18 +4,25 @@ extends Node
 @export var shop_path: NodePath
 @export var exit_door_path: NodePath      # not really used now, but ok to leave
 @export var ui_root_path: NodePath
+  # NEW: label in UI that shows the level
 
-@export var slime_scene: PackedScene
 @export var crate_scene: PackedScene
 
 @export var exit_door_scene: PackedScene
 @export var room_scenes: Array[PackedScene] = []
 
-var current_level: int = 1
+# --- ENEMY SPAWN TABLE ----------------------------------------------
 
-# 70% slime, 30% crate by default. Rest = nothing.
-@export_range(0.0, 1.0, 0.01) var slime_chance: float = 0.7
-@export_range(0.0, 1.0, 0.01) var crate_chance: float = 0.3
+# All enemy types that can spawn
+@export var enemy_scenes: Array[PackedScene] = []
+@export var enemy_weights: Array[float] = []   # ideally same size as enemy_scenes
+
+# 70% crate, 30% "some enemy" by default
+@export_range(0.0, 1.0, 0.01) var enemy_chance: float = 0.3
+@export_range(0.0, 1.0, 0.01) var crate_chance: float = 0.7
+
+
+var current_level: int = 1
 
 @onready var room_container: Node2D = $"../RoomContainer"
 
@@ -34,6 +41,7 @@ var is_in_death_sequence: bool = false
 
 var exit_door: Area2D
 var door_open: bool = false
+
 
 @onready var restart_button: Button = $"../UI/PauseScreen/RestartButton"
 @onready var death_restart_button: Button = $"../UI/DeathScreen/Content/RestartButton"
@@ -57,9 +65,23 @@ func _ready() -> void:
 	if ui_root_path != NodePath():
 		game_ui = get_node(ui_root_path)
 
+	# NEW: level label
+
 	current_level = 1
+	_update_level_ui()  # NEW: show "Floor 1" (or whatever) at start
 	_load_room()
 
+
+# --- LEVEL UI -------------------------------------------------------
+
+func _update_level_ui() -> void:
+	var label := get_tree().get_first_node_in_group("level_label") as Label
+	if label:
+		label.text = "%d" % current_level
+
+
+
+# --- ROOM / LEVEL LOADING -------------------------------------------
 
 func _load_room() -> void:
 	# clear previous room if there was one
@@ -106,6 +128,37 @@ func _pick_room_scene_for_level(_level: int) -> PackedScene:
 	return room_scenes[randi() % room_scenes.size()]
 
 
+# --- ENEMY PICKING --------------------------------------------------
+
+func _pick_enemy_scene() -> PackedScene:
+	if enemy_scenes.is_empty():
+		return null
+
+	var total_weight: float = 0.0
+	for w in enemy_weights:
+		total_weight += max(w, 0.0)
+
+	if total_weight <= 0.0:
+		return null
+
+	var r := randf() * total_weight
+	var running := 0.0
+
+	for i in range(enemy_scenes.size()):
+		var w: float = 1.0
+		if i < enemy_weights.size():
+			w = max(enemy_weights[i], 0.0)
+
+		running += w
+		if r <= running:
+			return enemy_scenes[i]
+
+	# fallback in weird edge cases
+	return enemy_scenes.back()
+
+
+# --- SPAWNING ROOM CONTENT ------------------------------------------
+
 func _spawn_room_content() -> void:
 	if current_room == null:
 		return
@@ -129,26 +182,37 @@ func _spawn_room_content() -> void:
 	for spawn in room_spawn_points:
 		var r := randf()
 
-		if r <= slime_chance and slime_scene:
-			var slime := slime_scene.instantiate()
-			slime.global_position = spawn.global_position
-			current_room.add_child(slime)
+		# --- ENEMY ---------------------------------------------------
+		if r < enemy_chance:
+			var enemy_scene := _pick_enemy_scene()
+			if enemy_scene:
+				var enemy := enemy_scene.instantiate()
+				enemy.global_position = spawn.global_position
 
-			alive_enemies += 1
+				# later we'll call enemy.apply_level(current_level) here
+				current_room.add_child(enemy)
 
-			if slime.has_signal("died"):
-				slime.died.connect(_on_enemy_died)
+				alive_enemies += 1
 
-		elif r <= slime_chance + crate_chance and crate_scene:
+				if enemy.has_signal("died"):
+					enemy.died.connect(_on_enemy_died)
+			continue
+
+		# --- CRATE ---------------------------------------------------
+		if r < enemy_chance + crate_chance and crate_scene:
 			var crate := crate_scene.instantiate()
 			crate.global_position = spawn.global_position
 			current_room.add_child(crate)
-		else:
-			pass
+			continue
+
+		# --- NOTHING -------------------------------------------------
+		pass
 
 	if alive_enemies == 0:
 		_spawn_exit_door()
 
+
+# --- ENEMY DEATH / DOOR SPAWN --------------------------------------
 
 func _on_enemy_died() -> void:
 	alive_enemies = max(alive_enemies - 1, 0)
@@ -205,6 +269,8 @@ func on_player_reached_exit() -> void:
 	_open_shop()
 
 
+# --- SHOP / LEVEL PROGRESSION --------------------------------------
+
 func _open_shop() -> void:
 	get_tree().paused = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
@@ -216,7 +282,7 @@ func _open_shop() -> void:
 			shop_ui.refresh_from_state()
 			
 	if game_ui:
-		game_ui.visible = false        # 👈 hide HUD while in shop
+		game_ui.visible = false        # hide HUD while in shop
 
 
 func load_next_level() -> void:
@@ -229,9 +295,10 @@ func load_next_level() -> void:
 
 	# increase level, then reroll a room
 	current_level += 1
+	_update_level_ui()   # NEW: refresh level text
 	_load_room()
 
-	# 👇 NEW: refresh HP UI
+	# refresh HP UI
 	var hp_ui := get_tree().get_first_node_in_group("hp_ui")
 	if hp_ui and hp_ui.has_method("refresh_from_state"):
 		hp_ui.refresh_from_state()
@@ -240,6 +307,7 @@ func load_next_level() -> void:
 		game_ui.visible = true         # show HUD again
 
 
+# --- PAUSE ----------------------------------------------------------
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"): # Esc
@@ -264,6 +332,8 @@ func _toggle_pause() -> void:
 	else:
 		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 
+
+# --- DEATH SEQUENCE -------------------------------------------------
 
 func on_player_died() -> void:
 	if is_in_death_sequence:

@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://s7do308xihbw"]
+[gd_scene load_steps=17 format=3 uid="uid://s7do308xihbw"]
 
 [ext_resource type="Script" uid="uid://brvgav35e1cb5" path="res://scripts/main.gd" id="1_mbb35"]
 [ext_resource type="PackedScene" uid="uid://cwdo73t7wn5pp" path="res://scenes/player.tscn" id="2_iw4em"]
@@ -7,7 +7,9 @@
 [ext_resource type="Script" uid="uid://be1y1fhgbt80f" path="res://scripts/camera_shake.gd" id="9_tdlki"]
 [ext_resource type="PackedScene" uid="uid://brptj1un3f7q8" path="res://scenes/rooms/room_03.tscn" id="10_7gny6"]
 [ext_resource type="Script" uid="uid://bd046eokvcnu2" path="res://addons/phantom_camera/scripts/phantom_camera_host/phantom_camera_host.gd" id="10_v8pws"]
+[ext_resource type="PackedScene" uid="uid://cqim488pqgwa" path="res://scenes/purple_slime.tscn" id="11_6dial"]
 [ext_resource type="PackedScene" uid="uid://m8ghb1xpuu1e" path="res://scenes/rooms/room_01.tscn" id="11_go7sj"]
+[ext_resource type="PackedScene" uid="uid://0gile0fujjql" path="res://scenes/slime.tscn" id="12_7nomh"]
 [ext_resource type="PackedScene" uid="uid://chcumh0nhsngk" path="res://scenes/crosshair.tscn" id="12_wom8k"]
 [ext_resource type="PackedScene" uid="uid://c7fcp73v6wu5d" path="res://scenes/ui.tscn" id="13_so66j"]
 [ext_resource type="PackedScene" uid="uid://rn582fpm5gls" path="res://scenes/game_manager.tscn" id="18_so66j"]
@@ -48,6 +50,8 @@ shop_path = NodePath("../ShopUI")
 exit_door_path = NodePath("")
 ui_root_path = NodePath("../UI")
 room_scenes = Array[PackedScene]([ExtResource("11_go7sj"), ExtResource("9_go7sj"), ExtResource("10_7gny6")])
+enemy_scenes = Array[PackedScene]([ExtResource("11_6dial"), ExtResource("12_7nomh")])
+enemy_weights = Array[float]([0.2, 0.8])
 
 [node name="ShopUI" parent="." instance=ExtResource("3_tr1x6")]
 visible = false
