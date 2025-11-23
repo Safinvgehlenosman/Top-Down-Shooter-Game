@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://cwmceg8v4sax2" path="res://scripts/start_screen.gd" id="1_he1sj"]
 [ext_resource type="FontFile" uid="uid://4xsaqwwtj2c1" path="res://assets/Fonts/PixelOperator8.ttf" id="1_o7i0r"]
 [ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="2_he1sj"]
-[ext_resource type="Shader" uid="uid://dvsnojk5qp2bx" path="res://scenes/main.gdshader" id="4_r2jwc"]
+[ext_resource type="Shader" uid="uid://dvsnojk5qp2bx" path="res://shaders/main.gdshader" id="4_r2jwc"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_hm208"]
 shader = ExtResource("4_r2jwc")

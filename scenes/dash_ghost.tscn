@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://bbqpqph5c3opl"]
 
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="1_geobj"]
-[ext_resource type="Script" uid="uid://b5xb3igrqgodh" path="res://scenes/dash_ghost.gd" id="1_nk8it"]
+[ext_resource type="Script" uid="uid://b5xb3igrqgodh" path="res://scripts/dash_ghost.gd" id="1_nk8it"]
 
 [node name="DashGhost" type="Node2D"]
 position = Vector2(0, -8)

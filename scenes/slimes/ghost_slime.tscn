@@ -1,6 +1,7 @@
-[gd_scene load_steps=17 format=3 uid="uid://qeylggg2h2ax"]
+[gd_scene load_steps=18 format=3 uid="uid://qeylggg2h2ax"]
 
-[ext_resource type="Script" uid="uid://m8dmaiywm4pq" path="res://ghost_slime.gd" id="1_43r53"]
+[ext_resource type="Script" uid="uid://m8dmaiywm4pq" path="res://scripts/ghost_slime.gd" id="1_43r53"]
+[ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="2_udu5k"]
 [ext_resource type="Texture2D" uid="uid://csw36agbxaibb" path="res://assets/ghostslime.png" id="4_nqef8"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="5_k66um"]
 [ext_resource type="AudioStream" uid="uid://dl8r8jnncqnmf" path="res://assets/Audios/Hurt.wav" id="6_xodj6"]
@@ -79,6 +80,7 @@ scale = Vector2(1.2, 1.2)
 collision_layer = 4
 collision_mask = 0
 script = ExtResource("1_43r53")
+CoinScene = ExtResource("2_udu5k")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(0, -5)

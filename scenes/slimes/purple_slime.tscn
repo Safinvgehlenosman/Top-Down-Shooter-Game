@@ -1,6 +1,6 @@
 [gd_scene load_steps=24 format=3 uid="uid://cqim488pqgwa"]
 
-[ext_resource type="Script" uid="uid://cwadqyd2jrm74" path="res://scenes/purple_slime.gd" id="1_o0hry"]
+[ext_resource type="Script" uid="uid://cwadqyd2jrm74" path="res://scripts/purple_slime.gd" id="1_o0hry"]
 [ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="2_5vw4l"]
 [ext_resource type="PackedScene" uid="uid://c1ddwf2sacphd" path="res://scenes/bullets/enemyprojectile.tscn" id="2_818gd"]
 [ext_resource type="PackedScene" uid="uid://b5vf6h1xj2eqo" path="res://scenes/heart_pickup.tscn" id="3_kw5n6"]

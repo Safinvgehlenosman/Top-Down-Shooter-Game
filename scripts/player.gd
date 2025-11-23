@@ -640,16 +640,27 @@ func sync_from_gamestate() -> void:
 
 	fire_rate = GameState.fire_rate
 
-	# 🔥 Alt weapon
-	alt_weapon = GameState.alt_weapon
-	# ... your turret stuff ...
-	
+	# 🔥 ALSO SYNC ALT WEAPON
+	alt_weapon = GameState.alt_weapon  # 0–3
+
+	# Turret visual + config
 	if has_node("Turret"):
-		var turret_node = $Turret
-		turret_node.visible = (alt_weapon == AltWeaponType.TURRET)
+		var turret = $Turret
+
+		if alt_weapon == AltWeaponType.TURRET:
+			turret.visible = true
+
+			# pull the currently selected weapon's data
+			var data: Dictionary = GameState.ALT_WEAPON_DATA.get(GameState.alt_weapon, {})
+			# (alt_weapon == ALT_WEAPON_TURRET when we’re here)
+
+			if not data.is_empty() and turret.has_method("configure"):
+				turret.configure(data)
+		else:
+			turret.visible = false
 
 	# 🌀 Ability
-	ability = GameState.ability  # numbers line up with AbilityType enum
+	ability = GameState.ability
 
 	# Update HP UI to match
 	update_health_bar()

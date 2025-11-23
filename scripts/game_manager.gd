@@ -272,7 +272,7 @@ func _update_enemy_weights_for_level() -> void:
 
 	# --- Ghost slime: small constant chance (~5%) at all levels ---
 	if enemy_weights.size() > ENEMY_INDEX_GHOST:
-		enemy_weights[ENEMY_INDEX_GHOST] = 1
+		enemy_weights[ENEMY_INDEX_GHOST] = 0.20
 
 	# Any extra enemy_scenes beyond index 3 (ghost) can be given a small default weight
 	for i in range(ENEMY_INDEX_GHOST + 1, enemy_weights.size()):
