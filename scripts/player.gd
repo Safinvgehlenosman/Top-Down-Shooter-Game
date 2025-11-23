@@ -41,6 +41,20 @@ const AIM_DEADZONE: float = 0.25
 const AIM_CURSOR_SPEED: float = 800.0  # tweak speed of controller cursor
 const AIM_SMOOTH: float = 10.0  # higher = snappier, lower = floatier
 
+enum AltWeaponType { NONE, SHOTGUN, SNIPER }
+var alt_weapon: AltWeaponType = AltWeaponType.NONE
+
+const ALT_WEAPON_DATA = {
+	AltWeaponType.SHOTGUN: {
+		"cooldown": 0.7,
+	},
+	AltWeaponType.SNIPER: {
+		"cooldown": 1.2,
+	},
+}
+
+
+
 enum AimMode { MOUSE, CONTROLLER }
 var aim_mode: AimMode = AimMode.MOUSE
 
@@ -86,6 +100,7 @@ func _ready() -> void:
 
 	# Local copies from current run
 	sync_from_gamestate()
+	alt_weapon = GameState.alt_weapon
 
 
 	# Aim setup
@@ -223,20 +238,34 @@ func _process_shooting(delta: float) -> void:
 		shoot()
 		fire_timer = fire_rate
 
-	# Alt fire (right mouse / shotgun)
+	# Alt fire (modular: shotgun / sniper / etc.)
 	if Input.is_action_just_pressed("alt_fire") \
 			and alt_fire_cooldown_timer <= 0.0 \
-			and GameState.ammo > 0:
-		fire_laser()
-		alt_fire_cooldown_timer = GameConfig.alt_fire_cooldown
+			and GameState.ammo > 0 \
+			and alt_weapon != AltWeaponType.NONE:
+		_do_alt_fire()
+
 
 
 func add_ammo(amount: int) -> void:
 	ammo = clampi(ammo + amount, 0, max_ammo)
 	GameState.ammo = ammo
 
+func _do_alt_fire() -> void:
+	match alt_weapon:
+		AltWeaponType.NONE:
+			return
+		AltWeaponType.SHOTGUN:
+			_fire_shotgun()
+		AltWeaponType.SNIPER:
+			_fire_sniper()
 
-func fire_laser() -> void:
+	# set cooldown based on current weapon
+	if ALT_WEAPON_DATA.has(alt_weapon):
+		alt_fire_cooldown_timer = ALT_WEAPON_DATA[alt_weapon]["cooldown"]
+
+
+func _fire_shotgun() -> void:
 	# spend ammo
 	ammo = max(ammo - 1, 0)
 	GameState.ammo = ammo
@@ -253,13 +282,14 @@ func fire_laser() -> void:
 		shot.pitch_scale = randf_range(0.35, 0.55)
 		shot.play()
 
-	# use upgraded pellet count from GameState
+	# pellet count still uses GameState (so your upgrade works!)
 	var bullet_count: int = GameState.shotgun_pellets
 	var spread_degrees: float = GameConfig.alt_fire_spread_degrees
 	var spread_radians: float = deg_to_rad(spread_degrees)
 
-	var mouse_pos := get_global_mouse_position()
-	var base_dir: Vector2 = (mouse_pos - muzzle.global_position).normalized()
+	# use aim_cursor_pos instead of raw mouse so it works with controller too
+	var target_pos := aim_cursor_pos
+	var base_dir: Vector2 = (target_pos - muzzle.global_position).normalized()
 	var start_index: float = -float(bullet_count - 1) / 2.0
 
 	for i in range(bullet_count):
@@ -274,14 +304,11 @@ func fire_laser() -> void:
 	# recoil: push player opposite of shot direction
 	var recoil_dir: Vector2 = -base_dir
 
-	# more pellets = more recoil
 	var base_pellets: int = GameConfig.alt_fire_bullet_count
 	var current_pellets: int = GameState.shotgun_pellets
 	var extra_pellets: int = max(current_pellets - base_pellets, 0)
 
-	# each extra pellet adds 10% recoil (tweak this value)
 	var recoil_multiplier: float = 1.0 + float(extra_pellets) * 0.10
-
 	var recoil_strength: float = GameConfig.alt_fire_recoil_strength * recoil_multiplier
 
 	knockback = recoil_dir * recoil_strength
@@ -290,6 +317,23 @@ func fire_laser() -> void:
 	var cam := get_tree().get_first_node_in_group("camera")
 	if cam and cam.has_method("shake"):
 		cam.shake(GameConfig.knockback_shake_strength, GameConfig.knockback_shake_duration)
+
+func _fire_sniper() -> void:
+	# spend ammo
+	ammo = max(ammo - 1, 0)
+	GameState.ammo = ammo
+
+	# reuse normal shoot sound for now
+	$SFX_Shoot.play()
+
+	var target_pos := aim_cursor_pos
+	var dir := (target_pos - muzzle.global_position).normalized()
+
+	var bullet := BulletScene.instantiate()
+	bullet.global_position = muzzle.global_position
+	bullet.direction = dir
+
+	get_tree().current_scene.add_child(bullet)
 
 
 func shoot() -> void:
@@ -415,6 +459,9 @@ func sync_from_gamestate() -> void:
 	ammo = GameState.ammo
 
 	fire_rate = GameState.fire_rate
+
+	# 🔥 ALSO SYNC ALT WEAPON
+	alt_weapon = GameState.alt_weapon
 
 	# Update HP UI to match
 	update_health_bar()

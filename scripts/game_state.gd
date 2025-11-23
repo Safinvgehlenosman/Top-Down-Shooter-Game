@@ -1,5 +1,12 @@
 extends Node
 
+const ALT_WEAPON_NONE := 0
+const ALT_WEAPON_SHOTGUN := 1
+const ALT_WEAPON_SNIPER := 2
+
+var alt_weapon: int = ALT_WEAPON_NONE
+
+
 signal coins_changed(new_value: int)
 signal health_changed(new_value: int, max_value: int)
 signal ammo_changed(new_value: int, max_value: int)
@@ -13,7 +20,6 @@ var health: int = 0
 var max_ammo: int = 0
 var ammo: int = 0
 
-
 var fire_rate: float = 0.0          # normal fire cooldown (seconds between shots)
 var shotgun_pellets: int = 0        # how many pellets the alt-fire uses
 
@@ -21,8 +27,20 @@ func _ready() -> void:
 	# Optional: auto-start a run when the game boots
 	start_new_run()
 
+
 func apply_upgrade(id: String) -> void:
 	match id:
+
+		"max_ammo_plus_1":
+			max_ammo += 1
+			ammo = max_ammo
+
+		"fire_rate_plus_10":
+			fire_rate = max(0.02, fire_rate * 0.95)
+
+		"shotgun_pellet_plus_1":
+			shotgun_pellets += 1
+
 		"hp_refill":
 			health = max_health
 
@@ -33,20 +51,13 @@ func apply_upgrade(id: String) -> void:
 		"ammo_refill":
 			ammo = max_ammo
 
-		"max_ammo_plus_1":
-			max_ammo += 1
-			ammo = max_ammo
+		# 🔥 NEW WEAPON UNLOCKS
+		"unlock_shotgun":
+			alt_weapon = ALT_WEAPON_SHOTGUN
 
-		"fire_rate_plus_10":
-			# 10% faster → 10% shorter cooldown
-			if fire_rate > 0.0:
-				fire_rate *= 0.95
+		"unlock_sniper":
+			alt_weapon = ALT_WEAPON_SNIPER
 
-		"shotgun_pellet_plus_1":
-			shotgun_pellets += 1
-
-		_:
-			print("Unknown upgrade id:", id)
 
 	# 👇 NEW: after any upgrade, sync player + UI
 	_sync_player_from_state()
