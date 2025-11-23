@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3 uid="uid://bbqpqph5c3opl"]
+
+[ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="1_geobj"]
+[ext_resource type="Script" uid="uid://b5xb3igrqgodh" path="res://scenes/dash_ghost.gd" id="1_nk8it"]
+
+[node name="DashGhost" type="Node2D"]
+position = Vector2(0, -8)
+script = ExtResource("1_nk8it")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("1_geobj")
+region_enabled = true
+region_rect = Rect2(12, 8, 11, 16)

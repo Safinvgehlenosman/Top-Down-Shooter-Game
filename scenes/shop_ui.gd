@@ -7,7 +7,9 @@ const ALT_WEAPON_SHOTGUN := 1
 const ALT_WEAPON_SNIPER := 2
 const ALT_WEAPON_TURRET := 3
 
-
+const ABILITY_NONE := 0
+const ABILITY_DASH := 1
+const ABILITY_SLOWMO := 2
 
 @onready var continue_button := $Panel/ContinueButton
 @onready var cards := $Panel/Cards
@@ -16,21 +18,21 @@ const ALT_WEAPON_TURRET := 3
 var upgrades := [
 	{
 		"id": "max_ammo_plus_1",
-		"price": 5,
+		"price": 0,
 		"icon": preload("res://assets/Separated/bullet.png"),
 		"text": "+1 Max Ammo",
 		"requires_ammo_weapon": true,
 	},
 	{
 		"id": "fire_rate_plus_10",
-		"price": 5,
+		"price": 0,
 		"icon": preload("res://assets/Separated/singlebullet.png"),
 		"text": "Shoot 5% faster"
 	},
 
 	{
 		"id": "shotgun_pellet_plus_1",
-		"price": 5,
+		"price": 0,
 		"icon": preload("res://assets/bullets/shotgunbullet.png"),
 		"text": "+1 Shotgun Projectile",
 		"requires_alt_weapon": ALT_WEAPON_SHOTGUN
@@ -39,71 +41,86 @@ var upgrades := [
 	# NEW: weapon unlocks (only show when you have no alt weapon)
 	{
 		"id": "unlock_shotgun",
-		"price": 10,
+		"price": 0,
 		"icon": preload("res://assets/bullets/shotgunbullet.png"),
 		"text": "Unlock Shotgun",
 		"requires_alt_weapon": ALT_WEAPON_NONE
 	},
 	{
 		"id": "unlock_sniper",
-		"price": 10,
+		"price": 0,
 		"icon": preload("res://assets/bullets/sniperbullet.png"),
 		"text": "Unlock Sniper",
 		"requires_alt_weapon": ALT_WEAPON_NONE
+	},
+	{
+		"id": "unlock_turret",
+		"price": 0,
+		"icon": preload("res://assets/Separated/turreticon.png"),
+		"text": "Unlock Turret Backpack",
+		"requires_alt_weapon": ALT_WEAPON_NONE
+	},
+
+	{
+		"id": "turret_cooldown_minus_5",
+		"price": 0,
+		"icon": preload("res://assets/Separated/turreticon.png"), # placeholder
+		"text": "Turret fires 5% faster",
+		"requires_alt_weapon": ALT_WEAPON_TURRET,
+	},
+
+	{
+		"id": "sniper_damage_plus_5",
+		"price": 0,
+		"icon": preload("res://assets/bullets/sniperbullet.png"),
+		"text": "+5% Sniper Damage",
+		"requires_alt_weapon": ALT_WEAPON_SNIPER,
+	},
+
+	# --- Ability unlocks ------------------------------------------------
+	{
+		"id": "unlock_dash",
+		"price": 0,
+		"icon": preload("res://assets/Separated/ammo.png"),
+		"text": "Unlock Dash (Space)",
+		"requires_ability": ABILITY_NONE,
+	},
+	{
+		"id": "unlock_slowmo",
+		"price": 0,
+		"icon": preload("res://assets/Separated/ammo.png"),
+		"text": "Unlock Bullet Time (Space)",
+		"requires_ability": ABILITY_NONE,
+	},
+	{
+		"id": "ability_cooldown_minus_10",
+		"price": 0,
+		"icon": preload("res://assets/Separated/ammo.png"),
+		"text": "-10% Ability Cooldown",
+		"requires_any_ability": true,
 	},
 
 	# Old upgrades
 	{
 		"id": "hp_refill",
-		"price": 3,
+		"price": 0,
 		"icon": preload("res://assets/Separated/singleheart.png"),
 		"text": "Refill HP"
 	},
 	{
 		"id": "max_hp_plus_1",
-		"price": 5,
+		"price": 0,
 		"icon": preload("res://assets/Separated/singleheart.png"),
 		"text": "+1 Max HP"
 	},
 	{
 		"id": "ammo_refill",
-		"price": 3,
+		"price": 0,
 		"icon": preload("res://assets/Separated/bullet.png"),
 		"text": "Refill Ammo",
 		"requires_ammo_weapon": true,
 	},
-	{
-		"id": "unlock_turret",
-		"price": 10,
-		"icon": preload("res://assets/Separated/turreticon.png"),
-		"text": "Unlock Turret Backpack",
-		"requires_alt_weapon": ALT_WEAPON_NONE
-	},
-	
-	{
-	"id": "turret_cooldown_minus_5",
-	"price": 5,
-	"icon": preload("res://assets/Separated/turreticon.png"), # placeholder
-	"text": "Turret fires 5% faster",
-	"requires_alt_weapon": ALT_WEAPON_TURRET,
-	},
-	
-	{
-	"id": "sniper_damage_plus_5",
-	"price": 5,
-	"icon": preload("res://assets/bullets/sniperbullet.png"),
-	"text": "+5% Sniper Damage",
-	"requires_alt_weapon": ALT_WEAPON_SNIPER,
-	},
-
-
-
-
-	
 ]
-
-
-
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -117,24 +134,30 @@ func _setup_cards() -> void:
 		if card.purchased.is_connected(_on_card_purchased):
 			card.purchased.disconnect(_on_card_purchased)
 
-	# --- 2. Shuffle & assign new upgrades ---
+	# --- 2. Build pool of valid upgrades for this run ------------
 	var pool: Array = []
 
 	for u in upgrades:
-	# Exact weapon requirement
+		# Exact weapon requirement
 		if u.has("requires_alt_weapon") and u["requires_alt_weapon"] != GameState.alt_weapon:
 			continue
 
-	# Generic "needs ammo-using weapon" requirement
+		# Generic "needs ammo-using weapon" requirement
 		if u.get("requires_ammo_weapon", false):
 			if GameState.alt_weapon == ALT_WEAPON_NONE or GameState.alt_weapon == ALT_WEAPON_TURRET:
 				continue
 
+		# Ability must be NONE
+		if u.has("requires_ability") and GameState.ability != u["requires_ability"]:
+			continue
+
+		# Any ability required
+		if u.get("requires_any_ability", false) and GameState.ability == ABILITY_NONE:
+			continue
+
 		pool.append(u)
 
-
 	pool.shuffle()
-
 
 	var count: int = min(cards.get_child_count(), pool.size())
 
@@ -147,8 +170,6 @@ func _setup_cards() -> void:
 		# Only connect once
 		if not card.purchased.is_connected(_on_card_purchased):
 			card.purchased.connect(_on_card_purchased)
-
-
 
 func _update_coin_label() -> void:
 	coin_label.text = str(GameState.coins)

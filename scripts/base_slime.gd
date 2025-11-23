@@ -114,6 +114,11 @@ func _physics_process(delta: float) -> void:
 	_update_hit_feedback(delta)
 	_update_ai(delta)
 	_update_animation_sfx()
+	
+	if velocity.x < -1:
+		animated_sprite.flip_h = false
+	elif velocity.x > 1:
+		animated_sprite.flip_h = true
 
 	move_and_slide()
 

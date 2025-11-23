@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://cwdo73t7wn5pp"]
+[gd_scene load_steps=20 format=3 uid="uid://cwdo73t7wn5pp"]
 
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="1_3vyb7"]
 [ext_resource type="Script" uid="uid://c08yjacbakryb" path="res://scripts/player.gd" id="1_g2els"]
@@ -7,6 +7,22 @@
 [ext_resource type="Texture2D" uid="uid://muxb10dn58dn" path="res://assets/Separated/turret.png" id="6_tuyoq"]
 [ext_resource type="AudioStream" uid="uid://bux0mdx48mneh" path="res://assets/Audios/Shoot.wav" id="10_y4r1p"]
 [ext_resource type="AudioStream" uid="uid://c8cwf2bwmi50v" path="res://assets/Audios/Hit.wav" id="11_d2wvv"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fjrip"]
+atlas = ExtResource("1_3vyb7")
+region = Rect2(128, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_smehm"]
+atlas = ExtResource("1_3vyb7")
+region = Rect2(160, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ur7pv"]
+atlas = ExtResource("1_3vyb7")
+region = Rect2(192, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_y4r1p"]
+atlas = ExtResource("1_3vyb7")
+region = Rect2(224, 32, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_g2els"]
 atlas = ExtResource("1_3vyb7")
@@ -26,6 +42,23 @@ region = Rect2(96, 0, 32, 32)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_tuyoq"]
 animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fjrip")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_smehm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ur7pv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_y4r1p")
+}],
+"loop": true,
+"name": &"dash",
+"speed": 5.0
+}, {
 "frames": [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_g2els")
@@ -72,7 +105,7 @@ position = Vector2(0, -8)
 sprite_frames = SubResource("SpriteFrames_tuyoq")
 animation = &"idle"
 autoplay = "idle"
-frame_progress = 0.157999
+frame_progress = 0.44773823
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -5)
@@ -120,6 +153,7 @@ texture = SubResource("GradientTexture2D_d2wvv")
 texture_scale = 0.5
 
 [node name="Turret" type="Node2D" parent="."]
+visible = false
 script = ExtResource("6_fjrip")
 
 [node name="Backpack" type="Sprite2D" parent="Turret"]

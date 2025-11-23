@@ -3,6 +3,10 @@ extends CharacterBody2D
 const BulletScene_DEFAULT := preload("res://scenes/bullets/bullet.tscn")
 const BulletScene_SHOTGUN := preload("res://scenes/bullets/shotgun_bullet.tscn")
 const BulletScene_SNIPER  := preload("res://scenes/bullets/sniper_bullet.tscn")
+const DashGhostScene := preload("res://scenes/dash_ghost.tscn")
+
+var dash_ghost_interval: float = 0.03
+var dash_ghost_timer: float = 0.0
 
 
 # UI
@@ -47,6 +51,21 @@ const AIM_SMOOTH: float = 10.0  # higher = snappier, lower = floatier
 enum AltWeaponType { NONE, SHOTGUN, SNIPER, TURRET }
 var alt_weapon: AltWeaponType = AltWeaponType.NONE
 
+
+enum AbilityType { NONE, DASH, SLOWMO }
+var ability: AbilityType = AbilityType.NONE
+
+var ability_cooldown_left: float = 0.0
+var ability_active_left: float = 0.0
+
+var is_dashing: bool = false
+var dash_dir: Vector2 = Vector2.ZERO
+var dash_speed: float = 0.0
+
+var slowmo_running: bool = false
+var base_speed: float = 0.0
+
+
 const ALT_WEAPON_DATA = {
 	AltWeaponType.SHOTGUN: {
 		"cooldown": 0.7,
@@ -81,6 +100,7 @@ func _ready() -> void:
 	# Design defaults from GameConfig
 	speed              = GameConfig.player_move_speed
 	knockback_strength = GameConfig.player_knockback_strength
+	base_speed = speed
 	knockback_duration = GameConfig.player_knockback_duration
 	invincible_time    = GameConfig.player_invincible_time
 
@@ -137,6 +157,14 @@ func _physics_process(delta: float) -> void:
 	_update_aim_direction(delta)
 	_process_aim()
 	_process_shooting(delta)
+	_process_ability_input(delta)
+	
+	if is_dashing:
+		dash_ghost_timer -= delta
+		if dash_ghost_timer <= 0.0:
+			_spawn_dash_ghost()
+			dash_ghost_timer = dash_ghost_interval
+
 
 
 # --------------------------------------------------------------------
@@ -155,26 +183,41 @@ func _update_timers(delta: float) -> void:
 	if alt_fire_cooldown_timer > 0.0:
 		alt_fire_cooldown_timer -= delta
 
+	# --- Ability timers ---
+	if ability_cooldown_left > 0.0:
+		ability_cooldown_left = max(ability_cooldown_left - delta, 0.0)
+
+	if ability_active_left > 0.0:
+		ability_active_left -= delta
+		if ability_active_left <= 0.0:
+			_end_ability()
+
+
 
 # --------------------------------------------------------------------
 # MOVEMENT & AIM
 # --------------------------------------------------------------------
 
 func _process_movement(_delta: float) -> void:
-	var input_dir := Vector2.ZERO
-	input_dir.x = Input.get_action_strength("move_right") - Input.get_action_strength("move_left")
-	input_dir.y = Input.get_action_strength("move_down") - Input.get_action_strength("move_up")
+	if is_dashing:
+		# Dash overrides normal movement
+		velocity = dash_dir * dash_speed
+	else:
+		var input_dir := Vector2.ZERO
+		input_dir.x = Input.get_action_strength("move_right") - Input.get_action_strength("move_left")
+		input_dir.y = Input.get_action_strength("move_down") - Input.get_action_strength("move_up")
 
-	if input_dir != Vector2.ZERO:
-		input_dir = input_dir.normalized()
+		if input_dir != Vector2.ZERO:
+			input_dir = input_dir.normalized()
 
-	velocity = input_dir * speed
+		velocity = input_dir * speed
 
 	# Apply knockback on top of input movement
 	if knockback_timer > 0.0:
 		velocity += knockback
 
 	move_and_slide()
+
 
 
 # choose input mode & update aim_dir
@@ -397,6 +440,95 @@ func shoot() -> void:
 
 
 
+func _process_ability_input(_delta: float) -> void:
+	if ability == AbilityType.NONE:
+		return
+
+	if Input.is_action_just_pressed("ability") and ability_cooldown_left <= 0.0 and ability_active_left <= 0.0:
+		_start_ability()
+
+
+func _start_ability() -> void:
+	var data: Dictionary = GameState.ABILITY_DATA.get(int(ability), {})
+	if data.is_empty():
+		return
+
+	var ability_type: String = data.get("type", "")
+	match ability_type:
+		"dash":
+			_start_dash(data)
+		"slowmo":
+			_start_slowmo(data)
+
+func _start_dash(data: Dictionary) -> void:
+	# Direction from movement or fallback to aim_dir
+	var input_dir := Vector2.ZERO
+	input_dir.x = Input.get_action_strength("move_right") - Input.get_action_strength("move_left")
+	input_dir.y = Input.get_action_strength("move_down") - Input.get_action_strength("move_up")
+
+	if input_dir == Vector2.ZERO:
+		input_dir = aim_dir
+
+	if input_dir == Vector2.ZERO:
+		return
+
+	dash_dir = input_dir.normalized()
+
+	var duration: float = data.get("duration", 0.12)
+	var distance: float = data.get("distance", 220.0)
+	dash_speed = distance / max(duration, 0.01)
+
+	ability_active_left = duration
+	ability_cooldown_left = data.get("cooldown", 5.0)
+
+	is_dashing = true
+	# 👇 So the first ghost spawns immediately
+	dash_ghost_timer = 0.0
+
+func _spawn_dash_ghost() -> void:
+	if DashGhostScene == null:
+		return
+
+	var ghost := DashGhostScene.instantiate()
+	ghost.global_position = global_position
+	ghost.rotation = rotation  # top-down so probably 0, but safe
+
+	# Add to main scene
+	get_tree().current_scene.add_child(ghost)
+
+	# Copy current player frame into ghost
+	ghost.setup_from_player(animated_sprite)
+
+
+func _start_slowmo(data: Dictionary) -> void:
+	if slowmo_running:
+		return
+
+	var duration: float = data.get("duration", 3.0)
+	var cooldown: float = data.get("cooldown", 30.0)
+	var factor: float = data.get("factor", 0.3)
+
+	ability_active_left = duration
+	ability_cooldown_left = cooldown
+
+	slowmo_running = true
+
+	# Slow down the world…
+	Engine.time_scale = factor
+	# …but keep player speed feeling normal
+	speed = base_speed / max(factor, 0.01)
+
+func _end_ability() -> void:
+	if is_dashing:
+		is_dashing = false
+		dash_speed = 0.0
+
+	if slowmo_running:
+		slowmo_running = false
+		Engine.time_scale = 1.0
+		speed = base_speed
+
+	ability_active_left = 0.0
 
 # --------------------------------------------------------------------
 # FEEDBACK (HIT / HEAL)
@@ -508,15 +640,12 @@ func sync_from_gamestate() -> void:
 
 	fire_rate = GameState.fire_rate
 
-	# 🔥 ALSO SYNC ALT WEAPON
+	# 🔥 Alt weapon
 	alt_weapon = GameState.alt_weapon
-	
-	if alt_weapon == AltWeaponType.TURRET:
-		$Turret.visible = true
-		$Turret.configure(GameState.ALT_WEAPON_DATA[AltWeaponType.TURRET])
-	else:
-		$Turret.visible = false
+	# ... your turret stuff ...
 
+	# 🌀 Ability
+	ability = GameState.ability  # numbers line up with AbilityType enum
 
 	# Update HP UI to match
 	update_health_bar()

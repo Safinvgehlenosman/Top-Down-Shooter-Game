@@ -1,5 +1,7 @@
 extends Node2D
 
+# --- ALT WEAPONS -------------------------------------------------------
+
 const ALT_WEAPON_NONE := 0
 const ALT_WEAPON_SHOTGUN := 1
 const ALT_WEAPON_SNIPER := 2
@@ -42,14 +44,40 @@ const ALT_WEAPON_BASE_DATA := {
 # Mutable runtime copy – THIS is what upgrades modify
 var ALT_WEAPON_DATA: Dictionary = {}
 
-
-
-
-
-
-
 var alt_weapon: int = ALT_WEAPON_NONE
 
+# --- ACTIVE ABILITY ----------------------------------------------------
+
+const ABILITY_NONE := 0
+const ABILITY_DASH := 1
+const ABILITY_SLOWMO := 2
+
+# Base ability data – never modified directly
+const ABILITY_BASE_DATA := {
+	ABILITY_DASH: {
+		"id": "dash",
+		"type": "dash",
+		"cooldown": 5.0,
+		"duration": 0.12,
+		"distance": 120.0,
+	},
+	ABILITY_SLOWMO: {
+		"id": "slowmo",
+		"type": "slowmo",
+		"cooldown": 30.0,
+		"duration": 3.0,
+		"factor": 0.3,
+	}
+}
+
+# Mutable runtime copy – upgrades modify this
+var ABILITY_DATA: Dictionary = {}
+
+var ability: int = ABILITY_NONE
+var ability_cooldown_left: float = 0.0
+var ability_active_left: float = 0.0
+
+# --- STATS & SIGNALS ---------------------------------------------------
 
 signal coins_changed(new_value: int)
 signal health_changed(new_value: int, max_value: int)
@@ -76,10 +104,18 @@ func _reset_alt_weapon_data() -> void:
 	for key in ALT_WEAPON_BASE_DATA.keys():
 		ALT_WEAPON_DATA[key] = ALT_WEAPON_BASE_DATA[key].duplicate()
 
+func _reset_ability_data() -> void:
+	ABILITY_DATA.clear()
+	for key in ABILITY_BASE_DATA.keys():
+		ABILITY_DATA[key] = ABILITY_BASE_DATA[key].duplicate()
+
+# -----------------------------------------------------------------------
+# UPGRADES
+# -----------------------------------------------------------------------
 
 func apply_upgrade(id: String) -> void:
 	match id:
-		
+		# --- Weapon-specific upgrades -----------------------------------
 		"sniper_damage_plus_5":
 			if ALT_WEAPON_DATA.has(ALT_WEAPON_SNIPER):
 				var d = ALT_WEAPON_DATA[ALT_WEAPON_SNIPER]
@@ -101,13 +137,13 @@ func apply_upgrade(id: String) -> void:
 			var base := GameConfig.player_fire_rate
 			fire_rate = max(0.05, fire_rate - base * 0.05)
 
-
 		"shotgun_pellet_plus_1":
 			if ALT_WEAPON_DATA.has(ALT_WEAPON_SHOTGUN):
 				var d = ALT_WEAPON_DATA[ALT_WEAPON_SHOTGUN]
 				var current = d.get("pellets", 1)
 				d["pellets"] = current + 1
 
+		# --- Health / ammo ----------------------------------------------
 		"hp_refill":
 			health = max_health
 
@@ -118,38 +154,54 @@ func apply_upgrade(id: String) -> void:
 		"ammo_refill":
 			ammo = max_ammo
 
-		# 🔥 NEW WEAPON UNLOCKS
+		# --- Alt weapon unlocks ----------------------------------------
 		"unlock_shotgun":
 			alt_weapon = ALT_WEAPON_SHOTGUN
-			var d = ALT_WEAPON_DATA[ALT_WEAPON_SHOTGUN]
-			max_ammo = d["max_ammo"]
-			ammo = max_ammo
+			if ALT_WEAPON_DATA.has(ALT_WEAPON_SHOTGUN):
+				var sd = ALT_WEAPON_DATA[ALT_WEAPON_SHOTGUN]
+				max_ammo = sd.get("max_ammo", 0)
+				ammo = max_ammo
 
 		"unlock_sniper":
 			alt_weapon = ALT_WEAPON_SNIPER
-			var d = ALT_WEAPON_DATA[ALT_WEAPON_SNIPER]
-			max_ammo = d["max_ammo"]
-			ammo = max_ammo
-			
+			if ALT_WEAPON_DATA.has(ALT_WEAPON_SNIPER):
+				var nd = ALT_WEAPON_DATA[ALT_WEAPON_SNIPER]
+				max_ammo = nd.get("max_ammo", 0)
+				ammo = max_ammo
+
 		"unlock_turret":
 			alt_weapon = ALT_WEAPON_TURRET
-			var d = ALT_WEAPON_DATA[ALT_WEAPON_TURRET]
-			max_ammo = d.get("max_ammo", 0)
-			ammo = max_ammo
+			if ALT_WEAPON_DATA.has(ALT_WEAPON_TURRET):
+				var td = ALT_WEAPON_DATA[ALT_WEAPON_TURRET]
+				max_ammo = td.get("max_ammo", 0)
+				ammo = max_ammo
 
+		# --- Ability unlocks -------------------------------------------
+		"unlock_dash":
+			ability = ABILITY_DASH
 
+		"unlock_slowmo":
+			ability = ABILITY_SLOWMO
 
+		# --- Ability generic cooldown reduction ------------------------
+		"ability_cooldown_minus_10":
+			if ability != ABILITY_NONE and ABILITY_DATA.has(ability):
+				var ad = ABILITY_DATA[ability]
+				var cd = ad.get("cooldown", 1.0)
+				ad["cooldown"] = max(0.1, cd * 0.9)
 
-
-	# 👇 NEW: after any upgrade, sync player + UI
+	# After any upgrade, sync player + UI
 	_sync_player_from_state()
 	emit_signal("ammo_changed", ammo, max_ammo)
 
-
-
+# -----------------------------------------------------------------------
+# RUN RESET
+# -----------------------------------------------------------------------
 
 func start_new_run() -> void:
 	_reset_alt_weapon_data()
+	_reset_ability_data()
+
 	# Reset health
 	max_health = GameConfig.player_max_health
 	health = max_health
@@ -158,10 +210,15 @@ func start_new_run() -> void:
 	fire_rate = GameConfig.player_fire_rate
 	shotgun_pellets = GameConfig.alt_fire_bullet_count
 
-	# 🔥 Alt weapon + ammo reset
+	# Alt weapon + ammo reset
 	alt_weapon = ALT_WEAPON_NONE
 	max_ammo = 0
 	ammo = 0
+
+	# Ability reset
+	ability = ABILITY_NONE
+	ability_cooldown_left = 0.0
+	ability_active_left = 0.0
 
 	# Coins
 	coins = 0
@@ -171,21 +228,25 @@ func start_new_run() -> void:
 	emit_signal("ammo_changed", ammo, max_ammo)
 	emit_signal("run_reset")
 
-
+# -----------------------------------------------------------------------
+# COINS / STATS HELPERS
+# -----------------------------------------------------------------------
 
 func add_coins(amount: int) -> void:
 	coins += amount
 	emit_signal("coins_changed", coins)
 
-
 func set_health(value: int) -> void:
 	health = clampi(value, 0, max_health)
 	emit_signal("health_changed", health, max_health)
 
-
 func set_ammo(value: int) -> void:
 	ammo = clampi(value, 0, max_ammo)
 	emit_signal("ammo_changed", ammo, max_ammo)
+
+# -----------------------------------------------------------------------
+# PLAYER SYNC
+# -----------------------------------------------------------------------
 
 func _sync_player_from_state() -> void:
 	var player := get_tree().get_first_node_in_group("player")
