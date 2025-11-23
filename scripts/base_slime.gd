@@ -8,26 +8,28 @@ signal died
 @export var heart_drop_chance: float = GameConfig.slime_heart_drop_chance
 @export var contact_damage: int = GameConfig.slime_contact_damage
 @export var contact_interval: float = 0.5   # seconds between hits while touching
-
 var contact_timer: float = 0.0
 
 @onready var hitbox: Area2D = $Hitbox       # <-- adjust path to your slime's Area2D
+@export var vision_radius: float = 250.0
 
-
-# How much we grow per level (0.15 = +15% per level)
+# How much we grow per level
 @export var health_growth_per_level: float = 0.05
 @export var damage_growth_per_level: float = 0.10
-
-
-
 
 # Movement / behaviour tuning
 @export var separation_radius: float = 24.0      # how close slimes can get to each other
 @export var separation_strength: float = 0.7     # how strongly they push away
 @export var strafe_amount: float = 0.3           # sideways movement while chasing
-@export var aggro_radius: float = 180.0          # player distance that triggers permanent aggro
+@export var aggro_radius: float = 180.0          # player distance that triggers aggro
 @export var wander_speed: float = 40.0           # speed while idle wandering
 @export var wander_change_interval: float = 1.5  # how often wander direction changes (seconds)
+
+# NEW: de-aggro behaviour
+@export var deaggro_delay: float = 1.2           # how long they keep searching after losing LOS
+@export var last_seen_search_speed: float = 1.0  # speed multiplier while moving to last seen pos
+var last_seen_player_pos: Vector2 = Vector2.ZERO
+var lost_sight_timer: float = 0.0
 
 @onready var sfx_land: AudioStreamPlayer2D = $SFX_Land
 @onready var sfx_hurt: AudioStreamPlayer2D = $SFX_Hurt
@@ -56,13 +58,8 @@ var hit_flash_timer: float = 0.0
 @export var hit_light_flash_time: float = 0.1
 var hit_light_timer: float = 0.0
 
-# Smoothed velocity target
-var target_velocity: Vector2 = Vector2.ZERO
-
-# Aggro state
+# Aggro / wander state
 var aggro: bool = false
-
-# Wander state
 var wander_timer: float = 0.0
 var wander_direction: Vector2 = Vector2.ZERO
 
@@ -103,19 +100,13 @@ func apply_level(level: int) -> void:
 		contact_damage = int(round(contact_damage * dmg_mult))
 
 
-
 func _physics_process(delta: float) -> void:
-	# ... your existing movement / AI ...
-
 	# contact damage timer
 	if contact_timer > 0.0:
 		contact_timer -= delta
-
 	if contact_timer <= 0.0:
 		_try_contact_damage()
 
-	
-	
 	if is_dead:
 		_update_hit_feedback(delta)
 		return
@@ -125,6 +116,7 @@ func _physics_process(delta: float) -> void:
 	_update_animation_sfx()
 
 	move_and_slide()
+
 
 func _try_contact_damage() -> void:
 	if hitbox == null:
@@ -137,7 +129,6 @@ func _try_contact_damage() -> void:
 			break
 
 
-
 # --- AI / MOVEMENT --------------------------------------------------
 
 func _update_ai(delta: float) -> void:
@@ -147,23 +138,49 @@ func _update_ai(delta: float) -> void:
 	# Distance & direction to player
 	var to_player: Vector2 = player.global_position - global_position
 	var distance: float = to_player.length()
-
-	# Only aggro if player is close AND visible
-	if distance <= aggro_radius and _can_see_player():
-		aggro = true
-
 	var can_see := _can_see_player()
 
-	if aggro and can_see:
-		# Chase with a little sideways strafe
-		var forward: Vector2 = to_player.normalized()
-		var right: Vector2 = Vector2(-forward.y, forward.x)
-		var strafe: Vector2 = right * strafe_amount
+	# --- Aggro state machine ---
 
-		var dir: Vector2 = (forward + strafe).normalized()
-		velocity = dir * speed
+	# Gain aggro when close *and* visible
+	if distance <= aggro_radius and can_see:
+		aggro = true
+		last_seen_player_pos = player.global_position
+		lost_sight_timer = 0.0
+	elif aggro:
+		# Already aggro but maybe lost LOS
+		if can_see:
+			# Still see the player: keep resetting timers + last seen
+			last_seen_player_pos = player.global_position
+			lost_sight_timer = 0.0
+		else:
+			# Lost LOS: count up de-aggro timer
+			lost_sight_timer += delta
+			if lost_sight_timer >= deaggro_delay:
+				aggro = false
+
+	# --- Movement decisions ---
+
+	if aggro:
+		if can_see:
+			# Direct chase with a little sideways strafe
+			var forward: Vector2 = to_player.normalized()
+			var right: Vector2 = Vector2(-forward.y, forward.x)
+			var strafe: Vector2 = right * strafe_amount
+
+			var dir: Vector2 = (forward + strafe).normalized()
+			velocity = dir * speed
+		elif lost_sight_timer < deaggro_delay:
+			# SEARCH: move to last seen player position
+			var to_last_seen := last_seen_player_pos - global_position
+			if to_last_seen.length() > 4.0:
+				var dir_search := to_last_seen.normalized()
+				velocity = dir_search * speed * last_seen_search_speed
+			else:
+				# Reached last seen spot → slow down (will de-aggro once timer finishes)
+				velocity = Vector2.ZERO
 	else:
-		# Simple wander (used when not aggro OR aggro but lost sight)
+		# Simple wander when not aggro
 		wander_timer -= delta
 		if wander_timer <= 0.0:
 			wander_timer = wander_change_interval
@@ -185,9 +202,9 @@ func _update_ai(delta: float) -> void:
 			continue
 
 		var diff: Vector2 = global_position - other_node.global_position
-		var dist: float = diff.length()
-		if dist > 0.0 and dist < separation_radius:
-			separation += diff.normalized() * (1.0 - dist / separation_radius)
+		var dist_sep: float = diff.length()
+		if dist_sep > 0.0 and dist_sep < separation_radius:
+			separation += diff.normalized() * (1.0 - dist_sep / separation_radius)
 
 	velocity += separation * separation_strength * speed
 	# you can re-add collision steering here later if you want
@@ -197,25 +214,23 @@ func _can_see_player() -> bool:
 	if not player:
 		return false
 
+	# Check radius first
+	if global_position.distance_to(player.global_position) > vision_radius:
+		return false
+
+	# LOS raycast
 	var space_state := get_world_2d().direct_space_state
-
-	var query := PhysicsRayQueryParameters2D.create(
-		global_position,
-		player.global_position
-	)
-
+	var query := PhysicsRayQueryParameters2D.create(global_position, player.global_position)
 	query.exclude = [self]
 	query.collision_mask = collision_mask
-	query.collide_with_bodies = true
-	query.collide_with_areas = false
 
 	var result := space_state.intersect_ray(query)
 
 	if result.is_empty():
 		return true
 
-	var collider = result.get("collider")
-	return collider == player
+	return result.get("collider") == player
+
 
 
 # --- VISUAL / AUDIO FEEDBACK ---------------------------------------

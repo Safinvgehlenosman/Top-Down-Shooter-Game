@@ -110,6 +110,8 @@ collision_layer = 4
 script = ExtResource("1_pjw23")
 speed = 60.0
 max_health = 3
+vision_radius = 150.0
+wander_speed = 25.0
 CoinScene = ExtResource("2_gstla")
 HeartScene = ExtResource("3_v5wyi")
 
