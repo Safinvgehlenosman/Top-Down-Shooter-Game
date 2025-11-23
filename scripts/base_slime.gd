@@ -7,10 +7,18 @@ signal died
 @export var max_health: int = GameConfig.slime_max_health
 @export var heart_drop_chance: float = GameConfig.slime_heart_drop_chance
 @export var contact_damage: int = GameConfig.slime_contact_damage
+@export var contact_interval: float = 0.5   # seconds between hits while touching
+
+var contact_timer: float = 0.0
+
+@onready var hitbox: Area2D = $Hitbox       # <-- adjust path to your slime's Area2D
+
 
 # How much we grow per level (0.15 = +15% per level)
 @export var health_growth_per_level: float = 0.05
 @export var damage_growth_per_level: float = 0.10
+
+
 
 
 # Movement / behaviour tuning
@@ -97,6 +105,17 @@ func apply_level(level: int) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	# ... your existing movement / AI ...
+
+	# contact damage timer
+	if contact_timer > 0.0:
+		contact_timer -= delta
+
+	if contact_timer <= 0.0:
+		_try_contact_damage()
+
+	
+	
 	if is_dead:
 		_update_hit_feedback(delta)
 		return
@@ -106,6 +125,17 @@ func _physics_process(delta: float) -> void:
 	_update_animation_sfx()
 
 	move_and_slide()
+
+func _try_contact_damage() -> void:
+	if hitbox == null:
+		return
+
+	for body in hitbox.get_overlapping_bodies():
+		if body.is_in_group("player") and body.has_method("take_damage"):
+			body.take_damage(contact_damage)
+			contact_timer = contact_interval
+			break
+
 
 
 # --- AI / MOVEMENT --------------------------------------------------

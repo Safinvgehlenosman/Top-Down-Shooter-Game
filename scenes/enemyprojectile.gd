@@ -8,6 +8,9 @@ extends Area2D
 
 var direction: Vector2 = Vector2.ZERO
 
+func _ready() -> void:
+	add_to_group("player_bullet")
+
 
 func _physics_process(delta: float) -> void:
 	if direction == Vector2.ZERO:

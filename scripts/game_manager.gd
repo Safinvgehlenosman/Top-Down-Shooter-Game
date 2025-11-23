@@ -79,6 +79,9 @@ func _update_level_ui() -> void:
 # --- ROOM / LEVEL LOADING -------------------------------------------
 
 func _load_room() -> void:
+	
+	for bullet in get_tree().get_nodes_in_group("player_bullet"):
+		bullet.queue_free()
 	# clear previous room if there was one
 	if current_room and current_room.is_inside_tree():
 		current_room.queue_free()
@@ -352,6 +355,10 @@ func load_next_level() -> void:
 	_update_level_ui()
 	_load_room()
 
+	var player := get_tree().get_first_node_in_group("player")
+	if player and player.has_method("grant_spawn_invincibility"):
+		player.grant_spawn_invincibility(0.7) # tweak value
+
 	# refresh HP UI
 	var hp_ui := get_tree().get_first_node_in_group("hp_ui")
 	if hp_ui and hp_ui.has_method("refresh_from_state"):
@@ -360,11 +367,29 @@ func load_next_level() -> void:
 	if game_ui:
 		game_ui.visible = true         # show HUD again
 
+func restart_run() -> void:
+	Engine.time_scale = 1.0
+	get_tree().paused = false
+
+	# reset run data
+	GameState.start_new_run()
+
+	# go back to level 1 (or start screen if you prefer)
+	current_level = 1
+	_update_level_ui()
+	_load_room()
+
+
+
 
 # --- PAUSE ----------------------------------------------------------
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"): # Esc
+		# 🔥 NEW: ignore Esc while shop is open
+		if shop_ui and shop_ui.visible:
+			return
+
 		_toggle_pause()
 
 

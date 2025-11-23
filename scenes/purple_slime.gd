@@ -6,45 +6,42 @@ extends "res://scripts/base_slime.gd"
 @export var projectile_speed: float = 140.0
 @export var shoot_range: float = 220.0
 
-
-
-
-
 var shoot_timer: float = 0.0
 
 
 func _physics_process(delta: float) -> void:
-	# Run base slime movement / AI / damage first
+	# base AI (movement, aggro, hit logic)
 	super(delta)
 
-	if is_dead:
-		return
-	if not player:
+	if is_dead or player == null:
 		return
 
-	# only shoot when aggro and within range
-	var to_player: Vector2 = player.global_position - global_position
-	var distance: float = to_player.length()
+	var to_player := player.global_position - global_position
+	var dist := to_player.length()
 
-	if aggro and distance <= shoot_range:
+	# only shoot when:
+	# - aggro
+	# - in range
+	# - has clear line of sight
+	if aggro and dist <= shoot_range and _has_line_of_sight_to_player():
 		shoot_timer -= delta
+
 		if shoot_timer <= 0.0:
 			_shoot_at_player()
 			shoot_timer = shoot_interval
 	else:
+		# reset timer when out of sight or range so it can't "insta-shoot"
 		shoot_timer = 0.0
 
 
 func _shoot_at_player() -> void:
-	if not projectile_scene:
-		return
-	if not player:
+	if not projectile_scene or player == null:
 		return
 
-	var proj := projectile_scene.instantiate()
-	var dir: Vector2 = (player.global_position - global_position).normalized()
+	var proj = projectile_scene.instantiate()
+	var dir := (player.global_position - global_position).normalized()
 
-	# spawn slightly in front of the slime so it doesn't hit itself
+	# spawn in front of slime to avoid self-hit
 	proj.global_position = global_position + dir * 6.0
 
 	if "direction" in proj:
@@ -53,3 +50,21 @@ func _shoot_at_player() -> void:
 		proj.target_group = "player"
 
 	get_tree().current_scene.add_child(proj)
+
+
+func _has_line_of_sight_to_player() -> bool:
+	if player == null:
+		return false
+
+	var space_state = get_world_2d().direct_space_state
+
+	var query := PhysicsRayQueryParameters2D.new()
+	query.from = global_position
+	query.to = player.global_position
+	query.exclude = [self]
+	query.collision_mask = 1  # <-- make sure WALL layer is bit 1
+
+	var result = space_state.intersect_ray(query)
+
+	# If nothing hit → the line is clear
+	return result.is_empty()

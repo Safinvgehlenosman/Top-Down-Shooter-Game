@@ -67,6 +67,11 @@ var aim_dir: Vector2 = Vector2.RIGHT
 var aim_cursor_pos: Vector2 = Vector2.ZERO
 var last_mouse_pos: Vector2 = Vector2.ZERO
 
+func grant_spawn_invincibility(duration: float) -> void:
+	invincible_timer = max(invincible_timer, duration)
+
+
+
 
 # --------------------------------------------------------------------
 # READY

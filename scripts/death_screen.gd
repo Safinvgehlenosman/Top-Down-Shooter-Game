@@ -52,6 +52,9 @@ func _on_restart_button_pressed() -> void:
 	Engine.time_scale = 1.0
 	get_tree().reload_current_scene()
 	GameState.start_new_run()
+	var gm := get_tree().get_first_node_in_group("game_manager")
+	if gm and gm.has_method("restart_run"):
+		gm.restart_run()
 
 
 func _on_quit_button_pressed() -> void:

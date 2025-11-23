@@ -4,7 +4,7 @@ extends Node2D
 @onready var muzzle: Marker2D = $TurretHead/Muzzle
 
 var fire_interval: float = 0.8
-var range: float = 400.0
+var range: float = 100.0
 var spread_rad: float = deg_to_rad(20.0)
 var bullet_scene: PackedScene = null
 var bullet_speed: float = 900.0
@@ -49,20 +49,40 @@ func _process(delta: float) -> void:
 
 
 func _find_target() -> Node2D:
-	var best: Node2D = null
-	var best_dist: float = range
+	var best_target: Node2D = null
+	var best_dist := range
 
-	# your slimes live in the "enemy" group
-	for e in get_tree().get_nodes_in_group("enemy"):
-		if not (e is Node2D):
+	for body in get_tree().get_nodes_in_group("enemy"):
+		if not body.is_inside_tree():
 			continue
 
-		var d: float = global_position.distance_to(e.global_position)
-		if d < best_dist:
-			best_dist = d
-			best = e
+		var to_target = body.global_position - global_position
+		var dist = to_target.length()
+		if dist > range:
+			continue
 
-	return best
+		# 🔥 NEW: line-of-sight check
+		var space_state := get_world_2d().direct_space_state
+
+		var query := PhysicsRayQueryParameters2D.new()
+		query.from = global_position
+		query.to = body.global_position
+		query.exclude = [self]          # don't hit the turret itself
+		query.collision_mask = 1        # set to whatever layer your walls use
+
+		var result := space_state.intersect_ray(query)
+
+
+		# If we hit something and it's NOT our target, LOS is blocked
+		if result and result.get("collider") != body:
+			continue
+
+		if dist < best_dist:
+			best_dist = dist
+			best_target = body
+
+	return best_target
+
 
 
 func _fire_at(target: Node2D) -> void:

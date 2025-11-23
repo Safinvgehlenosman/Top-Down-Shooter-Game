@@ -111,12 +111,22 @@ collision_layer = 4
 script = ExtResource("1_o0hry")
 projectile_scene = ExtResource("2_818gd")
 shoot_interval = 1.5
+projectile_speed = null
+shoot_range = null
 speed = 30.0
 max_health = 5
 health_growth_per_level = 0.03
 damage_growth_per_level = 0.05
+separation_radius = null
+separation_strength = null
+strafe_amount = null
+aggro_radius = null
+wander_speed = null
+wander_change_interval = null
 CoinScene = ExtResource("2_5vw4l")
 HeartScene = ExtResource("3_kw5n6")
+hit_flash_time = null
+hit_light_flash_time = null
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(0, -5)
