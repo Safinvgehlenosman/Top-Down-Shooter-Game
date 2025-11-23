@@ -98,7 +98,9 @@ func apply_upgrade(id: String) -> void:
 				d["fire_interval"] = max(0.05, current * 0.95)
 
 		"fire_rate_plus_10":
-			fire_rate = max(0.02, fire_rate * 0.95)
+			var base := GameConfig.player_fire_rate
+			fire_rate = max(0.05, fire_rate - base * 0.05)
+
 
 		"shotgun_pellet_plus_1":
 			if ALT_WEAPON_DATA.has(ALT_WEAPON_SHOTGUN):

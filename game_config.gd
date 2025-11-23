@@ -3,7 +3,7 @@ extends Node
 @export_category("Player")
 @export var player_move_speed: float = 200.0
 @export var player_max_health: int = 5
-@export var player_fire_rate: float = 0.35
+@export var player_fire_rate: float = 0.15
 @export var player_knockback_strength: float = 250.0
 @export var player_knockback_duration: float = 0.15
 @export var player_invincible_time: float = 0.3
