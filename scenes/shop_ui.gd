@@ -69,7 +69,16 @@ var upgrades := [
 		"price": 0,
 		"icon": preload("res://assets/Separated/ammo.png"),
 		"text": "Refill Ammo"
-	}
+	},
+	{
+		"id": "unlock_turret",
+		"price": 0,
+		"icon": preload("res://assets/Separated/bullet.png"),
+		"text": "Unlock Turret Backpack",
+		"requires_alt_weapon": ALT_WEAPON_NONE
+	},
+
+	
 ]
 
 

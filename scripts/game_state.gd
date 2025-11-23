@@ -3,6 +3,7 @@ extends Node
 const ALT_WEAPON_NONE := 0
 const ALT_WEAPON_SHOTGUN := 1
 const ALT_WEAPON_SNIPER := 2
+const ALT_WEAPON_TURRET := 3
 
 const ALT_WEAPON_DATA := {
 	ALT_WEAPON_SHOTGUN: {
@@ -10,12 +11,11 @@ const ALT_WEAPON_DATA := {
 		"pickup_amount": 2,
 		"cooldown": 0.7,
 		"spread_degrees": 15.0,
-		"pellets": 3,  # can replace GameState.shotgun_pellets later
+		"pellets": 3,
 		"bullet_scene": preload("res://scenes/bullets/shotgun_bullet.tscn"),
 		"bullet_speed": 900.0,
 		"recoil": 300.0,
 	},
-
 	ALT_WEAPON_SNIPER: {
 		"max_ammo": 4,
 		"pickup_amount": 1,
@@ -23,11 +23,21 @@ const ALT_WEAPON_DATA := {
 		"spread_degrees": 0.0,
 		"pellets": 1,
 		"bullet_scene": preload("res://scenes/bullets/sniper_bullet.tscn"),
-		"bullet_speed": 1600.0,
+		"bullet_speed": 1400.0,
 		"recoil": 80.0,
-		"pierce": true,
+	},
+	ALT_WEAPON_TURRET: {
+		"max_ammo": 0,
+		"pickup_amount": 0,
+		"fire_interval": 5,
+		"range": 400.0,
+		"spread_degrees": 20.0,
+		"bullet_scene": preload("res://scenes/bullets/turret_bullet.tscn"),
+		"bullet_speed": 100.0,
+		"damage": 1,
 	},
 }
+
 
 
 
@@ -92,6 +102,13 @@ func apply_upgrade(id: String) -> void:
 			var d := ALT_WEAPON_DATA[ALT_WEAPON_SNIPER]
 			max_ammo = d["max_ammo"]
 			ammo = max_ammo
+			
+		"unlock_turret":
+			alt_weapon = ALT_WEAPON_TURRET
+			var d := ALT_WEAPON_DATA[ALT_WEAPON_TURRET]
+			max_ammo = d.get("max_ammo", 0)
+			ammo = max_ammo
+
 
 
 

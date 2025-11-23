@@ -1,11 +1,11 @@
 [gd_scene load_steps=7 format=3 uid="uid://4g03mky1wrrw"]
 
 [ext_resource type="Script" uid="uid://eo5qiktu83ys" path="res://scripts/ammo_pickup.gd" id="1_3k870"]
-[ext_resource type="Texture2D" uid="uid://crenssjg3xtfu" path="res://assets/Separated/ammo.png" id="1_jrhku"]
 [ext_resource type="AudioStream" uid="uid://pe47wnik3isg" path="res://assets/Audios/one_beep-99630.mp3" id="2_3k870"]
+[ext_resource type="Texture2D" uid="uid://bvcb411odcujh" path="res://assets/Separated/bullet.png" id="2_jrhku"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_jrhku"]
-size = Vector2(4, 7)
+size = Vector2(7, 4)
 
 [sub_resource type="Gradient" id="Gradient_kmthg"]
 offsets = PackedFloat32Array(0.016129032, 0.8064516, 1)
@@ -27,11 +27,11 @@ collision_mask = 2
 script = ExtResource("1_3k870")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-texture = ExtResource("1_jrhku")
+texture = ExtResource("2_jrhku")
 region_rect = Rect2(40, 104, 16, 16)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, -0.5)
+position = Vector2(-0.5, 0)
 shape = SubResource("RectangleShape2D_jrhku")
 
 [node name="SFX_Pickup" type="AudioStreamPlayer2D" parent="."]
@@ -40,7 +40,7 @@ bus = &"SFX"
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
 z_index = 10
-color = Color(0.76862746, 0.14117648, 0.1882353, 1)
+color = Color(1, 0.7294118, 0.1764706, 1)
 energy = 0.5
 texture = SubResource("GradientTexture2D_jrhku")
 texture_scale = 0.5

@@ -44,7 +44,7 @@ const AIM_DEADZONE: float = 0.25
 const AIM_CURSOR_SPEED: float = 800.0  # tweak speed of controller cursor
 const AIM_SMOOTH: float = 10.0  # higher = snappier, lower = floatier
 
-enum AltWeaponType { NONE, SHOTGUN, SNIPER }
+enum AltWeaponType { NONE, SHOTGUN, SNIPER, TURRET }
 var alt_weapon: AltWeaponType = AltWeaponType.NONE
 
 const ALT_WEAPON_DATA = {
@@ -253,6 +253,10 @@ func add_ammo(amount: int) -> void:
 func _do_alt_fire() -> void:
 	if alt_weapon == AltWeaponType.NONE:
 		return
+		
+	if alt_weapon == AltWeaponType.TURRET:
+		return
+
 
 	var data = GameState.ALT_WEAPON_DATA[alt_weapon]
 
@@ -494,6 +498,13 @@ func sync_from_gamestate() -> void:
 
 	# 🔥 ALSO SYNC ALT WEAPON
 	alt_weapon = GameState.alt_weapon
+	
+	if alt_weapon == AltWeaponType.TURRET:
+		$Turret.visible = true
+		$Turret.configure(GameState.ALT_WEAPON_DATA[AltWeaponType.TURRET])
+	else:
+		$Turret.visible = false
+
 
 	# Update HP UI to match
 	update_health_bar()
