@@ -11,16 +11,17 @@ var base_modulate: Color
 var destroyed: bool = false
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
-@onready var collision: CollisionShape2D = $CollisionShape2D
+@onready var collision: CollisionShape2D = $CollisionShape2D          # Area2D hitbox
+@onready var blocker_shape: CollisionShape2D = $Blocker/CollisionShape2D  # solid collider
 
 func _ready() -> void:
 	if animated_sprite:
 		animated_sprite.play("idle")  # your idle crate frame
-	base_modulate = animated_sprite.modulate   # <--- add this
+	base_modulate = animated_sprite.modulate
+
 
 func _process(delta: float) -> void:
 	_update_hit_feedback(delta)
-
 
 
 func _update_hit_feedback(delta: float) -> void:
@@ -65,8 +66,11 @@ func _spawn_loot() -> void:
 
 
 func _break_and_despawn() -> void:
+	# disable both the Area2D hitbox and the solid collider
 	if collision:
 		collision.disabled = true
+	if blocker_shape:
+		blocker_shape.disabled = true
 
 	# flash red + start timer
 	animated_sprite.modulate = Color(1, 0.4, 0.4, 1)
@@ -82,7 +86,6 @@ func _break_and_despawn() -> void:
 
 	_spawn_loot()
 	queue_free()
-
 
 
 func _on_area_entered(area: Area2D) -> void:
