@@ -1,20 +1,22 @@
-extends Node
+extends Node2D
 
 const ALT_WEAPON_NONE := 0
 const ALT_WEAPON_SHOTGUN := 1
 const ALT_WEAPON_SNIPER := 2
 const ALT_WEAPON_TURRET := 3
 
-const ALT_WEAPON_DATA := {
+# Base, never modified
+const ALT_WEAPON_BASE_DATA := {
 	ALT_WEAPON_SHOTGUN: {
 		"max_ammo": 6,
 		"pickup_amount": 2,
 		"cooldown": 0.7,
 		"spread_degrees": 15.0,
-		"pellets": 3,
+		"pellets": 4,
 		"bullet_scene": preload("res://scenes/bullets/shotgun_bullet.tscn"),
-		"bullet_speed": 900.0,
-		"recoil": 300.0,
+		"bullet_speed": 400.0,
+		"recoil": 200.0,
+		"damage": 1.0,
 	},
 	ALT_WEAPON_SNIPER: {
 		"max_ammo": 4,
@@ -23,20 +25,23 @@ const ALT_WEAPON_DATA := {
 		"spread_degrees": 0.0,
 		"pellets": 1,
 		"bullet_scene": preload("res://scenes/bullets/sniper_bullet.tscn"),
-		"bullet_speed": 1400.0,
+		"bullet_speed": 600.0,
 		"recoil": 80.0,
+		"damage": 2.0,
 	},
 	ALT_WEAPON_TURRET: {
-		"max_ammo": 0,
-		"pickup_amount": 0,
-		"fire_interval": 5,
+		"fire_interval": 0.8,
 		"range": 400.0,
 		"spread_degrees": 20.0,
 		"bullet_scene": preload("res://scenes/bullets/turret_bullet.tscn"),
 		"bullet_speed": 100.0,
-		"damage": 1,
-	},
+		"damage": 1.0,
+	}
 }
+
+# Mutable runtime copy – THIS is what upgrades modify
+var ALT_WEAPON_DATA: Dictionary = {}
+
 
 
 
@@ -66,19 +71,40 @@ func _ready() -> void:
 	# Optional: auto-start a run when the game boots
 	start_new_run()
 
+func _reset_alt_weapon_data() -> void:
+	ALT_WEAPON_DATA.clear()
+	for key in ALT_WEAPON_BASE_DATA.keys():
+		ALT_WEAPON_DATA[key] = ALT_WEAPON_BASE_DATA[key].duplicate()
+
 
 func apply_upgrade(id: String) -> void:
 	match id:
+		
+		"sniper_damage_plus_5":
+			if ALT_WEAPON_DATA.has(ALT_WEAPON_SNIPER):
+				var d = ALT_WEAPON_DATA[ALT_WEAPON_SNIPER]
+				var current = d.get("damage", 1.0)
+				d["damage"] = current * 1.05
 
 		"max_ammo_plus_1":
 			max_ammo += 1
 			ammo = max_ammo
 
+		"turret_cooldown_minus_5":
+			if ALT_WEAPON_DATA.has(ALT_WEAPON_TURRET):
+				var d = ALT_WEAPON_DATA[ALT_WEAPON_TURRET]
+				var current = d.get("fire_interval", 0.8)
+				# 5% faster = 95% of old interval, clamp to avoid 0
+				d["fire_interval"] = max(0.05, current * 0.95)
+
 		"fire_rate_plus_10":
 			fire_rate = max(0.02, fire_rate * 0.95)
 
 		"shotgun_pellet_plus_1":
-			shotgun_pellets += 1
+			if ALT_WEAPON_DATA.has(ALT_WEAPON_SHOTGUN):
+				var d = ALT_WEAPON_DATA[ALT_WEAPON_SHOTGUN]
+				var current = d.get("pellets", 1)
+				d["pellets"] = current + 1
 
 		"hp_refill":
 			health = max_health
@@ -93,19 +119,19 @@ func apply_upgrade(id: String) -> void:
 		# 🔥 NEW WEAPON UNLOCKS
 		"unlock_shotgun":
 			alt_weapon = ALT_WEAPON_SHOTGUN
-			var d := ALT_WEAPON_DATA[ALT_WEAPON_SHOTGUN]
+			var d = ALT_WEAPON_DATA[ALT_WEAPON_SHOTGUN]
 			max_ammo = d["max_ammo"]
 			ammo = max_ammo
 
 		"unlock_sniper":
 			alt_weapon = ALT_WEAPON_SNIPER
-			var d := ALT_WEAPON_DATA[ALT_WEAPON_SNIPER]
+			var d = ALT_WEAPON_DATA[ALT_WEAPON_SNIPER]
 			max_ammo = d["max_ammo"]
 			ammo = max_ammo
 			
 		"unlock_turret":
 			alt_weapon = ALT_WEAPON_TURRET
-			var d := ALT_WEAPON_DATA[ALT_WEAPON_TURRET]
+			var d = ALT_WEAPON_DATA[ALT_WEAPON_TURRET]
 			max_ammo = d.get("max_ammo", 0)
 			ammo = max_ammo
 
@@ -121,6 +147,7 @@ func apply_upgrade(id: String) -> void:
 
 
 func start_new_run() -> void:
+	_reset_alt_weapon_data()
 	# Reset health
 	max_health = GameConfig.player_max_health
 	health = max_health

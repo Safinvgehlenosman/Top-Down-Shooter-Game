@@ -114,7 +114,11 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	coin_label.text = str(GameState.coins)
-	ammo_label.text = "%d/%d" % [GameState.ammo, GameState.max_ammo]
+	if alt_weapon == AltWeaponType.NONE or alt_weapon == AltWeaponType.TURRET:
+		ammo_label.text = "-/-"
+	else:
+		ammo_label.text = "%d/%d" % [GameState.ammo, GameState.max_ammo]
+
 	_update_crosshair()
 	
 
@@ -281,6 +285,7 @@ func _fire_weapon(data: Dictionary) -> void:
 	var pellets: int = data.get("pellets", 1)
 	var spread_deg: float = data.get("spread_degrees", 0.0)
 	var spread_rad: float = deg_to_rad(spread_deg)
+	var damage: float = data.get("damage", 1.0)
 
 	var base_dir := (aim_cursor_pos - muzzle.global_position).normalized()
 	var start_offset := -float(pellets - 1) / 2.0
@@ -293,12 +298,14 @@ func _fire_weapon(data: Dictionary) -> void:
 		bullet.global_position = muzzle.global_position
 		bullet.direction = dir
 		bullet.speed = bullet_speed
+		bullet.damage = damage   # 👈 THIS is new
 		get_tree().current_scene.add_child(bullet)
 
 	# recoil
 	var recoil_strength = data.get("recoil", 0.0)
 	knockback = -base_dir * recoil_strength
-	knockback_timer = 0.15  # can later move to table
+	knockback_timer = 0.15
+
 
 
 func _fire_shotgun() -> void:

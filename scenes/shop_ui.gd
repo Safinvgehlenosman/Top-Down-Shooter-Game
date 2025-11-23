@@ -5,6 +5,7 @@ extends CanvasLayer
 const ALT_WEAPON_NONE := 0
 const ALT_WEAPON_SHOTGUN := 1
 const ALT_WEAPON_SNIPER := 2
+const ALT_WEAPON_TURRET := 3
 
 
 
@@ -15,22 +16,22 @@ const ALT_WEAPON_SNIPER := 2
 var upgrades := [
 	{
 		"id": "max_ammo_plus_1",
-		"price": 0,
-		"icon": preload("res://assets/Separated/ammo.png"),
-		"text": "+1 Max Ammo"
+		"price": 5,
+		"icon": preload("res://assets/Separated/bullet.png"),
+		"text": "+1 Max Ammo",
+		"requires_ammo_weapon": true,
 	},
-
 	{
 		"id": "fire_rate_plus_10",
-		"price": 0,
+		"price": 5,
 		"icon": preload("res://assets/Separated/singlebullet.png"),
 		"text": "Shoot 5% faster"
 	},
 
 	{
 		"id": "shotgun_pellet_plus_1",
-		"price": 0,
-		"icon": preload("res://assets/Separated/ammo.png"),
+		"price": 5,
+		"icon": preload("res://assets/bullets/shotgunbullet.png"),
 		"text": "+1 Shotgun Projectile",
 		"requires_alt_weapon": ALT_WEAPON_SHOTGUN
 	},
@@ -38,45 +39,65 @@ var upgrades := [
 	# NEW: weapon unlocks (only show when you have no alt weapon)
 	{
 		"id": "unlock_shotgun",
-		"price": 0,
-		"icon": preload("res://assets/Separated/ammo.png"),
-		"text": "Unlock Shotgun Alt Fire",
+		"price": 10,
+		"icon": preload("res://assets/bullets/shotgunbullet.png"),
+		"text": "Unlock Shotgun",
 		"requires_alt_weapon": ALT_WEAPON_NONE
 	},
 	{
 		"id": "unlock_sniper",
-		"price": 0,
-		"icon": preload("res://assets/Separated/singlebullet.png"),
-		"text": "Unlock Sniper Alt Fire",
+		"price": 10,
+		"icon": preload("res://assets/bullets/sniperbullet.png"),
+		"text": "Unlock Sniper",
 		"requires_alt_weapon": ALT_WEAPON_NONE
 	},
 
 	# Old upgrades
 	{
 		"id": "hp_refill",
-		"price": 0,
+		"price": 3,
 		"icon": preload("res://assets/Separated/singleheart.png"),
 		"text": "Refill HP"
 	},
 	{
 		"id": "max_hp_plus_1",
-		"price": 0,
+		"price": 5,
 		"icon": preload("res://assets/Separated/singleheart.png"),
 		"text": "+1 Max HP"
 	},
 	{
 		"id": "ammo_refill",
-		"price": 0,
-		"icon": preload("res://assets/Separated/ammo.png"),
-		"text": "Refill Ammo"
+		"price": 3,
+		"icon": preload("res://assets/Separated/bullet.png"),
+		"text": "Refill Ammo",
+		"requires_ammo_weapon": true,
 	},
 	{
 		"id": "unlock_turret",
-		"price": 0,
-		"icon": preload("res://assets/Separated/bullet.png"),
+		"price": 10,
+		"icon": preload("res://assets/Separated/turreticon.png"),
 		"text": "Unlock Turret Backpack",
 		"requires_alt_weapon": ALT_WEAPON_NONE
 	},
+	
+	{
+	"id": "turret_cooldown_minus_5",
+	"price": 5,
+	"icon": preload("res://assets/Separated/turreticon.png"), # placeholder
+	"text": "Turret fires 5% faster",
+	"requires_alt_weapon": ALT_WEAPON_TURRET,
+	},
+	
+	{
+	"id": "sniper_damage_plus_5",
+	"price": 5,
+	"icon": preload("res://assets/bullets/sniperbullet.png"),
+	"text": "+5% Sniper Damage",
+	"requires_alt_weapon": ALT_WEAPON_SNIPER,
+	},
+
+
+
 
 	
 ]
@@ -100,10 +121,17 @@ func _setup_cards() -> void:
 	var pool: Array = []
 
 	for u in upgrades:
-		# If upgrade has a weapon requirement and it doesn't match, skip it
+	# Exact weapon requirement
 		if u.has("requires_alt_weapon") and u["requires_alt_weapon"] != GameState.alt_weapon:
 			continue
+
+	# Generic "needs ammo-using weapon" requirement
+		if u.get("requires_ammo_weapon", false):
+			if GameState.alt_weapon == ALT_WEAPON_NONE or GameState.alt_weapon == ALT_WEAPON_TURRET:
+				continue
+
 		pool.append(u)
+
 
 	pool.shuffle()
 
