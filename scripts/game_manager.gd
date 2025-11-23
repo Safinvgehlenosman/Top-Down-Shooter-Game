@@ -13,7 +13,12 @@ extends Node
 # --- ENEMY SPAWN TABLE ----------------------------------------------
 
 # All enemy types that can spawn
-# Index 0 = GREEN, 1 = PURPLE, 2 = BLUE (by convention)
+# Index 0 = GREEN, 1 = PURPLE, 2 = BLUE, 3 = GHOST (by convention)
+const ENEMY_INDEX_GREEN := 0
+const ENEMY_INDEX_PURPLE := 1
+const ENEMY_INDEX_BLUE  := 2
+const ENEMY_INDEX_GHOST := 3
+
 @export var enemy_scenes: Array[PackedScene] = []
 @export var enemy_weights: Array[float] = []   # ideally same size as enemy_scenes
 
@@ -79,7 +84,6 @@ func _update_level_ui() -> void:
 # --- ROOM / LEVEL LOADING -------------------------------------------
 
 func _load_room() -> void:
-	
 	for bullet in get_tree().get_nodes_in_group("player_bullet"):
 		bullet.queue_free()
 	# clear previous room if there was one
@@ -190,8 +194,12 @@ func _spawn_room_content() -> void:
 				var enemy := enemy_scene.instantiate()
 				enemy.global_position = spawn.global_position
 
-				# scale stats by current level if the enemy supports it
-				if enemy.has_method("apply_level"):
+				# Find which index this enemy came from
+				var enemy_index := enemy_scenes.find(enemy_scene)
+
+				# scale stats by current level if the enemy supports it,
+				# but NEVER for the ghost slime
+				if enemy_index != ENEMY_INDEX_GHOST and enemy.has_method("apply_level"):
 					enemy.apply_level(current_level)
 
 				current_room.add_child(enemy)
@@ -230,16 +238,15 @@ func _update_enemy_weights_for_level() -> void:
 		enemy_weights[i] = 0.0
 
 	# We assume:
-	# 0 = Green, 1 = Purple, 2 = Blue
-	# If you change the order in the inspector, update this logic.
+	# 0 = Green, 1 = Purple, 2 = Blue, 3 = Ghost
 
 	# --- Levels 1–4: only green + blue, even split, no purple ---
 	if current_level < 5:
-		if enemy_weights.size() > 0:  # green
-			enemy_weights[0] = 0.5
-		if enemy_weights.size() > 2:  # blue
-			enemy_weights[2] = 0.5
-		# purple (1) stays at 0
+		if enemy_weights.size() > ENEMY_INDEX_GREEN:  # green
+			enemy_weights[ENEMY_INDEX_GREEN] = 0.5
+		if enemy_weights.size() > ENEMY_INDEX_BLUE:   # blue
+			enemy_weights[ENEMY_INDEX_BLUE] = 0.5
+		# purple stays at 0
 
 	# --- Levels 5–14: smoothly transition toward final mix ---
 	elif current_level < 15:
@@ -247,24 +254,28 @@ func _update_enemy_weights_for_level() -> void:
 
 		# Early target:  green 0.5, blue 0.5, purple 0.0
 		# Final target:  green 0.3, blue 0.4, purple 0.3
-		if enemy_weights.size() > 0:  # green
-			enemy_weights[0] = lerp(0.5, 0.3, t)
-		if enemy_weights.size() > 2:  # blue
-			enemy_weights[2] = lerp(0.5, 0.4, t)
-		if enemy_weights.size() > 1:  # purple
-			enemy_weights[1] = lerp(0.0, 0.3, t)
+		if enemy_weights.size() > ENEMY_INDEX_GREEN:  # green
+			enemy_weights[ENEMY_INDEX_GREEN] = lerp(0.5, 0.3, t)
+		if enemy_weights.size() > ENEMY_INDEX_BLUE:   # blue
+			enemy_weights[ENEMY_INDEX_BLUE] = lerp(0.5, 0.4, t)
+		if enemy_weights.size() > ENEMY_INDEX_PURPLE: # purple
+			enemy_weights[ENEMY_INDEX_PURPLE] = lerp(0.0, 0.3, t)
 
 	# --- Levels 15+: final distribution: 30% G, 40% B, 30% P ---
 	else:
-		if enemy_weights.size() > 0:  # green
-			enemy_weights[0] = 0.3
-		if enemy_weights.size() > 2:  # blue
-			enemy_weights[2] = 0.4
-		if enemy_weights.size() > 1:  # purple
-			enemy_weights[1] = 0.3
+		if enemy_weights.size() > ENEMY_INDEX_GREEN:  # green
+			enemy_weights[ENEMY_INDEX_GREEN] = 0.3
+		if enemy_weights.size() > ENEMY_INDEX_BLUE:   # blue
+			enemy_weights[ENEMY_INDEX_BLUE] = 0.4
+		if enemy_weights.size() > ENEMY_INDEX_PURPLE: # purple
+			enemy_weights[ENEMY_INDEX_PURPLE] = 0.3
 
-	# Any extra enemy_scenes beyond index 2 can be given a small default weight
-	for i in range(3, enemy_weights.size()):
+	# --- Ghost slime: small constant chance (~5%) at all levels ---
+	if enemy_weights.size() > ENEMY_INDEX_GHOST:
+		enemy_weights[ENEMY_INDEX_GHOST] = 1
+
+	# Any extra enemy_scenes beyond index 3 (ghost) can be given a small default weight
+	for i in range(ENEMY_INDEX_GHOST + 1, enemy_weights.size()):
 		if enemy_weights[i] <= 0.0:
 			enemy_weights[i] = 0.2  # tiny chance for future enemies
 
@@ -367,6 +378,7 @@ func load_next_level() -> void:
 	if game_ui:
 		game_ui.visible = true         # show HUD again
 
+
 func restart_run() -> void:
 	Engine.time_scale = 1.0
 	get_tree().paused = false
@@ -378,8 +390,6 @@ func restart_run() -> void:
 	current_level = 1
 	_update_level_ui()
 	_load_room()
-
-
 
 
 # --- PAUSE ----------------------------------------------------------

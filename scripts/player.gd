@@ -643,6 +643,10 @@ func sync_from_gamestate() -> void:
 	# 🔥 Alt weapon
 	alt_weapon = GameState.alt_weapon
 	# ... your turret stuff ...
+	
+	if has_node("Turret"):
+		var turret_node = $Turret
+		turret_node.visible = (alt_weapon == AltWeaponType.TURRET)
 
 	# 🌀 Ability
 	ability = GameState.ability  # numbers line up with AbilityType enum
