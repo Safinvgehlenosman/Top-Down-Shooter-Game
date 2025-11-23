@@ -2,6 +2,12 @@ extends CanvasLayer
 
 #signal shop_closed
 
+const ALT_WEAPON_NONE := 0
+const ALT_WEAPON_SHOTGUN := 1
+const ALT_WEAPON_SNIPER := 2
+
+
+
 @onready var continue_button := $Panel/ContinueButton
 @onready var cards := $Panel/Cards
 @onready var coin_label := $CoinUI/CoinLabel
@@ -16,17 +22,34 @@ var upgrades := [
 	{
 		"id": "fire_rate_plus_10",
 		"price": 5,
-		"icon": preload("res://assets/Separated/singlebullet.png"), # or reuse ammo icon for now
+		"icon": preload("res://assets/Separated/singlebullet.png"),
 		"text": "Shoot 5% faster"
 	},
 	{
 		"id": "shotgun_pellet_plus_1",
 		"price": 5,
-		"icon": preload("res://assets/Separated/ammo.png"), # placeholder
-		"text": "+1 Shotgun Projectile"
+		"icon": preload("res://assets/Separated/ammo.png"),
+		"text": "+1 Shotgun Projectile",
+		"requires_alt_weapon": ALT_WEAPON_SHOTGUN
 	},
 
-	# keep the old ones too (they just won't show yet with only 3 cards)
+	# NEW: weapon unlocks (only show when you have no alt weapon)
+	{
+		"id": "unlock_shotgun",
+		"price": 5,
+		"icon": preload("res://assets/Separated/ammo.png"), # placeholder
+		"text": "Unlock Shotgun Alt Fire",
+		"requires_alt_weapon": ALT_WEAPON_NONE,
+	},
+	{
+		"id": "unlock_sniper",
+		"price": 5,
+		"icon": preload("res://assets/Separated/singlebullet.png"), # placeholder
+		"text": "Unlock Sniper Alt Fire",
+		"requires_alt_weapon": ALT_WEAPON_NONE,
+	},
+
+	# old ones...
 	{
 		"id": "hp_refill",
 		"price": 3,
@@ -48,6 +71,7 @@ var upgrades := [
 ]
 
 
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_setup_cards()
@@ -61,8 +85,16 @@ func _setup_cards() -> void:
 			card.purchased.disconnect(_on_card_purchased)
 
 	# --- 2. Shuffle & assign new upgrades ---
-	var pool := upgrades.duplicate()
+	var pool: Array = []
+
+	for u in upgrades:
+		# If upgrade has a weapon requirement and it doesn't match, skip it
+		if u.has("requires_alt_weapon") and u["requires_alt_weapon"] != GameState.alt_weapon:
+			continue
+		pool.append(u)
+
 	pool.shuffle()
+
 
 	var count: int = min(cards.get_child_count(), pool.size())
 
