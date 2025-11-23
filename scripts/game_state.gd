@@ -4,6 +4,35 @@ const ALT_WEAPON_NONE := 0
 const ALT_WEAPON_SHOTGUN := 1
 const ALT_WEAPON_SNIPER := 2
 
+const ALT_WEAPON_DATA := {
+	ALT_WEAPON_SHOTGUN: {
+		"max_ammo": 6,
+		"pickup_amount": 2,
+		"cooldown": 0.7,
+		"spread_degrees": 15.0,
+		"pellets": 3,  # can replace GameState.shotgun_pellets later
+		"bullet_scene": preload("res://scenes/bullets/shotgun_bullet.tscn"),
+		"bullet_speed": 900.0,
+		"recoil": 300.0,
+	},
+
+	ALT_WEAPON_SNIPER: {
+		"max_ammo": 4,
+		"pickup_amount": 1,
+		"cooldown": 1.2,
+		"spread_degrees": 0.0,
+		"pellets": 1,
+		"bullet_scene": preload("res://scenes/bullets/sniper_bullet.tscn"),
+		"bullet_speed": 1600.0,
+		"recoil": 80.0,
+		"pierce": true,
+	},
+}
+
+
+
+
+
 var alt_weapon: int = ALT_WEAPON_NONE
 
 
@@ -54,35 +83,48 @@ func apply_upgrade(id: String) -> void:
 		# 🔥 NEW WEAPON UNLOCKS
 		"unlock_shotgun":
 			alt_weapon = ALT_WEAPON_SHOTGUN
+			var d := ALT_WEAPON_DATA[ALT_WEAPON_SHOTGUN]
+			max_ammo = d["max_ammo"]
+			ammo = max_ammo
 
 		"unlock_sniper":
 			alt_weapon = ALT_WEAPON_SNIPER
+			var d := ALT_WEAPON_DATA[ALT_WEAPON_SNIPER]
+			max_ammo = d["max_ammo"]
+			ammo = max_ammo
+
+
 
 
 	# 👇 NEW: after any upgrade, sync player + UI
 	_sync_player_from_state()
-
+	emit_signal("ammo_changed", ammo, max_ammo)
 
 
 
 
 func start_new_run() -> void:
-	# Pull defaults from GameConfig (same place your Player uses)
+	# Reset health
 	max_health = GameConfig.player_max_health
 	health = max_health
-	
+
+	# Reset fire stats
 	fire_rate = GameConfig.player_fire_rate
 	shotgun_pellets = GameConfig.alt_fire_bullet_count
 
-	max_ammo = GameConfig.player_max_ammo
-	ammo = max_ammo
+	# 🔥 Alt weapon + ammo reset
+	alt_weapon = ALT_WEAPON_NONE
+	max_ammo = 0
+	ammo = 0
 
+	# Coins
 	coins = 0
 
 	emit_signal("coins_changed", coins)
 	emit_signal("health_changed", health, max_health)
 	emit_signal("ammo_changed", ammo, max_ammo)
 	emit_signal("run_reset")
+
 
 
 func add_coins(amount: int) -> void:

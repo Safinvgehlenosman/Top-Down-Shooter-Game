@@ -1,6 +1,9 @@
 extends CharacterBody2D
 
-const BulletScene := preload("res://scenes/bullet.tscn")
+const BulletScene_DEFAULT := preload("res://scenes/bullets/bullet.tscn")
+const BulletScene_SHOTGUN := preload("res://scenes/bullets/shotgun_bullet.tscn")
+const BulletScene_SNIPER  := preload("res://scenes/bullets/sniper_bullet.tscn")
+
 
 # UI
 @onready var hp_fill: TextureProgressBar = $"../UI/HPBar/HPFill"
@@ -87,10 +90,6 @@ func _ready() -> void:
 	if GameState.max_health == 0:
 		GameState.max_health = design_max_health
 		GameState.health = design_max_health
-
-	if GameState.max_ammo == 0:
-		GameState.max_ammo = design_max_ammo
-		GameState.ammo = design_max_ammo
 
 	if GameState.fire_rate <= 0.0:
 		GameState.fire_rate = design_fire_rate
@@ -252,17 +251,50 @@ func add_ammo(amount: int) -> void:
 	GameState.ammo = ammo
 
 func _do_alt_fire() -> void:
-	match alt_weapon:
-		AltWeaponType.NONE:
-			return
-		AltWeaponType.SHOTGUN:
-			_fire_shotgun()
-		AltWeaponType.SNIPER:
-			_fire_sniper()
+	if alt_weapon == AltWeaponType.NONE:
+		return
 
-	# set cooldown based on current weapon
-	if ALT_WEAPON_DATA.has(alt_weapon):
-		alt_fire_cooldown_timer = ALT_WEAPON_DATA[alt_weapon]["cooldown"]
+	var data = GameState.ALT_WEAPON_DATA[alt_weapon]
+
+	# cooldown
+	alt_fire_cooldown_timer = data.get("cooldown", 1.0)
+
+	# pick the right fire function
+	match alt_weapon:
+		AltWeaponType.SHOTGUN:
+			_fire_weapon(data)
+		AltWeaponType.SNIPER:
+			_fire_weapon(data)
+
+func _fire_weapon(data: Dictionary) -> void:
+	# spend ammo
+	ammo = max(ammo - 1, 0)
+	GameState.ammo = ammo
+
+	# get settings
+	var bullet_scene: PackedScene = data["bullet_scene"]
+	var bullet_speed: float = data["bullet_speed"]
+	var pellets: int = data.get("pellets", 1)
+	var spread_deg: float = data.get("spread_degrees", 0.0)
+	var spread_rad: float = deg_to_rad(spread_deg)
+
+	var base_dir := (aim_cursor_pos - muzzle.global_position).normalized()
+	var start_offset := -float(pellets - 1) / 2.0
+
+	for i in range(pellets):
+		var angle := (start_offset + i) * spread_rad
+		var dir := base_dir.rotated(angle)
+
+		var bullet = bullet_scene.instantiate()
+		bullet.global_position = muzzle.global_position
+		bullet.direction = dir
+		bullet.speed = bullet_speed
+		get_tree().current_scene.add_child(bullet)
+
+	# recoil
+	var recoil_strength = data.get("recoil", 0.0)
+	knockback = -base_dir * recoil_strength
+	knockback_timer = 0.15  # can later move to table
 
 
 func _fire_shotgun() -> void:
@@ -296,7 +328,7 @@ func _fire_shotgun() -> void:
 		var angle_offset: float = (start_index + float(i)) * spread_radians
 		var dir: Vector2 = base_dir.rotated(angle_offset)
 
-		var bullet := BulletScene.instantiate()
+		var bullet := BulletScene_SHOTGUN.instantiate()
 		bullet.global_position = muzzle.global_position
 		bullet.direction = dir
 		get_tree().current_scene.add_child(bullet)
@@ -319,27 +351,26 @@ func _fire_shotgun() -> void:
 		cam.shake(GameConfig.knockback_shake_strength, GameConfig.knockback_shake_duration)
 
 func _fire_sniper() -> void:
-	# spend ammo
 	ammo = max(ammo - 1, 0)
 	GameState.ammo = ammo
 
-	# reuse normal shoot sound for now
 	$SFX_Shoot.play()
 
 	var target_pos := aim_cursor_pos
 	var dir := (target_pos - muzzle.global_position).normalized()
 
-	var bullet := BulletScene.instantiate()
+	var bullet := BulletScene_SNIPER.instantiate()
 	bullet.global_position = muzzle.global_position
 	bullet.direction = dir
 
 	get_tree().current_scene.add_child(bullet)
 
 
+
 func shoot() -> void:
 	$SFX_Shoot.play()
 
-	var bullet := BulletScene.instantiate()
+	var bullet := BulletScene_DEFAULT.instantiate()
 	bullet.global_position = muzzle.global_position
 
 	var mouse_pos := get_global_mouse_position()
@@ -347,6 +378,7 @@ func shoot() -> void:
 	bullet.direction = dir
 
 	get_tree().current_scene.add_child(bullet)
+
 
 
 

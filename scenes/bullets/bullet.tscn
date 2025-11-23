@@ -1,0 +1,58 @@
+[gd_scene load_steps=7 format=3 uid="uid://d0ieh5hwjov6m"]
+
+[ext_resource type="Script" uid="uid://dltsi8y84w5tv" path="res://scripts/base_bullet.gd" id="1_lj7gv"]
+[ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="2_tocqt"]
+[ext_resource type="Texture2D" uid="uid://ntkmut61o7gw" path="res://assets/Separated/Bullets.png" id="3_0s0cy"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_y25gk"]
+radius = 2.0
+
+[sub_resource type="Gradient" id="Gradient_kmthg"]
+offsets = PackedFloat32Array(0.016129032, 0.8064516, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_l5glv"]
+gradient = SubResource("Gradient_kmthg")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.517094, 0.52136755)
+fill_to = Vector2(0.76495725, 0.7777778)
+
+[node name="BaseBullet" type="Area2D" groups=["bullet"]]
+collision_layer = 32
+collision_mask = 5
+script = ExtResource("1_lj7gv")
+speed = 250.0
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture_filter = 1
+texture = ExtResource("2_tocqt")
+region_enabled = true
+region_rect = Rect2(104, 104, 16, 16)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_y25gk")
+
+[node name="VisibleOnScreenNotifier2D" type="VisibleOnScreenNotifier2D" parent="."]
+visible = false
+
+[node name="PointLight2D" type="PointLight2D" parent="."]
+color = Color(0.91764706, 0.19607843, 0.23529412, 1)
+energy = 1.2
+texture = SubResource("GradientTexture2D_l5glv")
+texture_scale = 0.7
+
+[node name="Trail" type="CPUParticles2D" parent="."]
+visible = false
+amount = 40
+texture = ExtResource("3_0s0cy")
+lifetime = 0.18000000000000002
+explosiveness = 0.13
+spread = 15.0
+gravity = Vector2(0, 0)
+scale_amount_min = 0.4
+color = Color(1, 0.40784314, 0.4627451, 1)
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
+[connection signal="screen_exited" from="VisibleOnScreenNotifier2D" to="." method="_on_visible_on_screen_notifier_2d_screen_exited"]

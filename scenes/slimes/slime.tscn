@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3 uid="uid://bklac3d33m47p"]
+[gd_scene load_steps=23 format=3 uid="uid://0gile0fujjql"]
 
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="1_371uh"]
 [ext_resource type="Script" uid="uid://dwrplk25tpc2x" path="res://scripts/green_slime.gd" id="1_pjw23"]

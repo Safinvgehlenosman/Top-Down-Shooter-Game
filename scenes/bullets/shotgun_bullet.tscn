@@ -1,8 +1,8 @@
-[gd_scene load_steps=7 format=3 uid="uid://d0ieh5hwjov6m"]
+[gd_scene load_steps=7 format=3 uid="uid://m8wveywln7l3"]
 
-[ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="1_mkf8s"]
-[ext_resource type="Script" uid="uid://dltsi8y84w5tv" path="res://scripts/bullet.gd" id="1_y25gk"]
-[ext_resource type="Texture2D" uid="uid://ntkmut61o7gw" path="res://assets/Separated/Bullets.png" id="4_eoqba"]
+[ext_resource type="Script" uid="uid://da6hru04vo2sn" path="res://shotgun_bullet.gd" id="1_dxlgm"]
+[ext_resource type="Texture2D" uid="uid://bksrw6rtxkhb5" path="res://assets/bullets/shotgunbullet.png" id="2_dxlgm"]
+[ext_resource type="Texture2D" uid="uid://ntkmut61o7gw" path="res://assets/Separated/Bullets.png" id="3_pw2ds"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_y25gk"]
 radius = 2.0
@@ -19,16 +19,16 @@ fill = 1
 fill_from = Vector2(0.517094, 0.52136755)
 fill_to = Vector2(0.76495725, 0.7777778)
 
-[node name="Bullet" type="Area2D" groups=["bullet"]]
+[node name="ShotgunBullet" type="Area2D" groups=["bullet"]]
+scale = Vector2(0.8, 0.8)
 collision_layer = 32
 collision_mask = 5
-script = ExtResource("1_y25gk")
-speed = 250.0
+script = ExtResource("1_dxlgm")
+speed = 200.0
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture_filter = 1
-texture = ExtResource("1_mkf8s")
-region_enabled = true
+texture = ExtResource("2_dxlgm")
 region_rect = Rect2(104, 104, 16, 16)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
@@ -38,7 +38,7 @@ shape = SubResource("CircleShape2D_y25gk")
 visible = false
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
-color = Color(0.91764706, 0.19607843, 0.23529412, 1)
+color = Color(0.8151441, 0.8151441, 0, 1)
 energy = 1.2
 texture = SubResource("GradientTexture2D_l5glv")
 texture_scale = 0.7
@@ -46,7 +46,7 @@ texture_scale = 0.7
 [node name="Trail" type="CPUParticles2D" parent="."]
 visible = false
 amount = 40
-texture = ExtResource("4_eoqba")
+texture = ExtResource("3_pw2ds")
 lifetime = 0.18000000000000002
 explosiveness = 0.13
 spread = 15.0

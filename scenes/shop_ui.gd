@@ -15,19 +15,21 @@ const ALT_WEAPON_SNIPER := 2
 var upgrades := [
 	{
 		"id": "max_ammo_plus_1",
-		"price": 5,
+		"price": 0,
 		"icon": preload("res://assets/Separated/ammo.png"),
 		"text": "+1 Max Ammo"
 	},
+
 	{
 		"id": "fire_rate_plus_10",
-		"price": 5,
+		"price": 0,
 		"icon": preload("res://assets/Separated/singlebullet.png"),
 		"text": "Shoot 5% faster"
 	},
+
 	{
 		"id": "shotgun_pellet_plus_1",
-		"price": 5,
+		"price": 0,
 		"icon": preload("res://assets/Separated/ammo.png"),
 		"text": "+1 Shotgun Projectile",
 		"requires_alt_weapon": ALT_WEAPON_SHOTGUN
@@ -36,39 +38,40 @@ var upgrades := [
 	# NEW: weapon unlocks (only show when you have no alt weapon)
 	{
 		"id": "unlock_shotgun",
-		"price": 5,
-		"icon": preload("res://assets/Separated/ammo.png"), # placeholder
+		"price": 0,
+		"icon": preload("res://assets/Separated/ammo.png"),
 		"text": "Unlock Shotgun Alt Fire",
-		"requires_alt_weapon": ALT_WEAPON_NONE,
+		"requires_alt_weapon": ALT_WEAPON_NONE
 	},
 	{
 		"id": "unlock_sniper",
-		"price": 5,
-		"icon": preload("res://assets/Separated/singlebullet.png"), # placeholder
+		"price": 0,
+		"icon": preload("res://assets/Separated/singlebullet.png"),
 		"text": "Unlock Sniper Alt Fire",
-		"requires_alt_weapon": ALT_WEAPON_NONE,
+		"requires_alt_weapon": ALT_WEAPON_NONE
 	},
 
-	# old ones...
+	# Old upgrades
 	{
 		"id": "hp_refill",
-		"price": 3,
+		"price": 0,
 		"icon": preload("res://assets/Separated/singleheart.png"),
 		"text": "Refill HP"
 	},
 	{
 		"id": "max_hp_plus_1",
-		"price": 5,
+		"price": 0,
 		"icon": preload("res://assets/Separated/singleheart.png"),
 		"text": "+1 Max HP"
 	},
 	{
 		"id": "ammo_refill",
-		"price": 3,
+		"price": 0,
 		"icon": preload("res://assets/Separated/ammo.png"),
 		"text": "Refill Ammo"
 	}
 ]
+
 
 
 

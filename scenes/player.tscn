@@ -96,7 +96,7 @@ region_enabled = true
 region_rect = Rect2(8, 104, 16, 16)
 
 [node name="Muzzle" type="Marker2D" parent="Gun"]
-position = Vector2(4.999999, -0.7142854)
+position = Vector2(4.9999995, -0.59523785)
 scale = Vector2(0.99999976, 0.99999976)
 
 [node name="SFX_Shoot" type="AudioStreamPlayer2D" parent="."]

@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3 uid="uid://d3oi7m6c8ysa6"]
+[gd_scene load_steps=23 format=3 uid="uid://cvdf1gtv3y6pb"]
 
 [ext_resource type="Script" path="res://scenes/blue_slime.gd" id="1_7qf5q"]
 [ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="2_ullxd"]
