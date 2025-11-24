@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://bjfkxuy5hxd11"]
+[gd_scene load_steps=14 format=3 uid="uid://bjfkxuy5hxd11"]
 
 [ext_resource type="Script" uid="uid://dqvrma8a6jrqb" path="res://scripts/pickups/crate.gd" id="1_74u5o"]
 [ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="2_1kl6c"]
@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://b5vf6h1xj2eqo" path="res://scenes/heart_pickup.tscn" id="4_juhn0"]
 [ext_resource type="Texture2D" uid="uid://quuqh5wt57i1" path="res://assets/Separated/Destructible Objects Sprite Sheet.png" id="5_dfg3k"]
 [ext_resource type="AudioStream" uid="uid://bkbbtse858d2x" path="res://assets/Audios/crate-break-1-93926.mp3" id="8_juhn0"]
+[ext_resource type="Script" uid="uid://p4g4lnfxjftj" path="res://scripts/player/health_component.gd" id="9_ipbef"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_wsrlu"]
 atlas = ExtResource("5_dfg3k")
@@ -80,5 +81,8 @@ collision_mask = 39
 position = Vector2(0, -7.1428556)
 scale = Vector2(0.99999994, 0.99999994)
 shape = SubResource("RectangleShape2D_juhn0")
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("9_ipbef")
 
 [connection signal="area_entered" from="." to="." method="_on_area_entered"]

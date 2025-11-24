@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=3 uid="uid://qeylggg2h2ax"]
+[gd_scene load_steps=21 format=3 uid="uid://qeylggg2h2ax"]
 
 [ext_resource type="Script" uid="uid://m8dmaiywm4pq" path="res://scripts/slimes/ghost_slime.gd" id="1_43r53"]
 [ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="2_udu5k"]
@@ -7,6 +7,8 @@
 [ext_resource type="AudioStream" uid="uid://dl8r8jnncqnmf" path="res://assets/Audios/Hurt.wav" id="6_xodj6"]
 [ext_resource type="Script" uid="uid://p4g4lnfxjftj" path="res://scripts/player/health_component.gd" id="7_5pjse"]
 [ext_resource type="AudioStream" uid="uid://6jgtwphqqvnt" path="res://assets/Audios/SlimeLand.wav" id="7_gqwtn"]
+[ext_resource type="Texture2D" uid="uid://doa8spi3hyp5l" path="res://assets/HP Bar/enemyhealthbar.png" id="8_psk6j"]
+[ext_resource type="Texture2D" uid="uid://d4igq4x5r01bn" path="res://assets/Separated/progressbarfill3.png" id="9_psk6j"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_6espa"]
 atlas = ExtResource("4_nqef8")
@@ -136,5 +138,32 @@ texture_scale = 0.3
 
 [node name="Health" type="Node" parent="."]
 script = ExtResource("7_5pjse")
+
+[node name="HPBar" type="TextureRect" parent="." groups=["hp_ui"]]
+modulate = Color(1, 1, 1, 0.50980395)
+texture_filter = 1
+texture_repeat = 1
+offset_left = -3.3333333
+offset_right = 18.666666
+offset_bottom = 10.0
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("8_psk6j")
+stretch_mode = 2
+
+[node name="HPFill" type="TextureProgressBar" parent="HPBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 1.0
+offset_top = 6.0
+offset_right = 3.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 2
+max_value = 5.0
+value = 3.0
+texture_progress = ExtResource("9_psk6j")
+tint_progress = Color(1, 0, 0.078431375, 1)
 
 [connection signal="body_entered" from="Hitbox" to="." method="_on_hitbox_body_entered"]

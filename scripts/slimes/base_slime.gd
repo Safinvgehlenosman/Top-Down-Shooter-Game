@@ -12,9 +12,8 @@ var contact_timer: float = 0.0
 
 @onready var hitbox: Area2D = $Hitbox       # <-- adjust path to your slime's Area2D
 @export var vision_radius: float = 250.0
-
+@onready var hp_fill: TextureProgressBar = $HPBar/HPFill
 @onready var health_component: Node = $Health
-
 
 # How much we grow per level
 @export var health_growth_per_level: float = 0.05
@@ -85,8 +84,9 @@ func _ready() -> void:
 		health_component.connect("damaged", Callable(self, "_on_health_damaged"))
 		health_component.connect("died",    Callable(self, "_on_health_died"))
 
-	animated_sprite.play("moving")
+		_update_hp_bar()  # init enemy HP bar
 
+	animated_sprite.play("moving")
 
 
 func apply_level(level: int) -> void:
@@ -113,8 +113,6 @@ func apply_level(level: int) -> void:
 		health_component.health     = final_max_hp
 
 
-
-
 func _physics_process(delta: float) -> void:
 	# contact damage timer
 	if contact_timer > 0.0:
@@ -129,7 +127,7 @@ func _physics_process(delta: float) -> void:
 	_update_hit_feedback(delta)
 	_update_ai(delta)
 	_update_animation_sfx()
-	
+
 	if velocity.x < -1:
 		animated_sprite.flip_h = false
 	elif velocity.x > 1:
@@ -246,7 +244,6 @@ func _update_ai(delta: float) -> void:
 			velocity = motion / delta
 
 
-
 func _can_see_player() -> bool:
 	if not player:
 		return false
@@ -269,7 +266,6 @@ func _can_see_player() -> bool:
 	return result.get("collider") == player
 
 
-
 # --- VISUAL / AUDIO FEEDBACK ---------------------------------------
 
 func _update_hit_feedback(delta: float) -> void:
@@ -284,7 +280,6 @@ func _update_hit_feedback(delta: float) -> void:
 		hit_light_timer -= delta
 		if hit_light_timer <= 0.0 and not is_dead:
 			hit_light.color = original_light_color
-
 
 
 func _update_animation_sfx() -> void:
@@ -306,6 +301,15 @@ func _update_animation_sfx() -> void:
 	last_frame = current_frame
 
 
+func _update_hp_bar() -> void:
+	if hp_fill and health_component:
+		var max_hp: int = health_component.max_health
+		var current_hp: int = health_component.health
+
+		hp_fill.max_value = max_hp
+		hp_fill.value = current_hp
+
+
 # --- DAMAGE & DEATH ------------------------------------------------
 
 func take_damage(amount: int) -> void:
@@ -316,7 +320,6 @@ func take_damage(amount: int) -> void:
 
 	if health_component and health_component.has_method("take_damage"):
 		health_component.take_damage(amount)
-
 
 
 func die() -> void:
@@ -377,6 +380,9 @@ func _on_health_damaged(_amount: int) -> void:
 		sfx_hurt.stop()
 		sfx_hurt.play()
 
+	# DEFERRED so health_component has time to update its health value
+	call_deferred("_update_hp_bar")
+
 
 func _on_health_died() -> void:
 	if is_dead:
@@ -391,4 +397,6 @@ func _on_health_died() -> void:
 		sfx_death.stop()
 		sfx_death.play()
 
+	# Ensure the bar jumps to 0 on death
+	call_deferred("_update_hp_bar")
 	die()

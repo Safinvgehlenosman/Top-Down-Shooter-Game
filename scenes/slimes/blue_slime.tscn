@@ -9,7 +9,7 @@
 [ext_resource type="AudioStream" uid="uid://6jgtwphqqvnt" path="res://assets/Audios/SlimeLand.wav" id="6_vwtyt"]
 [ext_resource type="Script" uid="uid://p4g4lnfxjftj" path="res://scripts/player/health_component.gd" id="8_c23gw"]
 [ext_resource type="Texture2D" uid="uid://doa8spi3hyp5l" path="res://assets/HP Bar/enemyhealthbar.png" id="9_mfogb"]
-[ext_resource type="Texture2D" uid="uid://wvuudlu11n78" path="res://assets/Separated/progressbarfill2.png" id="10_5j0ea"]
+[ext_resource type="Texture2D" uid="uid://d4igq4x5r01bn" path="res://assets/Separated/progressbarfill3.png" id="10_mfogb"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_vx4o0"]
 atlas = ExtResource("4_ullxd")
@@ -171,9 +171,9 @@ script = ExtResource("8_c23gw")
 texture_filter = 1
 texture_repeat = 1
 offset_left = -8.75
-offset_top = -3.7500005
+offset_top = -3.75
 offset_right = 13.25
-offset_bottom = 6.2499995
+offset_bottom = 6.25
 scale = Vector2(0.8, 0.8)
 texture = ExtResource("9_mfogb")
 stretch_mode = 2
@@ -185,13 +185,13 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 1.0
 offset_top = 6.0
-offset_right = -2.0
+offset_right = 3.0
 offset_bottom = -2.0
 grow_horizontal = 2
 grow_vertical = 2
 max_value = 5.0
 value = 3.0
-texture_progress = ExtResource("10_5j0ea")
+texture_progress = ExtResource("10_mfogb")
 tint_progress = Color(1, 0, 0.078431375, 1)
 
 [connection signal="frame_changed" from="AnimatedSprite2D" to="." method="_on_animated_sprite_2d_frame_changed"]
