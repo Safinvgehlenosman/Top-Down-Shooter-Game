@@ -74,8 +74,8 @@ const ABILITY_BASE_DATA := {
 	ABILITY_SLOWMO: {
 		"id": "slowmo",
 		"type": "slowmo",
-		"cooldown": 30.0,
-		"duration": 3.0,
+		"cooldown": 15.0,
+		"duration": 0.5,
 		"factor": 0.3,
 	}
 }
@@ -144,8 +144,14 @@ func apply_upgrade(id: String) -> void:
 				d["fire_interval"] = max(0.05, current * 0.95)
 
 		"fire_rate_plus_10":
-			var base := GameConfig.player_fire_rate
-			fire_rate = max(0.05, fire_rate - base * 0.05)
+	# Ensure initialized
+			if fire_rate <= 0.0:
+				fire_rate = GameConfig.player_fire_rate
+
+	# Reduce current cooldown by 5% (shoot faster)
+			fire_rate = max(0.05, fire_rate * 0.95)
+
+
 
 		"shotgun_pellet_plus_1":
 			if ALT_WEAPON_DATA.has(ALT_WEAPON_SHOTGUN):

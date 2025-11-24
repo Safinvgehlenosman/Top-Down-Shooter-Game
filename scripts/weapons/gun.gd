@@ -49,7 +49,7 @@ func handle_primary_fire(is_pressed: bool, aim_dir: Vector2) -> void:
 	if not is_pressed:
 		return
 
-	# In normal mode we respect the fire timer
+	# Respect the cooldown timer (unless laser mode overrides)
 	if not GameState.debug_laser_mode and fire_timer > 0.0:
 		return
 
@@ -60,18 +60,21 @@ func handle_primary_fire(is_pressed: bool, aim_dir: Vector2) -> void:
 		fire_timer = 0.0
 		damage = 9999.0
 	else:
-		# Normal mode: proper cooldown based on fire_rate
-		fire_timer = 1.0 / max(fire_rate, 0.01)
+		# ✅ fire_rate is "seconds between shots"
+		var cooldown = max(GameState.fire_rate, 0.01)
+		fire_timer = cooldown
 
-	# Primary weapon ALWAYS has infinite ammo, even if alt-weapon exists
+	# Primary gun = infinite ammo, always allowed to shoot
 	var bullet := BulletScene_DEFAULT.instantiate()
 	bullet.global_position = muzzle.global_position
 	bullet.direction = aim_dir
-	bullet.damage = damage  # default bullets will one-shot in laser mode
+	bullet.damage = damage
 	get_tree().current_scene.add_child(bullet)
 
 	if sfx_shoot:
 		sfx_shoot.play()
+
+
 
 # --------------------------------------------------------------------
 # ALT FIRE (SHOTGUN / SNIPER)

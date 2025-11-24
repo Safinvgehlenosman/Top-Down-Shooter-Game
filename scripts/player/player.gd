@@ -81,28 +81,28 @@ func _ready() -> void:
 
 	# --- HealthComponent wiring ---
 	if health_component:
-		if health_component.has_method("sync_from_gamestate"):
-			health_component.sync_from_gamestate()
+		# Player-specific config for the generic Health component
+		health_component.invincible_time = GameConfig.player_invincible_time
 
 		health_component.connect("damaged", Callable(self, "_on_health_damaged"))
-		health_component.connect("healed", Callable(self, "_on_health_healed"))
-		health_component.connect("died", Callable(self, "_on_health_died"))
+		health_component.connect("healed",  Callable(self, "_on_health_healed"))
+		health_component.connect("died",    Callable(self, "_on_health_died"))
 
 	# --- AbilityComponent wiring (optional sync) ---
 	if ability_component and ability_component.has_method("sync_from_gamestate"):
 		ability_component.sync_from_gamestate()
 
 	var design_max_health: int = GameConfig.player_max_health
-	var design_max_ammo: int = GameConfig.player_max_ammo
+	var design_max_ammo: int   = GameConfig.player_max_ammo
 	var design_fire_rate: float = GameConfig.player_fire_rate
-	var design_pellets: int = GameConfig.alt_fire_bullet_count
+	var design_pellets: int    = GameConfig.alt_fire_bullet_count
 
 	# --- Sync with GameState (current run data) ---
 
 	# Initialize GameState once (first run)
 	if GameState.max_health == 0:
 		GameState.max_health = design_max_health
-		GameState.health = design_max_health
+		GameState.health     = design_max_health
 
 	if GameState.fire_rate <= 0.0:
 		GameState.fire_rate = design_fire_rate
@@ -110,7 +110,7 @@ func _ready() -> void:
 	if GameState.shotgun_pellets <= 0:
 		GameState.shotgun_pellets = design_pellets
 
-	# Local copies from current run
+	# Local copies from current run (+ push into HealthComponent)
 	sync_from_gamestate()
 	alt_weapon = GameState.alt_weapon
 
@@ -118,6 +118,7 @@ func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 	aim_cursor_pos = get_global_mouse_position()
 	last_mouse_pos = get_viewport().get_mouse_position()
+
 
 # --------------------------------------------------------------------
 # PROCESS
@@ -265,25 +266,43 @@ func _play_heal_feedback() -> void:
 # --------------------------------------------------------------------
 
 func take_damage(amount: int) -> void:
-	# Keep this wrapper so enemies can still call player.take_damage(amount)
+	# God mode only for the player, not for every HealthComponent user
+	if amount > 0 and GameState.debug_god_mode:
+		return
+
+	# Wrapper so enemies can still call player.take_damage(amount)
 	if health_component and health_component.has_method("take_damage"):
 		health_component.take_damage(amount)
 
+
 func _on_health_damaged(_amount: int) -> void:
+	# Sync GameState from component
+	if health_component:
+		GameState.set_health(health_component.health)
+
 	# Play hurt SFX + camera/screen feedback
 	if has_node("SFX_Hurt"):
 		$SFX_Hurt.play()
 	_play_hit_feedback()
-	# UI is now updated via GameState.health_changed -> ui.gd
+	# UI is updated via GameState.health_changed -> ui.gd
+
 
 func _on_health_healed(_amount: int) -> void:
+	if health_component:
+		GameState.set_health(health_component.health)
+
 	_play_heal_feedback()
-	# UI is now updated via GameState.health_changed -> ui.gd
+	# UI is updated via GameState.health_changed -> ui.gd
+
 
 func _on_health_died() -> void:
+	# Make sure GameState HP is 0
+	GameState.set_health(0)
+
 	# Mark player as dead so _physics_process stops
 	is_dead = true
 	die()
+
 
 func add_coin() -> void:
 	GameState.add_coins(1)
@@ -316,13 +335,14 @@ func die() -> void:
 # --------------------------------------------------------------------
 
 func sync_from_gamestate() -> void:
-	# Core stats
+	# Core stats from GameState
 	max_health = GameState.max_health
 	health     = GameState.health
 
-	# Also tell HealthComponent to resync
-	if health_component and health_component.has_method("sync_from_gamestate"):
-		health_component.sync_from_gamestate()
+	# Push into generic HealthComponent
+	if health_component:
+		health_component.max_health = max_health
+		health_component.health     = health
 
 	# Also tell AbilityComponent to resync (e.g. after unlocks)
 	if ability_component and ability_component.has_method("sync_from_gamestate"):

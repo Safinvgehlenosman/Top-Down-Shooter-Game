@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3 uid="uid://0gile0fujjql"]
+[gd_scene load_steps=26 format=3 uid="uid://0gile0fujjql"]
 
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="1_371uh"]
 [ext_resource type="Script" uid="uid://dwrplk25tpc2x" path="res://scripts/slimes/green_slime.gd" id="1_pjw23"]
@@ -7,6 +7,9 @@
 [ext_resource type="PackedScene" uid="uid://b5vf6h1xj2eqo" path="res://scenes/heart_pickup.tscn" id="3_v5wyi"]
 [ext_resource type="Texture2D" uid="uid://co3cr7v5aihl" path="res://assets/greenslime.png" id="4_gstla"]
 [ext_resource type="AudioStream" uid="uid://6jgtwphqqvnt" path="res://assets/Audios/SlimeLand.wav" id="4_pjw23"]
+[ext_resource type="Script" uid="uid://p4g4lnfxjftj" path="res://scripts/player/health_component.gd" id="8_25dgc"]
+[ext_resource type="Texture2D" uid="uid://doa8spi3hyp5l" path="res://assets/HP Bar/enemyhealthbar.png" id="9_wlyjp"]
+[ext_resource type="Texture2D" uid="uid://wvuudlu11n78" path="res://assets/Separated/progressbarfill2.png" id="10_8ok8g"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_v5wyi"]
 atlas = ExtResource("4_gstla")
@@ -159,5 +162,35 @@ color = Color(0.3529412, 1, 0, 1)
 energy = 1.5
 texture = SubResource("GradientTexture2D_fd6lc")
 texture_scale = 0.3
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("8_25dgc")
+
+[node name="HPBar" type="TextureRect" parent="." groups=["hp_ui"]]
+texture_filter = 1
+texture_repeat = 1
+offset_left = -9.166666
+offset_top = -4.166667
+offset_right = 12.833334
+offset_bottom = 5.833333
+scale = Vector2(0.8, 0.8)
+texture = ExtResource("9_wlyjp")
+stretch_mode = 2
+
+[node name="HPFill" type="TextureProgressBar" parent="HPBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 1.0
+offset_top = 6.0
+offset_right = -2.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 2
+max_value = 5.0
+value = 3.0
+texture_progress = ExtResource("10_8ok8g")
+tint_progress = Color(1, 0, 0.078431375, 1)
 
 [connection signal="body_entered" from="Hitbox" to="." method="_on_hitbox_body_entered"]

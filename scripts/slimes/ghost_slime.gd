@@ -23,8 +23,11 @@ func _ready() -> void:
 
 	# Override base stats
 	speed = ghost_speed
-	max_health = ghost_health
-	health = ghost_health
+	var hc := $Health
+
+	hc.max_health = ghost_health
+	hc.health = ghost_health
+
 
 	# Always aggro from start
 	aggro = true

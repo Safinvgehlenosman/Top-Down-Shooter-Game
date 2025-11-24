@@ -182,6 +182,7 @@ scale = Vector2(1.4285713, 1.4285713)
 
 [node name="Health" type="Node" parent="."]
 script = ExtResource("8_smehm")
+use_gamestate = true
 
 [node name="Ability" type="Node" parent="."]
 script = ExtResource("9_ur7pv")

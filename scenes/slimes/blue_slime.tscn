@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3 uid="uid://d3oi7m6c8ysa6"]
+[gd_scene load_steps=26 format=3 uid="uid://d3oi7m6c8ysa6"]
 
 [ext_resource type="Script" uid="uid://dvweoy7ell6cp" path="res://scripts/slimes/blue_slime.gd" id="1_7qf5q"]
 [ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="2_ullxd"]
@@ -7,6 +7,9 @@
 [ext_resource type="Texture2D" uid="uid://brflkgxc2wxdb" path="res://assets/blueslime.png" id="4_ullxd"]
 [ext_resource type="AudioStream" uid="uid://dl8r8jnncqnmf" path="res://assets/Audios/Hurt.wav" id="5_igu51"]
 [ext_resource type="AudioStream" uid="uid://6jgtwphqqvnt" path="res://assets/Audios/SlimeLand.wav" id="6_vwtyt"]
+[ext_resource type="Script" uid="uid://p4g4lnfxjftj" path="res://scripts/player/health_component.gd" id="8_c23gw"]
+[ext_resource type="Texture2D" uid="uid://doa8spi3hyp5l" path="res://assets/HP Bar/enemyhealthbar.png" id="9_mfogb"]
+[ext_resource type="Texture2D" uid="uid://wvuudlu11n78" path="res://assets/Separated/progressbarfill2.png" id="10_5j0ea"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_vx4o0"]
 atlas = ExtResource("4_ullxd")
@@ -160,6 +163,36 @@ color = Color(0, 0.39607844, 1, 1)
 energy = 1.5
 texture = SubResource("GradientTexture2D_fd6lc")
 texture_scale = 0.3
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("8_c23gw")
+
+[node name="HPBar" type="TextureRect" parent="." groups=["hp_ui"]]
+texture_filter = 1
+texture_repeat = 1
+offset_left = -8.75
+offset_top = -3.7500005
+offset_right = 13.25
+offset_bottom = 6.2499995
+scale = Vector2(0.8, 0.8)
+texture = ExtResource("9_mfogb")
+stretch_mode = 2
+
+[node name="HPFill" type="TextureProgressBar" parent="HPBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 1.0
+offset_top = 6.0
+offset_right = -2.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 2
+max_value = 5.0
+value = 3.0
+texture_progress = ExtResource("10_5j0ea")
+tint_progress = Color(1, 0, 0.078431375, 1)
 
 [connection signal="frame_changed" from="AnimatedSprite2D" to="." method="_on_animated_sprite_2d_frame_changed"]
 [connection signal="body_entered" from="Hitbox" to="." method="_on_hitbox_body_entered"]

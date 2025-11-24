@@ -1,9 +1,9 @@
 extends CanvasLayer  # or Control if that's what you use
 
-@onready var hp_fill: TextureProgressBar   = $HPBar/HPFill
-@onready var hp_label: Label               = $HPLabel
-@onready var ammo_label: Label             = $AmmoUI/AmmoLabel
-@onready var coin_label: Label             = $CoinUI/CoinLabel
+@onready var hp_fill: TextureProgressBar     = $HPBar/HPFill
+@onready var hp_label: Label                 = $HPBar/HPLabel
+@onready var ammo_label: Label               = $AmmoUI/AmmoLabel
+@onready var coin_label: Label               = $CoinUI/CoinLabel
 @onready var ability_bar: TextureProgressBar = $AbilityBar/AbilityFill
 
 
@@ -22,7 +22,10 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
+	# Hard-sync HP every frame (cheap + reliable)
+	_on_health_changed(GameState.health, GameState.max_health)
 	_update_ability_bar()
+
 
 
 # --------------------------------------------------------------------

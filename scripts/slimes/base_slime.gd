@@ -13,6 +13,9 @@ var contact_timer: float = 0.0
 @onready var hitbox: Area2D = $Hitbox       # <-- adjust path to your slime's Area2D
 @export var vision_radius: float = 250.0
 
+@onready var health_component: Node = $Health
+
+
 # How much we grow per level
 @export var health_growth_per_level: float = 0.05
 @export var damage_growth_per_level: float = 0.10
@@ -46,7 +49,6 @@ var last_anim: StringName = ""
 var last_frame: int = -1
 
 # Internal state
-var health: int = 0
 var player: Node2D
 var base_modulate: Color
 var original_light_color: Color  # store whatever the light color is in the inspector
@@ -68,36 +70,48 @@ var is_dead: bool = false
 
 func _ready() -> void:
 	player = get_tree().get_first_node_in_group("player") as Node2D
-	health = max_health
 
 	base_modulate = animated_sprite.modulate
 
 	if hit_light:
 		original_light_color = hit_light.color
 
+	# --- Health component wiring ---
+	if health_component:
+		health_component.max_health = max_health
+		health_component.health     = max_health
+		health_component.invincible_time = 0.0   # usually no i-frames for slimes
+
+		health_component.connect("damaged", Callable(self, "_on_health_damaged"))
+		health_component.connect("died",    Callable(self, "_on_health_died"))
+
 	animated_sprite.play("moving")
+
 
 
 func apply_level(level: int) -> void:
 	# level 1 = no scaling
 	var level_offset = max(level - 1, 0)
 
-	if level_offset <= 0:
-		health = max_health
-		return
+	var final_max_hp := max_health
 
-	# HP scaling
-	if health_growth_per_level != 0.0:
-		var hp_mult = 1.0 + health_growth_per_level * level_offset
-		max_health = int(round(max_health * hp_mult))
-		health = max_health
-	else:
-		health = max_health
+	if level_offset > 0:
+		# HP scaling
+		if health_growth_per_level != 0.0:
+			var hp_mult = 1.0 + health_growth_per_level * level_offset
+			final_max_hp = int(round(max_health * hp_mult))
 
-	# Damage scaling
-	if damage_growth_per_level != 0.0:
-		var dmg_mult = 1.0 + damage_growth_per_level * level_offset
-		contact_damage = int(round(contact_damage * dmg_mult))
+		# Damage scaling
+		if damage_growth_per_level != 0.0:
+			var dmg_mult = 1.0 + damage_growth_per_level * level_offset
+			contact_damage = int(round(contact_damage * dmg_mult))
+
+	# Apply to Health component + local field
+	max_health = final_max_hp
+	if health_component:
+		health_component.max_health = final_max_hp
+		health_component.health     = final_max_hp
+
 
 
 
@@ -268,8 +282,9 @@ func _update_hit_feedback(delta: float) -> void:
 	# light flash
 	if hit_light and hit_light_timer > 0.0:
 		hit_light_timer -= delta
-		if hit_light_timer <= 0.0 and health > 0:
+		if hit_light_timer <= 0.0 and not is_dead:
 			hit_light.color = original_light_color
+
 
 
 func _update_animation_sfx() -> void:
@@ -299,34 +314,9 @@ func take_damage(amount: int) -> void:
 	if amount <= 0:
 		return
 
-	aggro = true
+	if health_component and health_component.has_method("take_damage"):
+		health_component.take_damage(amount)
 
-	health = max(health - amount, 0)
-
-	# sprite flash
-	animated_sprite.modulate = Color(1, 0.4, 0.4, 1)
-	hit_flash_timer = hit_flash_time
-
-	# light flash
-	if hit_light:
-		hit_light.color = Color(1.0, 0.25, 0.25, 1.0)
-		hit_light_timer = hit_light_flash_time
-
-	if health > 0:
-		if sfx_hurt:
-			sfx_hurt.stop()
-			sfx_hurt.play()
-	else:
-		is_dead = true
-
-		if hit_light:
-			hit_light.color = Color(1.0, 0.25, 0.25, 1.0)
-
-		if sfx_death:
-			sfx_death.stop()
-			sfx_death.play()
-
-		die()
 
 
 func die() -> void:
@@ -368,3 +358,37 @@ func _on_hitbox_body_entered(body: Node2D) -> void:
 
 		if body.has_method("apply_knockback"):
 			body.apply_knockback(global_position)
+
+
+func _on_health_damaged(_amount: int) -> void:
+	aggro = true
+
+	# sprite flash
+	animated_sprite.modulate = Color(1, 0.4, 0.4, 1)
+	hit_flash_timer = hit_flash_time
+
+	# light flash
+	if hit_light:
+		hit_light.color = Color(1.0, 0.25, 0.25, 1.0)
+		hit_light_timer = hit_light_flash_time
+
+	# Only play hurt SFX if we are still alive
+	if not is_dead and sfx_hurt:
+		sfx_hurt.stop()
+		sfx_hurt.play()
+
+
+func _on_health_died() -> void:
+	if is_dead:
+		return
+
+	is_dead = true
+
+	if hit_light:
+		hit_light.color = Color(1.0, 0.25, 0.25, 1.0)
+
+	if sfx_death:
+		sfx_death.stop()
+		sfx_death.play()
+
+	die()

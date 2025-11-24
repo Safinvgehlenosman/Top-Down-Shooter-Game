@@ -1,10 +1,11 @@
-[gd_scene load_steps=18 format=3 uid="uid://qeylggg2h2ax"]
+[gd_scene load_steps=19 format=3 uid="uid://qeylggg2h2ax"]
 
 [ext_resource type="Script" uid="uid://m8dmaiywm4pq" path="res://scripts/slimes/ghost_slime.gd" id="1_43r53"]
 [ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="2_udu5k"]
 [ext_resource type="Texture2D" uid="uid://csw36agbxaibb" path="res://assets/ghostslime.png" id="4_nqef8"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="5_k66um"]
 [ext_resource type="AudioStream" uid="uid://dl8r8jnncqnmf" path="res://assets/Audios/Hurt.wav" id="6_xodj6"]
+[ext_resource type="Script" uid="uid://p4g4lnfxjftj" path="res://scripts/player/health_component.gd" id="7_5pjse"]
 [ext_resource type="AudioStream" uid="uid://6jgtwphqqvnt" path="res://assets/Audios/SlimeLand.wav" id="7_gqwtn"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_6espa"]
@@ -132,5 +133,8 @@ color = Color(1, 1, 1, 0.37254903)
 energy = 1.5
 texture = SubResource("GradientTexture2D_fd6lc")
 texture_scale = 0.3
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("7_5pjse")
 
 [connection signal="body_entered" from="Hitbox" to="." method="_on_hitbox_body_entered"]
