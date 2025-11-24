@@ -24,10 +24,18 @@ func init_from_state() -> void:
 
 
 func update_timers(delta: float) -> void:
+	# Make weapon timers ignore global time_scale (bullet time)
+	# Engine gives us a scaled delta, so we "unscale" it.
+	var dt := delta
+	if Engine.time_scale > 0.0:
+		dt = delta / Engine.time_scale
+
 	if fire_timer > 0.0:
-		fire_timer -= delta
+		fire_timer -= dt
+
 	if alt_fire_cooldown_timer > 0.0:
-		alt_fire_cooldown_timer -= delta
+		alt_fire_cooldown_timer -= dt
+
 
 func add_ammo(amount: int) -> void:
 	GameState.set_ammo(GameState.ammo + amount)
