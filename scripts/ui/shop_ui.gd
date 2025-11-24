@@ -11,9 +11,20 @@ const ABILITY_NONE := 0
 const ABILITY_DASH := 1
 const ABILITY_SLOWMO := 2
 
-@onready var continue_button := $Panel/ContinueButton
-@onready var cards := $Panel/Cards
-@onready var coin_label := $CoinUI/CoinLabel
+@onready var continue_button       := $Panel/ContinueButton
+@onready var cards                 := $Panel/Cards
+@onready var coin_label: Label     =  $CoinUI/CoinLabel
+
+@onready var hp_fill: TextureProgressBar = $HPBar/HPFill
+@onready var hp_label: Label             = $HPBar/HPLabel
+
+@onready var ammo_label: Label           = $AmmoUI/AmmoLabel
+@onready var level_label: Label          = $LevelUI/LevelLabel
+
+@onready var ability_bar_container: Control      = $AbilityBar
+@onready var ability_bar: TextureProgressBar     = $AbilityBar/AbilityFill
+@onready var ability_label: Label                = $AbilityBar/AbilityLabel
+
 
 var upgrades := [
 	{
@@ -122,19 +133,27 @@ var upgrades := [
 	},
 ]
 
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	ability_bar_container.visible = false
+
 	_setup_cards()
-	_update_coin_label()
+	_refresh_from_state_full()
+
 	continue_button.pressed.connect(_on_continue_pressed)
 
+
+# -------------------------------------------------------------------
+# CARD SETUP
+# -------------------------------------------------------------------
+
 func _setup_cards() -> void:
-	# --- 1. Disconnect previous signals to avoid duplicates ---
+	# Disconnect old signals so we don't double-connect
 	for card in cards.get_children():
 		if card.purchased.is_connected(_on_card_purchased):
 			card.purchased.disconnect(_on_card_purchased)
 
-	# --- 2. Build pool of valid upgrades for this run ------------
 	var pool: Array = []
 
 	for u in upgrades:
@@ -167,28 +186,102 @@ func _setup_cards() -> void:
 
 		card.setup(data)
 
-		# Only connect once
 		if not card.purchased.is_connected(_on_card_purchased):
 			card.purchased.connect(_on_card_purchased)
+
+
+# -------------------------------------------------------------------
+# UI REFRESH HELPERS
+# -------------------------------------------------------------------
+
+func _refresh_from_state_full() -> void:
+	_update_coin_label()
+	_update_hp_from_state()
+	_update_ammo_from_state()
+	_update_level_label()
+	_update_ability_bar()
+	_update_card_button_states()
+
 
 func _update_coin_label() -> void:
 	coin_label.text = str(GameState.coins)
 
-func _on_card_purchased() -> void:
-	# Coin amount changed → refresh label + button states
-	_update_coin_label()
+
+func _update_hp_from_state() -> void:
+	var gs = GameState
+	hp_fill.max_value = gs.max_health
+	hp_fill.value = gs.health
+	hp_label.text = "%d/%d" % [gs.health, gs.max_health]
+
+
+func _update_ammo_from_state() -> void:
+	var gs = GameState
+	if gs.max_ammo <= 0:
+		ammo_label.text = "-/-"
+	else:
+		ammo_label.text = "%d/%d" % [gs.ammo, gs.max_ammo]
+
+
+func _update_level_label() -> void:
+	var gm := get_tree().get_first_node_in_group("game_manager")
+	if gm:
+		level_label.text = str(gm.current_level)
+
+
+func _update_card_button_states() -> void:
 	for card in cards.get_children():
 		if card.has_method("_update_button_state"):
 			card._update_button_state()
+
+
+# --- Ability bar (same logic as main HUD) ---------------------------
+
+func _update_ability_bar() -> void:
+	var gs = GameState
+
+	# No ability equipped → hide bar
+	if gs.ability == ABILITY_NONE:
+		ability_bar_container.visible = false
+		return
+
+	var data = gs.ABILITY_DATA.get(gs.ability, {})
+	if data.is_empty():
+		ability_bar_container.visible = false
+		return
+
+	var max_cd: float = data.get("cooldown", 0.0)
+	if max_cd <= 0.0:
+		ability_bar_container.visible = false
+		return
+
+	ability_bar_container.visible = true
+
+	var cd_left: float = gs.ability_cooldown_left
+	ability_bar.max_value = max_cd
+	ability_bar.value = max_cd - cd_left
+
+	# Show "remaining / total s"
+	if ability_label:
+		var remaining = round(cd_left * 10.0) / 10.0
+		var max_display = round(max_cd * 10.0) / 10.0
+		ability_label.text = "%s / %s s" % [remaining, max_display]
+
+
+# -------------------------------------------------------------------
+# SIGNALS
+# -------------------------------------------------------------------
+
+func _on_card_purchased() -> void:
+	# Some upgrade changed stats → refresh everything visible in the shop
+	_refresh_from_state_full()
+
 
 func _on_continue_pressed() -> void:
 	var gm := get_tree().get_first_node_in_group("game_manager")
 	if gm and gm.has_method("load_next_level"):
 		gm.load_next_level()
 
+
 # Called by GameManager when shop opens
 func refresh_from_state() -> void:
-	_update_coin_label()
-	for card in cards.get_children():
-		if card.has_method("_update_button_state"):
-			card._update_button_state()
+	_refresh_from_state_full()

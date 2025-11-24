@@ -75,7 +75,7 @@ const ABILITY_BASE_DATA := {
 		"id": "slowmo",
 		"type": "slowmo",
 		"cooldown": 15.0,
-		"duration": 0.5,
+		"duration": 1.0,
 		"factor": 0.3,
 	}
 }
