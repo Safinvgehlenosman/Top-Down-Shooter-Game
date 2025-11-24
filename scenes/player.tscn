@@ -1,10 +1,11 @@
-[gd_scene load_steps=20 format=3 uid="uid://cwdo73t7wn5pp"]
+[gd_scene load_steps=21 format=3 uid="uid://cwdo73t7wn5pp"]
 
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="1_3vyb7"]
-[ext_resource type="Script" uid="uid://c08yjacbakryb" path="res://scripts/player.gd" id="1_g2els"]
+[ext_resource type="Script" uid="uid://c08yjacbakryb" path="res://scripts/player/player.gd" id="1_g2els"]
 [ext_resource type="Script" uid="uid://7xp6tv2fkwuf" path="res://scripts/weapons/gun.gd" id="3_qhqgy"]
 [ext_resource type="Script" uid="uid://dk4jv4k8n6es5" path="res://scripts/weapons/turret.gd" id="6_fjrip"]
 [ext_resource type="Texture2D" uid="uid://muxb10dn58dn" path="res://assets/Separated/turret.png" id="6_tuyoq"]
+[ext_resource type="Script" uid="uid://p4g4lnfxjftj" path="res://scripts/player/health_component.gd" id="8_smehm"]
 [ext_resource type="AudioStream" uid="uid://bux0mdx48mneh" path="res://assets/Audios/Shoot.wav" id="10_y4r1p"]
 [ext_resource type="AudioStream" uid="uid://c8cwf2bwmi50v" path="res://assets/Audios/Hit.wav" id="11_d2wvv"]
 
@@ -177,3 +178,6 @@ region_rect = Rect2(41, 10, 12, 6)
 [node name="Muzzle" type="Marker2D" parent="Turret/TurretHead"]
 position = Vector2(-3.5714273, 3.8601104e-07)
 scale = Vector2(1.4285713, 1.4285713)
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("8_smehm")

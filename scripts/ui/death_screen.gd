@@ -49,12 +49,21 @@ func _move_focus(direction: int) -> void:
 
 
 func _on_restart_button_pressed() -> void:
+	# Make sure time_scale is normal again
 	Engine.time_scale = 1.0
-	get_tree().change_scene_to_file("res://scenes/level_1.tscn")
+
+	# Reset run data first
 	GameState.start_new_run()
+
+	# If you have a GameManager that needs to know about restarts,
+	# call it BEFORE changing the scene.
 	var gm := get_tree().get_first_node_in_group("game_manager")
 	if gm and gm.has_method("restart_run"):
 		gm.restart_run()
+
+	# Finally reload the level
+	get_tree().change_scene_to_file("res://scenes/level_1.tscn")
+
 
 
 func _on_quit_button_pressed() -> void:

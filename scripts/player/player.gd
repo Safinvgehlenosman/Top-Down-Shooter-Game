@@ -9,6 +9,8 @@ var dash_ghost_interval: float = 0.03
 var dash_ghost_timer: float = 0.0
 
 @onready var gun: Node = $Gun
+@onready var health_component: Node = $Health
+
 
 
 # UI
@@ -85,7 +87,9 @@ var aim_cursor_pos: Vector2 = Vector2.ZERO
 var last_mouse_pos: Vector2 = Vector2.ZERO
 
 func grant_spawn_invincibility(duration: float) -> void:
-	invincible_timer = max(invincible_timer, duration)
+	if health_component and health_component.has_method("grant_spawn_invincibility"):
+		health_component.grant_spawn_invincibility(duration)
+
 
 
 
@@ -98,13 +102,23 @@ func _ready() -> void:
 	# Design defaults from GameConfig
 	speed              = GameConfig.player_move_speed
 	knockback_strength = GameConfig.player_knockback_strength
-	base_speed = speed
+	base_speed         = speed
 	knockback_duration = GameConfig.player_knockback_duration
 	invincible_time    = GameConfig.player_invincible_time
 	
 	gun.init_from_state()
 	gun.connect("recoil_requested", _on_gun_recoil_requested)
 
+	# --- HealthComponent wiring ---
+	if health_component:
+		# Make sure health_component is in sync with GameState at start
+		if health_component.has_method("sync_from_gamestate"):
+			health_component.sync_from_gamestate()
+
+		# Connect health signals
+		health_component.connect("damaged", Callable(self, "_on_health_damaged"))
+		health_component.connect("healed", Callable(self, "_on_health_healed"))
+		health_component.connect("died", Callable(self, "_on_health_died"))
 
 	var design_max_health: int = GameConfig.player_max_health
 	var design_max_ammo: int = GameConfig.player_max_ammo
@@ -128,11 +142,11 @@ func _ready() -> void:
 	sync_from_gamestate()
 	alt_weapon = GameState.alt_weapon
 
-
 	# Aim setup
 	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 	aim_cursor_pos = get_global_mouse_position()
 	last_mouse_pos = get_viewport().get_mouse_position()
+
 
 
 # --------------------------------------------------------------------
@@ -186,8 +200,7 @@ func _on_gun_recoil_requested(dir: Vector2, strength: float) -> void:
 # --------------------------------------------------------------------
 
 func _update_timers(delta: float) -> void:
-	if invincible_timer > 0.0:
-		invincible_timer -= delta
+	# NOTE: invincibility is now handled inside HealthComponent
 
 	if knockback_timer > 0.0:
 		knockback_timer -= delta
@@ -202,6 +215,7 @@ func _update_timers(delta: float) -> void:
 		ability_active_left -= delta
 		if ability_active_left <= 0.0:
 			_end_ability()
+
 
 
 
@@ -404,36 +418,29 @@ func _play_heal_feedback() -> void:
 # --------------------------------------------------------------------
 
 func take_damage(amount: int) -> void:
-	if is_dead:
-		return
-	if amount == 0:
-		return
+	# Keep this wrapper so enemies can still call player.take_damage(amount)
+	if health_component and health_component.has_method("take_damage"):
+		health_component.take_damage(amount)
 
-	# DAMAGE (amount > 0)
-	if amount > 0:
-		if invincible_timer > 0.0:
-			return
-		invincible_timer = invincible_time
-
+func _on_health_damaged(_amount: int) -> void:
+	# Play hurt SFX + camera/screen feedback
+	if has_node("SFX_Hurt"):
 		$SFX_Hurt.play()
-		_play_hit_feedback()
+	_play_hit_feedback()
 
-	# HEAL (amount < 0)
-	elif amount < 0:
-		_play_heal_feedback()
-
-	# amount can be negative: damage = minus, heal = plus
-	GameState.health = clampi(
-		GameState.health - amount,
-		0,
-		GameState.max_health
-	)
-	health = GameState.health
-
+	# Update HP UI to match GameState
 	update_health_bar()
 
-	if amount > 0 and health <= 0:
-		die()
+
+func _on_health_healed(_amount: int) -> void:
+	_play_heal_feedback()
+	update_health_bar()
+
+
+func _on_health_died() -> void:
+	# Mark player as dead so _physics_process stops
+	is_dead = true
+	die()
 
 
 func add_coin() -> void:
@@ -464,6 +471,7 @@ func die() -> void:
 		gm.on_player_died()
 
 
+
 # --------------------------------------------------------------------
 # UI BARS
 # --------------------------------------------------------------------
@@ -476,11 +484,15 @@ func update_health_bar() -> void:
 	if hp_label:
 		hp_label.text = "%d/%d" % [GameState.health, GameState.max_health]
 
+
 func sync_from_gamestate() -> void:
 	# Core stats
 	max_health = GameState.max_health
-	health = GameState.health
+	health     = GameState.health
 
+	# Also tell HealthComponent to resync
+	if health_component and health_component.has_method("sync_from_gamestate"):
+		health_component.sync_from_gamestate()
 
 	# 🔥 ALSO SYNC ALT WEAPON
 	alt_weapon = GameState.alt_weapon  # 0–3
