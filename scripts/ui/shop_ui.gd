@@ -6,6 +6,7 @@ const ALT_WEAPON_NONE := 0
 const ALT_WEAPON_SHOTGUN := 1
 const ALT_WEAPON_SNIPER := 2
 const ALT_WEAPON_TURRET := 3
+const ALT_WEAPON_FLAMETHROWER := 4
 
 const ABILITY_NONE := 0
 const ABILITY_DASH := 1
@@ -64,6 +65,7 @@ var upgrades := [
 		"text": "Unlock Sniper",
 		"requires_alt_weapon": ALT_WEAPON_NONE
 	},
+  
 	{
 		"id": "unlock_turret",
 		"price": 15,
@@ -71,7 +73,22 @@ var upgrades := [
 		"text": "Unlock Turret Backpack",
 		"requires_alt_weapon": ALT_WEAPON_NONE
 	},
+	{
+		"id": "unlock_flamethrower",
+		"price": 15,
+		"icon": preload("res://assets/bullets/flamethrowerbullet.png"), # TODO: flame icon
+		"text": "Unlock Flamethrower",
+		"requires_alt_weapon": ALT_WEAPON_NONE
+	},
+	{
+		"id": "flame_range_plus_20",
+		"price": 10,
+		"icon": preload("res://assets/bullets/flamethrowerbullet.png"), # use whatever icon you want
+		"text": "+20% Flame Range",
+		"requires_alt_weapon": ALT_WEAPON_FLAMETHROWER,
+	},
 
+	
 	{
 		"id": "turret_cooldown_minus_5",
 		"price": 10,
@@ -79,7 +96,6 @@ var upgrades := [
 		"text": "Turret fires 5% faster",
 		"requires_alt_weapon": ALT_WEAPON_TURRET,
 	},
-
 	{
 		"id": "sniper_damage_plus_5",
 		"price": 10,
@@ -122,7 +138,7 @@ var upgrades := [
 		"id": "max_hp_plus_1",
 		"price": 15,
 		"icon": preload("res://assets/Separated/singleheart.png"),
-		"text": "+1 Max HP"
+		"text": "+10 Max HP"   # ⬅ scaled text to match +10 effect
 	},
 	{
 		"id": "ammo_refill",

@@ -139,7 +139,7 @@ func _physics_process(delta: float) -> void:
 	gun.update_timers(delta)
 
 	var is_shooting := Input.is_action_pressed("shoot")
-	var is_alt_fire := Input.is_action_just_pressed("alt_fire")
+	var is_alt_fire := Input.is_action_pressed("alt_fire")
 
 	gun.handle_primary_fire(is_shooting, aim_dir)
 	gun.handle_alt_fire(is_alt_fire, aim_cursor_pos)

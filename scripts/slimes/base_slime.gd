@@ -321,6 +321,10 @@ func take_damage(amount: int) -> void:
 	if health_component and health_component.has_method("take_damage"):
 		health_component.take_damage(amount)
 
+func apply_burn(dmg_per_tick: int, duration: float, interval: float) -> void:
+	if health_component and health_component.has_method("apply_burn"):
+		health_component.apply_burn(dmg_per_tick, duration, interval)
+
 
 func die() -> void:
 	collision_shape.set_deferred("disabled", true)

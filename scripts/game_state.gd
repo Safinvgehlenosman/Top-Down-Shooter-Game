@@ -14,6 +14,7 @@ const ALT_WEAPON_NONE := 0
 const ALT_WEAPON_SHOTGUN := 1
 const ALT_WEAPON_SNIPER := 2
 const ALT_WEAPON_TURRET := 3
+const ALT_WEAPON_FLAMETHROWER := 4
 
 # Base, never modified
 const ALT_WEAPON_BASE_DATA := {
@@ -26,7 +27,7 @@ const ALT_WEAPON_BASE_DATA := {
 		"bullet_scene": preload("res://scenes/bullets/shotgun_bullet.tscn"),
 		"bullet_speed": 400.0,
 		"recoil": 200.0,
-		"damage": 1.0,
+		"damage": 10.0,   # ⬅ was 1.0
 		"ammo_cost": 1,
 	},
 	ALT_WEAPON_SNIPER: {
@@ -38,7 +39,7 @@ const ALT_WEAPON_BASE_DATA := {
 		"bullet_scene": preload("res://scenes/bullets/sniper_bullet.tscn"),
 		"bullet_speed": 600.0,
 		"recoil": 80.0,
-		"damage": 2.0,
+		"damage": 20.0,   # ⬅ was 2.0
 		"ammo_cost": 1,
 	},
 	ALT_WEAPON_TURRET: {
@@ -47,8 +48,24 @@ const ALT_WEAPON_BASE_DATA := {
 		"spread_degrees": 20.0,
 		"bullet_scene": preload("res://scenes/bullets/turret_bullet.tscn"),
 		"bullet_speed": 100.0,
-		"damage": 1.0,
-	}
+		"damage": 10.0,   # ⬅ was 1.0
+	},
+	ALT_WEAPON_FLAMETHROWER: {
+		"max_ammo": 100,          # fuel tank size
+		"pickup_amount": 10,      # ammo per pickup
+		"cooldown": 0.01,          # we handle “per frame” fire in Gun
+		"spread_degrees": 35.0,
+		"pellets": 1,
+		"bullet_scene": preload("res://scenes/bullets/flamethrower_bullet.tscn"),
+		"bullet_speed": 50.0,    # ⬅️ higher = longer range (was lower)
+		"recoil": 0.0,
+		"damage": 0,              # direct hit
+		"ammo_cost": 1,
+		"burn_damage": 10,        # DoT per tick (after the x10 change)
+		"burn_duration": 1.5,
+		"burn_interval": 0.3,
+	},
+
 }
 
 # Mutable runtime copy – THIS is what upgrades modify
@@ -129,7 +146,7 @@ func apply_upgrade(id: String) -> void:
 		"sniper_damage_plus_5":
 			if ALT_WEAPON_DATA.has(ALT_WEAPON_SNIPER):
 				var d = ALT_WEAPON_DATA[ALT_WEAPON_SNIPER]
-				var current = d.get("damage", 1.0)
+				var current = d.get("damage", 10.0)
 				d["damage"] = current * 1.05
 
 		"max_ammo_plus_1":
@@ -144,14 +161,12 @@ func apply_upgrade(id: String) -> void:
 				d["fire_interval"] = max(0.05, current * 0.95)
 
 		"fire_rate_plus_10":
-	# Ensure initialized
+			# Ensure initialized
 			if fire_rate <= 0.0:
 				fire_rate = GameConfig.player_fire_rate
 
-	# Reduce current cooldown by 5% (shoot faster)
+			# Reduce current cooldown by 5% (shoot faster)
 			fire_rate = max(0.05, fire_rate * 0.95)
-
-
 
 		"shotgun_pellet_plus_1":
 			if ALT_WEAPON_DATA.has(ALT_WEAPON_SHOTGUN):
@@ -164,7 +179,7 @@ func apply_upgrade(id: String) -> void:
 			health = max_health
 
 		"max_hp_plus_1":
-			max_health += 1
+			max_health += 10   # ⬅ was 1, now fits the "+10 Max HP" card
 			health = max_health
 
 		"ammo_refill":
@@ -191,6 +206,22 @@ func apply_upgrade(id: String) -> void:
 				var td = ALT_WEAPON_DATA[ALT_WEAPON_TURRET]
 				max_ammo = td.get("max_ammo", 0)
 				ammo = max_ammo
+
+		"unlock_flamethrower":
+			alt_weapon = ALT_WEAPON_FLAMETHROWER
+			if ALT_WEAPON_DATA.has(ALT_WEAPON_FLAMETHROWER):
+				var fd = ALT_WEAPON_DATA[ALT_WEAPON_FLAMETHROWER]
+				max_ammo = fd.get("max_ammo", 0)
+				ammo = max_ammo
+				
+		"flame_range_plus_20":
+			if ALT_WEAPON_DATA.has(ALT_WEAPON_FLAMETHROWER):
+				var d = ALT_WEAPON_DATA[ALT_WEAPON_FLAMETHROWER]
+				var current_speed = d.get("bullet_speed", 320.0)
+				# 20% more range = 20% more speed
+				d["bullet_speed"] = current_speed * 1.2
+
+
 
 		# --- Ability unlocks -------------------------------------------
 		"unlock_dash":
@@ -230,7 +261,7 @@ func start_new_run() -> void:
 	alt_weapon = ALT_WEAPON_NONE
 	max_ammo = 0
 	ammo = 0
-
+	
 	# Ability reset
 	ability = ABILITY_NONE
 	ability_cooldown_left = 0.0
@@ -241,6 +272,7 @@ func start_new_run() -> void:
 
 	emit_signal("coins_changed", coins)
 	emit_signal("health_changed", health, max_health)
+  
 	emit_signal("ammo_changed", ammo, max_ammo)
 	emit_signal("run_reset")
 
