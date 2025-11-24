@@ -1,6 +1,6 @@
 [gd_scene load_steps=4 format=3 uid="uid://chcumh0nhsngk"]
 
-[ext_resource type="Script" uid="uid://cik6u8kpiaycg" path="res://scripts/crosshair.gd" id="1_norqy"]
+[ext_resource type="Script" uid="uid://cik6u8kpiaycg" path="res://scripts/ui/crosshair.gd" id="1_norqy"]
 [ext_resource type="Texture2D" uid="uid://bg88mp4f6f26y" path="res://assets/crosshair.png" id="2_qnjby"]
 [ext_resource type="Texture2D" uid="uid://co6g1qtmr654o" path="res://assets/Separated/new_gradient_texture_2d.tres" id="3_qnjby"]
 

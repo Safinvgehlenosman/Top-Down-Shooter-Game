@@ -1,6 +1,6 @@
 [gd_scene load_steps=6 format=3 uid="uid://755tjml7mgfa"]
 
-[ext_resource type="Script" uid="uid://ctoagax75h2sy" path="res://scripts/upgrade_card.gd" id="1_0hv3p"]
+[ext_resource type="Script" uid="uid://ctoagax75h2sy" path="res://scripts/ui/upgrade_card.gd" id="1_0hv3p"]
 [ext_resource type="FontFile" uid="uid://4xsaqwwtj2c1" path="res://assets/Fonts/PixelOperator8.ttf" id="2_igsks"]
 [ext_resource type="Texture2D" uid="uid://55msc8hn2qb3" path="res://assets/Separated/singlecoin.png" id="3_33rkj"]
 [ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="4_sav2r"]

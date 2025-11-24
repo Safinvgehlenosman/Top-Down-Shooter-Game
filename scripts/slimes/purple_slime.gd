@@ -1,4 +1,4 @@
-extends "res://scripts/base_slime.gd"
+extends "res://scripts/slimes/base_slime.gd"
 
 # --- Shooting settings ---
 @export var projectile_scene: PackedScene

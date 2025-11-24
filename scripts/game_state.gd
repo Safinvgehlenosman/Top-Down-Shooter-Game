@@ -1,5 +1,9 @@
 extends Node2D
 
+
+enum AltWeaponType { NONE, SHOTGUN, SNIPER, TURRET }
+
+
 # --- ALT WEAPONS -------------------------------------------------------
 
 const ALT_WEAPON_NONE := 0
@@ -19,6 +23,7 @@ const ALT_WEAPON_BASE_DATA := {
 		"bullet_speed": 400.0,
 		"recoil": 200.0,
 		"damage": 1.0,
+		"ammo_cost": 1,
 	},
 	ALT_WEAPON_SNIPER: {
 		"max_ammo": 4,
@@ -30,6 +35,7 @@ const ALT_WEAPON_BASE_DATA := {
 		"bullet_speed": 600.0,
 		"recoil": 80.0,
 		"damage": 2.0,
+		"ammo_cost": 1,
 	},
 	ALT_WEAPON_TURRET: {
 		"fire_interval": 0.8,

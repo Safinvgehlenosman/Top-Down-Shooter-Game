@@ -1,6 +1,6 @@
 [gd_scene load_steps=21 format=3 uid="uid://bpcfinf4nnx5k"]
 
-[ext_resource type="Script" uid="uid://ct3p7rg0rcdhy" path="res://scripts/king_slime.gd" id="1_v0dom"]
+[ext_resource type="Script" uid="uid://ct3p7rg0rcdhy" path="res://scripts/slimes/king_slime.gd" id="1_v0dom"]
 [ext_resource type="Texture2D" uid="uid://dq6e5td6ibnp4" path="res://assets/redlime.png" id="4_0vox5"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="4_qj304"]
 [ext_resource type="AudioStream" uid="uid://dl8r8jnncqnmf" path="res://assets/Audios/Hurt.wav" id="5_hdw7q"]

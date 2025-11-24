@@ -1,6 +1,6 @@
 [gd_scene load_steps=12 format=3 uid="uid://cxo8ho16py78a"]
 
-[ext_resource type="Script" uid="uid://dogjq8nj1w25k" path="res://scripts/coin_pickup.gd" id="1_x00gn"]
+[ext_resource type="Script" uid="uid://dogjq8nj1w25k" path="res://scripts/pickups/coin_pickup.gd" id="1_x00gn"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="2_yu1o2"]
 [ext_resource type="AudioStream" uid="uid://b1jxtbwxuvrds" path="res://assets/Audios/CoinFall.wav" id="3_yu1o2"]
 [ext_resource type="AudioStream" uid="uid://s21q2vmi6db6" path="res://assets/Audios/CoinCollect.wav" id="4_jfem2"]

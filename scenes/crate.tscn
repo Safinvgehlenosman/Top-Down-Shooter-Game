@@ -1,6 +1,6 @@
 [gd_scene load_steps=13 format=3 uid="uid://bjfkxuy5hxd11"]
 
-[ext_resource type="Script" uid="uid://dqvrma8a6jrqb" path="res://scripts/crate.gd" id="1_74u5o"]
+[ext_resource type="Script" uid="uid://dqvrma8a6jrqb" path="res://scripts/pickups/crate.gd" id="1_74u5o"]
 [ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="2_1kl6c"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="2_dwt0d"]
 [ext_resource type="PackedScene" uid="uid://4g03mky1wrrw" path="res://scenes/ammo_pickup.tscn" id="3_dfg3k"]

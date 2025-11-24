@@ -1,4 +1,4 @@
-extends "res://scripts/base_slime.gd"   # <-- adjust path if needed
+extends "res://scripts/slimes/base_slime.gd"   # <-- adjust path if needed
 
 @export var ghost_speed: float = 25.0   # slow creepy speed
 @export var ghost_health: int = 1       # always 1 HP

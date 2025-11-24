@@ -8,6 +8,8 @@ const DashGhostScene := preload("res://scenes/dash_ghost.tscn")
 var dash_ghost_interval: float = 0.03
 var dash_ghost_timer: float = 0.0
 
+@onready var gun: Node = $Gun
+
 
 # UI
 @onready var hp_fill: TextureProgressBar = $"../UI/HPBar/HPFill"
@@ -17,21 +19,17 @@ var dash_ghost_timer: float = 0.0
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var muzzle: Marker2D = $Gun/Muzzle
 
-var alt_fire_cooldown_timer: float = 0.0
 
 # Runtime stats (filled from GameConfig / GameState in _ready)
 var speed: float
 var max_health: int
-var fire_rate: float
 var knockback_strength: float
 var knockback_duration: float
 var invincible_time: float
-var max_ammo: int
 
 # State
 var health: int = 0
-var ammo: int = 0
-var fire_timer: float = 0.0
+
 
 # Knockback
 var knockback: Vector2 = Vector2.ZERO
@@ -48,7 +46,7 @@ const AIM_DEADZONE: float = 0.25
 const AIM_CURSOR_SPEED: float = 800.0  # tweak speed of controller cursor
 const AIM_SMOOTH: float = 10.0  # higher = snappier, lower = floatier
 
-enum AltWeaponType { NONE, SHOTGUN, SNIPER, TURRET }
+const AltWeaponType = GameState.AltWeaponType
 var alt_weapon: AltWeaponType = AltWeaponType.NONE
 
 
@@ -103,6 +101,10 @@ func _ready() -> void:
 	base_speed = speed
 	knockback_duration = GameConfig.player_knockback_duration
 	invincible_time    = GameConfig.player_invincible_time
+	
+	gun.init_from_state()
+	gun.connect("recoil_requested", _on_gun_recoil_requested)
+
 
 	var design_max_health: int = GameConfig.player_max_health
 	var design_max_ammo: int = GameConfig.player_max_ammo
@@ -156,7 +158,6 @@ func _physics_process(delta: float) -> void:
 	_process_movement(delta)
 	_update_aim_direction(delta)
 	_process_aim()
-	_process_shooting(delta)
 	_process_ability_input(delta)
 	
 	if is_dashing:
@@ -164,6 +165,19 @@ func _physics_process(delta: float) -> void:
 		if dash_ghost_timer <= 0.0:
 			_spawn_dash_ghost()
 			dash_ghost_timer = dash_ghost_interval
+	
+	gun.update_timers(delta)
+
+	var is_shooting := Input.is_action_pressed("shoot")
+	var is_alt_fire := Input.is_action_just_pressed("alt_fire")
+
+# you already keep track of aim_dir and aim_cursor_pos in Player
+	gun.handle_primary_fire(is_shooting, aim_dir)
+	gun.handle_alt_fire(is_alt_fire, aim_cursor_pos)
+
+func _on_gun_recoil_requested(dir: Vector2, strength: float) -> void:
+	knockback = dir * strength
+	knockback_timer = knockback_duration
 
 
 
@@ -179,9 +193,6 @@ func _update_timers(delta: float) -> void:
 		knockback_timer -= delta
 	else:
 		knockback = Vector2.ZERO
-
-	if alt_fire_cooldown_timer > 0.0:
-		alt_fire_cooldown_timer -= delta
 
 	# --- Ability timers ---
 	if ability_cooldown_left > 0.0:
@@ -273,171 +284,6 @@ func _update_crosshair() -> void:
 		return
 
 	crosshair.global_position = aim_cursor_pos
-
-
-# --------------------------------------------------------------------
-# SHOOTING
-# --------------------------------------------------------------------
-
-func _process_shooting(delta: float) -> void:
-	fire_timer -= delta
-
-	# always use current run fire_rate from GameState (upgrades can change it)
-	fire_rate = GameState.fire_rate
-
-	if Input.is_action_pressed("shoot") and fire_timer <= 0.0:
-		shoot()
-		fire_timer = fire_rate
-
-	# Alt fire (modular: shotgun / sniper / etc.)
-	if Input.is_action_just_pressed("alt_fire") \
-			and alt_fire_cooldown_timer <= 0.0 \
-			and GameState.ammo > 0 \
-			and alt_weapon != AltWeaponType.NONE:
-		_do_alt_fire()
-
-
-
-func add_ammo(amount: int) -> void:
-	ammo = clampi(ammo + amount, 0, max_ammo)
-	GameState.ammo = ammo
-
-func _do_alt_fire() -> void:
-	if alt_weapon == AltWeaponType.NONE:
-		return
-		
-	if alt_weapon == AltWeaponType.TURRET:
-		return
-
-
-	var data = GameState.ALT_WEAPON_DATA[alt_weapon]
-
-	# cooldown
-	alt_fire_cooldown_timer = data.get("cooldown", 1.0)
-
-	# pick the right fire function
-	match alt_weapon:
-		AltWeaponType.SHOTGUN:
-			_fire_weapon(data)
-		AltWeaponType.SNIPER:
-			_fire_weapon(data)
-
-func _fire_weapon(data: Dictionary) -> void:
-	# spend ammo
-	ammo = max(ammo - 1, 0)
-	GameState.ammo = ammo
-
-	# get settings
-	var bullet_scene: PackedScene = data["bullet_scene"]
-	var bullet_speed: float = data["bullet_speed"]
-	var pellets: int = data.get("pellets", 1)
-	var spread_deg: float = data.get("spread_degrees", 0.0)
-	var spread_rad: float = deg_to_rad(spread_deg)
-	var damage: float = data.get("damage", 1.0)
-
-	var base_dir := (aim_cursor_pos - muzzle.global_position).normalized()
-	var start_offset := -float(pellets - 1) / 2.0
-
-	for i in range(pellets):
-		var angle := (start_offset + i) * spread_rad
-		var dir := base_dir.rotated(angle)
-
-		var bullet = bullet_scene.instantiate()
-		bullet.global_position = muzzle.global_position
-		bullet.direction = dir
-		bullet.speed = bullet_speed
-		bullet.damage = damage   # 👈 THIS is new
-		get_tree().current_scene.add_child(bullet)
-
-	# recoil
-	var recoil_strength = data.get("recoil", 0.0)
-	knockback = -base_dir * recoil_strength
-	knockback_timer = 0.15
-
-
-
-func _fire_shotgun() -> void:
-	# spend ammo
-	ammo = max(ammo - 1, 0)
-	GameState.ammo = ammo
-
-	# --- SHOTGUN / ALT FIRE SFX ---
-	var shot := $SFX_Shoot_Shotgun
-
-	# Main deep blast
-	shot.pitch_scale = 0.7
-	shot.play()
-
-	# Extra layers for oomph
-	for i in range(4):
-		shot.pitch_scale = randf_range(0.35, 0.55)
-		shot.play()
-
-	# pellet count still uses GameState (so your upgrade works!)
-	var bullet_count: int = GameState.shotgun_pellets
-	var spread_degrees: float = GameConfig.alt_fire_spread_degrees
-	var spread_radians: float = deg_to_rad(spread_degrees)
-
-	# use aim_cursor_pos instead of raw mouse so it works with controller too
-	var target_pos := aim_cursor_pos
-	var base_dir: Vector2 = (target_pos - muzzle.global_position).normalized()
-	var start_index: float = -float(bullet_count - 1) / 2.0
-
-	for i in range(bullet_count):
-		var angle_offset: float = (start_index + float(i)) * spread_radians
-		var dir: Vector2 = base_dir.rotated(angle_offset)
-
-		var bullet := BulletScene_SHOTGUN.instantiate()
-		bullet.global_position = muzzle.global_position
-		bullet.direction = dir
-		get_tree().current_scene.add_child(bullet)
-
-	# recoil: push player opposite of shot direction
-	var recoil_dir: Vector2 = -base_dir
-
-	var base_pellets: int = GameConfig.alt_fire_bullet_count
-	var current_pellets: int = GameState.shotgun_pellets
-	var extra_pellets: int = max(current_pellets - base_pellets, 0)
-
-	var recoil_multiplier: float = 1.0 + float(extra_pellets) * 0.10
-	var recoil_strength: float = GameConfig.alt_fire_recoil_strength * recoil_multiplier
-
-	knockback = recoil_dir * recoil_strength
-	knockback_timer = GameConfig.alt_fire_recoil_duration
-
-	var cam := get_tree().get_first_node_in_group("camera")
-	if cam and cam.has_method("shake"):
-		cam.shake(GameConfig.knockback_shake_strength, GameConfig.knockback_shake_duration)
-
-func _fire_sniper() -> void:
-	ammo = max(ammo - 1, 0)
-	GameState.ammo = ammo
-
-	$SFX_Shoot.play()
-
-	var target_pos := aim_cursor_pos
-	var dir := (target_pos - muzzle.global_position).normalized()
-
-	var bullet := BulletScene_SNIPER.instantiate()
-	bullet.global_position = muzzle.global_position
-	bullet.direction = dir
-
-	get_tree().current_scene.add_child(bullet)
-
-
-
-func shoot() -> void:
-	$SFX_Shoot.play()
-
-	var bullet := BulletScene_DEFAULT.instantiate()
-	bullet.global_position = muzzle.global_position
-
-	var mouse_pos := get_global_mouse_position()
-	var dir := (mouse_pos - muzzle.global_position).normalized()
-	bullet.direction = dir
-
-	get_tree().current_scene.add_child(bullet)
-
 
 
 func _process_ability_input(_delta: float) -> void:
@@ -635,10 +481,6 @@ func sync_from_gamestate() -> void:
 	max_health = GameState.max_health
 	health = GameState.health
 
-	max_ammo = GameState.max_ammo
-	ammo = GameState.ammo
-
-	fire_rate = GameState.fire_rate
 
 	# 🔥 ALSO SYNC ALT WEAPON
 	alt_weapon = GameState.alt_weapon  # 0–3

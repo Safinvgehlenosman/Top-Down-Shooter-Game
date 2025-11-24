@@ -1,6 +1,6 @@
 [gd_scene load_steps=7 format=3 uid="uid://c06q8m62vgg1i"]
 
-[ext_resource type="Script" uid="uid://c8wyjykgvkmi0" path="res://scripts/sniper_bullet.gd" id="1_21kos"]
+[ext_resource type="Script" uid="uid://c8wyjykgvkmi0" path="res://scripts/bullets/sniper_bullet.gd" id="1_21kos"]
 [ext_resource type="Texture2D" uid="uid://cynxbw0irkdpk" path="res://assets/bullets/sniperbullet.png" id="2_21kos"]
 [ext_resource type="Texture2D" uid="uid://ntkmut61o7gw" path="res://assets/Separated/Bullets.png" id="3_a0wqd"]
 

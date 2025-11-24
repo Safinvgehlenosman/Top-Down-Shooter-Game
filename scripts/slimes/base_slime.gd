@@ -100,6 +100,7 @@ func apply_level(level: int) -> void:
 		contact_damage = int(round(contact_damage * dmg_mult))
 
 
+
 func _physics_process(delta: float) -> void:
 	# contact damage timer
 	if contact_timer > 0.0:
@@ -212,7 +213,24 @@ func _update_ai(delta: float) -> void:
 			separation += diff.normalized() * (1.0 - dist_sep / separation_radius)
 
 	velocity += separation * separation_strength * speed
-	# you can re-add collision steering here later if you want
+
+	# --- Wall avoidance so slimes don't get shoved into walls ---
+	var motion := velocity * delta
+
+	if test_move(global_transform, motion):
+		var motion_x := Vector2(motion.x, 0.0)
+		var motion_y := Vector2(0.0, motion.y)
+
+		if not test_move(global_transform, motion_x):
+			motion = motion_x
+		elif not test_move(global_transform, motion_y):
+			motion = motion_y
+		else:
+			motion = Vector2.ZERO
+
+		if delta > 0.0:
+			velocity = motion / delta
+
 
 
 func _can_see_player() -> bool:

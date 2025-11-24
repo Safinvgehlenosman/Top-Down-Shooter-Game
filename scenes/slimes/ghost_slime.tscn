@@ -1,6 +1,6 @@
 [gd_scene load_steps=18 format=3 uid="uid://qeylggg2h2ax"]
 
-[ext_resource type="Script" uid="uid://m8dmaiywm4pq" path="res://scripts/ghost_slime.gd" id="1_43r53"]
+[ext_resource type="Script" uid="uid://m8dmaiywm4pq" path="res://scripts/slimes/ghost_slime.gd" id="1_43r53"]
 [ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="2_udu5k"]
 [ext_resource type="Texture2D" uid="uid://csw36agbxaibb" path="res://assets/ghostslime.png" id="4_nqef8"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="5_k66um"]

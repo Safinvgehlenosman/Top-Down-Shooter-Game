@@ -1,6 +1,6 @@
 [gd_scene load_steps=7 format=3 uid="uid://m8wveywln7l3"]
 
-[ext_resource type="Script" uid="uid://da6hru04vo2sn" path="res://scripts/shotgun_bullet.gd" id="1_dxlgm"]
+[ext_resource type="Script" uid="uid://da6hru04vo2sn" path="res://scripts/bullets/shotgun_bullet.gd" id="1_dxlgm"]
 [ext_resource type="Texture2D" uid="uid://bksrw6rtxkhb5" path="res://assets/bullets/shotgunbullet.png" id="2_dxlgm"]
 [ext_resource type="Texture2D" uid="uid://ntkmut61o7gw" path="res://assets/Separated/Bullets.png" id="3_pw2ds"]
 
