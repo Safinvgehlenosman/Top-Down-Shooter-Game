@@ -1,8 +1,10 @@
-[gd_scene load_steps=20 format=3 uid="uid://s7do308xihbw"]
+[gd_scene load_steps=22 format=3 uid="uid://s7do308xihbw"]
 
 [ext_resource type="Script" uid="uid://brvgav35e1cb5" path="res://scripts/main.gd" id="1_mbb35"]
 [ext_resource type="PackedScene" uid="uid://cwdo73t7wn5pp" path="res://scenes/player.tscn" id="2_iw4em"]
+[ext_resource type="PackedScene" uid="uid://blepjhd0xqb2g" path="res://scenes/debug_level_popup_ui.tscn" id="3_2cbcq"]
 [ext_resource type="PackedScene" uid="uid://dxcqijbcprgnd" path="res://scenes/shop_ui.tscn" id="3_tr1x6"]
+[ext_resource type="PackedScene" uid="uid://cv6vgriedjfo1" path="res://scenes/debug_overlay_ui.tscn" id="4_isj1j"]
 [ext_resource type="PackedScene" uid="uid://chkoa4u60jigd" path="res://scenes/rooms/room_02.tscn" id="9_go7sj"]
 [ext_resource type="Script" uid="uid://be1y1fhgbt80f" path="res://scripts/ui/camera_shake.gd" id="9_tdlki"]
 [ext_resource type="PackedScene" uid="uid://brptj1un3f7q8" path="res://scenes/rooms/room_03.tscn" id="10_7gny6"]
@@ -26,6 +28,12 @@ script = ExtResource("25_lkded")
 script = ExtResource("1_mbb35")
 
 [node name="UI" parent="." instance=ExtResource("13_so66j")]
+
+[node name="DebugLevelPopup" parent="UI" instance=ExtResource("3_2cbcq")]
+visible = false
+
+[node name="DebugOverlayUI" parent="UI" instance=ExtResource("4_isj1j")]
+visible = false
 
 [node name="Player" parent="." instance=ExtResource("2_iw4em")]
 position = Vector2(86, 92)

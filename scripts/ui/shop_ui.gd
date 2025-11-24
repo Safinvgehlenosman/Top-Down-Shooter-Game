@@ -18,21 +18,21 @@ const ABILITY_SLOWMO := 2
 var upgrades := [
 	{
 		"id": "max_ammo_plus_1",
-		"price": 0,
+		"price": 10,
 		"icon": preload("res://assets/Separated/bullet.png"),
 		"text": "+1 Max Ammo",
 		"requires_ammo_weapon": true,
 	},
 	{
 		"id": "fire_rate_plus_10",
-		"price": 0,
+		"price": 10,
 		"icon": preload("res://assets/Separated/singlebullet.png"),
 		"text": "Shoot 5% faster"
 	},
 
 	{
 		"id": "shotgun_pellet_plus_1",
-		"price": 0,
+		"price": 10,
 		"icon": preload("res://assets/bullets/shotgunbullet.png"),
 		"text": "+1 Shotgun Projectile",
 		"requires_alt_weapon": ALT_WEAPON_SHOTGUN
@@ -41,21 +41,21 @@ var upgrades := [
 	# NEW: weapon unlocks (only show when you have no alt weapon)
 	{
 		"id": "unlock_shotgun",
-		"price": 0,
+		"price": 15,
 		"icon": preload("res://assets/bullets/shotgunbullet.png"),
 		"text": "Unlock Shotgun",
 		"requires_alt_weapon": ALT_WEAPON_NONE
 	},
 	{
 		"id": "unlock_sniper",
-		"price": 0,
+		"price": 15,
 		"icon": preload("res://assets/bullets/sniperbullet.png"),
 		"text": "Unlock Sniper",
 		"requires_alt_weapon": ALT_WEAPON_NONE
 	},
 	{
 		"id": "unlock_turret",
-		"price": 0,
+		"price": 15,
 		"icon": preload("res://assets/Separated/turreticon.png"),
 		"text": "Unlock Turret Backpack",
 		"requires_alt_weapon": ALT_WEAPON_NONE
@@ -63,7 +63,7 @@ var upgrades := [
 
 	{
 		"id": "turret_cooldown_minus_5",
-		"price": 0,
+		"price": 10,
 		"icon": preload("res://assets/Separated/turreticon.png"), # placeholder
 		"text": "Turret fires 5% faster",
 		"requires_alt_weapon": ALT_WEAPON_TURRET,
@@ -71,7 +71,7 @@ var upgrades := [
 
 	{
 		"id": "sniper_damage_plus_5",
-		"price": 0,
+		"price": 10,
 		"icon": preload("res://assets/bullets/sniperbullet.png"),
 		"text": "+5% Sniper Damage",
 		"requires_alt_weapon": ALT_WEAPON_SNIPER,
@@ -80,21 +80,21 @@ var upgrades := [
 	# --- Ability unlocks ------------------------------------------------
 	{
 		"id": "unlock_dash",
-		"price": 0,
+		"price": 15,
 		"icon": preload("res://assets/Separated/ammo.png"),
 		"text": "Unlock Dash (Space)",
 		"requires_ability": ABILITY_NONE,
 	},
 	{
 		"id": "unlock_slowmo",
-		"price": 0,
+		"price": 15,
 		"icon": preload("res://assets/Separated/ammo.png"),
 		"text": "Unlock Bullet Time (Space)",
 		"requires_ability": ABILITY_NONE,
 	},
 	{
 		"id": "ability_cooldown_minus_10",
-		"price": 0,
+		"price": 10,
 		"icon": preload("res://assets/Separated/ammo.png"),
 		"text": "-10% Ability Cooldown",
 		"requires_any_ability": true,
@@ -103,19 +103,19 @@ var upgrades := [
 	# Old upgrades
 	{
 		"id": "hp_refill",
-		"price": 0,
+		"price": 3,
 		"icon": preload("res://assets/Separated/singleheart.png"),
 		"text": "Refill HP"
 	},
 	{
 		"id": "max_hp_plus_1",
-		"price": 0,
+		"price": 15,
 		"icon": preload("res://assets/Separated/singleheart.png"),
 		"text": "+1 Max HP"
 	},
 	{
 		"id": "ammo_refill",
-		"price": 0,
+		"price": 3,
 		"icon": preload("res://assets/Separated/bullet.png"),
 		"text": "Refill Ammo",
 		"requires_ammo_weapon": true,

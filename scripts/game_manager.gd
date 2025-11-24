@@ -392,6 +392,30 @@ func restart_run() -> void:
 	_load_room()
 
 
+func debug_set_level(level: int) -> void:
+	# Clamp to at least level 1
+	level = max(1, level)
+
+	current_level = level
+	_update_level_ui()
+	_load_room()
+
+	# Same optional spawn invincibility as load_next_level
+	var player := get_tree().get_first_node_in_group("player")
+	if player and player.has_method("grant_spawn_invincibility"):
+		player.grant_spawn_invincibility(0.7)
+
+	# Refresh HP UI
+	var hp_ui := get_tree().get_first_node_in_group("hp_ui")
+	if hp_ui and hp_ui.has_method("refresh_from_state"):
+		hp_ui.refresh_from_state()
+
+	if game_ui:
+		game_ui.visible = true
+
+
+
+
 # --- PAUSE ----------------------------------------------------------
 
 func _unhandled_input(event: InputEvent) -> void:

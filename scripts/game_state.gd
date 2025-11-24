@@ -3,6 +3,10 @@ extends Node2D
 
 enum AltWeaponType { NONE, SHOTGUN, SNIPER, TURRET }
 
+var debug_god_mode: bool = false
+var debug_infinite_ammo: bool = false
+var debug_noclip: bool = false
+var debug_laser_mode: bool = false
 
 # --- ALT WEAPONS -------------------------------------------------------
 

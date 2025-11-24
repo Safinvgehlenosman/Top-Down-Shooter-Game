@@ -41,48 +41,37 @@ func sync_from_gamestate() -> void:
 
 
 func take_damage(amount: int) -> void:
-	# Same semantics as your old Player.take_damage:
-	# amount > 0  => damage
-	# amount < 0  => heal
-	# amount = 0  => no-op
-
-	if is_dead:
-		return
 	if amount == 0:
 		return
 
-	# DAMAGE
+	# 🔥 God mode: ignore positive damage completely
+	if amount > 0 and GameState.debug_god_mode:
+		return
+
+	# DAMAGE (amount > 0)
 	if amount > 0:
-		# Respect invincibility
 		if invincible_timer > 0.0:
 			return
-
-		# start invincibility frames
 		invincible_timer = invincible_time
 
-		var new_health := clampi(health - amount, 0, max_health)
-		var actual_damage := health - new_health
+		if owner and owner.has_node("SFX_Hurt"):
+			owner.get_node("SFX_Hurt").play()
 
-		if actual_damage == 0:
-			return
+		emit_signal("damaged", amount)
 
-		health = new_health
-		GameState.set_health(health)
-		emit_signal("damaged", actual_damage)
-
-		if health <= 0:
-			is_dead = true
-			emit_signal("died")
-
-	# HEAL
+	# HEAL (amount < 0)
 	elif amount < 0:
-		var heal_amount := -amount
-		var new_health := clampi(health + heal_amount, 0, max_health)
-		var actual_heal := new_health - health
+		emit_signal("healed", -amount)
 
-		if actual_heal == 0:
-			return
+	# amount can be negative: damage = minus, heal = plus
+	var new_health := clampi(
+		GameState.health - amount,
+		0,
+		GameState.max_health
+	)
 
-		health = new_health
-		GameState.set_health(health)
-		emit_signal("healed", actual_heal)
+	GameState.set_health(new_health)
+
+	# Death check
+	if amount > 0 and GameState.health <= 0:
+		emit_signal("died")

@@ -40,30 +40,30 @@ func add_ammo(amount: int) -> void:
 func handle_primary_fire(is_pressed: bool, aim_dir: Vector2) -> void:
 	if not is_pressed:
 		return
-	if fire_timer > 0.0:
+
+	# In normal mode we respect the fire timer
+	if not GameState.debug_laser_mode and fire_timer > 0.0:
 		return
 
-	# If weapon has a magazine (max_ammo > 0), require ammo.
-	# If max_ammo == 0, primary fire is "infinite ammo".
-	if GameState.max_ammo > 0 and GameState.ammo <= 0:
-		return
+	var damage: float = 1.0
 
-	# reset fire timer (shots per second)
-	fire_timer = 0.0 / max(fire_rate, 0.01)
+	if GameState.debug_laser_mode:
+		# Laser mode: no cooldown, crazy damage
+		fire_timer = 0.0
+		damage = 9999.0
+	else:
+		# Normal mode: proper cooldown based on fire_rate
+		fire_timer = 1.0 / max(fire_rate, 0.01)
 
+	# Primary weapon ALWAYS has infinite ammo, even if alt-weapon exists
 	var bullet := BulletScene_DEFAULT.instantiate()
 	bullet.global_position = muzzle.global_position
 	bullet.direction = aim_dir
+	bullet.damage = damage  # default bullets will one-shot in laser mode
 	get_tree().current_scene.add_child(bullet)
-
-	if GameState.max_ammo > 0:
-		GameState.set_ammo(GameState.ammo - 1)
 
 	if sfx_shoot:
 		sfx_shoot.play()
-
-
-
 
 # --------------------------------------------------------------------
 # ALT FIRE (SHOTGUN / SNIPER)
@@ -77,14 +77,14 @@ func handle_alt_fire(is_pressed: bool, aim_pos: Vector2) -> void:
 	var alt_weapon := GameState.alt_weapon
 
 	# no alt weapon / turret handled elsewhere
-	print("Alt weapon is:", alt_weapon)
 	if alt_weapon == GameState.AltWeaponType.NONE or alt_weapon == GameState.AltWeaponType.TURRET:
-		print("No weapon connected")
 		return
 
 	if alt_fire_cooldown_timer > 0.0:
 		return
-	if GameState.ammo <= 0:
+
+	# Only block alt fire when we have 0 ammo AND not in infinite mode
+	if GameState.ammo <= 0 and not GameState.debug_infinite_ammo:
 		return
 
 	var data: Dictionary = GameState.ALT_WEAPON_DATA.get(alt_weapon, {})
@@ -96,13 +96,15 @@ func handle_alt_fire(is_pressed: bool, aim_pos: Vector2) -> void:
 
 
 
+
 func _fire_weapon(data: Dictionary, aim_pos: Vector2) -> void:
 	# How much ammo this alt shot should cost (defaults to 1)
 	var ammo_cost: int = data.get("ammo_cost", 1)
 
-	var new_ammo = max(GameState.ammo - ammo_cost, 0)
+	var new_ammo := GameState.ammo
+	if not GameState.debug_infinite_ammo:
+		new_ammo = max(GameState.ammo - ammo_cost, 0)
 	GameState.set_ammo(new_ammo)
-
 
 	# settings
 	var bullet_scene: PackedScene = data["bullet_scene"]
@@ -117,7 +119,7 @@ func _fire_weapon(data: Dictionary, aim_pos: Vector2) -> void:
 	var base_dir := (aim_pos - muzzle.global_position).normalized()
 	var start_offset := -float(pellets - 1) / 2.0
 
-	# FIRE MULTIPLE PELLETS, NO EXTRA AMMO COST
+	# FIRE MULTIPLE PELLETS
 	for i in range(pellets):
 		var angle := (start_offset + i) * spread_rad
 		var dir := base_dir.rotated(angle)
@@ -131,7 +133,6 @@ func _fire_weapon(data: Dictionary, aim_pos: Vector2) -> void:
 
 	# recoil
 	emit_signal("recoil_requested", -base_dir, recoil_strength)
-
 
 	var cam := get_tree().get_first_node_in_group("camera")
 	if cam and cam.has_method("shake"):
