@@ -1,0 +1,192 @@
+[gd_scene load_steps=25 format=3 uid="uid://wyjj07qulq2n"]
+
+[ext_resource type="Script" uid="uid://cceb7bill2as7" path="res://scripts/slimes/ice_slime.gd" id="1_f6i3m"]
+[ext_resource type="PackedScene" uid="uid://eu5i5gb8771d" path="res://scenes/bullets/ice_projectile.tscn" id="2_ss21a"]
+[ext_resource type="Texture2D" uid="uid://bphraonej5m30" path="res://assets/iceslime.png" id="4_y14di"]
+[ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="5_qgsdp"]
+[ext_resource type="AudioStream" uid="uid://dl8r8jnncqnmf" path="res://assets/Audios/Hurt.wav" id="6_7e7yk"]
+[ext_resource type="AudioStream" uid="uid://6jgtwphqqvnt" path="res://assets/Audios/SlimeLand.wav" id="7_60ybt"]
+[ext_resource type="Script" uid="uid://p4g4lnfxjftj" path="res://scripts/player/health_component.gd" id="8_alwag"]
+[ext_resource type="Texture2D" uid="uid://doa8spi3hyp5l" path="res://assets/HP Bar/enemyhealthbar.png" id="9_4s6dn"]
+[ext_resource type="Texture2D" uid="uid://d4igq4x5r01bn" path="res://assets/Separated/progressbarfill3.png" id="10_nhp36"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_i03xf"]
+atlas = ExtResource("4_y14di")
+region = Rect2(128, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idl43"]
+atlas = ExtResource("4_y14di")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1y82y"]
+atlas = ExtResource("4_y14di")
+region = Rect2(192, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qgsdp"]
+atlas = ExtResource("4_y14di")
+region = Rect2(224, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7e7yk"]
+atlas = ExtResource("4_y14di")
+region = Rect2(0, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_60ybt"]
+atlas = ExtResource("4_y14di")
+region = Rect2(32, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_alwag"]
+atlas = ExtResource("4_y14di")
+region = Rect2(64, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4s6dn"]
+atlas = ExtResource("4_y14di")
+region = Rect2(96, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nhp36"]
+atlas = ExtResource("4_y14di")
+region = Rect2(128, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2b7qy"]
+atlas = ExtResource("4_y14di")
+region = Rect2(160, 32, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_fur4c"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_i03xf")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idl43")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1y82y")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qgsdp")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7e7yk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_60ybt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_alwag")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4s6dn")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nhp36")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2b7qy")
+}],
+"loop": true,
+"name": &"moving",
+"speed": 7.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_pu8ps"]
+radius = 4.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_p2gj0"]
+radius = 6.6666665
+
+[sub_resource type="Gradient" id="Gradient_kmthg"]
+offsets = PackedFloat32Array(0.016129032, 0.8064516, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_fd6lc"]
+gradient = SubResource("Gradient_kmthg")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.517094, 0.52136755)
+fill_to = Vector2(0.76495725, 0.7777778)
+
+[node name="IceSlime" type="CharacterBody2D" groups=["enemy"]]
+scale = Vector2(1.2, 1.2)
+collision_layer = 4
+script = ExtResource("1_f6i3m")
+projectile_scene = ExtResource("2_ss21a")
+speed = 20.0
+max_health = 30
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(0, -5)
+sprite_frames = SubResource("SpriteFrames_fur4c")
+animation = &"moving"
+autoplay = "moving"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -4)
+shape = SubResource("CircleShape2D_pu8ps")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+modulate = Color(0, 0, 0, 0.11764706)
+z_index = -1
+texture = ExtResource("5_qgsdp")
+region_enabled = true
+region_rect = Rect2(201.99591, 204.99461, 12.041901, 5.0242004)
+
+[node name="Hitbox" type="Area2D" parent="."]
+collision_layer = 8
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+position = Vector2(0, -4.1666665)
+shape = SubResource("CircleShape2D_p2gj0")
+
+[node name="SFX_Hurt" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("6_7e7yk")
+bus = &"SFX"
+
+[node name="SFX_Death" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("6_7e7yk")
+pitch_scale = 0.5
+bus = &"SFX"
+
+[node name="SFX_Land" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("7_60ybt")
+bus = &"SFX"
+
+[node name="PointLight2D" type="PointLight2D" parent="."]
+position = Vector2(0, -4.1666665)
+color = Color(0, 0.85490197, 0.8901961, 1)
+energy = 1.5
+texture = SubResource("GradientTexture2D_fd6lc")
+texture_scale = 0.3
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("8_alwag")
+
+[node name="HPBar" type="TextureRect" parent="." groups=["hp_ui"]]
+texture_filter = 1
+texture_repeat = 1
+offset_left = -9.166666
+offset_top = -4.166667
+offset_right = 12.833334
+offset_bottom = 5.833333
+scale = Vector2(0.8, 0.8)
+texture = ExtResource("9_4s6dn")
+stretch_mode = 2
+
+[node name="HPFill" type="TextureProgressBar" parent="HPBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 1.0
+offset_top = 6.0
+offset_right = 3.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 2
+max_value = 5.0
+value = 3.0
+texture_progress = ExtResource("10_nhp36")
+tint_progress = Color(1, 0, 0.078431375, 1)
+
+[connection signal="body_entered" from="Hitbox" to="." method="_on_hitbox_body_entered"]

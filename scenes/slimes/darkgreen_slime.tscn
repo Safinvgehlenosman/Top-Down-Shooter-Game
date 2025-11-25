@@ -1,6 +1,6 @@
 [gd_scene load_steps=26 format=3 uid="uid://d3oi7m6c8ysa6"]
 
-[ext_resource type="Script" uid="uid://dvweoy7ell6cp" path="res://scripts/slimes/blue_slime.gd" id="1_7qf5q"]
+[ext_resource type="Script" uid="uid://dvweoy7ell6cp" path="res://scripts/slimes/darkgreen_slime.gd" id="1_7qf5q"]
 [ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="2_ullxd"]
 [ext_resource type="PackedScene" uid="uid://b5vf6h1xj2eqo" path="res://scenes/heart_pickup.tscn" id="3_vx4o0"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="4_i8e30"]
@@ -107,7 +107,7 @@ fill = 1
 fill_from = Vector2(0.517094, 0.52136755)
 fill_to = Vector2(0.76495725, 0.7777778)
 
-[node name="BlueSlime" type="CharacterBody2D" groups=["enemy"]]
+[node name="DarkGreenSlime" type="CharacterBody2D" groups=["enemy"]]
 scale = Vector2(0.8, 0.8)
 collision_layer = 4
 script = ExtResource("1_7qf5q")
@@ -141,6 +141,7 @@ collision_layer = 8
 collision_mask = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+visible = false
 position = Vector2(0, -4.1666665)
 shape = SubResource("CircleShape2D_p2gj0")
 
@@ -159,7 +160,7 @@ bus = &"SFX"
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
 position = Vector2(0, -4.1666665)
-color = Color(0, 0.39607844, 1, 1)
+color = Color(0.09019608, 0.34901962, 0, 1)
 energy = 1.5
 texture = SubResource("GradientTexture2D_fd6lc")
 texture_scale = 0.3

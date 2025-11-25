@@ -1,7 +1,7 @@
-[gd_scene load_steps=6 format=3 uid="uid://c1ddwf2sacphd"]
+[gd_scene load_steps=6 format=3 uid="uid://eu5i5gb8771d"]
 
-[ext_resource type="Script" uid="uid://b06uua1d83835" path="res://scripts/bullets/enemyprojectile.gd" id="1_f1s01"]
-[ext_resource type="Texture2D" uid="uid://brmkfslbdbga" path="res://assets/bullets/enemyprojectile.png" id="2_1cqdw"]
+[ext_resource type="Script" uid="uid://bu11sp5q7ux8k" path="res://scripts/bullets/ice_projectile.gd" id="1_3g47x"]
+[ext_resource type="Texture2D" uid="uid://brmkfslbdbga" path="res://assets/bullets/enemyprojectile.png" id="2_fswxi"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_y25gk"]
 radius = 2.0
@@ -18,17 +18,14 @@ fill = 1
 fill_from = Vector2(0.517094, 0.52136755)
 fill_to = Vector2(0.76495725, 0.7777778)
 
-[node name="EnemyProjectile" type="Area2D" groups=["bullet"]]
+[node name="IceProjectile" type="Area2D" groups=["bullet"]]
 collision_layer = 32
 collision_mask = 3
-script = ExtResource("1_f1s01")
-speed = 150.0
-damage = 1
+script = ExtResource("1_3g47x")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-modulate = Color(1, 0.003921569, 1, 1)
 texture_filter = 1
-texture = ExtResource("2_1cqdw")
+texture = ExtResource("2_fswxi")
 region_rect = Rect2(104, 104, 16, 16)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
@@ -37,8 +34,8 @@ shape = SubResource("CircleShape2D_y25gk")
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
 modulate = Color(1.7358576, 0.22292884, 1.0272707, 1)
-color = Color(0.69411767, 0.003921569, 0.9882353, 1)
-energy = 1.2
+color = Color(0.33333334, 1, 0.972549, 1)
+energy = 0.2
 texture = SubResource("GradientTexture2D_l5glv")
 texture_scale = 0.7
 

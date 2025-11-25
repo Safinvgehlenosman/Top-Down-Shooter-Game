@@ -233,51 +233,12 @@ func _update_enemy_weights_for_level() -> void:
 	if enemy_weights.size() < enemy_scenes.size():
 		enemy_weights.resize(enemy_scenes.size())
 
-	# Default all weights to 0.0 (we'll set only what we care about)
-	for i in range(enemy_weights.size()):
-		enemy_weights[i] = 0.0
+	# ✅ Simple version: every enemy has equal chance, all levels
+	var equal_weight := 1.0
 
-	# We assume:
-	# 0 = Green, 1 = Purple, 2 = Blue, 3 = Ghost
+	for i in range(enemy_scenes.size()):
+		enemy_weights[i] = equal_weight
 
-	# --- Levels 1–4: only green + blue, even split, no purple ---
-	if current_level < 5:
-		if enemy_weights.size() > ENEMY_INDEX_GREEN:  # green
-			enemy_weights[ENEMY_INDEX_GREEN] = 0.5
-		if enemy_weights.size() > ENEMY_INDEX_BLUE:   # blue
-			enemy_weights[ENEMY_INDEX_BLUE] = 0.5
-		# purple stays at 0
-
-	# --- Levels 5–14: smoothly transition toward final mix ---
-	elif current_level < 15:
-		var t: float = float(current_level - 5) / 10.0  # 0 at 5, 1 at 15
-
-		# Early target:  green 0.5, blue 0.5, purple 0.0
-		# Final target:  green 0.3, blue 0.4, purple 0.3
-		if enemy_weights.size() > ENEMY_INDEX_GREEN:  # green
-			enemy_weights[ENEMY_INDEX_GREEN] = lerp(0.5, 0.3, t)
-		if enemy_weights.size() > ENEMY_INDEX_BLUE:   # blue
-			enemy_weights[ENEMY_INDEX_BLUE] = lerp(0.5, 0.4, t)
-		if enemy_weights.size() > ENEMY_INDEX_PURPLE: # purple
-			enemy_weights[ENEMY_INDEX_PURPLE] = lerp(0.0, 0.3, t)
-
-	# --- Levels 15+: final distribution: 30% G, 40% B, 30% P ---
-	else:
-		if enemy_weights.size() > ENEMY_INDEX_GREEN:  # green
-			enemy_weights[ENEMY_INDEX_GREEN] = 0.3
-		if enemy_weights.size() > ENEMY_INDEX_BLUE:   # blue
-			enemy_weights[ENEMY_INDEX_BLUE] = 0.4
-		if enemy_weights.size() > ENEMY_INDEX_PURPLE: # purple
-			enemy_weights[ENEMY_INDEX_PURPLE] = 0.3
-
-	# --- Ghost slime: small constant chance (~5%) at all levels ---
-	if enemy_weights.size() > ENEMY_INDEX_GHOST:
-		enemy_weights[ENEMY_INDEX_GHOST] = 0.20
-
-	# Any extra enemy_scenes beyond index 3 (ghost) can be given a small default weight
-	for i in range(ENEMY_INDEX_GHOST + 1, enemy_weights.size()):
-		if enemy_weights[i] <= 0.0:
-			enemy_weights[i] = 0.2  # tiny chance for future enemies
 
 
 # --- ENEMY DEATH / DOOR SPAWN --------------------------------------

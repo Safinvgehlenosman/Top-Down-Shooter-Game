@@ -172,21 +172,29 @@ func _process_movement(_delta: float) -> void:
 	if input_dir != Vector2.ZERO:
 		input_dir = input_dir.normalized()
 
+	# Ask HealthComponent how slowed we are (1.0 = normal)
+	var slow_factor: float = 1.0
+	if health_component and health_component.has_method("get_move_slow_factor"):
+		slow_factor = health_component.get_move_slow_factor()
+
 	# Ask AbilityComponent if a dash is active
 	if ability_component and ability_component.has_method("get_dash_velocity"):
 		var dash_velocity: Vector2 = ability_component.get_dash_velocity()
 		if dash_velocity != Vector2.ZERO:
+			# Dash ignores slow (nice counterplay). Remove if you want frozen dashes too.
 			velocity = dash_velocity
 		else:
-			velocity = input_dir * speed
+			velocity = input_dir * speed * slow_factor
 	else:
-		velocity = input_dir * speed
+		velocity = input_dir * speed * slow_factor
 
 	# Apply knockback on top of input movement
 	if knockback_timer > 0.0:
 		velocity += knockback
 
 	move_and_slide()
+
+
 
 # choose input mode & update aim_dir
 func _update_aim_direction(delta: float) -> void:
