@@ -41,6 +41,5 @@ func _on_body_entered(body: Node2D) -> void:
 	var hc := body.get_node_or_null("Health")
 	if hc and hc.has_method("apply_freeze"):
 		hc.apply_freeze(freeze_factor, freeze_duration)
-
 	# No direct damage, just the slow
 	queue_free()
