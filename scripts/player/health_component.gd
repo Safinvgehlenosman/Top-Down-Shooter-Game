@@ -4,6 +4,13 @@ signal damaged(amount: int)
 signal healed(amount: int)
 signal died
 
+@export var freeze_target_path: NodePath      # e.g. "AnimatedSprite2D"
+@export var freeze_material: ShaderMaterial   # the blue frozen material
+
+
+var _freeze_target: CanvasItem = null
+var _freeze_original_material: Material = null
+
 @export var use_gamestate: bool = false  # true for player, false for enemies
 @export var max_health: int = 1
 var health: int = 0
@@ -33,6 +40,14 @@ func _ready() -> void:
 		invincible_time = GameConfig.player_invincible_time
 	else:
 		health = max_health
+
+	# 🔵 freeze target lookup (NOTE: use self, not owner)
+	if freeze_target_path != NodePath(""):
+		var n = get_node_or_null(freeze_target_path)
+		if n and n is CanvasItem:
+			_freeze_target = n
+			_freeze_original_material = _freeze_target.material
+
 
 
 func _physics_process(delta: float) -> void:
@@ -84,6 +99,7 @@ func apply_freeze(speed_factor: float, duration: float) -> void:
 
 	freeze_time_left = duration
 	freeze_speed_factor = clamp(speed_factor, 0.1, 1.0)
+	_set_frozen_visual(true)
 
 
 func get_move_slow_factor() -> float:
@@ -165,3 +181,14 @@ func _update_freeze(delta: float) -> void:
 
 	if freeze_time_left <= 0.0:
 		freeze_speed_factor = 1.0
+		_set_frozen_visual(false)
+
+func _set_frozen_visual(active: bool) -> void:
+	if _freeze_target == null:
+		return
+
+	if active:
+		if freeze_material:
+			_freeze_target.material = freeze_material
+	else:
+		_freeze_target.material = _freeze_original_material

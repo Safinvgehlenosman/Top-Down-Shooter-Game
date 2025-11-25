@@ -1,7 +1,11 @@
-[gd_scene load_steps=6 format=3 uid="uid://eu5i5gb8771d"]
+[gd_scene load_steps=7 format=3 uid="uid://eu5i5gb8771d"]
 
 [ext_resource type="Script" uid="uid://bu11sp5q7ux8k" path="res://scripts/bullets/ice_projectile.gd" id="1_3g47x"]
 [ext_resource type="Texture2D" uid="uid://brmkfslbdbga" path="res://assets/bullets/enemyprojectile.png" id="2_fswxi"]
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_hs8qg"]
+blend_mode = 1
+light_mode = 1
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_y25gk"]
 radius = 2.0
@@ -25,6 +29,7 @@ script = ExtResource("1_3g47x")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture_filter = 1
+material = SubResource("CanvasItemMaterial_hs8qg")
 texture = ExtResource("2_fswxi")
 region_rect = Rect2(104, 104, 16, 16)
 

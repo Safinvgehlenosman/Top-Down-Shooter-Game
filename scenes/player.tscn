@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3 uid="uid://cwdo73t7wn5pp"]
+[gd_scene load_steps=23 format=3 uid="uid://cwdo73t7wn5pp"]
 
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="1_3vyb7"]
 [ext_resource type="Script" uid="uid://c08yjacbakryb" path="res://scripts/player/player.gd" id="1_g2els"]
@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://muxb10dn58dn" path="res://assets/Separated/turret.png" id="6_tuyoq"]
 [ext_resource type="Script" uid="uid://p4g4lnfxjftj" path="res://scripts/player/health_component.gd" id="8_smehm"]
 [ext_resource type="Script" uid="uid://7vhf7tvcm6it" path="res://scripts/player/ability.gd" id="9_ur7pv"]
+[ext_resource type="Material" uid="uid://sju853f7lvi8" path="res://shaders/freeze_material.tres" id="9_y4r1p"]
 [ext_resource type="AudioStream" uid="uid://bux0mdx48mneh" path="res://assets/Audios/Shoot.wav" id="10_y4r1p"]
 [ext_resource type="AudioStream" uid="uid://c8cwf2bwmi50v" path="res://assets/Audios/Hit.wav" id="11_d2wvv"]
 
@@ -97,6 +98,7 @@ fill_to = Vector2(0.76495725, 0.7777778)
 
 [node name="Player" type="CharacterBody2D" groups=["player"]]
 z_index = 100
+material = ExtResource("9_y4r1p")
 scale = Vector2(1.2, 1.2)
 collision_layer = 2
 collision_mask = 25
@@ -182,6 +184,8 @@ scale = Vector2(1.4285713, 1.4285713)
 
 [node name="Health" type="Node" parent="."]
 script = ExtResource("8_smehm")
+freeze_target_path = NodePath("../AnimatedSprite2D")
+freeze_material = ExtResource("9_y4r1p")
 use_gamestate = true
 
 [node name="Ability" type="Node" parent="."]
