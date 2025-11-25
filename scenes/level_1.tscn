@@ -1,4 +1,4 @@
-[gd_scene load_steps=25 format=3 uid="uid://s7do308xihbw"]
+[gd_scene load_steps=27 format=3 uid="uid://s7do308xihbw"]
 
 [ext_resource type="Script" uid="uid://brvgav35e1cb5" path="res://scripts/main.gd" id="1_mbb35"]
 [ext_resource type="PackedScene" uid="uid://cwdo73t7wn5pp" path="res://scenes/player.tscn" id="2_iw4em"]
@@ -17,10 +17,12 @@
 [ext_resource type="PackedScene" uid="uid://c7fcp73v6wu5d" path="res://scenes/ui.tscn" id="13_so66j"]
 [ext_resource type="PackedScene" uid="uid://d3oi7m6c8ysa6" path="res://scenes/slimes/darkgreen_slime.tscn" id="13_x2xxo"]
 [ext_resource type="PackedScene" uid="uid://ck1bcwuy021a5" path="res://scenes/rooms/room_05.tscn" id="14_d5akn"]
+[ext_resource type="PackedScene" uid="uid://ogva686f63up" path="res://scenes/rooms/room_06.tscn" id="15_x2fux"]
 [ext_resource type="PackedScene" uid="uid://qeylggg2h2ax" path="res://scenes/slimes/ghost_slime.tscn" id="15_x2xxo"]
 [ext_resource type="PackedScene" uid="uid://rn582fpm5gls" path="res://scenes/game_manager.tscn" id="18_so66j"]
 [ext_resource type="PackedScene" uid="uid://wyjj07qulq2n" path="res://scenes/slimes/ice_slime.tscn" id="18_tr1x6"]
 [ext_resource type="PackedScene" uid="uid://dkiblxaxpjj7c" path="res://scenes/slimes/poison_slime.tscn" id="19_tr1x6"]
+[ext_resource type="PackedScene" uid="uid://cs7ihugsroow2" path="res://scenes/slimes/fire_slime.tscn" id="21_wbtxt"]
 [ext_resource type="Script" uid="uid://bhexx6mj1xv3q" path="res://addons/phantom_camera/scripts/phantom_camera/phantom_camera_2d.gd" id="24_gwsl1"]
 [ext_resource type="Script" uid="uid://8umksf8e80fw" path="res://addons/phantom_camera/scripts/resources/tween_resource.gd" id="25_lkded"]
 
@@ -63,8 +65,8 @@ color = Color(0.502743, 0.502743, 0.502743, 1)
 shop_path = NodePath("../ShopUI")
 exit_door_path = NodePath("")
 ui_root_path = NodePath("../UI")
-room_scenes = Array[PackedScene]([ExtResource("11_go7sj"), ExtResource("9_go7sj"), ExtResource("10_7gny6"), ExtResource("11_1s4pk"), ExtResource("14_d5akn")])
-enemy_scenes = Array[PackedScene]([ExtResource("11_7nomh"), ExtResource("12_1s4pk"), ExtResource("13_x2xxo"), ExtResource("15_x2xxo"), ExtResource("18_tr1x6"), ExtResource("19_tr1x6")])
+room_scenes = Array[PackedScene]([ExtResource("11_go7sj"), ExtResource("9_go7sj"), ExtResource("10_7gny6"), ExtResource("11_1s4pk"), ExtResource("14_d5akn"), ExtResource("15_x2fux")])
+enemy_scenes = Array[PackedScene]([ExtResource("11_7nomh"), ExtResource("12_1s4pk"), ExtResource("13_x2xxo"), ExtResource("15_x2xxo"), ExtResource("18_tr1x6"), ExtResource("19_tr1x6"), ExtResource("21_wbtxt")])
 enemy_weights = Array[float]([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 enemy_chance = 0.5
 crate_chance = 0.5

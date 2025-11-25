@@ -216,6 +216,14 @@ texture = ExtResource("2_hq2h1")
 21:4/0/z_index = 101
 20:5/0 = 0
 20:5/0/physics_layer_0/polygon_0/points = PackedVector2Array(8, -8, -1.0568466, -8, -0.9785614, -2.0158367, -1.9962654, -1.9375534, -1.9179802, 5.930086, 8, 6.0083714)
+22:5/0 = 0
+22:4/0 = 0
+23:4/0 = 0
+23:5/0 = 0
+24:5/0 = 0
+25:5/0 = 0
+25:4/0 = 0
+24:4/0 = 0
 
 [sub_resource type="TileSet" id="TileSet_12cbe"]
 physics_layer_0/collision_layer = 1
@@ -244,7 +252,7 @@ layer_0/tile_data = PackedInt32Array(0, 327680, 1, 65536, 131072, 1, 131072, 131
 
 [node name="TileMapLayer" type="TileMapLayer" parent="TileMap"]
 z_index = 1
-tile_map_data = PackedByteArray("AAAMAAYAAAAMAAQAAAAMAAcAAAAMAAUAAAANAAYAAAANAAQAAAANAAcAAAANAAUAAAAnAAMAAAAMAAQAAAAnAAQAAAAMAAUAAAAoAAMAAAANAAQAAAAoAAQAAAANAAUAAAAZAA4AAAAUAAMAAAAZAA8AAAAUAAQAAAAZABAAAAAUAAUAAAAaAA4AAAAVAAMAAAAaAA8AAAAVAAQAAAAaABAAAAAVAAUAAAAbAAMAAAAUAAMAAAAbAAQAAAAUAAQAAAAbAAUAAAAUAAUAAAAcAAMAAAAVAAMAAAAcAAQAAAAVAAQAAAAcAAUAAAAVAAUAAAA=")
+tile_map_data = PackedByteArray("AAAMAAYAAAAMAAQAAAAMAAcAAAAMAAUAAAANAAYAAAANAAQAAAANAAcAAAANAAUAAAAnAAMAAAAMAAQAAAAnAAQAAAAMAAUAAAAoAAMAAAANAAQAAAAoAAQAAAANAAUAAAAZAA4AAAAUAAMAAAAZAA8AAAAUAAQAAAAZABAAAAAUAAUAAAAaAA4AAAAVAAMAAAAaAA8AAAAVAAQAAAAaABAAAAAVAAUAAAAbAAMAAAAUAAMAAAAbAAQAAAAUAAQAAAAbAAUAAAAUAAUAAAAcAAMAAAAVAAMAAAAcAAQAAAAVAAQAAAAcAAUAAAAVAAUAAAAdAAUAAAAWAAQAAAAdAAYAAAAWAAUAAAAeAAUAAAAXAAQAAAAeAAYAAAAXAAUAAAAXABAAAAAYAAQAAAAXABEAAAAYAAUAAAAYABAAAAAZAAQAAAAYABEAAAAZAAUAAAA=")
 tile_set = SubResource("TileSet_12cbe")
 
 [node name="EnvironmentLights" type="Node" parent="TileMap"]
@@ -258,6 +266,20 @@ texture_scale = 0.3
 
 [node name="PointLight2D2" type="PointLight2D" parent="TileMap/EnvironmentLights"]
 position = Vector2(416, 248)
+color = Color(0.3529412, 1, 0, 1)
+energy = 1.5
+texture = SubResource("GradientTexture2D_g4ydk")
+texture_scale = 0.3
+
+[node name="PointLight2D3" type="PointLight2D" parent="TileMap/EnvironmentLights"]
+position = Vector2(381, 271)
+color = Color(0.3529412, 1, 0, 1)
+energy = 1.5
+texture = SubResource("GradientTexture2D_g4ydk")
+texture_scale = 0.3
+
+[node name="PointLight2D4" type="PointLight2D" parent="TileMap/EnvironmentLights"]
+position = Vector2(479, 97)
 color = Color(0.3529412, 1, 0, 1)
 energy = 1.5
 texture = SubResource("GradientTexture2D_g4ydk")
