@@ -1,9 +1,7 @@
-[gd_scene load_steps=9 format=3 uid="uid://eu5i5gb8771d"]
+[gd_scene load_steps=7 format=3 uid="uid://cv5pv01n43dm2"]
 
-[ext_resource type="Script" uid="uid://bu11sp5q7ux8k" path="res://scripts/bullets/ice_projectile.gd" id="1_3g47x"]
-[ext_resource type="Texture2D" uid="uid://ceyrb7hpckkcc" path="res://assets/bullets/iceprojectile.png" id="2_hs8qg"]
-[ext_resource type="Texture2D" uid="uid://py3jckfa4m4s" path="res://assets/bullets/iceprojectile1.png" id="2_vrvll"]
-[ext_resource type="Texture2D" uid="uid://da0npfawjknax" path="res://assets/bullets/iceprojectile2.png" id="3_t5qmb"]
+[ext_resource type="Texture2D" uid="uid://d0ak604xcqjcp" path="res://assets/bullets/flamethrowerbullet.png" id="1_rirw1"]
+[ext_resource type="Script" uid="uid://ct7b05q1jkfvr" path="res://scripts/bullets/fire_projectile.gd" id="1_scdx8"]
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_hs8qg"]
 blend_mode = 1
@@ -24,17 +22,26 @@ fill = 1
 fill_from = Vector2(0.517094, 0.52136755)
 fill_to = Vector2(0.76495725, 0.7777778)
 
-[node name="IceProjectile" type="Area2D" groups=["bullet"]]
+[node name="FireProjectile" type="Area2D" groups=["bullet"]]
 collision_layer = 32
 collision_mask = 3
-script = ExtResource("1_3g47x")
-freeze_duration = 1.0
-cloud_textures = Array[Texture2D]([ExtResource("2_vrvll"), ExtResource("3_t5qmb"), ExtResource("2_hs8qg")])
+script = ExtResource("1_scdx8")
+min_speed = 240.0
+max_speed = 290.0
+friction = 400.0
+lifetime = 0.5
+burn_duration = 1.2
+burn_tick_interval = 0.25
+cloud_textures = Array[Texture2D]([ExtResource("1_rirw1")])
+wobble_amplitude = 0.0
+wobble_frequency = 0.0
+fade_in_time = 0.05
+fade_out_time = 0.15
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture_filter = 1
 material = SubResource("CanvasItemMaterial_hs8qg")
-texture = ExtResource("2_hs8qg")
+texture = ExtResource("1_rirw1")
 region_rect = Rect2(104, 104, 16, 16)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

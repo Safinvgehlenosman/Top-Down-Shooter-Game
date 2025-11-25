@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3 uid="uid://wyjj07qulq2n"]
+[gd_scene load_steps=30 format=3 uid="uid://wyjj07qulq2n"]
 
 [ext_resource type="Script" uid="uid://cceb7bill2as7" path="res://scripts/slimes/ice_slime.gd" id="1_f6i3m"]
 [ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="2_i03xf"]
@@ -11,24 +11,9 @@
 [ext_resource type="Script" uid="uid://p4g4lnfxjftj" path="res://scripts/player/health_component.gd" id="8_alwag"]
 [ext_resource type="Texture2D" uid="uid://doa8spi3hyp5l" path="res://assets/HP Bar/enemyhealthbar.png" id="9_4s6dn"]
 [ext_resource type="Texture2D" uid="uid://d4igq4x5r01bn" path="res://assets/Separated/progressbarfill3.png" id="10_nhp36"]
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_pu8ps"]
-radius = 4.0
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_p2gj0"]
-radius = 6.6666665
-
-[sub_resource type="Gradient" id="Gradient_kmthg"]
-offsets = PackedFloat32Array(0.016129032, 0.8064516, 1)
-colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0)
-
-[sub_resource type="GradientTexture2D" id="GradientTexture2D_fd6lc"]
-gradient = SubResource("Gradient_kmthg")
-width = 256
-height = 256
-fill = 1
-fill_from = Vector2(0.517094, 0.52136755)
-fill_to = Vector2(0.76495725, 0.7777778)
+[ext_resource type="Material" uid="uid://sju853f7lvi8" path="res://shaders/freeze_material.tres" id="10_qgsdp"]
+[ext_resource type="Material" uid="uid://b1lf7fv1llupn" path="res://shaders/poison_material.tres" id="11_7e7yk"]
+[ext_resource type="Material" uid="uid://cy47t6cojlqrw" path="res://shaders/burn_material.tres" id="12_60ybt"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_i03xf"]
 atlas = ExtResource("4_y14di")
@@ -108,6 +93,24 @@ animations = [{
 "speed": 7.0
 }]
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_pu8ps"]
+radius = 4.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_p2gj0"]
+radius = 6.6666665
+
+[sub_resource type="Gradient" id="Gradient_kmthg"]
+offsets = PackedFloat32Array(0.016129032, 0.8064516, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_fd6lc"]
+gradient = SubResource("Gradient_kmthg")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.517094, 0.52136755)
+fill_to = Vector2(0.76495725, 0.7777778)
+
 [node name="IceSlime" type="CharacterBody2D" groups=["enemy"]]
 scale = Vector2(1.2, 1.2)
 collision_layer = 4
@@ -122,6 +125,12 @@ aggro_radius = 90.0
 wander_speed = 20.0
 CoinScene = ExtResource("2_i03xf")
 HeartScene = ExtResource("3_idl43")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(0, -5)
+sprite_frames = SubResource("SpriteFrames_i03xf")
+animation = &"moving"
+autoplay = "moving"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -4)
@@ -158,12 +167,18 @@ bus = &"SFX"
 [node name="PointLight2D" type="PointLight2D" parent="."]
 position = Vector2(0, -4.1666665)
 color = Color(0, 0.85490197, 0.8901961, 1)
-energy = 0.5
+energy = 1.5
 texture = SubResource("GradientTexture2D_fd6lc")
 texture_scale = 0.3
 
 [node name="Health" type="Node" parent="."]
 script = ExtResource("8_alwag")
+freeze_target_path = NodePath("../AnimatedSprite2D")
+freeze_material = ExtResource("10_qgsdp")
+poison_target_path = NodePath("../AnimatedSprite2D")
+poison_material = ExtResource("11_7e7yk")
+burn_target_path = NodePath("../AnimatedSprite2D")
+burn_material = ExtResource("12_60ybt")
 
 [node name="HPBar" type="TextureRect" parent="." groups=["hp_ui"]]
 texture_filter = 1
@@ -191,11 +206,5 @@ max_value = 5.0
 value = 3.0
 texture_progress = ExtResource("10_nhp36")
 tint_progress = Color(1, 0, 0.078431375, 1)
-
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-position = Vector2(0, -5)
-sprite_frames = SubResource("SpriteFrames_i03xf")
-animation = &"moving"
-autoplay = "moving"
 
 [connection signal="body_entered" from="Hitbox" to="." method="_on_hitbox_body_entered"]

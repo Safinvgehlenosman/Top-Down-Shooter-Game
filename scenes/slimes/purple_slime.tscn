@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3 uid="uid://cqim488pqgwa"]
+[gd_scene load_steps=30 format=3 uid="uid://cqim488pqgwa"]
 
 [ext_resource type="Script" uid="uid://cwadqyd2jrm74" path="res://scripts/slimes/purple_slime.gd" id="1_o0hry"]
 [ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="2_5vw4l"]
@@ -9,8 +9,11 @@
 [ext_resource type="Texture2D" uid="uid://dsok60txc11jj" path="res://assets/purpleslime.png" id="5_revln"]
 [ext_resource type="AudioStream" uid="uid://6jgtwphqqvnt" path="res://assets/Audios/SlimeLand.wav" id="6_vuyyj"]
 [ext_resource type="Script" uid="uid://p4g4lnfxjftj" path="res://scripts/player/health_component.gd" id="9_rj2ur"]
+[ext_resource type="Material" uid="uid://sju853f7lvi8" path="res://shaders/freeze_material.tres" id="10_84keh"]
 [ext_resource type="Texture2D" uid="uid://doa8spi3hyp5l" path="res://assets/HP Bar/enemyhealthbar.png" id="10_wduws"]
+[ext_resource type="Material" uid="uid://b1lf7fv1llupn" path="res://shaders/poison_material.tres" id="11_uc8gj"]
 [ext_resource type="Texture2D" uid="uid://d4igq4x5r01bn" path="res://assets/Separated/progressbarfill3.png" id="11_wduws"]
+[ext_resource type="Material" uid="uid://cy47t6cojlqrw" path="res://shaders/burn_material.tres" id="12_ybwue"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_rj2ur"]
 atlas = ExtResource("5_revln")
@@ -165,13 +168,18 @@ bus = &"SFX"
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
 position = Vector2(0, -4.1666665)
-color = Color(0, 0.44705883, 0.43137255, 1)
 energy = 1.5
 texture = SubResource("GradientTexture2D_fd6lc")
 texture_scale = 0.3
 
 [node name="Health" type="Node" parent="."]
 script = ExtResource("9_rj2ur")
+freeze_target_path = NodePath("../AnimatedSprite2D")
+freeze_material = ExtResource("10_84keh")
+poison_target_path = NodePath("../AnimatedSprite2D")
+poison_material = ExtResource("11_uc8gj")
+burn_target_path = NodePath("../AnimatedSprite2D")
+burn_material = ExtResource("12_ybwue")
 
 [node name="HPBar" type="TextureRect" parent="." groups=["hp_ui"]]
 texture_filter = 1

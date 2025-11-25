@@ -1,4 +1,4 @@
-[gd_scene load_steps=26 format=3 uid="uid://0gile0fujjql"]
+[gd_scene load_steps=29 format=3 uid="uid://0gile0fujjql"]
 
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="1_371uh"]
 [ext_resource type="Script" uid="uid://dwrplk25tpc2x" path="res://scripts/slimes/green_slime.gd" id="1_pjw23"]
@@ -8,8 +8,11 @@
 [ext_resource type="Texture2D" uid="uid://co3cr7v5aihl" path="res://assets/greenslime.png" id="4_gstla"]
 [ext_resource type="AudioStream" uid="uid://6jgtwphqqvnt" path="res://assets/Audios/SlimeLand.wav" id="4_pjw23"]
 [ext_resource type="Script" uid="uid://p4g4lnfxjftj" path="res://scripts/player/health_component.gd" id="8_25dgc"]
+[ext_resource type="Material" uid="uid://sju853f7lvi8" path="res://shaders/freeze_material.tres" id="9_gc73b"]
 [ext_resource type="Texture2D" uid="uid://doa8spi3hyp5l" path="res://assets/HP Bar/enemyhealthbar.png" id="9_wlyjp"]
 [ext_resource type="Texture2D" uid="uid://d4igq4x5r01bn" path="res://assets/Separated/progressbarfill3.png" id="10_wlyjp"]
+[ext_resource type="Material" uid="uid://b1lf7fv1llupn" path="res://shaders/poison_material.tres" id="10_yau1j"]
+[ext_resource type="Material" uid="uid://cy47t6cojlqrw" path="res://shaders/burn_material.tres" id="11_mkdei"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_v5wyi"]
 atlas = ExtResource("4_gstla")
@@ -165,6 +168,12 @@ texture_scale = 0.3
 
 [node name="Health" type="Node" parent="."]
 script = ExtResource("8_25dgc")
+freeze_target_path = NodePath("../AnimatedSprite2D")
+freeze_material = ExtResource("9_gc73b")
+poison_target_path = NodePath("../AnimatedSprite2D")
+poison_material = ExtResource("10_yau1j")
+burn_target_path = NodePath("../AnimatedSprite2D")
+burn_material = ExtResource("11_mkdei")
 
 [node name="HPBar" type="TextureRect" parent="." groups=["hp_ui"]]
 texture_filter = 1

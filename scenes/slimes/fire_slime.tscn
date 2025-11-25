@@ -1,0 +1,206 @@
+[gd_scene load_steps=28 format=3 uid="uid://cs7ihugsroow2"]
+
+[ext_resource type="Texture2D" uid="uid://h8v2n05n2ryy" path="res://assets/fireslime.png" id="1_3rmme"]
+[ext_resource type="Script" uid="uid://c408tfsaimou5" path="res://scripts/slimes/fire_slime.gd" id="1_sri36"]
+[ext_resource type="PackedScene" uid="uid://cv5pv01n43dm2" path="res://scenes/bullets/fire_projectile.tscn" id="2_ykb4d"]
+[ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="6_e0il6"]
+[ext_resource type="AudioStream" uid="uid://dl8r8jnncqnmf" path="res://assets/Audios/Hurt.wav" id="7_bbhrb"]
+[ext_resource type="AudioStream" uid="uid://6jgtwphqqvnt" path="res://assets/Audios/SlimeLand.wav" id="8_cmako"]
+[ext_resource type="Script" uid="uid://p4g4lnfxjftj" path="res://scripts/player/health_component.gd" id="9_giqe7"]
+[ext_resource type="Material" uid="uid://sju853f7lvi8" path="res://shaders/freeze_material.tres" id="10_25psd"]
+[ext_resource type="Material" uid="uid://b1lf7fv1llupn" path="res://shaders/poison_material.tres" id="11_odkl6"]
+[ext_resource type="Material" uid="uid://cy47t6cojlqrw" path="res://shaders/burn_material.tres" id="12_cd2i6"]
+[ext_resource type="Texture2D" uid="uid://doa8spi3hyp5l" path="res://assets/HP Bar/enemyhealthbar.png" id="13_fiejs"]
+[ext_resource type="Texture2D" uid="uid://d4igq4x5r01bn" path="res://assets/Separated/progressbarfill3.png" id="14_w5lr4"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sri36"]
+atlas = ExtResource("1_3rmme")
+region = Rect2(128, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ykb4d"]
+atlas = ExtResource("1_3rmme")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_son63"]
+atlas = ExtResource("1_3rmme")
+region = Rect2(192, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_u1faj"]
+atlas = ExtResource("1_3rmme")
+region = Rect2(224, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mqawd"]
+atlas = ExtResource("1_3rmme")
+region = Rect2(0, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qu6jv"]
+atlas = ExtResource("1_3rmme")
+region = Rect2(32, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ia636"]
+atlas = ExtResource("1_3rmme")
+region = Rect2(64, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_oinla"]
+atlas = ExtResource("1_3rmme")
+region = Rect2(96, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_e0il6"]
+atlas = ExtResource("1_3rmme")
+region = Rect2(128, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bbhrb"]
+atlas = ExtResource("1_3rmme")
+region = Rect2(160, 32, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_i03xf"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sri36")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ykb4d")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_son63")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_u1faj")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mqawd")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qu6jv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ia636")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_oinla")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_e0il6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bbhrb")
+}],
+"loop": true,
+"name": &"moving",
+"speed": 7.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_pu8ps"]
+radius = 4.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_p2gj0"]
+radius = 6.6666665
+
+[sub_resource type="Gradient" id="Gradient_kmthg"]
+offsets = PackedFloat32Array(0.016129032, 0.8064516, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_fd6lc"]
+gradient = SubResource("Gradient_kmthg")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.517094, 0.52136755)
+fill_to = Vector2(0.76495725, 0.7777778)
+
+[node name="FireSlime" type="CharacterBody2D" groups=["enemy"]]
+scale = Vector2(1.2, 1.2)
+collision_layer = 4
+script = ExtResource("1_sri36")
+projectile_scene = ExtResource("2_ykb4d")
+burst_count = 10
+spread_degrees = 40.0
+pellet_min_speed = 240.0
+pellet_max_speed = 290.0
+speed = 50.0
+max_health = 20
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(0, -5)
+sprite_frames = SubResource("SpriteFrames_i03xf")
+animation = &"moving"
+autoplay = "moving"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -4)
+shape = SubResource("CircleShape2D_pu8ps")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+modulate = Color(0, 0, 0, 0.11764706)
+z_index = -1
+texture = ExtResource("6_e0il6")
+region_enabled = true
+region_rect = Rect2(201.99591, 204.99461, 12.041901, 5.0242004)
+
+[node name="Hitbox" type="Area2D" parent="."]
+collision_layer = 8
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+visible = false
+position = Vector2(0, -4.1666665)
+shape = SubResource("CircleShape2D_p2gj0")
+
+[node name="SFX_Hurt" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("7_bbhrb")
+bus = &"SFX"
+
+[node name="SFX_Death" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("7_bbhrb")
+pitch_scale = 0.5
+bus = &"SFX"
+
+[node name="SFX_Land" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("8_cmako")
+bus = &"SFX"
+
+[node name="PointLight2D" type="PointLight2D" parent="."]
+position = Vector2(0, -4.1666665)
+color = Color(1, 0.34901962, 0, 1)
+energy = 1.5
+texture = SubResource("GradientTexture2D_fd6lc")
+texture_scale = 0.3
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("9_giqe7")
+freeze_target_path = NodePath("../AnimatedSprite2D")
+freeze_material = ExtResource("10_25psd")
+poison_target_path = NodePath("../AnimatedSprite2D")
+poison_material = ExtResource("11_odkl6")
+burn_target_path = NodePath("../AnimatedSprite2D")
+burn_material = ExtResource("12_cd2i6")
+
+[node name="HPBar" type="TextureRect" parent="." groups=["hp_ui"]]
+texture_filter = 1
+texture_repeat = 1
+offset_left = -9.166666
+offset_top = -4.166667
+offset_right = 12.833334
+offset_bottom = 5.833333
+scale = Vector2(0.8, 0.8)
+texture = ExtResource("13_fiejs")
+stretch_mode = 2
+
+[node name="HPFill" type="TextureProgressBar" parent="HPBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 1.0
+offset_top = 6.0
+offset_right = 3.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 2
+max_value = 5.0
+value = 3.0
+texture_progress = ExtResource("14_w5lr4")
+tint_progress = Color(1, 0, 0.078431375, 1)
+
+[connection signal="body_entered" from="Hitbox" to="." method="_on_hitbox_body_entered"]

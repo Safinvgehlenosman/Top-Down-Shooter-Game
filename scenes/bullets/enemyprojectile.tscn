@@ -36,8 +36,8 @@ shape = SubResource("CircleShape2D_y25gk")
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
 modulate = Color(1.7358576, 0.22292884, 1.0272707, 1)
-color = Color(0.043137256, 1, 1, 1)
-energy = 1.2
+color = Color(0.6, 0, 0.7647059, 1)
+energy = 0.5
 texture = SubResource("GradientTexture2D_l5glv")
 texture_scale = 0.7
 
