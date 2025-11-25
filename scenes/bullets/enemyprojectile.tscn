@@ -23,10 +23,9 @@ collision_layer = 32
 collision_mask = 3
 script = ExtResource("1_f1s01")
 speed = 150.0
-damage = 1
+damage = 10
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-modulate = Color(1, 0.003921569, 1, 1)
 texture_filter = 1
 texture = ExtResource("2_1cqdw")
 region_rect = Rect2(104, 104, 16, 16)
@@ -37,7 +36,7 @@ shape = SubResource("CircleShape2D_y25gk")
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
 modulate = Color(1.7358576, 0.22292884, 1.0272707, 1)
-color = Color(0.69411767, 0.003921569, 0.9882353, 1)
+color = Color(0.043137256, 1, 1, 1)
 energy = 1.2
 texture = SubResource("GradientTexture2D_l5glv")
 texture_scale = 0.7

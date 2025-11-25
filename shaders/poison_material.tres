@@ -1,0 +1,9 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://b1lf7fv1llupn"]
+
+[ext_resource type="Shader" uid="uid://oqjg63xpmdao" path="res://shaders/poison_shader.gdshader" id="1_8wvxf"]
+
+[resource]
+shader = ExtResource("1_8wvxf")
+shader_parameter/poison_color = Color(0.4, 1, 0.4, 1)
+shader_parameter/poison_strength = 0.45
+shader_parameter/poison_opacity = 0.2

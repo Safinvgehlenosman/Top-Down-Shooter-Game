@@ -160,7 +160,7 @@ bus = &"SFX"
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
 position = Vector2(0, -4.1666665)
-color = Color(0.09019608, 0.34901962, 0, 1)
+color = Color(0.9490196, 0.65882355, 0, 1)
 energy = 1.5
 texture = SubResource("GradientTexture2D_fd6lc")
 texture_scale = 0.3

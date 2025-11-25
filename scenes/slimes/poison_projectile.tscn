@@ -1,16 +1,16 @@
-[gd_scene load_steps=9 format=3 uid="uid://eu5i5gb8771d"]
+[gd_scene load_steps=9 format=3 uid="uid://e2ens20cba54"]
 
-[ext_resource type="Script" uid="uid://bu11sp5q7ux8k" path="res://scripts/bullets/ice_projectile.gd" id="1_3g47x"]
-[ext_resource type="Texture2D" uid="uid://ceyrb7hpckkcc" path="res://assets/bullets/iceprojectile.png" id="2_hs8qg"]
-[ext_resource type="Texture2D" uid="uid://py3jckfa4m4s" path="res://assets/bullets/iceprojectile1.png" id="2_vrvll"]
-[ext_resource type="Texture2D" uid="uid://da0npfawjknax" path="res://assets/bullets/iceprojectile2.png" id="3_t5qmb"]
+[ext_resource type="Script" uid="uid://tmuasqkb6tey" path="res://scripts/bullets/poison_projectile.gd" id="1_kij7j"]
+[ext_resource type="Texture2D" uid="uid://xl83mmgphpjn" path="res://assets/bullets/poisonprojectile2.png" id="3_0ttec"]
+[ext_resource type="Texture2D" uid="uid://c0xtnq7l022va" path="res://assets/bullets/poisonprojectile.png" id="4_g81l2"]
+[ext_resource type="Texture2D" uid="uid://tbe3ykoo0hhs" path="res://assets/bullets/poisonprojectile1.png" id="5_g81l2"]
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_hs8qg"]
 blend_mode = 1
 light_mode = 1
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_y25gk"]
-radius = 2.0
+radius = 4.0
 
 [sub_resource type="Gradient" id="Gradient_kmthg"]
 offsets = PackedFloat32Array(0.016129032, 0.8064516, 1)
@@ -24,17 +24,16 @@ fill = 1
 fill_from = Vector2(0.517094, 0.52136755)
 fill_to = Vector2(0.76495725, 0.7777778)
 
-[node name="IceProjectile" type="Area2D" groups=["bullet"]]
+[node name="PoisonProjectile" type="Area2D" groups=["bullet"]]
 collision_layer = 32
 collision_mask = 3
-script = ExtResource("1_3g47x")
-freeze_duration = 1.0
-cloud_textures = Array[Texture2D]([ExtResource("2_vrvll"), ExtResource("3_t5qmb"), ExtResource("2_hs8qg")])
+script = ExtResource("1_kij7j")
+cloud_textures = Array[Texture2D]([ExtResource("5_g81l2"), ExtResource("3_0ttec"), ExtResource("4_g81l2")])
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture_filter = 1
 material = SubResource("CanvasItemMaterial_hs8qg")
-texture = ExtResource("2_hs8qg")
+texture = ExtResource("5_g81l2")
 region_rect = Rect2(104, 104, 16, 16)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
@@ -42,7 +41,7 @@ shape = SubResource("CircleShape2D_y25gk")
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
 modulate = Color(1.7358576, 0.22292884, 1.0272707, 1)
-color = Color(0.33333334, 1, 0.972549, 1)
+color = Color(0.70980394, 0.29803923, 0.6901961, 1)
 energy = 0.1
 texture = SubResource("GradientTexture2D_l5glv")
 texture_scale = 0.4

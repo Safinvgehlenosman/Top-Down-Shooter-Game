@@ -71,7 +71,7 @@ func _on_body_entered(body: Node2D) -> void:
 
 		# heal player: we use negative damage
 		if body.has_method("take_damage"):
-			body.take_damage(-1)
+			body.take_damage(-10)
 
 		# immediately kill collisions + visuals + light
 		if collision:

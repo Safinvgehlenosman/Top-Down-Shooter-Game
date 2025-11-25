@@ -4,8 +4,10 @@ extends Area2D
 @export var max_speed: float = 140.0
 @export var friction: float = 260.0       # how fast it slows down
 @export var lifetime: float = 2.0         # how long the cloud stays
-@export var freeze_factor: float = 0.3    # 0.3 = 70% slower
-@export var freeze_duration: float = 1.5  # seconds of slow
+
+@export var poison_damage_per_tick: float = 0.5
+@export var poison_duration: float = 3.0
+@export var poison_tick_interval: float = 0.5
 
 var direction: Vector2 = Vector2.ZERO
 var velocity: Vector2 = Vector2.ZERO
@@ -87,15 +89,14 @@ func _physics_process(delta: float) -> void:
 	if light:
 		light.energy = sprite.modulate.a
 
+
 func _on_body_entered(body: Node2D) -> void:
-	# Only affect player  (LOGIC UNCHANGED)
+	# Only affect player (same as ice version)
 	if not body.is_in_group("player"):
 		return
 
-	# Get Health component under the player and apply freeze (LOGIC UNCHANGED)
 	var hc := body.get_node_or_null("Health")
-	if hc and hc.has_method("apply_freeze"):
-		hc.apply_freeze(freeze_factor, freeze_duration)
+	if hc and hc.has_method("apply_poison"):
+		hc.apply_poison(poison_damage_per_tick, poison_duration, poison_tick_interval)
 
-	# No direct damage, just the slow (LOGIC UNCHANGED)
 	queue_free()

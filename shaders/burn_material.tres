@@ -1,0 +1,9 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://cy47t6cojlqrw"]
+
+[ext_resource type="Shader" uid="uid://472p364sw43d" path="res://shaders/burn_shader.gdshader" id="1_vj2pg"]
+
+[resource]
+shader = ExtResource("1_vj2pg")
+shader_parameter/burn_color = Color(1, 0.5, 0.1, 1)
+shader_parameter/flash_strength = 0.6
+shader_parameter/flash_speed = 4.0

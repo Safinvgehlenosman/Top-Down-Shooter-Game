@@ -7,9 +7,20 @@ signal died
 @export var freeze_target_path: NodePath      # e.g. "AnimatedSprite2D"
 @export var freeze_material: ShaderMaterial   # the blue frozen material
 
+@export var poison_target_path: NodePath = "" # e.g. "AnimatedSprite2D"
+@export var poison_material: ShaderMaterial   # the green poison material
+
+@export var burn_target_path: NodePath = ""   # e.g. "AnimatedSprite2D"
+@export var burn_material: ShaderMaterial     # the orange burn material
 
 var _freeze_target: CanvasItem = null
 var _freeze_original_material: Material = null
+
+var _poison_target: CanvasItem = null
+var _poison_original_material: Material = null
+
+var _burn_target: CanvasItem = null
+var _burn_original_material: Material = null
 
 @export var use_gamestate: bool = false  # true for player, false for enemies
 @export var max_health: int = 1
@@ -32,6 +43,13 @@ var burn_damage_accumulator: float = 0.0
 var freeze_time_left: float = 0.0
 var freeze_speed_factor: float = 1.0
 
+# --- POISON STATUS ---------------------------------------------------
+var poison_time_left: float = 0.0
+var poison_tick_interval: float = 0.5
+var poison_tick_timer: float = 0.0
+var poison_damage_per_tick: float = 0.0
+var poison_damage_accumulator: float = 0.0
+
 
 func _ready() -> void:
 	if use_gamestate:
@@ -48,6 +66,19 @@ func _ready() -> void:
 			_freeze_target = n
 			_freeze_original_material = _freeze_target.material
 
+	# 🟢 poison target lookup
+	if poison_target_path != NodePath(""):
+		var p = get_node_or_null(poison_target_path)
+		if p and p is CanvasItem:
+			_poison_target = p
+			_poison_original_material = _poison_target.material
+
+	# 🔥 burn target lookup
+	if burn_target_path != NodePath(""):
+		var b = get_node_or_null(burn_target_path)
+		if b and b is CanvasItem:
+			_burn_target = b
+			_burn_original_material = _burn_target.material
 
 
 func _physics_process(delta: float) -> void:
@@ -55,6 +86,7 @@ func _physics_process(delta: float) -> void:
 		invincible_timer -= delta
 
 	_update_burn(delta)
+	_update_poison(delta)
 	_update_freeze(delta)
 
 
@@ -90,6 +122,7 @@ func apply_burn(dmg_per_tick: float, duration: float, interval: float) -> void:
 	burn_damage_per_tick = dmg_per_tick
 	burn_tick_interval = max(0.05, interval)
 	burn_tick_timer = 0.0
+	_set_burn_visual(true)
 
 
 func apply_freeze(speed_factor: float, duration: float) -> void:
@@ -100,6 +133,18 @@ func apply_freeze(speed_factor: float, duration: float) -> void:
 	freeze_time_left = duration
 	freeze_speed_factor = clamp(speed_factor, 0.1, 1.0)
 	_set_frozen_visual(true)
+
+
+func apply_poison(dmg_per_tick: float, duration: float, interval: float) -> void:
+	# Separate DOT from burn so both can exist in the game
+	if duration <= 0.0 or dmg_per_tick <= 0.0:
+		return
+
+	poison_time_left = duration
+	poison_damage_per_tick = dmg_per_tick
+	poison_tick_interval = max(0.05, interval)
+	poison_tick_timer = 0.0
+	_set_poison_visual(true)
 
 
 func get_move_slow_factor() -> float:
@@ -149,7 +194,7 @@ func _apply_damage(amount: float, ignore_invincibility: bool) -> void:
 
 
 # --------------------------------------------------------------------
-# BURN & FREEZE UPDATE
+# BURN / POISON / FREEZE UPDATE
 # --------------------------------------------------------------------
 
 func _update_burn(delta: float) -> void:
@@ -166,11 +211,34 @@ func _update_burn(delta: float) -> void:
 		if burn_damage_accumulator >= 1.0:
 			var dmg_to_apply := int(burn_damage_accumulator)
 			burn_damage_accumulator -= dmg_to_apply
-			_apply_damage(dmg_to_apply, true)
+			_apply_damage(dmg_to_apply, true)  # burn ignores i-frames
 
 	if burn_time_left <= 0.0:
 		burn_damage_per_tick = 0.0
 		burn_damage_accumulator = 0.0
+		_set_burn_visual(false)
+
+
+func _update_poison(delta: float) -> void:
+	if poison_time_left <= 0.0:
+		return
+
+	poison_time_left -= delta
+	poison_tick_timer -= delta
+
+	if poison_tick_timer <= 0.0:
+		poison_tick_timer += poison_tick_interval
+		poison_damage_accumulator += poison_damage_per_tick
+
+		if poison_damage_accumulator >= 1.0:
+			var dmg_to_apply := int(poison_damage_accumulator)
+			poison_damage_accumulator -= dmg_to_apply
+			_apply_damage(dmg_to_apply, true)  # poison also ignores i-frames
+
+	if poison_time_left <= 0.0:
+		poison_damage_per_tick = 0.0
+		poison_damage_accumulator = 0.0
+		_set_poison_visual(false)
 
 
 func _update_freeze(delta: float) -> void:
@@ -183,6 +251,11 @@ func _update_freeze(delta: float) -> void:
 		freeze_speed_factor = 1.0
 		_set_frozen_visual(false)
 
+
+# --------------------------------------------------------------------
+# VISUAL HELPERS
+# --------------------------------------------------------------------
+
 func _set_frozen_visual(active: bool) -> void:
 	if _freeze_target == null:
 		return
@@ -192,3 +265,25 @@ func _set_frozen_visual(active: bool) -> void:
 			_freeze_target.material = freeze_material
 	else:
 		_freeze_target.material = _freeze_original_material
+
+
+func _set_poison_visual(active: bool) -> void:
+	if _poison_target == null:
+		return
+
+	if active:
+		if poison_material:
+			_poison_target.material = poison_material
+	else:
+		_poison_target.material = _poison_original_material
+
+
+func _set_burn_visual(active: bool) -> void:
+	if _burn_target == null:
+		return
+
+	if active:
+		if burn_material:
+			_burn_target.material = burn_material
+	else:
+		_burn_target.material = _burn_original_material

@@ -12,6 +12,24 @@
 [ext_resource type="Texture2D" uid="uid://doa8spi3hyp5l" path="res://assets/HP Bar/enemyhealthbar.png" id="9_4s6dn"]
 [ext_resource type="Texture2D" uid="uid://d4igq4x5r01bn" path="res://assets/Separated/progressbarfill3.png" id="10_nhp36"]
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_pu8ps"]
+radius = 4.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_p2gj0"]
+radius = 6.6666665
+
+[sub_resource type="Gradient" id="Gradient_kmthg"]
+offsets = PackedFloat32Array(0.016129032, 0.8064516, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_fd6lc"]
+gradient = SubResource("Gradient_kmthg")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.517094, 0.52136755)
+fill_to = Vector2(0.76495725, 0.7777778)
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_i03xf"]
 atlas = ExtResource("4_y14di")
 region = Rect2(128, 0, 32, 32)
@@ -52,7 +70,7 @@ region = Rect2(128, 32, 32, 32)
 atlas = ExtResource("4_y14di")
 region = Rect2(160, 32, 32, 32)
 
-[sub_resource type="SpriteFrames" id="SpriteFrames_fur4c"]
+[sub_resource type="SpriteFrames" id="SpriteFrames_i03xf"]
 animations = [{
 "frames": [{
 "duration": 1.0,
@@ -90,42 +108,20 @@ animations = [{
 "speed": 7.0
 }]
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_pu8ps"]
-radius = 4.0
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_p2gj0"]
-radius = 6.6666665
-
-[sub_resource type="Gradient" id="Gradient_kmthg"]
-offsets = PackedFloat32Array(0.016129032, 0.8064516, 1)
-colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0)
-
-[sub_resource type="GradientTexture2D" id="GradientTexture2D_fd6lc"]
-gradient = SubResource("Gradient_kmthg")
-width = 256
-height = 256
-fill = 1
-fill_from = Vector2(0.517094, 0.52136755)
-fill_to = Vector2(0.76495725, 0.7777778)
-
 [node name="IceSlime" type="CharacterBody2D" groups=["enemy"]]
 scale = Vector2(1.2, 1.2)
 collision_layer = 4
 script = ExtResource("1_f6i3m")
 projectile_scene = ExtResource("2_ss21a")
-burst_count = 10
-speed = 20.0
+burst_count = 12
+spread_degrees = 120.0
+speed = 40.0
 max_health = 30
+vision_radius = 150.0
 aggro_radius = 90.0
 wander_speed = 20.0
 CoinScene = ExtResource("2_i03xf")
 HeartScene = ExtResource("3_idl43")
-
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-position = Vector2(0, -5)
-sprite_frames = SubResource("SpriteFrames_fur4c")
-animation = &"moving"
-autoplay = "moving"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -4)
@@ -162,7 +158,7 @@ bus = &"SFX"
 [node name="PointLight2D" type="PointLight2D" parent="."]
 position = Vector2(0, -4.1666665)
 color = Color(0, 0.85490197, 0.8901961, 1)
-energy = 1.5
+energy = 0.5
 texture = SubResource("GradientTexture2D_fd6lc")
 texture_scale = 0.3
 
@@ -195,5 +191,11 @@ max_value = 5.0
 value = 3.0
 texture_progress = ExtResource("10_nhp36")
 tint_progress = Color(1, 0, 0.078431375, 1)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(0, -5)
+sprite_frames = SubResource("SpriteFrames_i03xf")
+animation = &"moving"
+autoplay = "moving"
 
 [connection signal="body_entered" from="Hitbox" to="." method="_on_hitbox_body_entered"]
