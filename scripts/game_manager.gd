@@ -10,6 +10,11 @@ extends Node
 @export var exit_door_scene: PackedScene
 @export var room_scenes: Array[PackedScene] = []
 
+@export_group("Enemy Spawn Padding")
+@export var spawn_padding_radius: float = 12.0
+@export var spawn_padding_attempts: int = 6
+
+
 # --- ENEMY SPAWN TABLE ----------------------------------------------
 # IMPORTANT: enemy_scenes indices should match these roles:
 # 0 = GREEN (basic melee)           -> slime.tscn
@@ -28,6 +33,7 @@ const ENEMY_INDEX_ICE    := 4
 const ENEMY_INDEX_PURPLE := 5
 const ENEMY_INDEX_GHOST  := 6
 
+@export_group("Enemies")
 @export var enemy_scenes: Array[PackedScene] = []
 @export var enemy_weights: Array[float] = []   # runtime weights, auto-filled
 
@@ -209,6 +215,35 @@ func _pick_enemy_scene() -> PackedScene:
 
 
 # --- SPAWNING ROOM CONTENT ------------------------------------------
+func get_safe_spawn_position(pos: Vector2) -> Vector2:
+	var tilemap := current_room.get_node("TileMap") if current_room else null
+	if tilemap == null:
+		return pos  # no tilemap? just spawn normally
+
+	for attempt in spawn_padding_attempts:
+		# random offset in a circle
+		var angle := randf() * TAU
+		var offset := Vector2(cos(angle), sin(angle)) * spawn_padding_radius
+		var test_pos := pos + offset
+
+		# Check if this pos collides with walls
+		var cell = tilemap.local_to_map(tilemap.to_local(test_pos))
+		var tile_data = tilemap.get_cell_tile_data(0, cell)
+
+		if tile_data == null:
+			# empty tile => safe to spawn here
+			return test_pos
+
+		# If tile exists but has NO collision, it's also safe
+		var has_collision = tile_data.get_collision_polygons_count(0) > 0
+		if not has_collision:
+			return test_pos
+
+	# If all attempts failed → return original (worst-case)
+	return pos
+
+
+
 
 func _spawn_room_content() -> void:
 	if current_room == null:
@@ -238,7 +273,7 @@ func _spawn_room_content() -> void:
 			var enemy_scene := _pick_enemy_scene()
 			if enemy_scene:
 				var enemy := enemy_scene.instantiate()
-				enemy.global_position = spawn.global_position
+				enemy.global_position = get_safe_spawn_position(spawn.global_position)
 
 				# Find which index this enemy came from (for apply_level logic)
 				var enemy_index := enemy_scenes.find(enemy_scene)
