@@ -62,7 +62,7 @@ const ALT_WEAPON_BASE_DATA := {
 	"pellets": 3,
 	"bullet_scene": preload("res://scenes/bullets/flamethrower_bullet.tscn"),
 	"bullet_speed": 50.0,   # keep low for flamethrower feel
-	"lifetime": 0.25,       # 🔥 base range controller
+	"flame_lifetime": 0.35,       # 🔥 base range controller
 	"recoil": 0.0,
 	"damage": 0,
 	"ammo_cost": 1,
@@ -290,9 +290,9 @@ func apply_upgrade(id: String) -> void:
 		"flame_range_plus_20":
 			if ALT_WEAPON_DATA.has(ALT_WEAPON_FLAMETHROWER):
 				var d = ALT_WEAPON_DATA[ALT_WEAPON_FLAMETHROWER]
-				var current_lifetime = d.get("lifetime", 0.25)
-				# +20% effective flame range by increasing lifetime
-				d["lifetime"] = current_lifetime * 1.2
+				var current = d.get("flame_lifetime", 0.25)
+				d["flame_lifetime"] = current * 1.2
+
 
 
 

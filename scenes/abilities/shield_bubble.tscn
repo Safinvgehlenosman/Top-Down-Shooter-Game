@@ -47,10 +47,12 @@ texture = ExtResource("1_l0lw3")
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
 color = Color(0, 0.043137256, 0.48235294, 1)
+shadow_enabled = true
 texture = SubResource("GradientTexture2D_j07um")
 texture_scale = 0.5
 
 [node name="PointLight2D2" type="PointLight2D" parent="."]
 color = Color(0.12156863, 0.6156863, 1, 1)
+shadow_enabled = true
 texture = SubResource("GradientTexture2D_d26v2")
 texture_scale = 0.5

@@ -77,6 +77,7 @@ stream = ExtResource("4_jfem2")
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
 color = Color(1, 0.78431374, 0.14509805, 1)
+shadow_enabled = true
 texture = ExtResource("5_pf647")
 texture_scale = 0.5
 

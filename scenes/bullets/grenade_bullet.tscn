@@ -40,7 +40,8 @@ visible = false
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
 color = Color(0, 0.45490196, 0.039215688, 1)
-energy = 1.2
+energy = 2.0
+shadow_enabled = true
 texture = SubResource("GradientTexture2D_l5glv")
 texture_scale = 0.7
 
@@ -57,5 +58,6 @@ color = Color(1, 0.40784314, 0.4627451, 1)
 
 [node name="SFX_Explode" type="AudioStreamPlayer2D" parent="."]
 stream = ExtResource("4_w4p55")
+bus = &"SFX"
 
 [connection signal="screen_exited" from="VisibleOnScreenNotifier2D" to="." method="_on_visible_on_screen_notifier_2d_screen_exited"]

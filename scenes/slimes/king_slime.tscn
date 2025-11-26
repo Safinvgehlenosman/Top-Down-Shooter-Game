@@ -152,6 +152,7 @@ bus = &"SFX"
 position = Vector2(0, -4.1666665)
 color = Color(0.6745098, 0.19607843, 0.19607843, 1)
 energy = 1.5
+shadow_enabled = true
 texture = SubResource("GradientTexture2D_fd6lc")
 texture_scale = 0.3
 

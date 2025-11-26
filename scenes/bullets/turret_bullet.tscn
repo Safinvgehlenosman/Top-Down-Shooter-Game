@@ -40,6 +40,7 @@ visible = false
 [node name="PointLight2D" type="PointLight2D" parent="."]
 color = Color(0.4627451, 0.25882354, 0.5411765, 1)
 energy = 1.2
+shadow_enabled = true
 texture = SubResource("GradientTexture2D_l5glv")
 texture_scale = 0.7
 

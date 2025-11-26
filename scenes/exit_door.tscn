@@ -42,6 +42,7 @@ shape = SubResource("RectangleShape2D_syxuu")
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
 color = Color(0.9254902, 0.8745098, 0.39215687, 1)
+shadow_enabled = true
 texture = SubResource("GradientTexture2D_yk4m6")
 texture_scale = 0.5
 

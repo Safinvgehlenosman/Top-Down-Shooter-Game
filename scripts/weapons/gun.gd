@@ -136,7 +136,9 @@ func _handle_flamethrower_fire(aim_pos: Vector2) -> void:
 	var damage: float = data.get("damage", 0.0)
 	var recoil_strength: float = data.get("recoil", 0.0)
 	var ammo_cost: int = data.get("ammo_cost", 1)
-	var base_lifetime: float = data.get("lifetime", 0.25)
+
+	# ✔ USE THE CORRECT KEY
+	var base_lifetime: float = data.get("flame_lifetime", 0.25)
 
 	var base_dir := (aim_pos - muzzle.global_position).normalized()
 
@@ -150,18 +152,18 @@ func _handle_flamethrower_fire(aim_pos: Vector2) -> void:
 		bullet.speed = bullet_speed
 		bullet.damage = damage
 
-		# 🔥 Fuzzy edge: randomize lifetime a bit so it doesn't form a hard circle
+		# ✔ Only flamethrower bullet has .lifetime
 		if "lifetime" in bullet:
 			bullet.lifetime = base_lifetime * randf_range(0.75, 1.15)
 
 		get_tree().current_scene.add_child(bullet)
 
-	# Consume ammo once per “flame tick”
+	# Consume ammo
 	if not GameState.debug_infinite_ammo:
-		var new_ammo = max(GameState.ammo - ammo_cost, 0)
-		GameState.set_ammo(new_ammo)
+		GameState.set_ammo(max(GameState.ammo - ammo_cost, 0))
 
 	emit_signal("recoil_requested", -base_dir, recoil_strength)
+
 
 
 
@@ -208,7 +210,6 @@ func _fire_weapon(data: Dictionary, aim_pos: Vector2) -> void:
 		bullet.direction = dir
 		bullet.speed = bullet_speed
 		bullet.damage = damage
-		bullet.lifetime = lifetime 
 		if "bounces_left" in bullet:
 			bullet.bounces_left = bounces
 		if "explosion_radius" in bullet:

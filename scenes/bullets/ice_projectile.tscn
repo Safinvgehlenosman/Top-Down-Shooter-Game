@@ -45,6 +45,7 @@ visible = false
 modulate = Color(1.7358576, 0.22292884, 1.0272707, 1)
 color = Color(0.33333334, 1, 0.972549, 1)
 energy = 0.1
+shadow_enabled = true
 texture = SubResource("GradientTexture2D_l5glv")
 texture_scale = 0.4
 
