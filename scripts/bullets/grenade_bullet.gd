@@ -1,5 +1,6 @@
 extends CharacterBody2D
 
+@export var target_group: StringName = "enemy"
 @export var base_speed: float = 260.0
 @export var base_damage: int = 25
 @export var max_lifetime: float = 6.0

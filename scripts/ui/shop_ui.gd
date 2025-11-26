@@ -14,6 +14,7 @@ const ALT_WEAPON_GRENADE := 6
 const ABILITY_NONE := 0
 const ABILITY_DASH := 1
 const ABILITY_SLOWMO := 2
+const ABILITY_BUBBLE := 3
 
 @onready var continue_button       := $Panel/ContinueButton
 @onready var cards                 := $Panel/Cards
@@ -154,6 +155,14 @@ var upgrades := [
 		"text": "Unlock Bullet Time (Space)",
 		"requires_ability": ABILITY_NONE,
 	},
+	{
+		"id": "unlock_bubble",
+		"price": 10,
+		"icon": preload("res://assets/shield.png"), # pick any shield sprite
+		"text": "Unlock Shield Bubble (Space)",
+		"requires_ability": ABILITY_NONE,
+	},
+
 	{
 		"id": "ability_cooldown_minus_10",
 		"price": 5,

@@ -199,6 +199,7 @@ debug_laser_mode={
 2d_physics/layer_4="EnemyHitbox"
 2d_physics/layer_5="Pickup"
 2d_physics/layer_6="Bullet"
+2d_physics/layer_7="Shield"
 
 [physics]
 

@@ -4,7 +4,7 @@ extends CharacterBody2D
 @export var base_damage: int = 10
 @export var max_lifetime: float = 4.0
 @export var default_bounces: int = 1   # base number of bounces
-
+@export var target_group: StringName = "enemy"
 var direction: Vector2 = Vector2.ZERO
 var speed: float = 0.0
 var damage: int = 0

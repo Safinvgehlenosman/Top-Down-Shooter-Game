@@ -3,6 +3,7 @@ extends Node
 # This node controls dash + slowmo, and keeps ability timers in GameState.
 
 const DashGhostScene := preload("res://scenes/dash_ghost.tscn")
+const ShieldBubbleScene := preload("res://scenes/abilities/shield_bubble.tscn")
 
 @onready var player: CharacterBody2D = get_parent() as CharacterBody2D
 @onready var animated_sprite: AnimatedSprite2D = player.animated_sprite
@@ -21,6 +22,8 @@ var base_speed: float = 0.0
 
 var dash_ghost_interval: float = 0.03
 var dash_ghost_timer: float = 0.0
+
+var active_bubble: Node2D = null
 
 
 func _ready() -> void:
@@ -86,6 +89,31 @@ func _start_ability() -> void:
 			_start_dash(data)
 		"slowmo":
 			_start_slowmo(data)
+		"bubble":
+			_start_bubble(data)
+
+func _start_bubble(data: Dictionary) -> void:
+	if ShieldBubbleScene == null:
+		return
+
+	# Duration + cooldown from GameState data
+	var duration: float = data.get("duration", 3.0)
+	var cooldown: float = data.get("cooldown", 12.0)
+
+	ability_active_left = duration
+	ability_cooldown_left = cooldown
+
+	# Spawn bubble at player position
+	var bubble := ShieldBubbleScene.instantiate()
+	bubble.global_position = player.global_position
+
+	# setup only gets duration; radius is whatever the scene has
+	if bubble.has_method("setup"):
+		bubble.setup(duration)
+
+	get_tree().current_scene.add_child(bubble)
+	active_bubble = bubble
+
 
 
 func _start_dash(data: Dictionary) -> void:

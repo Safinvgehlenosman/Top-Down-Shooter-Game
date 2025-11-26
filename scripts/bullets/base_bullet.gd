@@ -3,6 +3,9 @@ extends Area2D
 @export var speed: float  = GameConfig.bullet_speed
 @export var damage: int   = GameConfig.bullet_base_damage
 
+@export var target_group: StringName = "enemy"
+
+
 var direction: Vector2 = Vector2.ZERO
 
 func _ready() -> void:

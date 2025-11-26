@@ -2,18 +2,24 @@ extends Area2D
 
 @export var speed: float  = GameConfig.bullet_speed
 @export var damage: int   = GameConfig.bullet_base_damage
-
-# NEW: who this bullet is allowed to hurt
-@export var target_group: StringName = "enemy"
+@export var target_group: StringName = "player"
 
 var direction: Vector2 = Vector2.ZERO
 
+
 func _ready() -> void:
-	add_to_group("player_bullet")
+	# So the shield bubble can recognize / block these
+	add_to_group("enemy_bullet")
+
+	# Safety: if the spawner never set direction, aim at the player
+	if direction == Vector2.ZERO:
+		var player := get_tree().get_first_node_in_group("player") as Node2D
+		if player:
+			direction = (player.global_position - global_position).normalized()
 
 
 func _physics_process(delta: float) -> void:
-	if direction == Vector2.ZERO:
+	if direction == Vector2.ZERO or speed == 0.0:
 		return
 
 	position += direction * speed * delta

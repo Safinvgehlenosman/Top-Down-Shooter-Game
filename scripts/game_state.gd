@@ -109,6 +109,7 @@ var alt_weapon: int = ALT_WEAPON_NONE
 const ABILITY_NONE := 0
 const ABILITY_DASH := 1
 const ABILITY_SLOWMO := 2
+const ABILITY_BUBBLE := 3
 
 # Base ability data – never modified directly
 const ABILITY_BASE_DATA := {
@@ -125,7 +126,15 @@ const ABILITY_BASE_DATA := {
 		"cooldown": 15.0,
 		"duration": 1.0,
 		"factor": 0.3,
-	}
+	},
+	ABILITY_BUBBLE: {
+		"id": "bubble",
+		"type": "bubble",
+		"cooldown": 12.0,  # tweak later
+		"duration": 4.0,
+		"radius": 80.0,
+	},
+	
 }
 
 # Mutable runtime copy – upgrades modify this
@@ -289,6 +298,10 @@ func apply_upgrade(id: String) -> void:
 
 		"unlock_slowmo":
 			ability = ABILITY_SLOWMO
+			
+		"unlock_bubble":
+			ability = ABILITY_BUBBLE
+
 
 		# --- Ability generic cooldown reduction ------------------------
 		"ability_cooldown_minus_10":

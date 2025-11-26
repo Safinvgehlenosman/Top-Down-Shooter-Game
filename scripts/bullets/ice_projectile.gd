@@ -6,7 +6,7 @@ extends Area2D
 @export var lifetime: float = 2.0         # how long the cloud stays
 @export var freeze_factor: float = 0.3    # 0.3 = 70% slower
 @export var freeze_duration: float = 1.5  # seconds of slow
-
+@export var target_group: StringName = "player"
 var direction: Vector2 = Vector2.ZERO
 var velocity: Vector2 = Vector2.ZERO
 var time_left: float = 0.0
@@ -31,6 +31,7 @@ var _max_alpha: float = 1.0
 
 func _ready() -> void:
 	time_left = lifetime
+	add_to_group("enemy_bullet")
 
 	# Pick a random speed in range for this pellet (LOGIC UNCHANGED)
 	var s := randf_range(min_speed, max_speed)

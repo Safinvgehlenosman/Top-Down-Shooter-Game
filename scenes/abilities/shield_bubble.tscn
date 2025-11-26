@@ -1,0 +1,56 @@
+[gd_scene load_steps=8 format=3 uid="uid://bg20ebsb1k57m"]
+
+[ext_resource type="Script" uid="uid://cix1nhrulnvgw" path="res://scripts/abilities/shield_bubble.gd" id="1_j07um"]
+[ext_resource type="Texture2D" uid="uid://laf58n32w25g" path="res://assets/shield.png" id="1_l0lw3"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_l0lw3"]
+radius = 31.016125
+
+[sub_resource type="Gradient" id="Gradient_d2wvv"]
+offsets = PackedFloat32Array(0.58379376, 0.6998158, 1)
+colors = PackedColorArray(0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_j07um"]
+gradient = SubResource("Gradient_d2wvv")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.517094, 0.52136755)
+fill_to = Vector2(0.76495725, 0.7777778)
+
+[sub_resource type="Gradient" id="Gradient_3v2ag"]
+offsets = PackedFloat32Array(0.016129032, 0.8064516, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_d26v2"]
+gradient = SubResource("Gradient_3v2ag")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.517094, 0.52136755)
+fill_to = Vector2(0.76495725, 0.7777778)
+
+[node name="ShieldBubble" type="Area2D"]
+scale = Vector2(1.5, 1.5)
+collision_layer = 64
+collision_mask = 36
+script = ExtResource("1_j07um")
+radius = 50.0
+push_strength = 100.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_l0lw3")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(2, 2)
+texture = ExtResource("1_l0lw3")
+
+[node name="PointLight2D" type="PointLight2D" parent="."]
+color = Color(0, 0.043137256, 0.48235294, 1)
+texture = SubResource("GradientTexture2D_j07um")
+texture_scale = 0.5
+
+[node name="PointLight2D2" type="PointLight2D" parent="."]
+color = Color(0.12156863, 0.6156863, 1, 1)
+texture = SubResource("GradientTexture2D_d26v2")
+texture_scale = 0.5

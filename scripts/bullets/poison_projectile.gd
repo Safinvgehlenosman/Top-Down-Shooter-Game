@@ -4,7 +4,7 @@ extends Area2D
 @export var max_speed: float = 140.0
 @export var friction: float = 260.0       # how fast it slows down
 @export var lifetime: float = 2.0         # how long the cloud stays
-
+@export var target_group: StringName = "player"
 @export var poison_damage_per_tick: float = 0.5
 @export var poison_duration: float = 3.0
 @export var poison_tick_interval: float = 0.5
@@ -33,6 +33,7 @@ var _max_alpha: float = 1.0
 
 func _ready() -> void:
 	time_left = lifetime
+	add_to_group("enemy_bullet")
 
 	# Pick a random speed in range for this pellet (LOGIC UNCHANGED)
 	var s := randf_range(min_speed, max_speed)
