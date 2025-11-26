@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://ba46snpchigar"]
+[gd_scene load_steps=12 format=3 uid="uid://ba46snpchigar"]
 
 [ext_resource type="Script" uid="uid://cvknpriueagq7" path="res://scripts/explosion_vfx.gd" id="1_hl760"]
 [ext_resource type="Texture2D" uid="uid://deu4q383qtedq" path="res://assets/Explosion/4.png" id="5_75bu5"]
@@ -38,6 +38,18 @@ animations = [{
 "speed": 20.0
 }]
 
+[sub_resource type="Gradient" id="Gradient_kmthg"]
+offsets = PackedFloat32Array(0.016129032, 0.8064516, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_tv5rc"]
+gradient = SubResource("Gradient_kmthg")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.517094, 0.52136755)
+fill_to = Vector2(0.76495725, 0.7777778)
+
 [node name="ExplosionVFX" type="Node2D"]
 scale = Vector2(0.15, 0.15)
 script = ExtResource("1_hl760")
@@ -47,3 +59,12 @@ sprite_frames = SubResource("SpriteFrames_83wuo")
 animation = &"explode"
 frame = 1
 frame_progress = 0.9020799
+
+[node name="PointLight2D" type="PointLight2D" parent="."]
+position = Vector2(1.5258789e-05, 0)
+scale = Vector2(12, 12)
+color = Color(0.9988522, 0.66189295, 0.2680868, 1)
+energy = 6.0
+shadow_enabled = true
+texture = SubResource("GradientTexture2D_tv5rc")
+texture_scale = 0.7
