@@ -55,20 +55,22 @@ const ALT_WEAPON_BASE_DATA := {
 		"damage": 10.0,   # ⬅ was 1.0
 	},
 	ALT_WEAPON_FLAMETHROWER: {
-		"max_ammo": 100,          # fuel tank size
-		"pickup_amount": 10,      # ammo per pickup
-		"cooldown": 0.01,          # we handle “per frame” fire in Gun
-		"spread_degrees": 35.0,
-		"pellets": 1,
-		"bullet_scene": preload("res://scenes/bullets/flamethrower_bullet.tscn"),
-		"bullet_speed": 50.0,    # ⬅️ higher = longer range (was lower)
-		"recoil": 0.0,
-		"damage": 0,              # direct hit
-		"ammo_cost": 1,
-		"burn_damage": 10,        # DoT per tick (after the x10 change)
-		"burn_duration": 1.5,
-		"burn_interval": 0.3,
-	},
+	"max_ammo": 100,
+	"pickup_amount": 10,
+	"cooldown": 0.01,
+	"spread_degrees": 35.0,
+	"pellets": 3,
+	"bullet_scene": preload("res://scenes/bullets/flamethrower_bullet.tscn"),
+	"bullet_speed": 50.0,   # keep low for flamethrower feel
+	"lifetime": 0.25,       # 🔥 base range controller
+	"recoil": 0.0,
+	"damage": 0,
+	"ammo_cost": 1,
+	"burn_damage": 10,
+	"burn_duration": 1.5,
+	"burn_interval": 0.3,
+},
+
 		ALT_WEAPON_SHURIKEN: {
 		"max_ammo": 8,
 		"pickup_amount": 3,
@@ -288,9 +290,12 @@ func apply_upgrade(id: String) -> void:
 		"flame_range_plus_20":
 			if ALT_WEAPON_DATA.has(ALT_WEAPON_FLAMETHROWER):
 				var d = ALT_WEAPON_DATA[ALT_WEAPON_FLAMETHROWER]
-				var current_speed = d.get("bullet_speed", 320.0)
-				# 20% more range = 20% more speed
-				d["bullet_speed"] = current_speed * 1.2
+				var current_lifetime = d.get("lifetime", 0.25)
+				# +20% effective flame range by increasing lifetime
+				d["lifetime"] = current_lifetime * 1.2
+
+
+
 				
 		"shuriken_bounce_plus_1":
 			if ALT_WEAPON_DATA.has(ALT_WEAPON_SHURIKEN):

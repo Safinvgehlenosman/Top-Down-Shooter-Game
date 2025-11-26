@@ -127,20 +127,19 @@ func _handle_flamethrower_fire(aim_pos: Vector2) -> void:
 		return
 
 	var bullet_scene: PackedScene = data["bullet_scene"]
-	var bullet_speed: float = data.get("bullet_speed", 150.0)
+	var bullet_speed: float = data.get("bullet_speed", 50.0)
 
-	# 🔥 These two control the *shape* of your flame:
-	var spread_deg: float = data.get("spread_degrees", 18.0)
+	var spread_deg: float = data.get("spread_degrees", 35.0)
 	var spread_rad: float = deg_to_rad(spread_deg)
-	var pellets: int = data.get("pellets", 3)   # bullets per frame
+	var pellets: int = data.get("pellets", 3)
 
 	var damage: float = data.get("damage", 0.0)
 	var recoil_strength: float = data.get("recoil", 0.0)
 	var ammo_cost: int = data.get("ammo_cost", 1)
+	var base_lifetime: float = data.get("lifetime", 0.25)
 
 	var base_dir := (aim_pos - muzzle.global_position).normalized()
 
-	# Spawn a small cloud of bullets with random angles inside the cone
 	for i in range(pellets):
 		var angle := randf_range(-spread_rad, spread_rad)
 		var dir := base_dir.rotated(angle)
@@ -150,19 +149,20 @@ func _handle_flamethrower_fire(aim_pos: Vector2) -> void:
 		bullet.direction = dir
 		bullet.speed = bullet_speed
 		bullet.damage = damage
+
+		# 🔥 Fuzzy edge: randomize lifetime a bit so it doesn't form a hard circle
+		if "lifetime" in bullet:
+			bullet.lifetime = base_lifetime * randf_range(0.75, 1.15)
+
 		get_tree().current_scene.add_child(bullet)
 
-	# Consume ammo once per "flame tick"
+	# Consume ammo once per “flame tick”
 	if not GameState.debug_infinite_ammo:
 		var new_ammo = max(GameState.ammo - ammo_cost, 0)
 		GameState.set_ammo(new_ammo)
 
-	# Optional little pushback
 	emit_signal("recoil_requested", -base_dir, recoil_strength)
-	# If you want a tiny camera shake, you can re-enable this later:
-	# var cam := get_tree().get_first_node_in_group("camera")
-	# if cam and cam.has_method("shake"):
-	# 	cam.shake(GameConfig.knockback_shake_strength, GameConfig.knockback_shake_duration)
+
 
 
 
@@ -195,17 +195,20 @@ func _fire_weapon(data: Dictionary, aim_pos: Vector2) -> void:
 	# BASE DIRECTION
 	var base_dir := (aim_pos - muzzle.global_position).normalized()
 	var start_offset := -float(pellets - 1) / 2.0
+	var lifetime = data.get("lifetime", 0.25)
 
 	# FIRE MULTIPLE PELLETS (shotgun pattern)
 	for i in range(pellets):
 		var angle := (start_offset + i) * spread_rad
 		var dir := base_dir.rotated(angle)
+		
 
 		var bullet = bullet_scene.instantiate()
 		bullet.global_position = muzzle.global_position
 		bullet.direction = dir
 		bullet.speed = bullet_speed
 		bullet.damage = damage
+		bullet.lifetime = lifetime 
 		if "bounces_left" in bullet:
 			bullet.bounces_left = bounces
 		if "explosion_radius" in bullet:
