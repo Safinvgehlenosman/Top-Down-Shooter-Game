@@ -141,8 +141,11 @@ func _physics_process(delta: float) -> void:
 	var is_shooting := Input.is_action_pressed("shoot")
 	var is_alt_fire := Input.is_action_pressed("alt_fire")
 
-	gun.handle_primary_fire(is_shooting, aim_dir)
-	gun.handle_alt_fire(is_alt_fire, aim_cursor_pos)
+	# Disable shooting while invisible
+	if not GameState.player_invisible:
+		gun.handle_primary_fire(is_shooting, aim_dir)
+		gun.handle_alt_fire(is_alt_fire, aim_cursor_pos)
+
 
 func _on_gun_recoil_requested(dir: Vector2, strength: float) -> void:
 	knockback = dir * strength

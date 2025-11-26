@@ -1,12 +1,13 @@
 extends Node
 
-# This node controls dash + slowmo, and keeps ability timers in GameState.
+# This node controls dash, slowmo, bubble and invis, and keeps ability timers in GameState.
 
 const DashGhostScene := preload("res://scenes/dash_ghost.tscn")
 const ShieldBubbleScene := preload("res://scenes/abilities/shield_bubble.tscn")
 
 @onready var player: CharacterBody2D = get_parent() as CharacterBody2D
-@onready var animated_sprite: AnimatedSprite2D = player.animated_sprite
+@onready var animated_sprite: AnimatedSprite2D = player.get_node_or_null("AnimatedSprite2D")
+@onready var gun: Node2D = player.get_node_or_null("Gun")  # adjust path if needed
 
 var ability: int = GameState.ability
 
@@ -25,6 +26,11 @@ var dash_ghost_timer: float = 0.0
 
 var active_bubble: Node2D = null
 
+# --- Invisibility state -----------------------------------------------
+var invis_running: bool = false
+var original_player_modulate: Color = Color.WHITE
+var original_gun_modulate: Color = Color.WHITE
+
 
 func _ready() -> void:
 	# Base player speed from config
@@ -34,6 +40,12 @@ func _ready() -> void:
 	ability = GameState.ability
 	ability_cooldown_left = GameState.ability_cooldown_left
 	ability_active_left = GameState.ability_active_left
+
+	# Store original colors, guarding against nulls
+	if is_instance_valid(animated_sprite):
+		original_player_modulate = animated_sprite.modulate
+	if is_instance_valid(gun):
+		original_gun_modulate = gun.modulate
 
 
 func _physics_process(delta: float) -> void:
@@ -62,7 +74,6 @@ func _physics_process(delta: float) -> void:
 
 
 func sync_from_gamestate() -> void:
-	# If upgrades change ability or ability data, we can resync here.
 	ability = GameState.ability
 
 
@@ -91,23 +102,56 @@ func _start_ability() -> void:
 			_start_slowmo(data)
 		"bubble":
 			_start_bubble(data)
+		"invis":
+			_start_invis(data)
+
+
+func _start_invis(data: Dictionary) -> void:
+	if invis_running:
+		return
+
+	var duration: float = data.get("duration", 3.0)
+	var cooldown: float = data.get("cooldown", 18.0)
+
+	ability_active_left = duration
+	ability_cooldown_left = cooldown
+
+	invis_running = true
+	GameState.player_invisible = true
+
+	# Remember current colors
+	if is_instance_valid(animated_sprite):
+		original_player_modulate = animated_sprite.modulate
+	if is_instance_valid(gun):
+		original_gun_modulate = gun.modulate
+
+	# Fade both player + gun
+	var cloak_color := Color(1, 1, 1, 0.25)
+	if is_instance_valid(animated_sprite):
+		animated_sprite.modulate = cloak_color
+	if is_instance_valid(gun):
+		gun.modulate = cloak_color
+
+	# Optional: clear current aggro immediately
+	for enemy in get_tree().get_nodes_in_group("enemy"):
+		if enemy is Node and "aggro" in enemy:
+			enemy.aggro = false
+
+
 
 func _start_bubble(data: Dictionary) -> void:
 	if ShieldBubbleScene == null:
 		return
 
-	# Duration + cooldown from GameState data
 	var duration: float = data.get("duration", 3.0)
 	var cooldown: float = data.get("cooldown", 12.0)
 
 	ability_active_left = duration
 	ability_cooldown_left = cooldown
 
-	# Spawn bubble at player position
 	var bubble := ShieldBubbleScene.instantiate()
 	bubble.global_position = player.global_position
 
-	# setup only gets duration; radius is whatever the scene has
 	if bubble.has_method("setup"):
 		bubble.setup(duration)
 
@@ -115,9 +159,7 @@ func _start_bubble(data: Dictionary) -> void:
 	active_bubble = bubble
 
 
-
 func _start_dash(data: Dictionary) -> void:
-	# Direction from movement or fallback to aim_dir
 	var input_dir := Vector2.ZERO
 	input_dir.x = Input.get_action_strength("move_right") - Input.get_action_strength("move_left")
 	input_dir.y = Input.get_action_strength("move_down") - Input.get_action_strength("move_up")
@@ -150,7 +192,8 @@ func _spawn_dash_ghost() -> void:
 	ghost.rotation = player.rotation
 
 	get_tree().current_scene.add_child(ghost)
-	ghost.setup_from_player(animated_sprite)
+	if is_instance_valid(animated_sprite):
+		ghost.setup_from_player(animated_sprite)
 
 
 func _start_slowmo(data: Dictionary) -> void:
@@ -166,9 +209,7 @@ func _start_slowmo(data: Dictionary) -> void:
 
 	slowmo_running = true
 
-	# Slow down the world…
 	Engine.time_scale = factor
-	# …but keep player speed feeling normal
 	player.speed = base_speed / max(factor, 0.01)
 
 
@@ -182,10 +223,17 @@ func _end_ability() -> void:
 		Engine.time_scale = 1.0
 		player.speed = base_speed
 
+	if invis_running:
+		invis_running = false
+		GameState.player_invisible = false
+
+		if is_instance_valid(animated_sprite):
+			animated_sprite.modulate = original_player_modulate
+		if is_instance_valid(gun):
+			gun.modulate = original_gun_modulate
+
 	ability_active_left = 0.0
 
-
-# --- Helpers for Player movement --------------------------------------
 
 
 func get_dash_velocity() -> Vector2:

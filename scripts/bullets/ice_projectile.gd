@@ -30,6 +30,7 @@ var _max_alpha: float = 1.0
 
 
 func _ready() -> void:
+	add_to_group("room_cleanup")
 	time_left = lifetime
 	add_to_group("enemy_bullet")
 

@@ -19,7 +19,7 @@ var is_collected: bool = false   # <-- added
 
 
 func _ready() -> void:
-	pass
+	add_to_group("room_cleanup")
 
 
 func launch() -> void:

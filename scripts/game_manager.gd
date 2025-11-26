@@ -84,6 +84,7 @@ func _update_level_ui() -> void:
 # --- ROOM / LEVEL LOADING -------------------------------------------
 
 func _load_room() -> void:
+	_clear_room_transient_objects()
 	for bullet in get_tree().get_nodes_in_group("player_bullet"):
 		bullet.queue_free()
 	# clear previous room if there was one
@@ -434,3 +435,10 @@ func _show_death_screen_after_timer(timer: SceneTreeTimer) -> void:
 			death_restart_button.grab_focus()
 
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+
+func _clear_room_transient_objects() -> void:
+	# Everything that should NOT persist between rooms
+	var nodes := get_tree().get_nodes_in_group("room_cleanup")
+	for n in nodes:
+		if is_instance_valid(n):
+			n.queue_free()

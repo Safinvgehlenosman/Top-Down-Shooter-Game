@@ -7,6 +7,8 @@ var debug_god_mode: bool = false
 var debug_infinite_ammo: bool = false
 var debug_noclip: bool = false
 var debug_laser_mode: bool = false
+var player_invisible: bool = false
+
 
 # --- ALT WEAPONS -------------------------------------------------------
 
@@ -110,6 +112,7 @@ const ABILITY_NONE := 0
 const ABILITY_DASH := 1
 const ABILITY_SLOWMO := 2
 const ABILITY_BUBBLE := 3
+const ABILITY_INVIS := 4
 
 # Base ability data – never modified directly
 const ABILITY_BASE_DATA := {
@@ -118,7 +121,7 @@ const ABILITY_BASE_DATA := {
 		"type": "dash",
 		"cooldown": 5.0,
 		"duration": 0.12,
-		"distance": 120.0,
+		"distance": 80.0,
 	},
 	ABILITY_SLOWMO: {
 		"id": "slowmo",
@@ -133,6 +136,12 @@ const ABILITY_BASE_DATA := {
 		"cooldown": 12.0,  # tweak later
 		"duration": 4.0,
 		"radius": 80.0,
+	},
+	ABILITY_INVIS: {
+		"id": "invis",
+		"type": "invis",
+		"cooldown": 18.0,  # tune later
+		"duration": 3.5,
 	},
 	
 }
@@ -301,7 +310,9 @@ func apply_upgrade(id: String) -> void:
 			
 		"unlock_bubble":
 			ability = ABILITY_BUBBLE
-
+			
+		"unlock_invis":
+			ability = ABILITY_INVIS
 
 		# --- Ability generic cooldown reduction ------------------------
 		"ability_cooldown_minus_10":
@@ -339,6 +350,8 @@ func start_new_run() -> void:
 	ability = ABILITY_NONE
 	ability_cooldown_left = 0.0
 	ability_active_left = 0.0
+	player_invisible = false
+
 
 	# Coins
 	coins = 0

@@ -15,6 +15,7 @@ const ABILITY_NONE := 0
 const ABILITY_DASH := 1
 const ABILITY_SLOWMO := 2
 const ABILITY_BUBBLE := 3
+const ABILITY_INVIS := 4
 
 @onready var continue_button       := $Panel/ContinueButton
 @onready var cards                 := $Panel/Cards
@@ -162,7 +163,13 @@ var upgrades := [
 		"text": "Unlock Shield Bubble (Space)",
 		"requires_ability": ABILITY_NONE,
 	},
-
+	{
+		"id": "unlock_invis",
+		"price": 10,
+		"icon": preload("res://assets/Separated/ammo.png"), # swap to cloak/ghost icon later
+		"text": "Unlock Invisibility Cloak (Space)",
+		"requires_ability": ABILITY_NONE,
+	},
 	{
 		"id": "ability_cooldown_minus_10",
 		"price": 5,

@@ -20,7 +20,7 @@ var is_collected: bool = false   # <-- new
 
 
 func _ready() -> void:
-	pass
+	add_to_group("room_cleanup")
 
 func launch() -> void:
 	# random horizontal direction for the hop

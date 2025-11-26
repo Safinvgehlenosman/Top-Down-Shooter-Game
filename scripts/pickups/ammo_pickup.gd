@@ -17,6 +17,8 @@ var z_velocity: float = 0.0
 
 var is_collected: bool = false
 
+func _ready() -> void:
+	add_to_group("room_cleanup")
 
 func _physics_process(delta: float) -> void:
 	if is_collected:

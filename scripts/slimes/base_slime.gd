@@ -156,6 +156,63 @@ func _update_ai(delta: float) -> void:
 	if not player:
 		return
 
+	# ------------------------------------------------------
+	# PLAYER INVISIBLE → forget them and wander normally
+	# ------------------------------------------------------
+	if GameState.player_invisible:
+		aggro = false
+
+		# normal wander logic
+		wander_timer -= delta
+		if wander_timer <= 0.0:
+			wander_timer = wander_change_interval
+			wander_direction = Vector2(
+				randf_range(-1.0, 1.0),
+				randf_range(-1.0, 1.0)
+			).normalized()
+
+		velocity = wander_direction * wander_speed
+
+		# separation so they don't stack
+		var separation: Vector2 = Vector2.ZERO
+		for other in get_tree().get_nodes_in_group("enemy"):
+			if other == self:
+				continue
+
+			var other_node := other as Node2D
+			if other_node == null:
+				continue
+
+			var diff: Vector2 = global_position - other_node.global_position
+			var dist_sep: float = diff.length()
+			if dist_sep > 0.0 and dist_sep < separation_radius:
+				separation += diff.normalized() * (1.0 - dist_sep / separation_radius)
+
+		velocity += separation * separation_strength * speed
+
+		# wall avoidance
+		var motion := velocity * delta
+		if test_move(global_transform, motion):
+			var motion_x := Vector2(motion.x, 0.0)
+			var motion_y := Vector2(0.0, motion.y)
+
+			if not test_move(global_transform, motion_x):
+				motion = motion_x
+			elif not test_move(global_transform, motion_y):
+				motion = motion_y
+			else:
+				motion = Vector2.ZERO
+
+			if delta > 0.0:
+				velocity = motion / delta
+
+		# knockback still applies
+		velocity += knockback_velocity
+		return
+
+	# ------------------------------------------------------
+	# NORMAL BEHAVIOUR (player visible)
+	# ------------------------------------------------------
 	var to_player: Vector2 = player.global_position - global_position
 	var distance: float = to_player.length()
 	var can_see := _can_see_player()
@@ -202,45 +259,50 @@ func _update_ai(delta: float) -> void:
 		velocity = wander_direction * wander_speed
 
 	# separation
-	var separation: Vector2 = Vector2.ZERO
+	var separation2: Vector2 = Vector2.ZERO
 	for other in get_tree().get_nodes_in_group("enemy"):
 		if other == self:
 			continue
 
-		var other_node := other as Node2D
-		if other_node == null:
+		var other_node2 := other as Node2D
+		if other_node2 == null:
 			continue
 
-		var diff: Vector2 = global_position - other_node.global_position
-		var dist_sep: float = diff.length()
-		if dist_sep > 0.0 and dist_sep < separation_radius:
-			separation += diff.normalized() * (1.0 - dist_sep / separation_radius)
+		var diff2: Vector2 = global_position - other_node2.global_position
+		var dist_sep2: float = diff2.length()
+		if dist_sep2 > 0.0 and dist_sep2 < separation_radius:
+			separation2 += diff2.normalized() * (1.0 - dist_sep2 / separation_radius)
 
-	velocity += separation * separation_strength * speed
+	velocity += separation2 * separation_strength * speed
 
 	# wall avoidance
-	var motion := velocity * delta
+	var motion2 := velocity * delta
+	if test_move(global_transform, motion2):
+		var motion_x2 := Vector2(motion2.x, 0.0)
+		var motion_y2 := Vector2(0.0, motion2.y)
 
-	if test_move(global_transform, motion):
-		var motion_x := Vector2(motion.x, 0.0)
-		var motion_y := Vector2(0.0, motion.y)
-
-		if not test_move(global_transform, motion_x):
-			motion = motion_x
-		elif not test_move(global_transform, motion_y):
-			motion = motion_y
+		if not test_move(global_transform, motion_x2):
+			motion2 = motion_x2
+		elif not test_move(global_transform, motion_y2):
+			motion2 = motion_y2
 		else:
-			motion = Vector2.ZERO
+			motion2 = Vector2.ZERO
 
 		if delta > 0.0:
-			velocity = motion / delta
+			velocity = motion2 / delta
 
-	# finally, add knockback on top
+	# finally, add knockback
 	velocity += knockback_velocity
+
+
 
 
 func _can_see_player() -> bool:
 	if not player:
+		return false
+
+	# While invisible, slimes can never see the player
+	if GameState.player_invisible:
 		return false
 
 	if global_position.distance_to(player.global_position) > vision_radius:
@@ -257,6 +319,7 @@ func _can_see_player() -> bool:
 		return true
 
 	return result.get("collider") == player
+
 
 
 # --- VISUAL / AUDIO FEEDBACK ---------------------------------------
@@ -396,3 +459,7 @@ func _on_health_died() -> void:
 
 	call_deferred("_update_hp_bar")
 	die()
+
+func force_deaggro() -> void:
+	aggro = false
+	lost_sight_timer = deaggro_delay

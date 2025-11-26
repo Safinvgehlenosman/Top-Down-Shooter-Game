@@ -81,6 +81,7 @@ grow_horizontal = 2
 grow_vertical = 0
 theme_override_fonts/font = ExtResource("1_oixfk")
 text = "CONTINUE"
+icon_alignment = 1
 
 [node name="CoinUI" type="TextureRect" parent="."]
 offset_left = 390.0
