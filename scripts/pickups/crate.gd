@@ -55,33 +55,22 @@ func _update_hit_feedback(delta: float) -> void:
 # --------------------------------------------------------------------
 
 func _spawn_loot() -> void:
+	# Crates now only drop ammo or bullets, 50/50
 	var roll := randf()
 
-	var coin_chance := GameConfig.crate_coin_drop_chance
-	var ammo_chance := GameConfig.crate_ammo_drop_chance
-	var heart_chance := GameConfig.crate_heart_drop_chance
-
-	var total := coin_chance + ammo_chance + heart_chance
-	if total <= 0.0:
-		return
-
-	roll *= total
-
-	if roll < ammo_chance:
+	if roll < 0.5:
+		# Ammo pickup
 		if AmmoScene:
 			var ammo := AmmoScene.instantiate()
 			ammo.global_position = global_position
 			get_tree().current_scene.add_child(ammo)
-	elif roll < ammo_chance + coin_chance:
-		if CoinScene:
-			var coin := CoinScene.instantiate()
-			coin.global_position = global_position
-			get_tree().current_scene.add_child(coin)
 	else:
-		if HeartScene:
-			var heart := HeartScene.instantiate()
-			heart.global_position = global_position
-			get_tree().current_scene.add_child(heart)
+		# Bullet / coin / whatever you use as other ammo type
+		if CoinScene:
+			var bullet := CoinScene.instantiate()
+			bullet.global_position = global_position
+			get_tree().current_scene.add_child(bullet)
+
 
 
 func _break_and_despawn() -> void:

@@ -11,18 +11,27 @@ extends Node
 @export var room_scenes: Array[PackedScene] = []
 
 # --- ENEMY SPAWN TABLE ----------------------------------------------
+# IMPORTANT: enemy_scenes indices should match these roles:
+# 0 = GREEN (basic melee)           -> slime.tscn
+# 1 = FAST (darkgreen, chaser)      -> darkgreen_slime.tscn
+# 2 = FIRE (fire DoT melee)         -> fire_slime.tscn
+# 3 = POISON (cloud DoT)            -> poison_slime.tscn
+# 4 = ICE (slow, tanky)             -> ice_slime.tscn
+# 5 = PURPLE (basic shooter)        -> purple_slime.tscn
+# 6 = GHOST (phase / special)       -> ghost_slime.tscn
 
-# All enemy types that can spawn
-# Index 0 = GREEN, 1 = PURPLE, 2 = BLUE, 3 = GHOST (by convention)
-const ENEMY_INDEX_GREEN := 0
-const ENEMY_INDEX_PURPLE := 1
-const ENEMY_INDEX_BLUE  := 2
-const ENEMY_INDEX_GHOST := 3
+const ENEMY_INDEX_GREEN  := 0
+const ENEMY_INDEX_FAST   := 1
+const ENEMY_INDEX_FIRE   := 2
+const ENEMY_INDEX_POISON := 3
+const ENEMY_INDEX_ICE    := 4
+const ENEMY_INDEX_PURPLE := 5
+const ENEMY_INDEX_GHOST  := 6
 
 @export var enemy_scenes: Array[PackedScene] = []
-@export var enemy_weights: Array[float] = []   # ideally same size as enemy_scenes
+@export var enemy_weights: Array[float] = []   # runtime weights, auto-filled
 
-# 70% crate, 30% "some enemy" by default
+# 70% crate, 30% "some enemy" by default (you can still tweak this in inspector)
 @export_range(0.0, 1.0, 0.01) var enemy_chance: float = 0.3
 @export_range(0.0, 1.0, 0.01) var crate_chance: float = 0.7
 
@@ -51,6 +60,29 @@ var door_open: bool = false
 
 # 🔁 Track last used room index so we don't repeat it
 var last_room_index: int = -1
+
+
+# --- PROGRESSION / SPAWN CURVE TUNING -------------------------------
+# These are editable in the inspector so you can tweak the curve later.
+
+@export_group("Enemy Unlock Levels")
+@export var level_unlock_green: int  = 1   # basic melee
+@export var level_unlock_fast: int   = 4   # darkgreen chaser
+@export var level_unlock_purple: int = 7   # shooter
+@export var level_unlock_poison: int = 10  # DoT cloud
+@export var level_unlock_ice: int    = 13  # slow / tanky
+@export var level_unlock_fire: int   = 10  # fire melee (mid-game)
+@export var level_unlock_ghost: int  = 16  # late-game special
+
+@export_group("Enemy Base Weights")
+# These are "relative" weights; the per-level logic multiplies/combines them.
+@export var weight_green: float  = 1.0
+@export var weight_fast: float   = 0.9
+@export var weight_purple: float = 0.7
+@export var weight_poison: float = 0.5
+@export var weight_ice: float    = 0.4
+@export var weight_fire: float   = 0.4
+@export var weight_ghost: float  = 0.2
 
 
 func _ready() -> void:
@@ -208,12 +240,12 @@ func _spawn_room_content() -> void:
 				var enemy := enemy_scene.instantiate()
 				enemy.global_position = spawn.global_position
 
-				# Find which index this enemy came from
+				# Find which index this enemy came from (for apply_level logic)
 				var enemy_index := enemy_scenes.find(enemy_scene)
 
 				# scale stats by current level if the enemy supports it,
-				# but NEVER for the ghost slime
-				if enemy_index != ENEMY_INDEX_GHOST and enemy.has_method("apply_level"):
+				# (ghost can still ignore this in its own script if needed)
+				if enemy.has_method("apply_level"):
 					enemy.apply_level(current_level)
 
 				current_room.add_child(enemy)
@@ -237,7 +269,9 @@ func _spawn_room_content() -> void:
 		_spawn_exit_door()
 
 
-# --- ENEMY WEIGHT SCALING -------------------------------------------
+# --- ENEMY WEIGHT SCALING / PROGRESSION -----------------------------
+# This is where the "natural progression" curve lives.
+# You can tweak unlock levels + base weights in the inspector and keep this logic.
 
 func _update_enemy_weights_for_level() -> void:
 	if enemy_scenes.is_empty():
@@ -247,12 +281,107 @@ func _update_enemy_weights_for_level() -> void:
 	if enemy_weights.size() < enemy_scenes.size():
 		enemy_weights.resize(enemy_scenes.size())
 
-	# ✅ Simple version: every enemy has equal chance, all levels
-	var equal_weight := 1.0
+	# Reset all weights to 0 by default
+	for i in range(enemy_weights.size()):
+		enemy_weights[i] = 0.0
 
-	for i in range(enemy_scenes.size()):
-		enemy_weights[i] = equal_weight
+	var lvl := current_level
 
+	# --- Enemy spawn curve by level range ---
+	#  1–3   : Green only (learning)
+	#  4–6   : Green + Fast
+	#  7–9   : Add Purple (shooter)
+	# 10–12  : Add Poison + Fire
+	# 13–15  : Add Ice
+	# 16–20  : Add Ghost (rare)
+	# 21+    : Full mix, slightly more dangerous composition
+
+	if lvl < 4:
+		if lvl >= level_unlock_green:
+			enemy_weights[ENEMY_INDEX_GREEN] = weight_green
+
+	elif lvl < 7:
+		# Green + Fast
+		if lvl >= level_unlock_green:
+			enemy_weights[ENEMY_INDEX_GREEN] = weight_green
+		if lvl >= level_unlock_fast and enemy_weights.size() > ENEMY_INDEX_FAST:
+			enemy_weights[ENEMY_INDEX_FAST] = weight_fast * 0.7
+
+	elif lvl < 10:
+		# Green + Fast + a bit of Purple (shooter)
+		if lvl >= level_unlock_green:
+			enemy_weights[ENEMY_INDEX_GREEN] = weight_green
+		if lvl >= level_unlock_fast and enemy_weights.size() > ENEMY_INDEX_FAST:
+			enemy_weights[ENEMY_INDEX_FAST] = weight_fast
+		if lvl >= level_unlock_purple and enemy_weights.size() > ENEMY_INDEX_PURPLE:
+			enemy_weights[ENEMY_INDEX_PURPLE] = weight_purple * 0.5
+
+	elif lvl < 13:
+		# Add Poison + Fire, ramp Purple slightly
+		if lvl >= level_unlock_green:
+			enemy_weights[ENEMY_INDEX_GREEN] = weight_green * 0.8
+		if lvl >= level_unlock_fast and enemy_weights.size() > ENEMY_INDEX_FAST:
+			enemy_weights[ENEMY_INDEX_FAST] = weight_fast
+		if lvl >= level_unlock_purple and enemy_weights.size() > ENEMY_INDEX_PURPLE:
+			enemy_weights[ENEMY_INDEX_PURPLE] = weight_purple * 0.8
+		if lvl >= level_unlock_poison and enemy_weights.size() > ENEMY_INDEX_POISON:
+			enemy_weights[ENEMY_INDEX_POISON] = weight_poison * 0.7
+		if lvl >= level_unlock_fire and enemy_weights.size() > ENEMY_INDEX_FIRE:
+			enemy_weights[ENEMY_INDEX_FIRE] = weight_fire * 0.6
+
+	elif lvl < 16:
+		# Add Ice (tanky support)
+		if lvl >= level_unlock_green:
+			enemy_weights[ENEMY_INDEX_GREEN] = weight_green * 0.6
+		if lvl >= level_unlock_fast and enemy_weights.size() > ENEMY_INDEX_FAST:
+			enemy_weights[ENEMY_INDEX_FAST] = weight_fast
+		if lvl >= level_unlock_purple and enemy_weights.size() > ENEMY_INDEX_PURPLE:
+			enemy_weights[ENEMY_INDEX_PURPLE] = weight_purple
+		if lvl >= level_unlock_poison and enemy_weights.size() > ENEMY_INDEX_POISON:
+			enemy_weights[ENEMY_INDEX_POISON] = weight_poison * 0.8
+		if lvl >= level_unlock_fire and enemy_weights.size() > ENEMY_INDEX_FIRE:
+			enemy_weights[ENEMY_INDEX_FIRE] = weight_fire * 0.7
+		if lvl >= level_unlock_ice and enemy_weights.size() > ENEMY_INDEX_ICE:
+			enemy_weights[ENEMY_INDEX_ICE] = weight_ice * 0.7
+
+	elif lvl < 21:
+		# Add Ghost (rare), mid/late mix
+		if lvl >= level_unlock_green:
+			enemy_weights[ENEMY_INDEX_GREEN] = weight_green * 0.5
+		if lvl >= level_unlock_fast and enemy_weights.size() > ENEMY_INDEX_FAST:
+			enemy_weights[ENEMY_INDEX_FAST] = weight_fast
+		if lvl >= level_unlock_purple and enemy_weights.size() > ENEMY_INDEX_PURPLE:
+			enemy_weights[ENEMY_INDEX_PURPLE] = weight_purple
+		if lvl >= level_unlock_poison and enemy_weights.size() > ENEMY_INDEX_POISON:
+			enemy_weights[ENEMY_INDEX_POISON] = weight_poison
+		if lvl >= level_unlock_fire and enemy_weights.size() > ENEMY_INDEX_FIRE:
+			enemy_weights[ENEMY_INDEX_FIRE] = weight_fire
+		if lvl >= level_unlock_ice and enemy_weights.size() > ENEMY_INDEX_ICE:
+			enemy_weights[ENEMY_INDEX_ICE] = weight_ice
+		if lvl >= level_unlock_ghost and enemy_weights.size() > ENEMY_INDEX_GHOST:
+			enemy_weights[ENEMY_INDEX_GHOST] = weight_ghost * 0.4
+
+	else:
+		# 21+ : Full chaos mix – slightly more elites / ranged / control
+		if lvl >= level_unlock_green:
+			enemy_weights[ENEMY_INDEX_GREEN] = weight_green * 0.4
+		if lvl >= level_unlock_fast and enemy_weights.size() > ENEMY_INDEX_FAST:
+			enemy_weights[ENEMY_INDEX_FAST] = weight_fast * 1.1
+		if lvl >= level_unlock_purple and enemy_weights.size() > ENEMY_INDEX_PURPLE:
+			enemy_weights[ENEMY_INDEX_PURPLE] = weight_purple * 1.2
+		if lvl >= level_unlock_poison and enemy_weights.size() > ENEMY_INDEX_POISON:
+			enemy_weights[ENEMY_INDEX_POISON] = weight_poison
+		if lvl >= level_unlock_fire and enemy_weights.size() > ENEMY_INDEX_FIRE:
+			enemy_weights[ENEMY_INDEX_FIRE] = weight_fire
+		if lvl >= level_unlock_ice and enemy_weights.size() > ENEMY_INDEX_ICE:
+			enemy_weights[ENEMY_INDEX_ICE] = weight_ice * 1.1
+		if lvl >= level_unlock_ghost and enemy_weights.size() > ENEMY_INDEX_GHOST:
+			enemy_weights[ENEMY_INDEX_GHOST] = weight_ghost * 0.6
+
+	# (Optional) If you want enemy density to increase slightly with level,
+	# you could also tweak enemy_chance here, e.g.:
+	# enemy_chance = clamp(0.3 + (current_level - 1) * 0.01, 0.3, 0.8)
+	# crate_chance = 1.0 - enemy_chance
 
 
 # --- ENEMY DEATH / DOOR SPAWN --------------------------------------
@@ -387,8 +516,6 @@ func debug_set_level(level: int) -> void:
 
 	if game_ui:
 		game_ui.visible = true
-
-
 
 
 # --- PAUSE ----------------------------------------------------------
