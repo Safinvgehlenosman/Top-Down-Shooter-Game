@@ -1,8 +1,10 @@
-[gd_scene load_steps=7 format=3 uid="uid://c06q8m62vgg1i"]
+[gd_scene load_steps=9 format=3 uid="uid://b43ghi054wak8"]
 
-[ext_resource type="Script" uid="uid://c8wyjykgvkmi0" path="res://scripts/bullets/sniper_bullet.gd" id="1_21kos"]
-[ext_resource type="Texture2D" uid="uid://cynxbw0irkdpk" path="res://assets/bullets/sniperbullet.png" id="2_21kos"]
-[ext_resource type="Texture2D" uid="uid://ntkmut61o7gw" path="res://assets/Separated/Bullets.png" id="3_a0wqd"]
+[ext_resource type="Script" uid="uid://cwxhd5ykurmbe" path="res://scripts/bullets/grenade_bullet.gd" id="1_tulee"]
+[ext_resource type="PackedScene" uid="uid://ba46snpchigar" path="res://scenes/explosion_vfx.tscn" id="2_3imy3"]
+[ext_resource type="Texture2D" uid="uid://h8xo4hckf7th" path="res://assets/bullets/grenade.png" id="2_tulee"]
+[ext_resource type="Texture2D" uid="uid://ntkmut61o7gw" path="res://assets/Separated/Bullets.png" id="3_3imy3"]
+[ext_resource type="AudioStream" uid="uid://unlth4rqb8r0" path="res://assets/Audios/explosion-312361.wav" id="4_w4p55"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_y25gk"]
 radius = 2.0
@@ -19,17 +21,15 @@ fill = 1
 fill_from = Vector2(0.517094, 0.52136755)
 fill_to = Vector2(0.76495725, 0.7777778)
 
-[node name="SniperBullet" type="Area2D" groups=["bullet"]]
-scale = Vector2(1.4, 1.4)
+[node name="Grenade" type="CharacterBody2D" groups=["bullet"]]
 collision_layer = 32
 collision_mask = 5
-script = ExtResource("1_21kos")
-speed = 300.0
-damage = 3
+script = ExtResource("1_tulee")
+explosion_fx_scene = ExtResource("2_3imy3")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture_filter = 1
-texture = ExtResource("2_21kos")
+texture = ExtResource("2_tulee")
 region_rect = Rect2(104, 104, 16, 16)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
@@ -39,7 +39,7 @@ shape = SubResource("CircleShape2D_y25gk")
 visible = false
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
-color = Color(0.21568628, 0.8784314, 0.5647059, 1)
+color = Color(0, 0.45490196, 0.039215688, 1)
 energy = 1.2
 texture = SubResource("GradientTexture2D_l5glv")
 texture_scale = 0.7
@@ -47,7 +47,7 @@ texture_scale = 0.7
 [node name="Trail" type="CPUParticles2D" parent="."]
 visible = false
 amount = 40
-texture = ExtResource("3_a0wqd")
+texture = ExtResource("3_3imy3")
 lifetime = 0.18000000000000002
 explosiveness = 0.13
 spread = 15.0
@@ -55,5 +55,7 @@ gravity = Vector2(0, 0)
 scale_amount_min = 0.4
 color = Color(1, 0.40784314, 0.4627451, 1)
 
-[connection signal="body_entered" from="." to="." method="_on_body_entered"]
+[node name="SFX_Explode" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("4_w4p55")
+
 [connection signal="screen_exited" from="VisibleOnScreenNotifier2D" to="." method="_on_visible_on_screen_notifier_2d_screen_exited"]

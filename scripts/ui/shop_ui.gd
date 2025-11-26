@@ -8,6 +8,7 @@ const ALT_WEAPON_SNIPER := 2
 const ALT_WEAPON_TURRET := 3
 const ALT_WEAPON_FLAMETHROWER := 4
 const ALT_WEAPON_SHURIKEN := 5
+const ALT_WEAPON_GRENADE := 6
 
 
 const ABILITY_NONE := 0
@@ -96,6 +97,22 @@ var upgrades := [
 		"text": "Unlock Shuriken",
 		"requires_alt_weapon": ALT_WEAPON_NONE,
 	},
+	{
+		"id": "unlock_grenade",
+		"price": 10,
+		"icon": preload("res://assets/bullets/grenade.png"), # pick any icon you have
+		"text": "Unlock Grenade Launcher",
+		"requires_alt_weapon": ALT_WEAPON_NONE
+	},
+	{
+		"id": "grenade_radius_plus_20",
+		"price": 5,
+		"icon": preload("res://assets/bullets/grenade.png"),
+		"text": "+20px Grenade Radius",
+		"requires_alt_weapon": ALT_WEAPON_GRENADE
+	},
+
+
 	{
 		"id": "shuriken_bounce_plus_1",
 		"price": 5,

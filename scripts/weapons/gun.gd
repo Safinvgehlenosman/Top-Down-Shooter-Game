@@ -188,6 +188,8 @@ func _fire_weapon(data: Dictionary, aim_pos: Vector2) -> void:
 	var damage: float = data.get("damage", 1.0)
 	var recoil_strength: float = data.get("recoil", 0.0)
 	var bounces: int = data.get("bounces", 0)
+	var explosion_radius: float = data.get("explosion_radius", 0.0)
+
 
 
 	# BASE DIRECTION
@@ -206,6 +208,8 @@ func _fire_weapon(data: Dictionary, aim_pos: Vector2) -> void:
 		bullet.damage = damage
 		if "bounces_left" in bullet:
 			bullet.bounces_left = bounces
+		if "explosion_radius" in bullet:
+			bullet.explosion_radius = explosion_radius
 		get_tree().current_scene.add_child(bullet)
 
 	# recoil

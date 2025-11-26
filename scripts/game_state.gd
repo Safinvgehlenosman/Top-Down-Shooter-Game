@@ -16,6 +16,7 @@ const ALT_WEAPON_SNIPER := 2
 const ALT_WEAPON_TURRET := 3
 const ALT_WEAPON_FLAMETHROWER := 4
 const ALT_WEAPON_SHURIKEN := 5
+const ALT_WEAPON_GRENADE := 6
 
 # Base, never modified
 const ALT_WEAPON_BASE_DATA := {
@@ -77,10 +78,23 @@ const ALT_WEAPON_BASE_DATA := {
 		"recoil": 60.0,
 		"damage": 10.0,
 		"ammo_cost": 1,
-
 		# 👇 our custom field used for bouncing
 		"bounces": 2,      # base: 1 bounce
 	},
+		ALT_WEAPON_GRENADE: {
+		"max_ammo": 4,
+		"pickup_amount": 1,
+		"cooldown": 0.9,
+		"spread_degrees": 0.0,
+		"pellets": 1,
+		"bullet_scene": preload("res://scenes/bullets/grenade_bullet.tscn"),
+		"bullet_speed": 260.0,
+		"recoil": 220.0,
+		"damage": 50.0,
+		"ammo_cost": 1,
+		"explosion_radius": 60.0,   # 👈 upgrade will buff this
+	},
+
 
 
 }
@@ -237,6 +251,20 @@ func apply_upgrade(id: String) -> void:
 				var d = ALT_WEAPON_DATA[ALT_WEAPON_SHURIKEN]
 				max_ammo = d.get("max_ammo", 0)
 				ammo = max_ammo
+				
+		"unlock_grenade":
+			alt_weapon = ALT_WEAPON_GRENADE
+			if ALT_WEAPON_DATA.has(ALT_WEAPON_GRENADE):
+				var gd = ALT_WEAPON_DATA[ALT_WEAPON_GRENADE]
+				max_ammo = gd.get("max_ammo", 0)
+				ammo = max_ammo
+
+		"grenade_radius_plus_20":
+			if ALT_WEAPON_DATA.has(ALT_WEAPON_GRENADE):
+				var gd = ALT_WEAPON_DATA[ALT_WEAPON_GRENADE]
+				var current = gd.get("explosion_radius", 60.0)
+				gd["explosion_radius"] = current + 20.0
+
 
 				
 		"flame_range_plus_20":
