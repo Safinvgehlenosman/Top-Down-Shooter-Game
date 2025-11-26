@@ -49,6 +49,9 @@ var door_open: bool = false
 @onready var restart_button: Button = $"../UI/PauseScreen/RestartButton"
 @onready var death_restart_button: Button = $"../UI/DeathScreen/Content/RestartButton"
 
+# 🔁 Track last used room index so we don't repeat it
+var last_room_index: int = -1
+
 
 func _ready() -> void:
 	randomize()
@@ -130,8 +133,18 @@ func _pick_room_scene_for_level(_level: int) -> PackedScene:
 	if room_scenes.is_empty():
 		return null
 
-	# For now, just completely random every level
-	return room_scenes[randi() % room_scenes.size()]
+	# If there's only one room, we can't avoid repeats.
+	if room_scenes.size() == 1:
+		last_room_index = 0
+		return room_scenes[0]
+
+	# Pick a random index that is not the same as last_room_index
+	var new_index := last_room_index
+	while new_index == last_room_index:
+		new_index = randi_range(0, room_scenes.size() - 1)
+
+	last_room_index = new_index
+	return room_scenes[new_index]
 
 
 # --- ENEMY PICKING --------------------------------------------------
@@ -435,6 +448,7 @@ func _show_death_screen_after_timer(timer: SceneTreeTimer) -> void:
 			death_restart_button.grab_focus()
 
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+
 
 func _clear_room_transient_objects() -> void:
 	# Everything that should NOT persist between rooms
