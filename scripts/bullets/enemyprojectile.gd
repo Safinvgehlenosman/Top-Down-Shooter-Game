@@ -8,14 +8,8 @@ var direction: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
-	# So the shield bubble can recognize / block these
+	# So the shield can filter these out
 	add_to_group("enemy_bullet")
-
-	# Safety: if the spawner never set direction, aim at the player
-	if direction == Vector2.ZERO:
-		var player := get_tree().get_first_node_in_group("player") as Node2D
-		if player:
-			direction = (player.global_position - global_position).normalized()
 
 
 func _physics_process(delta: float) -> void:

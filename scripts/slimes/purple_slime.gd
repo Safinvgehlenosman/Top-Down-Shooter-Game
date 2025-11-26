@@ -40,16 +40,21 @@ func _shoot_at_player() -> void:
 
 	var proj = projectile_scene.instantiate()
 	var dir := (player.global_position - global_position).normalized()
+	if dir == Vector2.ZERO:
+		return
 
-	# spawn in front of slime to avoid self-hit
+	# spawn slightly in front of the slime to avoid self-hit
 	proj.global_position = global_position + dir * 6.0
 
-	if "direction" in proj:
-		proj.direction = dir
-	if "target_group" in proj:
-		proj.target_group = "player"
+	# 🔥 Hard-assign common projectile fields
+	# All your enemy projectile scripts (enemyprojectile, fire, ice, poison)
+	# have these same variables, so we can just set them directly.
+	proj.direction = dir
+	proj.speed = projectile_speed
+	proj.target_group = "player"
 
 	get_tree().current_scene.add_child(proj)
+
 
 
 func _has_line_of_sight_to_player() -> bool:
