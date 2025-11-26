@@ -15,6 +15,7 @@ const ALT_WEAPON_SHOTGUN := 1
 const ALT_WEAPON_SNIPER := 2
 const ALT_WEAPON_TURRET := 3
 const ALT_WEAPON_FLAMETHROWER := 4
+const ALT_WEAPON_SHURIKEN := 5
 
 # Base, never modified
 const ALT_WEAPON_BASE_DATA := {
@@ -65,6 +66,22 @@ const ALT_WEAPON_BASE_DATA := {
 		"burn_duration": 1.5,
 		"burn_interval": 0.3,
 	},
+		ALT_WEAPON_SHURIKEN: {
+		"max_ammo": 8,
+		"pickup_amount": 3,
+		"cooldown": 0.5,   # seconds between throws
+		"spread_degrees": 0.0,
+		"pellets": 1,
+		"bullet_scene": preload("res://scenes/bullets/shuriken_bullet.tscn"),
+		"bullet_speed": 500.0,
+		"recoil": 60.0,
+		"damage": 10.0,
+		"ammo_cost": 1,
+
+		# 👇 our custom field used for bouncing
+		"bounces": 2,      # base: 1 bounce
+	},
+
 
 }
 
@@ -214,12 +231,27 @@ func apply_upgrade(id: String) -> void:
 				max_ammo = fd.get("max_ammo", 0)
 				ammo = max_ammo
 				
+		"unlock_shuriken":
+			alt_weapon = ALT_WEAPON_SHURIKEN
+			if ALT_WEAPON_DATA.has(ALT_WEAPON_SHURIKEN):
+				var d = ALT_WEAPON_DATA[ALT_WEAPON_SHURIKEN]
+				max_ammo = d.get("max_ammo", 0)
+				ammo = max_ammo
+
+				
 		"flame_range_plus_20":
 			if ALT_WEAPON_DATA.has(ALT_WEAPON_FLAMETHROWER):
 				var d = ALT_WEAPON_DATA[ALT_WEAPON_FLAMETHROWER]
 				var current_speed = d.get("bullet_speed", 320.0)
 				# 20% more range = 20% more speed
 				d["bullet_speed"] = current_speed * 1.2
+				
+		"shuriken_bounce_plus_1":
+			if ALT_WEAPON_DATA.has(ALT_WEAPON_SHURIKEN):
+				var d = ALT_WEAPON_DATA[ALT_WEAPON_SHURIKEN]
+				var current = d.get("bounces", 1)
+				d["bounces"] = current + 1
+
 
 
 

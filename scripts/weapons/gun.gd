@@ -187,6 +187,8 @@ func _fire_weapon(data: Dictionary, aim_pos: Vector2) -> void:
 	var spread_rad: float = deg_to_rad(spread_deg)
 	var damage: float = data.get("damage", 1.0)
 	var recoil_strength: float = data.get("recoil", 0.0)
+	var bounces: int = data.get("bounces", 0)
+
 
 	# BASE DIRECTION
 	var base_dir := (aim_pos - muzzle.global_position).normalized()
@@ -202,6 +204,8 @@ func _fire_weapon(data: Dictionary, aim_pos: Vector2) -> void:
 		bullet.direction = dir
 		bullet.speed = bullet_speed
 		bullet.damage = damage
+		if "bounces_left" in bullet:
+			bullet.bounces_left = bounces
 		get_tree().current_scene.add_child(bullet)
 
 	# recoil

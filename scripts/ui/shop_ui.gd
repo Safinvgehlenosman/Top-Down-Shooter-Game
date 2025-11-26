@@ -7,6 +7,8 @@ const ALT_WEAPON_SHOTGUN := 1
 const ALT_WEAPON_SNIPER := 2
 const ALT_WEAPON_TURRET := 3
 const ALT_WEAPON_FLAMETHROWER := 4
+const ALT_WEAPON_SHURIKEN := 5
+
 
 const ABILITY_NONE := 0
 const ABILITY_DASH := 1
@@ -87,6 +89,22 @@ var upgrades := [
 		"text": "+20% Flame Range",
 		"requires_alt_weapon": ALT_WEAPON_FLAMETHROWER,
 	},
+	{
+		"id": "unlock_shuriken",
+		"price": 10,
+		"icon": preload("res://assets/bullets/shuriken.png"),  # pick whatever sprite
+		"text": "Unlock Shuriken",
+		"requires_alt_weapon": ALT_WEAPON_NONE,
+	},
+	{
+		"id": "shuriken_bounce_plus_1",
+		"price": 5,
+		"icon": preload("res://assets/bullets/shuriken.png"),  # same or different icon
+		"text": "+1 Shuriken Bounce",
+		"requires_alt_weapon": ALT_WEAPON_SHURIKEN,
+	},
+
+
 
 	
 	{
