@@ -335,6 +335,9 @@ func start_new_run() -> void:
 	ability_active_left = 0.0
 	ability_bubble_duration_bonus = 0.0
 
+	# Note: keep `max_ammo` initialized from GameConfig here.
+	# The HUD decides whether to show values based on `alt_weapon`.
+
 	debug_laser_mode     = false
 	debug_infinite_ammo  = false
 	debug_god_mode       = false

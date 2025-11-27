@@ -24,7 +24,7 @@ fill_to = Vector2(0.76495725, 0.7777778)
 
 [node name="FireProjectile" type="Area2D" groups=["bullet"]]
 collision_layer = 32
-collision_mask = 5
+collision_mask = 3
 script = ExtResource("1_scdx8")
 min_speed = 240.0
 max_speed = 290.0

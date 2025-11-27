@@ -53,7 +53,8 @@ func _on_health_changed(new_value: int, max_value: int) -> void:
 
 
 func _on_ammo_changed(new_value: int, max_value: int) -> void:
-	if max_value <= 0:
+	# Show "-/-" when no alt weapon or when it's the turret (which doesn't use player ammo)
+	if GameState.alt_weapon == GameState.AltWeaponType.NONE or GameState.alt_weapon == GameState.AltWeaponType.TURRET:
 		ammo_label.text = "-/-"
 	else:
 		ammo_label.text = "%d/%d" % [new_value, max_value]

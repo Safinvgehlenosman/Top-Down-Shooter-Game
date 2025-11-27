@@ -205,7 +205,8 @@ func _update_hp_from_state() -> void:
 	hp_label.text = "%d/%d" % [GameState.health, GameState.max_health]
 
 func _update_ammo_from_state() -> void:
-	if GameState.max_ammo <= 0:
+	# Display ammo only for ammo-using alt weapons; show "-/-" for NONE or TURRET
+	if GameState.alt_weapon == ALT_WEAPON_NONE or GameState.alt_weapon == ALT_WEAPON_TURRET:
 		ammo_label.text = "-/-"
 	else:
 		ammo_label.text = "%d/%d" % [GameState.ammo, GameState.max_ammo]
