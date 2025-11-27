@@ -12,6 +12,7 @@ signal purchased
 var sfx_collect: AudioStreamPlayer = null
 
 var upgrade_id: String = ""
+var base_price: int = 0
 var price: int = 0
 var icon: Texture2D = null
 var text: String = ""
@@ -38,7 +39,9 @@ func _ready() -> void:
 func setup(data: Dictionary) -> void:
 	# Called by ShopUI with one of the dictionaries from UpgradesDB.get_all()
 	upgrade_id = data.get("id", "")
-	price      = int(data.get("price", 0))
+	base_price = int(data.get("price", 0))
+	# Calculate scaled price based on purchase count
+	price = GameState.get_upgrade_price(upgrade_id, base_price)
 	icon       = data.get("icon", null)
 	text       = data.get("text", "")
 	rarity     = data.get("rarity", UpgradesDB.Rarity.COMMON)  # ← Get rarity
@@ -52,7 +55,12 @@ func setup(data: Dictionary) -> void:
 
 func _refresh() -> void:
 	if price_label:
-		price_label.text = str(price)
+		if price > base_price:
+			price_label.text = str(price) + " ↑"  # Arrow shows it scaled
+			price_label.modulate = Color(1.0, 0.8, 0.2)  # Yellow = expensive
+		else:
+			price_label.text = str(price)
+			price_label.modulate = Color(1.0, 1.0, 1.0)  # White = base price
 
 	if desc_label:
 		desc_label.text = text
@@ -93,6 +101,9 @@ func _on_buy_pressed() -> void:
 	# Pay (use GameState helper so signals fire)
 	if not GameState.spend_coins(price):
 		return
+
+	# Record purchase for price scaling
+	GameState.record_upgrade_purchase(upgrade_id)
 
 	# Apply the upgrade via the DB
 	preload("res://scripts/Upgrades_DB.gd").apply_upgrade(upgrade_id)

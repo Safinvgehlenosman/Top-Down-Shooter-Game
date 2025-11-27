@@ -252,6 +252,9 @@ var ability_bubble_duration_bonus: float = 0.0
 # non-stackable upgrades and to query ownership.
 var acquired_upgrades: Array = []
 
+# Track how many times each upgrade has been purchased this run (for price scaling)
+var upgrade_purchase_counts: Dictionary = {}
+
 
 # flags
 var player_invisible: bool = false
@@ -328,6 +331,7 @@ func start_new_run() -> void:
 
 	coins            = 0
 	player_invisible = false
+	upgrade_purchase_counts.clear()
 
 	alt_weapon       = AltWeaponType.NONE
 	ability          = AbilityType.NONE
@@ -434,6 +438,20 @@ func _record_acquired_upgrade(upgrade_id: String) -> void:
 	if not has_upgrade(upgrade_id):
 		acquired_upgrades.append(upgrade_id)
 		print("[GameState] Recorded acquired upgrade:", upgrade_id)
+
+
+func get_upgrade_price(upgrade_id: String, base_price: int) -> int:
+	"""Calculate scaled price based on how many times this upgrade has been purchased."""
+	var times_purchased: int = upgrade_purchase_counts.get(upgrade_id, 0)
+	var scaled_price: float = float(base_price) * (1.0 + 0.2 * float(times_purchased))
+	return int(scaled_price)
+
+
+func record_upgrade_purchase(upgrade_id: String) -> void:
+	"""Increment purchase count for this upgrade ID."""
+	var current_count: int = upgrade_purchase_counts.get(upgrade_id, 0)
+	upgrade_purchase_counts[upgrade_id] = current_count + 1
+	print("[GameState] Upgrade '%s' purchased %d times" % [upgrade_id, current_count + 1])
 
 
 # -------------------------------------------------------------------
