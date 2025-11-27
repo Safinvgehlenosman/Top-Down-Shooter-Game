@@ -17,7 +17,7 @@ var contact_timer: float = 0.0
 
 # How much we grow per level
 @export var health_growth_per_level: float = 0.05
-@export var damage_growth_per_level: float = 0.10
+@export var damage_growth_per_level: float = 0.05
 
 # Movement / behaviour tuning
 @export var separation_radius: float = 24.0      # how close slimes can get to each other
