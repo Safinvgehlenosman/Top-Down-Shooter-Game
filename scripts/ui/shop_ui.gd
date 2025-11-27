@@ -80,7 +80,7 @@ func _roll_shop_offers() -> Array:
 		current_level = gm.current_level
 
 	var rarity_weights := _get_rarity_weights_for_level(current_level)
-	var all_upgrades: Array = UpgradesDB.get_all()
+	var all_upgrades: Array = preload("res://scripts/Upgrades_DB.gd").get_all()
 
 	var max_cards = min(5, cards_container.get_child_count())
 
@@ -107,7 +107,7 @@ func _get_rarity_weights_for_level(level: int) -> Dictionary:
 	var rare := 9.0
 	var epic := 1.0
 
-	var tiers = max(0, int((level - 1) / 5))
+	var tiers = max(0, int((level - 1) / 5.0))
 	for i in range(tiers):
 		common = max(20.0, common - 5.0)
 		uncommon += 3.0
@@ -153,6 +153,11 @@ func _filter_upgrades(all_upgrades: Array, wanted_rarity: int, taken_ids: Array[
 			continue
 
 		if not _upgrade_meets_requirements(u):
+			continue
+
+		# Skip non-stackable upgrades that the player already owns
+		var stackable := bool(u.get("stackable", true))
+		if not stackable and GameState.has_upgrade(id):
 			continue
 
 		res.append(u)

@@ -44,8 +44,8 @@ func _debug_open_shop() -> void:
 
 
 func _debug_give_coins() -> void:
-	GameState.add_coins(999)
-	print("[DEBUG] +999 coins")
+	GameState.add_coins(99999)
+	print("[DEBUG] +99999 coins")
 
 
 func _debug_kill_slimes() -> void:
@@ -140,7 +140,7 @@ DEBUG HOTKEYS
 -------------
 
 F1 – Open shop
-F2 – +999 coins
+F2 – +99999 coins
 F3 – Kill all enemies (spawn door)
 F4 – Open level popup (set level)
 

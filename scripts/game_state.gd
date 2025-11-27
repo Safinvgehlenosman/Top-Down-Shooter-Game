@@ -39,7 +39,8 @@ const BulletScene_FLAME    := preload("res://scenes/bullets/fire_projectile.tscn
 const BulletScene_TURRET    := preload("res://scenes/bullets/turret_bullet.tscn")
 
 # Core config for each alt weapon
-const ALT_WEAPON_DATA := {
+# Use `var` so runtime code can mutate per-run values when upgrades apply.
+var ALT_WEAPON_DATA := {
 	AltWeaponType.SHOTGUN: {
 		"id": "shotgun",
 		"bullet_scene": BulletScene_SHOTGUN,
@@ -172,7 +173,8 @@ const ABILITY_DATA := {
 }
 
 func set_ability(new_ability: int) -> void:
-	ability = new_ability
+	# Cast integer to enum type to avoid INT_AS_ENUM_WITHOUT_CAST
+	ability = new_ability as AbilityType
 
 # -------------------------------------------------------------------
 # PLAYER / RUN DATA
@@ -190,10 +192,63 @@ var shotgun_pellets: int = 0
 
 # Primary weapon stats
 var primary_damage: float = 1.0         # 🔥 This is a MULTIPLIER (1.0 = 100%)
+var primary_damage_base: float = 1.0
+var primary_damage_bonus: float = 0.0
+
+# Fire rate (cooldown) base + additive percent bonus (reduces cooldown)
+var fire_rate_base: float = 0.0
+var fire_rate_bonus_percent: float = 0.0
 var primary_burst_count: int = 1
+
+# --- Per-line / weapon bonuses (populated by upgrades) ----
+var shotgun_pellets_bonus: int = 0
+var shotgun_spread_bonus_percent: float = 0.0
+var shotgun_knockback_bonus_percent: float = 0.0
+
+var sniper_damage_bonus_percent: float = 0.0
+var sniper_pierce_bonus: int = 0
+var sniper_charge_bonus_percent: float = 0.0
+
+var flamethrower_lifetime_bonus_percent: float = 0.0
+var flamethrower_burn_bonus_percent: float = 0.0
+var flamethrower_size_bonus_percent: float = 0.0
+
+var grenade_radius_bonus: float = 0.0
+var grenade_fragments_bonus: int = 0
+var grenade_damage_bonus_percent: float = 0.0
+
+var shuriken_bounces_bonus: int = 0
+var shuriken_speed_bonus_percent: float = 0.0
+var shuriken_ricochet_bonus_percent: float = 0.0
+
+var turret_fire_rate_bonus_percent: float = 0.0
+var turret_range_bonus_percent: float = 0.0
+var turret_bullet_speed_bonus_percent: float = 0.0
+
+# Ability bonuses
+var dash_distance_bonus_percent: float = 0.0
+var bubble_duration_bonus_percent: float = 0.0
+var bubble_duration_bonus_seconds: float = 0.0
+var slowmo_time_bonus_seconds: float = 0.0
+var invis_duration_bonus_percent: float = 0.0
+
+# Synergy flags (data-only placeholders for later wiring)
+var synergy_flamethrower_bubble_unlocked: bool = false
+var synergy_grenade_dash_unlocked: bool = false
+var synergy_shuriken_slowmo_unlocked: bool = false
+var synergy_sniper_invis_unlocked: bool = false
+var synergy_turret_bubble_unlocked: bool = false
 
 # economy
 var coins: int = 0
+
+# Bonus seconds added to the Shield Bubble ability duration by upgrades
+var ability_bubble_duration_bonus: float = 0.0
+
+# Acquired upgrades (records purchase history). Used to prevent re-offering
+# non-stackable upgrades and to query ownership.
+var acquired_upgrades: Array = []
+
 
 # flags
 var player_invisible: bool = false
@@ -220,10 +275,53 @@ func start_new_run() -> void:
 	ammo       = max_ammo
 
 	# Reset fire stats
+	fire_rate_base = GameConfig.player_fire_rate
 	fire_rate = GameConfig.player_fire_rate
+	fire_rate_bonus_percent = 0.0
 	shotgun_pellets = GameConfig.alt_fire_bullet_count
-	primary_damage = 1.0
+	shotgun_pellets_bonus = 0
+	primary_damage_base = 1.0
+	primary_damage_bonus = 0.0
+	primary_damage = primary_damage_base * (1.0 + primary_damage_bonus)
+
 	primary_burst_count = 1
+
+	# reset per-line bonuses
+	shotgun_spread_bonus_percent = 0.0
+	shotgun_knockback_bonus_percent = 0.0
+
+	sniper_damage_bonus_percent = 0.0
+	sniper_pierce_bonus = 0
+	sniper_charge_bonus_percent = 0.0
+
+	flamethrower_lifetime_bonus_percent = 0.0
+	flamethrower_burn_bonus_percent = 0.0
+	flamethrower_size_bonus_percent = 0.0
+
+	grenade_radius_bonus = 0.0
+	grenade_fragments_bonus = 0
+	grenade_damage_bonus_percent = 0.0
+
+	shuriken_bounces_bonus = 0
+	shuriken_speed_bonus_percent = 0.0
+	shuriken_ricochet_bonus_percent = 0.0
+
+	turret_fire_rate_bonus_percent = 0.0
+	turret_range_bonus_percent = 0.0
+	turret_bullet_speed_bonus_percent = 0.0
+
+	dash_distance_bonus_percent = 0.0
+	bubble_duration_bonus_percent = 0.0
+	bubble_duration_bonus_seconds = 0.0
+	slowmo_time_bonus_seconds = 0.0
+	invis_duration_bonus_percent = 0.0
+
+	# reset synergies
+	synergy_flamethrower_bubble_unlocked = false
+	synergy_grenade_dash_unlocked = false
+	synergy_shuriken_slowmo_unlocked = false
+	synergy_sniper_invis_unlocked = false
+	synergy_turret_bubble_unlocked = false
 
 	coins            = 0
 	player_invisible = false
@@ -232,6 +330,7 @@ func start_new_run() -> void:
 	ability          = AbilityType.NONE
 	ability_cooldown_left = 0.0
 	ability_active_left = 0.0
+	ability_bubble_duration_bonus = 0.0
 
 	debug_laser_mode     = false
 	debug_infinite_ammo  = false
@@ -288,6 +387,11 @@ func set_alt_weapon(new_alt: int) -> void:
 	if new_alt == alt_weapon:
 		return
 	alt_weapon = new_alt
+	# If this alt weapon defines a max ammo, update run-time ammo pool
+	if ALT_WEAPON_DATA.has(alt_weapon) and ALT_WEAPON_DATA[alt_weapon].has("max_ammo"):
+		var m := int(ALT_WEAPON_DATA[alt_weapon].get("max_ammo", GameConfig.player_max_ammo))
+		max_ammo = m
+		set_ammo(m)
 	alt_weapon_changed.emit(alt_weapon)
 
 # -------------------------------------------------------------------
@@ -310,3 +414,457 @@ func _emit_all_signals() -> void:
 	coins_changed.emit(coins)
 	alt_weapon_changed.emit(alt_weapon)
 	player_invisible_changed.emit(player_invisible)
+
+
+func has_upgrade(upgrade_id: String) -> bool:
+	return upgrade_id in acquired_upgrades
+
+
+func _record_acquired_upgrade(upgrade_id: String) -> void:
+	if not has_upgrade(upgrade_id):
+		acquired_upgrades.append(upgrade_id)
+		print("[GameState] Recorded acquired upgrade:", upgrade_id)
+
+
+# -------------------------------------------------------------------
+# APPLY UPGRADE ENTRYPOINT
+# All non-synergy upgrade effects are applied here.
+# Keep this function limited to numeric changes of GameState or ALT_WEAPON_DATA
+# -------------------------------------------------------------------
+func apply_upgrade(upgrade_id: String) -> void:
+	print("[GameState] Applying upgrade:", upgrade_id)
+
+	# Prevent re-applying non-stackable upgrades
+	var u := preload("res://scripts/Upgrades_DB.gd").get_by_id(upgrade_id)
+	if not u.is_empty():
+		var stackable := bool(u.get("stackable", true))
+		if not stackable and has_upgrade(upgrade_id):
+			push_warning("[GameState] Upgrade already owned and not stackable: %s" % upgrade_id)
+			return
+
+	match upgrade_id:
+		# GENERAL / CORE
+		"max_hp_plus_1":
+			max_health += 10
+			set_health(health + 10)
+			print("  → Max HP now:", max_health)
+
+		"hp_refill":
+			set_health(max_health)
+			print("  → HP refilled to:", max_health)
+
+		"max_ammo_plus_1":
+			max_ammo += 1
+			set_ammo(ammo + 1)
+			print("  → Max Ammo now:", max_ammo)
+
+		"ammo_refill":
+			set_ammo(max_ammo)
+			print("  → Ammo refilled to:", max_ammo)
+
+		"ability_cooldown_minus_10":
+			ability_cooldown_mult *= 0.9
+			var reduction_percent = int((1.0 - ability_cooldown_mult) * 100)
+			print("  → Ability cooldown multiplier:", ability_cooldown_mult)
+			print("  → Total reduction:", reduction_percent, "%")
+
+		# PRIMARY
+
+		# UNLOCKS (shop buys should call these)
+		"unlock_shotgun":
+			set_alt_weapon(AltWeaponType.SHOTGUN)
+			print("  → Shotgun unlocked")
+
+		"unlock_sniper":
+			set_alt_weapon(AltWeaponType.SNIPER)
+			print("  → Sniper unlocked")
+
+		"unlock_turret":
+			set_alt_weapon(AltWeaponType.TURRET)
+			print("  → Turret unlocked")
+
+		"unlock_flamethrower":
+			set_alt_weapon(AltWeaponType.FLAMETHROWER)
+			print("  → Flamethrower unlocked")
+
+		"unlock_shuriken":
+			set_alt_weapon(AltWeaponType.SHURIKEN)
+			print("  → Shuriken unlocked")
+
+		"unlock_grenade":
+			set_alt_weapon(AltWeaponType.GRENADE)
+			print("  → Grenade unlocked")
+
+		# Ability unlocks
+		"unlock_dash":
+			set_ability(AbilityType.DASH)
+			print("  → Dash ability unlocked")
+
+		"unlock_slowmo":
+			set_ability(AbilityType.SLOWMO)
+			print("  → Slowmo ability unlocked")
+
+		"unlock_bubble":
+			set_ability(AbilityType.BUBBLE)
+			print("  → Bubble ability unlocked")
+
+		"unlock_invis":
+			set_ability(AbilityType.INVIS)
+			print("  → Invis ability unlocked")
+
+		"primary_damage_common":
+			primary_damage_bonus += 0.05
+			primary_damage = primary_damage_base * (1.0 + primary_damage_bonus)
+			print("  → Primary damage bonus:", primary_damage_bonus)
+
+		"primary_damage_uncommon":
+			primary_damage_bonus += 0.10
+			primary_damage = primary_damage_base * (1.0 + primary_damage_bonus)
+			print("  → Primary damage bonus:", primary_damage_bonus)
+
+		"primary_damage_rare":
+			primary_damage_bonus += 0.15
+			primary_damage = primary_damage_base * (1.0 + primary_damage_bonus)
+			print("  → Primary damage bonus:", primary_damage_bonus)
+
+		"primary_fire_rate_uncommon":
+			fire_rate_bonus_percent += 0.05
+			fire_rate = fire_rate_base * max(0.05, 1.0 - fire_rate_bonus_percent)
+			print("  → Fire rate (cooldown) now:", fire_rate)
+
+		"primary_fire_rate_rare":
+			fire_rate_bonus_percent += 0.10
+			fire_rate = fire_rate_base * max(0.05, 1.0 - fire_rate_bonus_percent)
+			print("  → Fire rate (cooldown) now:", fire_rate)
+
+		"primary_bullet_size_rare":
+			# bullet size is usually handled by bullet scenes; store a global multiplier
+			# We'll use primary_damage as representative for now (no direct bullet size fields exist)
+			print("  → Primary bullet size upgrade applied (data-only)")
+
+		"primary_bullet_size_epic":
+			print("  → Primary bullet size epic applied (data-only)")
+
+		# PRIMARY burst shot (existing id)
+		"primary_burst_plus_1":
+			primary_burst_count += 1
+			print("  → Primary burst count now:", primary_burst_count)
+
+		# ALT WEAPON TWEAKS (modify ALT_WEAPON_DATA where sensible)
+		"shotgun_pellets_common":
+			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN) and ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].has("pellets"):
+				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["pellets"] = int(ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("pellets", 0) + 1)
+			print("  → Shotgun pellets:", ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("pellets"))
+
+		"shotgun_pellets_uncommon":
+			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN) and ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].has("pellets"):
+				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["pellets"] = int(ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("pellets", 0) + 2)
+			print("  → Shotgun pellets:", ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("pellets"))
+
+		"shotgun_pellets_rare":
+			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN) and ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].has("pellets"):
+				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["pellets"] = int(ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("pellets", 0) + 3)
+			print("  → Shotgun pellets:", ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("pellets"))
+
+		"shotgun_spread_uncommon":
+			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN) and ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].has("spread_degrees"):
+				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["spread_degrees"] = float(ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("spread_degrees", 0.0) * 0.95)
+			print("  → Shotgun spread now:", ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("spread_degrees"))
+
+		"shotgun_spread_rare":
+			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN) and ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].has("spread_degrees"):
+				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["spread_degrees"] = float(ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("spread_degrees", 0.0) * 0.90)
+			print("  → Shotgun spread now:", ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("spread_degrees"))
+
+		"shotgun_knockback_rare":
+			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN) and ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].has("recoil"):
+				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["recoil"] = float(ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("recoil", 0.0) * 1.10)
+			print("  → Shotgun recoil now:", ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("recoil"))
+
+		"shotgun_knockback_epic":
+			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN) and ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].has("recoil"):
+				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["recoil"] = float(ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("recoil", 0.0) * 1.20)
+			print("  → Shotgun recoil now:", ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("recoil"))
+
+		# SNIPER
+		"sniper_damage_common":
+			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER) and ALT_WEAPON_DATA[AltWeaponType.SNIPER].has("damage"):
+				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] = float(ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("damage", 0.0) * 1.10)
+			print("  → Sniper damage now:", ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("damage"))
+
+		"sniper_damage_uncommon":
+			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER) and ALT_WEAPON_DATA[AltWeaponType.SNIPER].has("damage"):
+				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] = float(ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("damage", 0.0) * 1.20)
+			print("  → Sniper damage now:", ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("damage"))
+
+		"sniper_damage_rare":
+			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER) and ALT_WEAPON_DATA[AltWeaponType.SNIPER].has("damage"):
+				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] = float(ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("damage", 0.0) * 1.30)
+			print("  → Sniper damage now:", ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("damage"))
+
+		"sniper_pierce_uncommon":
+			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER):
+				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["bounces"] = int(ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("bounces", 0) + 1)
+			print("  → Sniper pierce now:", ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("bounces"))
+
+		"sniper_pierce_rare":
+			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER):
+				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["bounces"] = int(ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("bounces", 0) + 2)
+			print("  → Sniper pierce now:", ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("bounces"))
+
+		"sniper_charge_rare":
+			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER) and ALT_WEAPON_DATA[AltWeaponType.SNIPER].has("damage"):
+				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] = float(ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("damage", 0.0) * 1.15)
+			print("  → Sniper charge damage bonus applied (data-only)")
+
+		"sniper_charge_epic":
+			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER) and ALT_WEAPON_DATA[AltWeaponType.SNIPER].has("damage"):
+				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] = float(ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("damage", 0.0) * 1.30)
+			print("  → Sniper charge epic applied (data-only)")
+
+		# FLAMETHROWER
+		"flame_lifetime_common":
+			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER) and ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].has("flame_lifetime"):
+				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"] = float(ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].get("flame_lifetime", 0.0) * 1.10)
+			print("  → Flame lifetime now:", ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].get("flame_lifetime"))
+
+		"flame_lifetime_uncommon":
+			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER) and ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].has("flame_lifetime"):
+				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"] = float(ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].get("flame_lifetime", 0.0) * 1.20)
+			print("  → Flame lifetime now:", ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].get("flame_lifetime"))
+
+		"flame_lifetime_rare":
+			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER) and ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].has("flame_lifetime"):
+				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"] = float(ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].get("flame_lifetime", 0.0) * 1.30)
+			print("  → Flame lifetime now:", ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].get("flame_lifetime"))
+
+		"flame_burn_uncommon":
+			print("  → Flamethrower burn damage increase (data-only)")
+
+		"flame_burn_rare":
+			print("  → Flamethrower burn damage rare (data-only)")
+
+		"flame_size_rare":
+			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER) and ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].has("damage"):
+				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["damage"] = float(ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].get("damage", 0.0) * 1.10)
+			print("  → Flame size / damage proxy applied")
+
+		"flame_size_epic":
+			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER) and ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].has("damage"):
+				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["damage"] = float(ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].get("damage", 0.0) * 1.20)
+			print("  → Flame size epic applied")
+
+		# GRENADE
+		"grenade_radius_common":
+			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE) and ALT_WEAPON_DATA[AltWeaponType.GRENADE].has("explosion_radius"):
+				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["explosion_radius"] = float(ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("explosion_radius", 0.0) + 10.0)
+			print("  → Grenade radius now:", ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("explosion_radius"))
+
+		"grenade_radius_uncommon":
+			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE) and ALT_WEAPON_DATA[AltWeaponType.GRENADE].has("explosion_radius"):
+				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["explosion_radius"] = float(ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("explosion_radius", 0.0) + 20.0)
+			print("  → Grenade radius now:", ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("explosion_radius"))
+
+		"grenade_radius_rare":
+			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE) and ALT_WEAPON_DATA[AltWeaponType.GRENADE].has("explosion_radius"):
+				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["explosion_radius"] = float(ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("explosion_radius", 0.0) + 30.0)
+			print("  → Grenade radius now:", ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("explosion_radius"))
+
+		"grenade_fragments_uncommon":
+			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE):
+				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["bounces"] = int(ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("bounces", 0) + 1)
+			print("  → Grenade fragments (bounces) now:", ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("bounces"))
+
+		"grenade_fragments_rare":
+			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE):
+				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["bounces"] = int(ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("bounces", 0) + 2)
+			print("  → Grenade fragments (bounces) now:", ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("bounces"))
+
+		"grenade_damage_rare":
+			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE) and ALT_WEAPON_DATA[AltWeaponType.GRENADE].has("damage"):
+				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["damage"] = float(ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("damage", 0.0) * 1.10)
+			print("  → Grenade damage:", ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("damage"))
+
+		"grenade_damage_epic":
+			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE) and ALT_WEAPON_DATA[AltWeaponType.GRENADE].has("damage"):
+				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["damage"] = float(ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("damage", 0.0) * 1.20)
+			print("  → Grenade damage epic:", ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("damage"))
+
+		# SHURIKEN
+		"shuriken_bounces_common":
+			if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN):
+				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bounces"] = int(ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("bounces", 0) + 1)
+			print("  → Shuriken bounces:", ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("bounces"))
+
+		"shuriken_bounces_uncommon":
+			if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN):
+				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bounces"] = int(ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("bounces", 0) + 2)
+			print("  → Shuriken bounces:", ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("bounces"))
+
+		"shuriken_bounces_rare":
+			if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN):
+				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bounces"] = int(ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("bounces", 0) + 3)
+			print("  → Shuriken bounces:", ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("bounces"))
+
+		"shuriken_speed_uncommon":
+			if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN) and ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].has("bullet_speed"):
+				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bullet_speed"] = float(ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("bullet_speed", 0.0) * 1.10)
+			print("  → Shuriken speed:", ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("bullet_speed"))
+
+		"shuriken_speed_rare":
+			if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN) and ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].has("bullet_speed"):
+				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bullet_speed"] = float(ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("bullet_speed", 0.0) * 1.20)
+			print("  → Shuriken speed:", ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("bullet_speed"))
+
+		"shuriken_ricochet_rare":
+			if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN) and ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].has("damage"):
+				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["damage"] = float(ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("damage", 0.0) * 1.10)
+			print("  → Shuriken ricochet damage:", ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("damage"))
+
+		"shuriken_ricochet_epic":
+			if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN) and ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].has("damage"):
+				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["damage"] = float(ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("damage", 0.0) * 1.20)
+			print("  → Shuriken ricochet damage epic:", ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("damage"))
+
+		# TURRET
+		"turret_fire_rate_common":
+			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET) and ALT_WEAPON_DATA[AltWeaponType.TURRET].has("fire_rate"):
+				ALT_WEAPON_DATA[AltWeaponType.TURRET]["fire_rate"] = float(ALT_WEAPON_DATA[AltWeaponType.TURRET].get("fire_rate", 0.4) * 0.95)
+			print("  → Turret fire rate:", ALT_WEAPON_DATA[AltWeaponType.TURRET].get("fire_rate"))
+
+		"turret_fire_rate_uncommon":
+			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET) and ALT_WEAPON_DATA[AltWeaponType.TURRET].has("fire_rate"):
+				ALT_WEAPON_DATA[AltWeaponType.TURRET]["fire_rate"] = float(ALT_WEAPON_DATA[AltWeaponType.TURRET].get("fire_rate", 0.4) * 0.90)
+			print("  → Turret fire rate:", ALT_WEAPON_DATA[AltWeaponType.TURRET].get("fire_rate"))
+
+		"turret_fire_rate_rare":
+			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET) and ALT_WEAPON_DATA[AltWeaponType.TURRET].has("fire_rate"):
+				ALT_WEAPON_DATA[AltWeaponType.TURRET]["fire_rate"] = float(ALT_WEAPON_DATA[AltWeaponType.TURRET].get("fire_rate", 0.4) * 0.85)
+			print("  → Turret fire rate:", ALT_WEAPON_DATA[AltWeaponType.TURRET].get("fire_rate"))
+
+		"turret_range_uncommon":
+			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET) and ALT_WEAPON_DATA[AltWeaponType.TURRET].has("range"):
+				ALT_WEAPON_DATA[AltWeaponType.TURRET]["range"] = float(ALT_WEAPON_DATA[AltWeaponType.TURRET].get("range", 220.0) * 1.05)
+			print("  → Turret range:", ALT_WEAPON_DATA[AltWeaponType.TURRET].get("range"))
+
+		"turret_range_rare":
+			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET) and ALT_WEAPON_DATA[AltWeaponType.TURRET].has("range"):
+				ALT_WEAPON_DATA[AltWeaponType.TURRET]["range"] = float(ALT_WEAPON_DATA[AltWeaponType.TURRET].get("range", 220.0) * 1.10)
+			print("  → Turret range:", ALT_WEAPON_DATA[AltWeaponType.TURRET].get("range"))
+
+		"turret_bullet_speed_rare":
+			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET) and ALT_WEAPON_DATA[AltWeaponType.TURRET].has("bullet_speed"):
+				ALT_WEAPON_DATA[AltWeaponType.TURRET]["bullet_speed"] = float(ALT_WEAPON_DATA[AltWeaponType.TURRET].get("bullet_speed", 900.0) * 1.10)
+			print("  → Turret bullet speed:", ALT_WEAPON_DATA[AltWeaponType.TURRET].get("bullet_speed"))
+
+		"turret_bullet_speed_epic":
+			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET) and ALT_WEAPON_DATA[AltWeaponType.TURRET].has("bullet_speed"):
+				ALT_WEAPON_DATA[AltWeaponType.TURRET]["bullet_speed"] = float(ALT_WEAPON_DATA[AltWeaponType.TURRET].get("bullet_speed", 900.0) * 1.20)
+			print("  → Turret bullet speed epic:", ALT_WEAPON_DATA[AltWeaponType.TURRET].get("bullet_speed"))
+
+		# ABILITIES
+		"dash_distance_common":
+			dash_distance_bonus_percent += 0.10
+			print("  → Dash distance bonus:", dash_distance_bonus_percent)
+
+		"dash_distance_uncommon":
+			dash_distance_bonus_percent += 0.20
+			print("  → Dash distance bonus:", dash_distance_bonus_percent)
+
+		"dash_distance_rare":
+			dash_distance_bonus_percent += 0.30
+			print("  → Dash distance bonus:", dash_distance_bonus_percent)
+
+		"dash_distance_epic":
+			dash_distance_bonus_percent += 0.50
+			print("  → Dash distance bonus:", dash_distance_bonus_percent)
+
+		"bubble_duration_common":
+			bubble_duration_bonus_percent += 0.05
+			print("  → Bubble duration multiplier now:", bubble_duration_bonus_percent)
+
+		"bubble_duration_uncommon":
+			bubble_duration_bonus_percent += 0.10
+			print("  → Bubble duration multiplier now:", bubble_duration_bonus_percent)
+
+		"bubble_duration_rare":
+			bubble_duration_bonus_percent += 0.20
+			print("  → Bubble duration multiplier now:", bubble_duration_bonus_percent)
+
+		"bubble_duration_epic":
+			bubble_duration_bonus_percent += 0.30
+			print("  → Bubble duration multiplier now:", bubble_duration_bonus_percent)
+
+		"bubble_duration_plus_0_5":
+			bubble_duration_bonus_seconds += 0.5
+			print("  → Bubble duration flat bonus now:", bubble_duration_bonus_seconds)
+
+		"bubble_duration_plus_1":
+			bubble_duration_bonus_seconds += 1.0
+			print("  → Bubble duration flat bonus now:", bubble_duration_bonus_seconds)
+
+		"bubble_duration_plus_2":
+			bubble_duration_bonus_seconds += 2.0
+			print("  → Bubble duration flat bonus now:", bubble_duration_bonus_seconds)
+
+		"slowmo_time_common":
+			slowmo_time_bonus_seconds += 0.1
+			print("  → Slowmo time bonus sec:", slowmo_time_bonus_seconds)
+
+		"slowmo_time_uncommon":
+			slowmo_time_bonus_seconds += 0.2
+			print("  → Slowmo time bonus sec:", slowmo_time_bonus_seconds)
+
+		"slowmo_time_rare":
+			slowmo_time_bonus_seconds += 0.4
+			print("  → Slowmo time bonus sec:", slowmo_time_bonus_seconds)
+
+		"slowmo_time_epic":
+			slowmo_time_bonus_seconds += 1.0
+			print("  → Slowmo time bonus sec:", slowmo_time_bonus_seconds)
+
+		"invis_duration_common":
+			invis_duration_bonus_percent += 0.05
+			print("  → Invisibility duration bonus:", invis_duration_bonus_percent)
+
+		"invis_duration_uncommon":
+			invis_duration_bonus_percent += 0.10
+			print("  → Invisibility duration bonus:", invis_duration_bonus_percent)
+
+		"invis_duration_rare":
+			invis_duration_bonus_percent += 0.20
+			print("  → Invisibility duration bonus:", invis_duration_bonus_percent)
+
+		"invis_duration_epic":
+			invis_duration_bonus_percent += 0.30
+			print("  → Invisibility duration bonus:", invis_duration_bonus_percent)
+
+		# SYNERGIES (data-only flags)
+		"synergy_flamethrower_bubble_burning_shield":
+			synergy_flamethrower_bubble_unlocked = true
+			# TODO: Implement burning shield behavior in gameplay code
+
+		"synergy_grenade_dash_explosive_trail":
+			synergy_grenade_dash_unlocked = true
+			# TODO: Implement explosive dash trail in gameplay code
+
+		"synergy_shuriken_slowmo_infinite_bounces":
+			synergy_shuriken_slowmo_unlocked = true
+			# TODO: Implement infinite bounces during slowmo in gameplay code
+
+		"synergy_sniper_invis_assassins_shot":
+			synergy_sniper_invis_unlocked = true
+			# TODO: Implement assassins shot on invisibility break
+
+		"synergy_turret_bubble_shielded_turret":
+			synergy_turret_bubble_unlocked = true
+			# TODO: Implement shielded turret while bubble is active
+
+		_:
+			push_warning("[GameState] No handler for upgrade_id: %s" % upgrade_id)
+
+	# After changing numbers, broadcast signals so UI and systems can refresh
+	# Record acquisition (used to prevent re-offering non-stackables)
+	_record_acquired_upgrade(upgrade_id)
+
+	_emit_all_signals()

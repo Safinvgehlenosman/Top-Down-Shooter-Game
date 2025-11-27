@@ -113,18 +113,26 @@ func _start_invis(data: Dictionary) -> void:
 	var duration: float = data.get("duration", 3.0)
 	var base_cooldown: float = data.get("cooldown", 18.0)
 
-	# ✅ Apply cooldown multiplier from upgrades
+	# Apply invis duration bonuses (percent + flat seconds)
+	var percent_bonus: float = 0.0
+	if "invis_duration_bonus_percent" in GameState:
+		percent_bonus = GameState.invis_duration_bonus_percent
+
+	duration = duration * (1.0 + percent_bonus)
+
+	# Apply cooldown multiplier from upgrades
 	var multiplier: float = 1.0
 	if "ability_cooldown_mult" in GameState:
 		multiplier = GameState.ability_cooldown_mult
 	var actual_cooldown: float = base_cooldown * multiplier
 
 	# ✅ Store in GameState
+
 	GameState.ability_active_left = duration
 	GameState.ability_cooldown_left = actual_cooldown
 
 	invis_running = true
-	GameState.player_invisible = true
+	GameState.set_player_invisible(true)
 
 	if is_instance_valid(animated_sprite):
 		original_player_modulate = animated_sprite.modulate
@@ -146,7 +154,22 @@ func _start_bubble(data: Dictionary) -> void:
 	if ShieldBubbleScene == null:
 		return
 
-	var duration: float = data.get("duration", 3.0)
+	# Base duration from config
+	var base_duration: float = data.get("duration", 3.0)
+
+	# Apply bubble duration bonuses: multiplicative percent + additive seconds
+	var percent_bonus: float = 0.0
+	if "bubble_duration_bonus_percent" in GameState:
+		percent_bonus = GameState.bubble_duration_bonus_percent
+	var flat_bonus: float = 0.0
+	if "bubble_duration_bonus_seconds" in GameState:
+		flat_bonus = GameState.bubble_duration_bonus_seconds
+	# legacy compatibility: include older field if present
+	if "ability_bubble_duration_bonus" in GameState:
+		flat_bonus += GameState.ability_bubble_duration_bonus
+
+	var duration: float = base_duration * (1.0 + percent_bonus) + flat_bonus
+
 	var base_cooldown: float = data.get("cooldown", 12.0)
 
 	# ✅ Apply cooldown multiplier
@@ -183,7 +206,10 @@ func _start_dash(data: Dictionary) -> void:
 	dash_dir = input_dir.normalized()
 
 	var duration: float = data.get("duration", 0.12)
-	var distance: float = data.get("distance", 220.0)
+	var base_distance: float = data.get("distance", 220.0)
+	var distance: float = base_distance
+	if "dash_distance_bonus_percent" in GameState:
+		distance = base_distance * (1.0 + GameState.dash_distance_bonus_percent)
 	dash_speed = distance / max(duration, 0.01)
 
 	var base_cooldown: float = data.get("cooldown", 5.0)
@@ -194,7 +220,7 @@ func _start_dash(data: Dictionary) -> void:
 		multiplier = GameState.ability_cooldown_mult
 	var actual_cooldown: float = base_cooldown * multiplier
 
-	# ✅ Store in GameState
+	# Store in GameState
 	GameState.ability_active_left = duration
 	GameState.ability_cooldown_left = actual_cooldown
 
@@ -219,17 +245,21 @@ func _start_slowmo(data: Dictionary) -> void:
 	if slowmo_running:
 		return
 
-	var duration: float = data.get("duration", 3.0)
+	var base_duration: float = data.get("duration", 3.0)
 	var base_cooldown: float = data.get("cooldown", 30.0)
 	var factor: float = data.get("factor", 0.3)
+	# Apply additional slowmo time from upgrades (flat seconds)
+	var duration: float = base_duration
+	if "slowmo_time_bonus_seconds" in GameState:
+		duration += GameState.slowmo_time_bonus_seconds
 
-	# ✅ Apply cooldown multiplier
+	# Apply cooldown multiplier
 	var multiplier: float = 1.0
 	if "ability_cooldown_mult" in GameState:
 		multiplier = GameState.ability_cooldown_mult
 	var actual_cooldown: float = base_cooldown * multiplier
 
-	# ✅ Store in GameState
+	# Store in GameState
 	GameState.ability_active_left = duration
 	GameState.ability_cooldown_left = actual_cooldown
 
@@ -251,7 +281,7 @@ func _end_ability() -> void:
 
 	if invis_running:
 		invis_running = false
-		GameState.player_invisible = false
+		GameState.set_player_invisible(false)
 
 		if is_instance_valid(animated_sprite):
 			animated_sprite.modulate = original_player_modulate

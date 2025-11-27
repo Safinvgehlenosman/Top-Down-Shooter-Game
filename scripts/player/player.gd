@@ -44,15 +44,6 @@ const AIM_CURSOR_SPEED: float = 800.0  # tweak speed of controller cursor
 const AIM_SMOOTH: float = 10.0  # higher = snappier, lower = floatier
 
 
-var ALT_WEAPON_DATA = {
-	GameState.AltWeaponType.SHOTGUN: {
-		"cooldown": 0.7,
-	},
-	GameState.AltWeaponType.SNIPER: {
-		"cooldown": 1.2,
-	},
-}
-
 enum AimMode { MOUSE, CONTROLLER }
 var aim_mode: AimMode = AimMode.MOUSE
 
@@ -94,7 +85,7 @@ func _ready() -> void:
 		ability_component.sync_from_gamestate()
 
 	var design_max_health: int = GameConfig.player_max_health
-	var design_max_ammo: int   = GameConfig.player_max_ammo
+	var _design_max_ammo: int   = GameConfig.player_max_ammo
 	var design_fire_rate: float = GameConfig.player_fire_rate
 	var design_pellets: int    = GameConfig.alt_fire_bullet_count
 
@@ -241,7 +232,6 @@ func _process_aim() -> void:
 
 	# Rotate gun to face aim_dir (works for mouse + controller)
 	if has_node("Gun"):
-		var gun := $Gun
 		gun.rotation = aim_dir.angle()
 
 # Crosshair follows shared cursor (mouse + controller)
@@ -330,7 +320,6 @@ func die() -> void:
 
 	# Disable gun logic so it stops rotating/aiming
 	if has_node("Gun"):
-		var gun := $Gun
 		gun.process_mode = Node.PROCESS_MODE_DISABLED
 
 	# Hide crosshair

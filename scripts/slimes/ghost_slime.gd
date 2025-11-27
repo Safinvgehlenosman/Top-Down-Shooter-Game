@@ -48,12 +48,12 @@ func _ready() -> void:
 		_light_base_energy = hit_light.energy
 
 
-func apply_level(level: int) -> void:
+func apply_level(_level: int) -> void:
 	# Ghost ignores level scaling entirely
 	return
 
 
-func _update_ai(delta: float) -> void:
+func _update_ai(_delta: float) -> void:
 	if not player:
 		return
 

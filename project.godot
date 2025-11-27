@@ -24,6 +24,10 @@ GameState="*res://scripts/game_state.gd"
 DebugController="*res://scripts/debug_controller.gd"
 UpgradesDB="*res://scripts/Upgrades_DB.gd"
 
+[debug]
+
+file_logging/enable_file_logging=true
+
 [display]
 
 window/stretch/mode="canvas_items"
@@ -31,7 +35,7 @@ window/stretch/aspect="expand"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/phantom_camera/plugin.cfg")
+enabled=PackedStringArray("res://addons/copilot/plugin.cfg", "res://addons/phantom_camera/plugin.cfg")
 
 [global_group]
 

@@ -304,7 +304,7 @@ func _spawn_room_content() -> void:
 				enemy.global_position = safe_pos
 
 				# Find which index this enemy came from (for apply_level logic)
-				var enemy_index := enemy_scenes.find(enemy_scene)
+				var _enemy_index := enemy_scenes.find(enemy_scene)
 
 				# scale stats by current level if the enemy supports it,
 				# (ghost can still ignore this in its own script if needed)

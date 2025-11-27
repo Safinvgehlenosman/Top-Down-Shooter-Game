@@ -114,6 +114,7 @@ const ALL_UPGRADES: Array = [
 		"rarity": Rarity.UNCOMMON,
 		"icon": preload("res://assets/bullets/shotgunbullet.png"),
 		"requires_alt_weapon": ALT_WEAPON_NONE,
+		"stackable": false,
 	},
 	{
 		"id": "unlock_sniper",
@@ -122,6 +123,7 @@ const ALL_UPGRADES: Array = [
 		"rarity": Rarity.UNCOMMON,
 		"icon": preload("res://assets/bullets/sniperbullet.png"),
 		"requires_alt_weapon": ALT_WEAPON_NONE,
+		"stackable": false,
 	},
 	{
 		"id": "unlock_turret",
@@ -130,6 +132,7 @@ const ALL_UPGRADES: Array = [
 		"rarity": Rarity.UNCOMMON,
 		"icon": preload("res://assets/Separated/turreticon.png"),
 		"requires_alt_weapon": ALT_WEAPON_NONE,
+		"stackable": false,
 	},
 	{
 		"id": "unlock_flamethrower",
@@ -138,6 +141,7 @@ const ALL_UPGRADES: Array = [
 		"rarity": Rarity.UNCOMMON,
 		"icon": preload("res://assets/bullets/flamethrowerbullet.png"),
 		"requires_alt_weapon": ALT_WEAPON_NONE,
+		"stackable": false,
 	},
 	{
 		"id": "unlock_shuriken",
@@ -146,6 +150,7 @@ const ALL_UPGRADES: Array = [
 		"rarity": Rarity.UNCOMMON,
 		"icon": preload("res://assets/bullets/shuriken.png"),
 		"requires_alt_weapon": ALT_WEAPON_NONE,
+		"stackable": false,
 	},
 	{
 		"id": "unlock_grenade",
@@ -154,6 +159,7 @@ const ALL_UPGRADES: Array = [
 		"rarity": Rarity.UNCOMMON,
 		"icon": preload("res://assets/bullets/grenade.png"),
 		"requires_alt_weapon": ALT_WEAPON_NONE,
+		"stackable": false,
 	},
 
 	# -------------------------
@@ -166,6 +172,7 @@ const ALL_UPGRADES: Array = [
 		"rarity": Rarity.UNCOMMON,
 		"icon": preload("res://assets/Separated/ammo.png"),
 		"requires_ability": ABILITY_NONE,
+		"stackable": false,
 	},
 	{
 		"id": "unlock_slowmo",
@@ -174,6 +181,7 @@ const ALL_UPGRADES: Array = [
 		"rarity": Rarity.UNCOMMON,
 		"icon": preload("res://assets/Separated/ammo.png"),
 		"requires_ability": ABILITY_NONE,
+		"stackable": false,
 	},
 	{
 		"id": "unlock_bubble",
@@ -182,6 +190,7 @@ const ALL_UPGRADES: Array = [
 		"rarity": Rarity.UNCOMMON,
 		"icon": preload("res://assets/shield.png"),
 		"requires_ability": ABILITY_NONE,
+		"stackable": false,
 	},
 	{
 		"id": "unlock_invis",
@@ -190,6 +199,974 @@ const ALL_UPGRADES: Array = [
 		"rarity": Rarity.UNCOMMON,
 		"icon": preload("res://assets/Separated/ammo.png"),
 		"requires_ability": ABILITY_NONE,
+		"stackable": false,
+	},
+
+	# -------------------------
+	# FULL UPGRADE LINES (Data-only)
+	# Each entry is data-only; gameplay wiring lives elsewhere.
+	# PRIMARY WEAPON
+	{
+		"id": "primary_damage_common",
+		"line_id": "primary_damage",
+		"text": "+5% Primary Damage",
+		"description": "Increase primary weapon damage by 5%.",
+		"price": 30,
+		"rarity": Rarity.COMMON,
+		"tags": ["weapon_primary"],
+		"increment": 0.05,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/singlebullet.png"),
+	},
+	{
+		"id": "primary_damage_uncommon",
+		"line_id": "primary_damage",
+		"text": "+10% Primary Damage",
+		"description": "Increase primary weapon damage by 10%.",
+		"price": 60,
+		"rarity": Rarity.UNCOMMON,
+		"tags": ["weapon_primary"],
+		"increment": 0.10,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/singlebullet.png"),
+	},
+	{
+		"id": "primary_damage_rare",
+		"line_id": "primary_damage",
+		"text": "+15% Primary Damage",
+		"description": "Increase primary weapon damage by 15%.",
+		"price": 120,
+		"rarity": Rarity.RARE,
+		"tags": ["weapon_primary"],
+		"increment": 0.15,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/singlebullet.png"),
+	},
+
+	# Primary Fire Rate (Line B)
+	{
+		"id": "primary_fire_rate_uncommon",
+		"line_id": "primary_fire_rate",
+		"text": "+5% Primary Fire Rate",
+		"description": "Increase primary fire rate by 5% (faster).",
+		"price": 60,
+		"rarity": Rarity.UNCOMMON,
+		"tags": ["weapon_primary"],
+		"increment": 0.05,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/singlebullet.png"),
+	},
+	{
+		"id": "primary_fire_rate_rare",
+		"line_id": "primary_fire_rate",
+		"text": "+10% Primary Fire Rate",
+		"description": "Increase primary fire rate by 10% (faster).",
+		"price": 120,
+		"rarity": Rarity.RARE,
+		"tags": ["weapon_primary"],
+		"increment": 0.10,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/singlebullet.png"),
+	},
+
+	# Primary Bullet Size (Line C)
+	{
+		"id": "primary_bullet_size_rare",
+		"line_id": "primary_bullet_size",
+		"text": "+10% Bullet Size",
+		"description": "Increase primary bullet size by 10%.",
+		"price": 120,
+		"rarity": Rarity.RARE,
+		"tags": ["weapon_primary"],
+		"increment": 0.10,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/singlebullet.png"),
+	},
+	{
+		"id": "primary_bullet_size_epic",
+		"line_id": "primary_bullet_size",
+		"text": "+20% Bullet Size",
+		"description": "Increase primary bullet size by 20%.",
+		"price": 250,
+		"rarity": Rarity.EPIC,
+		"tags": ["weapon_primary"],
+		"increment": 0.20,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/singlebullet.png"),
+	},
+
+	# SHOTGUN
+	{
+		"id": "shotgun_pellets_common",
+		"line_id": "shotgun_pellets",
+		"text": "+1 Shotgun Pellet",
+		"description": "Increase shotgun pellet count by 1.",
+		"price": 30,
+		"rarity": Rarity.COMMON,
+		"tags": ["weapon_shotgun"],
+		"requires_alt_weapon": ALT_WEAPON_SHOTGUN,
+		"increment": 1,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/shotgunbullet.png"),
+	},
+	{
+		"id": "shotgun_pellets_uncommon",
+		"line_id": "shotgun_pellets",
+		"text": "+2 Shotgun Pellets",
+		"description": "Increase shotgun pellet count by 2.",
+		"price": 60,
+		"rarity": Rarity.UNCOMMON,
+		"tags": ["weapon_shotgun"],
+		"requires_alt_weapon": ALT_WEAPON_SHOTGUN,
+		"increment": 2,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/shotgunbullet.png"),
+	},
+	{
+		"id": "shotgun_pellets_rare",
+		"line_id": "shotgun_pellets",
+		"text": "+3 Shotgun Pellets",
+		"description": "Increase shotgun pellet count by 3.",
+		"price": 120,
+		"rarity": Rarity.RARE,
+		"tags": ["weapon_shotgun"],
+		"requires_alt_weapon": ALT_WEAPON_SHOTGUN,
+		"increment": 3,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/shotgunbullet.png"),
+	},
+
+	# Shotgun Spread Tightening (negative increment reduces spread)
+	{
+		"id": "shotgun_spread_uncommon",
+		"line_id": "shotgun_spread",
+		"text": "-5% Shotgun Spread",
+		"description": "Reduce shotgun spread by 5%.",
+		"price": 60,
+		"rarity": Rarity.UNCOMMON,
+		"tags": ["weapon_shotgun"],
+		"requires_alt_weapon": ALT_WEAPON_SHOTGUN,
+		"increment": -0.05,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/shotgunbullet.png"),
+	},
+	{
+		"id": "shotgun_spread_rare",
+		"line_id": "shotgun_spread",
+		"text": "-10% Shotgun Spread",
+		"description": "Reduce shotgun spread by 10%.",
+		"price": 120,
+		"rarity": Rarity.RARE,
+		"tags": ["weapon_shotgun"],
+		"requires_alt_weapon": ALT_WEAPON_SHOTGUN,
+		"increment": -0.10,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/shotgunbullet.png"),
+	},
+
+	# Shotgun Knockback
+	{
+		"id": "shotgun_knockback_rare",
+		"line_id": "shotgun_knockback",
+		"text": "+10% Shotgun Knockback",
+		"description": "Increase shotgun knockback by 10%.",
+		"price": 120,
+		"rarity": Rarity.RARE,
+		"tags": ["weapon_shotgun"],
+		"requires_alt_weapon": ALT_WEAPON_SHOTGUN,
+		"increment": 0.10,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/shotgunbullet.png"),
+	},
+	{
+		"id": "shotgun_knockback_epic",
+		"line_id": "shotgun_knockback",
+		"text": "+20% Shotgun Knockback",
+		"description": "Increase shotgun knockback by 20%.",
+		"price": 250,
+		"rarity": Rarity.EPIC,
+		"tags": ["weapon_shotgun"],
+		"requires_alt_weapon": ALT_WEAPON_SHOTGUN,
+		"increment": 0.20,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/shotgunbullet.png"),
+	},
+
+	# SNIPER
+	{
+		"id": "sniper_damage_common",
+		"line_id": "sniper_damage",
+		"text": "+10% Sniper Damage",
+		"description": "Increase sniper damage by 10%.",
+		"price": 30,
+		"rarity": Rarity.COMMON,
+		"tags": ["weapon_sniper"],
+		"requires_alt_weapon": ALT_WEAPON_SNIPER,
+		"increment": 0.10,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/sniperbullet.png"),
+	},
+	{
+		"id": "sniper_damage_uncommon",
+		"line_id": "sniper_damage",
+		"text": "+20% Sniper Damage",
+		"description": "Increase sniper damage by 20%.",
+		"price": 60,
+		"rarity": Rarity.UNCOMMON,
+		"tags": ["weapon_sniper"],
+		"requires_alt_weapon": ALT_WEAPON_SNIPER,
+		"increment": 0.20,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/sniperbullet.png"),
+	},
+	{
+		"id": "sniper_damage_rare",
+		"line_id": "sniper_damage",
+		"text": "+30% Sniper Damage",
+		"description": "Increase sniper damage by 30%.",
+		"price": 120,
+		"rarity": Rarity.RARE,
+		"tags": ["weapon_sniper"],
+		"requires_alt_weapon": ALT_WEAPON_SNIPER,
+		"increment": 0.30,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/sniperbullet.png"),
+	},
+
+	# Sniper Pierce
+	{
+		"id": "sniper_pierce_uncommon",
+		"line_id": "sniper_pierce",
+		"text": "+1 Sniper Pierce",
+		"description": "Sniper gains +1 pierce.",
+		"price": 60,
+		"rarity": Rarity.UNCOMMON,
+		"tags": ["weapon_sniper"],
+		"requires_alt_weapon": ALT_WEAPON_SNIPER,
+		"increment": 1,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/sniperbullet.png"),
+	},
+	{
+		"id": "sniper_pierce_rare",
+		"line_id": "sniper_pierce",
+		"text": "+2 Sniper Pierce",
+		"description": "Sniper gains +2 pierce.",
+		"price": 120,
+		"rarity": Rarity.RARE,
+		"tags": ["weapon_sniper"],
+		"requires_alt_weapon": ALT_WEAPON_SNIPER,
+		"increment": 2,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/sniperbullet.png"),
+	},
+	{
+		"id": "sniper_charge_rare",
+		"line_id": "sniper_charge",
+		"text": "+15% Charge Damage",
+		"description": "Increase charged sniper damage by 15%.",
+		"price": 120,
+		"rarity": Rarity.RARE,
+		"tags": ["weapon_sniper"],
+		"requires_alt_weapon": ALT_WEAPON_SNIPER,
+		"increment": 0.15,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/sniperbullet.png"),
+	},
+	{
+		"id": "sniper_charge_epic",
+		"line_id": "sniper_charge",
+		"text": "+30% Charge Damage",
+		"description": "Increase charged sniper damage by 30%.",
+		"price": 250,
+		"rarity": Rarity.EPIC,
+		"tags": ["weapon_sniper"],
+		"requires_alt_weapon": ALT_WEAPON_SNIPER,
+		"increment": 0.30,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/sniperbullet.png"),
+	},
+
+	# FLAMETHROWER
+	{
+		"id": "flame_lifetime_common",
+		"line_id": "flame_lifetime",
+		"text": "+10% Flame Lifetime",
+		"description": "Increase flamethrower flame lifetime by 10%.",
+		"price": 30,
+		"rarity": Rarity.COMMON,
+		"tags": ["weapon_flamethrower"],
+		"requires_alt_weapon": ALT_WEAPON_FLAMETHROWER,
+		"increment": 0.10,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/flamethrowerbullet.png"),
+	},
+	{
+		"id": "flame_lifetime_uncommon",
+		"line_id": "flame_lifetime",
+		"text": "+20% Flame Lifetime",
+		"description": "Increase flamethrower flame lifetime by 20%.",
+		"price": 60,
+		"rarity": Rarity.UNCOMMON,
+		"tags": ["weapon_flamethrower"],
+		"requires_alt_weapon": ALT_WEAPON_FLAMETHROWER,
+		"increment": 0.20,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/flamethrowerbullet.png"),
+	},
+	{
+		"id": "flame_lifetime_rare",
+		"line_id": "flame_lifetime",
+		"text": "+30% Flame Lifetime",
+		"description": "Increase flamethrower flame lifetime by 30%.",
+		"price": 120,
+		"rarity": Rarity.RARE,
+		"tags": ["weapon_flamethrower"],
+		"requires_alt_weapon": ALT_WEAPON_FLAMETHROWER,
+		"increment": 0.30,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/flamethrowerbullet.png"),
+	},
+	{
+		"id": "flame_burn_uncommon",
+		"line_id": "flame_burn",
+		"text": "+10% Burn Damage",
+		"description": "Increase flame burn damage by 10%.",
+		"price": 60,
+		"rarity": Rarity.UNCOMMON,
+		"tags": ["weapon_flamethrower"],
+		"requires_alt_weapon": ALT_WEAPON_FLAMETHROWER,
+		"increment": 0.10,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/flamethrowerbullet.png"),
+	},
+	{
+		"id": "flame_burn_rare",
+		"line_id": "flame_burn",
+		"text": "+20% Burn Damage",
+		"description": "Increase flame burn damage by 20%.",
+		"price": 120,
+		"rarity": Rarity.RARE,
+		"tags": ["weapon_flamethrower"],
+		"requires_alt_weapon": ALT_WEAPON_FLAMETHROWER,
+		"increment": 0.20,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/flamethrowerbullet.png"),
+	},
+	{
+		"id": "flame_size_rare",
+		"line_id": "flame_size",
+		"text": "+10% Flame Size",
+		"description": "Increase flame size by 10%.",
+		"price": 120,
+		"rarity": Rarity.RARE,
+		"tags": ["weapon_flamethrower"],
+		"requires_alt_weapon": ALT_WEAPON_FLAMETHROWER,
+		"increment": 0.10,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/flamethrowerbullet.png"),
+	},
+	{
+		"id": "flame_size_epic",
+		"line_id": "flame_size",
+		"text": "+20% Flame Size",
+		"description": "Increase flame size by 20%.",
+		"price": 250,
+		"rarity": Rarity.EPIC,
+		"tags": ["weapon_flamethrower"],
+		"requires_alt_weapon": ALT_WEAPON_FLAMETHROWER,
+		"increment": 0.20,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/flamethrowerbullet.png"),
+	},
+
+	# GRENADE LAUNCHER
+	{
+		"id": "grenade_radius_common",
+		"line_id": "grenade_radius",
+		"text": "+10px Explosion Radius",
+		"description": "Increase grenade explosion radius by 10px.",
+		"price": 30,
+		"rarity": Rarity.COMMON,
+		"tags": ["weapon_grenade"],
+		"requires_alt_weapon": ALT_WEAPON_GRENADE,
+		"increment": 10,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/grenade.png"),
+	},
+	# -------------------------
+	# SHIELD / BUBBLE DURATION UPGRADES
+	# -------------------------
+	{
+		"id": "bubble_duration_plus_0_5",
+		"text": "+0.5s Shield Duration",
+		"price": 150,
+		"rarity": Rarity.COMMON,
+		"icon": preload("res://assets/shield.png"),
+		"requires_ability": ABILITY_BUBBLE,
+	},
+	{
+		"id": "bubble_duration_plus_1",
+		"text": "+1s Shield Duration",
+		"price": 300,
+		"rarity": Rarity.UNCOMMON,
+		"icon": preload("res://assets/shield.png"),
+		"requires_ability": ABILITY_BUBBLE,
+	},
+	{
+		"id": "bubble_duration_plus_2",
+		"text": "+2s Shield Duration",
+		"price": 500,
+		"rarity": Rarity.RARE,
+		"icon": preload("res://assets/shield.png"),
+		"requires_ability": ABILITY_BUBBLE,
+	},
+
+	# Additional grenade / shuriken / turret / ability upgrades (data-only)
+	{
+		"id": "grenade_radius_uncommon",
+		"line_id": "grenade_radius",
+		"text": "+20px Explosion Radius",
+		"description": "Increase grenade explosion radius by 20px.",
+		"price": 60,
+		"rarity": Rarity.UNCOMMON,
+		"tags": ["weapon_grenade"],
+		"requires_alt_weapon": ALT_WEAPON_GRENADE,
+		"increment": 20,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/grenade.png"),
+	},
+	{
+		"id": "grenade_radius_rare",
+		"line_id": "grenade_radius",
+		"text": "+30px Explosion Radius",
+		"description": "Increase grenade explosion radius by 30px.",
+		"price": 120,
+		"rarity": Rarity.RARE,
+		"tags": ["weapon_grenade"],
+		"requires_alt_weapon": ALT_WEAPON_GRENADE,
+		"increment": 30,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/grenade.png"),
+	},
+	{
+		"id": "grenade_fragments_uncommon",
+		"line_id": "grenade_fragments",
+		"text": "+1 Fragment",
+		"description": "Grenade spawns +1 fragment.",
+		"price": 60,
+		"rarity": Rarity.UNCOMMON,
+		"tags": ["weapon_grenade"],
+		"requires_alt_weapon": ALT_WEAPON_GRENADE,
+		"increment": 1,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/grenade.png"),
+	},
+	{
+		"id": "grenade_fragments_rare",
+		"line_id": "grenade_fragments",
+		"text": "+2 Fragments",
+		"description": "Grenade spawns +2 fragments.",
+		"price": 120,
+		"rarity": Rarity.RARE,
+		"tags": ["weapon_grenade"],
+		"requires_alt_weapon": ALT_WEAPON_GRENADE,
+		"increment": 2,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/grenade.png"),
+	},
+	{
+		"id": "grenade_damage_rare",
+		"line_id": "grenade_damage",
+		"text": "+10% Grenade Damage",
+		"description": "Increase grenade damage by 10%.",
+		"price": 120,
+		"rarity": Rarity.RARE,
+		"tags": ["weapon_grenade"],
+		"requires_alt_weapon": ALT_WEAPON_GRENADE,
+		"increment": 0.10,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/grenade.png"),
+	},
+	{
+		"id": "grenade_damage_epic",
+		"line_id": "grenade_damage",
+		"text": "+20% Grenade Damage",
+		"description": "Increase grenade damage by 20%.",
+		"price": 250,
+		"rarity": Rarity.EPIC,
+		"tags": ["weapon_grenade"],
+		"requires_alt_weapon": ALT_WEAPON_GRENADE,
+		"increment": 0.20,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/grenade.png"),
+	},
+
+	# SHURIKEN
+	{
+		"id": "shuriken_bounces_common",
+		"line_id": "shuriken_bounces",
+		"text": "+1 Shuriken Bounce",
+		"description": "Shuriken gains +1 bounce.",
+		"price": 30,
+		"rarity": Rarity.COMMON,
+		"tags": ["weapon_shuriken"],
+		"requires_alt_weapon": ALT_WEAPON_SHURIKEN,
+		"increment": 1,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/shuriken.png"),
+	},
+	{
+		"id": "shuriken_bounces_uncommon",
+		"line_id": "shuriken_bounces",
+		"text": "+2 Shuriken Bounces",
+		"description": "Shuriken gains +2 bounces.",
+		"price": 60,
+		"rarity": Rarity.UNCOMMON,
+		"tags": ["weapon_shuriken"],
+		"requires_alt_weapon": ALT_WEAPON_SHURIKEN,
+		"increment": 2,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/shuriken.png"),
+	},
+	{
+		"id": "shuriken_bounces_rare",
+		"line_id": "shuriken_bounces",
+		"text": "+3 Shuriken Bounces",
+		"description": "Shuriken gains +3 bounces.",
+		"price": 120,
+		"rarity": Rarity.RARE,
+		"tags": ["weapon_shuriken"],
+		"requires_alt_weapon": ALT_WEAPON_SHURIKEN,
+		"increment": 3,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/shuriken.png"),
+	},
+	{
+		"id": "shuriken_speed_uncommon",
+		"line_id": "shuriken_speed",
+		"text": "+10% Shuriken Speed",
+		"description": "Increase shuriken speed by 10%.",
+		"price": 60,
+		"rarity": Rarity.UNCOMMON,
+		"tags": ["weapon_shuriken"],
+		"requires_alt_weapon": ALT_WEAPON_SHURIKEN,
+		"increment": 0.10,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/shuriken.png"),
+	},
+	{
+		"id": "shuriken_speed_rare",
+		"line_id": "shuriken_speed",
+		"text": "+20% Shuriken Speed",
+		"description": "Increase shuriken speed by 20%.",
+		"price": 120,
+		"rarity": Rarity.RARE,
+		"tags": ["weapon_shuriken"],
+		"requires_alt_weapon": ALT_WEAPON_SHURIKEN,
+		"increment": 0.20,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/shuriken.png"),
+	},
+	{
+		"id": "shuriken_ricochet_rare",
+		"line_id": "shuriken_ricochet",
+		"text": "+10% Ricochet Damage",
+		"description": "Increase shuriken ricochet damage by 10%.",
+		"price": 120,
+		"rarity": Rarity.RARE,
+		"tags": ["weapon_shuriken"],
+		"requires_alt_weapon": ALT_WEAPON_SHURIKEN,
+		"increment": 0.10,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/shuriken.png"),
+	},
+	{
+		"id": "shuriken_ricochet_epic",
+		"line_id": "shuriken_ricochet",
+		"text": "+20% Ricochet Damage",
+		"description": "Increase shuriken ricochet damage by 20%.",
+		"price": 250,
+		"rarity": Rarity.EPIC,
+		"tags": ["weapon_shuriken"],
+		"requires_alt_weapon": ALT_WEAPON_SHURIKEN,
+		"increment": 0.20,
+		"stackable": true,
+		"icon": preload("res://assets/bullets/shuriken.png"),
+	},
+
+	# TURRET
+	{
+		"id": "turret_fire_rate_common",
+		"line_id": "turret_fire_rate",
+		"text": "+5% Turret Fire Rate",
+		"description": "Increase turret fire rate by 5%.",
+		"price": 30,
+		"rarity": Rarity.COMMON,
+		"tags": ["weapon_turret"],
+		"requires_alt_weapon": ALT_WEAPON_TURRET,
+		"increment": 0.05,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/turreticon.png"),
+	},
+	{
+		"id": "turret_fire_rate_uncommon",
+		"line_id": "turret_fire_rate",
+		"text": "+10% Turret Fire Rate",
+		"description": "Increase turret fire rate by 10%.",
+		"price": 60,
+		"rarity": Rarity.UNCOMMON,
+		"tags": ["weapon_turret"],
+		"requires_alt_weapon": ALT_WEAPON_TURRET,
+		"increment": 0.10,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/turreticon.png"),
+	},
+	{
+		"id": "turret_fire_rate_rare",
+		"line_id": "turret_fire_rate",
+		"text": "+15% Turret Fire Rate",
+		"description": "Increase turret fire rate by 15%.",
+		"price": 120,
+		"rarity": Rarity.RARE,
+		"tags": ["weapon_turret"],
+		"requires_alt_weapon": ALT_WEAPON_TURRET,
+		"increment": 0.15,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/turreticon.png"),
+	},
+	{
+		"id": "turret_range_uncommon",
+		"line_id": "turret_range",
+		"text": "+5% Turret Range",
+		"description": "Increase turret range by 5%.",
+		"price": 60,
+		"rarity": Rarity.UNCOMMON,
+		"tags": ["weapon_turret"],
+		"requires_alt_weapon": ALT_WEAPON_TURRET,
+		"increment": 0.05,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/turreticon.png"),
+	},
+	{
+		"id": "turret_range_rare",
+		"line_id": "turret_range",
+		"text": "+10% Turret Range",
+		"description": "Increase turret range by 10%.",
+		"price": 120,
+		"rarity": Rarity.RARE,
+		"tags": ["weapon_turret"],
+		"requires_alt_weapon": ALT_WEAPON_TURRET,
+		"increment": 0.10,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/turreticon.png"),
+	},
+	{
+		"id": "turret_bullet_speed_rare",
+		"line_id": "turret_bullet_speed",
+		"text": "+10% Turret Bullet Speed",
+		"description": "Increase turret bullet speed by 10%.",
+		"price": 120,
+		"rarity": Rarity.RARE,
+		"tags": ["weapon_turret"],
+		"requires_alt_weapon": ALT_WEAPON_TURRET,
+		"increment": 0.10,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/turreticon.png"),
+	},
+	{
+		"id": "turret_bullet_speed_epic",
+		"line_id": "turret_bullet_speed",
+		"text": "+20% Turret Bullet Speed",
+		"description": "Increase turret bullet speed by 20%.",
+		"price": 250,
+		"rarity": Rarity.EPIC,
+		"tags": ["weapon_turret"],
+		"requires_alt_weapon": ALT_WEAPON_TURRET,
+		"increment": 0.20,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/turreticon.png"),
+	},
+
+	# ABILITY UPGRADES
+	# DASH
+	{
+		"id": "dash_distance_common",
+		"line_id": "dash_distance",
+		"text": "+10% Dash Distance",
+		"description": "Increase dash distance by 10%.",
+		"price": 30,
+		"rarity": Rarity.COMMON,
+		"tags": ["ability_dash"],
+		"requires_ability": ABILITY_DASH,
+		"increment": 0.10,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/ammo.png"),
+	},
+	{
+		"id": "dash_distance_uncommon",
+		"line_id": "dash_distance",
+		"text": "+20% Dash Distance",
+		"description": "Increase dash distance by 20%.",
+		"price": 60,
+		"rarity": Rarity.UNCOMMON,
+		"tags": ["ability_dash"],
+		"requires_ability": ABILITY_DASH,
+		"increment": 0.20,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/ammo.png"),
+	},
+	{
+		"id": "dash_distance_rare",
+		"line_id": "dash_distance",
+		"text": "+30% Dash Distance",
+		"description": "Increase dash distance by 30%.",
+		"price": 120,
+		"rarity": Rarity.RARE,
+		"tags": ["ability_dash"],
+		"requires_ability": ABILITY_DASH,
+		"increment": 0.30,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/ammo.png"),
+	},
+	{
+		"id": "dash_distance_epic",
+		"line_id": "dash_distance",
+		"text": "+50% Dash Distance",
+		"description": "Increase dash distance by 50%.",
+		"price": 250,
+		"rarity": Rarity.EPIC,
+		"tags": ["ability_dash"],
+		"requires_ability": ABILITY_DASH,
+		"increment": 0.50,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/ammo.png"),
+	},
+
+	# BUBBLE SHIELD (percent duration bonuses)
+	{
+		"id": "bubble_duration_common",
+		"line_id": "bubble_duration",
+		"text": "+5% Bubble Duration",
+		"description": "Increase shield bubble duration by 5%.",
+		"price": 30,
+		"rarity": Rarity.COMMON,
+		"tags": ["ability_bubble"],
+		"requires_ability": ABILITY_BUBBLE,
+		"increment": 0.05,
+		"stackable": true,
+		"icon": preload("res://assets/shield.png"),
+	},
+	{
+		"id": "bubble_duration_uncommon",
+		"line_id": "bubble_duration",
+		"text": "+10% Bubble Duration",
+		"description": "Increase shield bubble duration by 10%.",
+		"price": 60,
+		"rarity": Rarity.UNCOMMON,
+		"tags": ["ability_bubble"],
+		"requires_ability": ABILITY_BUBBLE,
+		"increment": 0.10,
+		"stackable": true,
+		"icon": preload("res://assets/shield.png"),
+	},
+	{
+		"id": "bubble_duration_rare",
+		"line_id": "bubble_duration",
+		"text": "+20% Bubble Duration",
+		"description": "Increase shield bubble duration by 20%.",
+		"price": 120,
+		"rarity": Rarity.RARE,
+		"tags": ["ability_bubble"],
+		"requires_ability": ABILITY_BUBBLE,
+		"increment": 0.20,
+		"stackable": true,
+		"icon": preload("res://assets/shield.png"),
+	},
+	{
+		"id": "bubble_duration_epic",
+		"line_id": "bubble_duration",
+		"text": "+30% Bubble Duration",
+		"description": "Increase shield bubble duration by 30%.",
+		"price": 250,
+		"rarity": Rarity.EPIC,
+		"tags": ["ability_bubble"],
+		"requires_ability": ABILITY_BUBBLE,
+		"increment": 0.30,
+		"stackable": true,
+		"icon": preload("res://assets/shield.png"),
+	},
+
+	# SLOWMO (duration additions)
+	{
+		"id": "slowmo_time_common",
+		"line_id": "slowmo_time",
+		"text": "+0.1s Slowmo",
+		"description": "Increase slowmo duration by 0.1s.",
+		"price": 30,
+		"rarity": Rarity.COMMON,
+		"tags": ["ability_slowmo"],
+		"requires_ability": ABILITY_SLOWMO,
+		"increment": 0.1,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/ammo.png"),
+	},
+	{
+		"id": "slowmo_time_uncommon",
+		"line_id": "slowmo_time",
+		"text": "+0.2s Slowmo",
+		"description": "Increase slowmo duration by 0.2s.",
+		"price": 60,
+		"rarity": Rarity.UNCOMMON,
+		"tags": ["ability_slowmo"],
+		"requires_ability": ABILITY_SLOWMO,
+		"increment": 0.2,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/ammo.png"),
+	},
+	{
+		"id": "slowmo_time_rare",
+		"line_id": "slowmo_time",
+		"text": "+0.4s Slowmo",
+		"description": "Increase slowmo duration by 0.4s.",
+		"price": 120,
+		"rarity": Rarity.RARE,
+		"tags": ["ability_slowmo"],
+		"requires_ability": ABILITY_SLOWMO,
+		"increment": 0.4,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/ammo.png"),
+	},
+	{
+		"id": "slowmo_time_epic",
+		"line_id": "slowmo_time",
+		"text": "+1.0s Slowmo",
+		"description": "Increase slowmo duration by 1.0s.",
+		"price": 250,
+		"rarity": Rarity.EPIC,
+		"tags": ["ability_slowmo"],
+		"requires_ability": ABILITY_SLOWMO,
+		"increment": 1.0,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/ammo.png"),
+	},
+
+	# INVIS (duration percent)
+	{
+		"id": "invis_duration_common",
+		"line_id": "invis_duration",
+		"text": "+5% Invisibility Duration",
+		"description": "Increase invisibility duration by 5%.",
+		"price": 30,
+		"rarity": Rarity.COMMON,
+		"tags": ["ability_invis"],
+		"requires_ability": ABILITY_INVIS,
+		"increment": 0.05,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/ammo.png"),
+	},
+	{
+		"id": "invis_duration_uncommon",
+		"line_id": "invis_duration",
+		"text": "+10% Invisibility Duration",
+		"description": "Increase invisibility duration by 10%.",
+		"price": 60,
+		"rarity": Rarity.UNCOMMON,
+		"tags": ["ability_invis"],
+		"requires_ability": ABILITY_INVIS,
+		"increment": 0.10,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/ammo.png"),
+	},
+	{
+		"id": "invis_duration_rare",
+		"line_id": "invis_duration",
+		"text": "+20% Invisibility Duration",
+		"description": "Increase invisibility duration by 20%.",
+		"price": 120,
+		"rarity": Rarity.RARE,
+		"tags": ["ability_invis"],
+		"requires_ability": ABILITY_INVIS,
+		"increment": 0.20,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/ammo.png"),
+	},
+	{
+		"id": "invis_duration_epic",
+		"line_id": "invis_duration",
+		"text": "+30% Invisibility Duration",
+		"description": "Increase invisibility duration by 30%.",
+		"price": 250,
+		"rarity": Rarity.EPIC,
+		"tags": ["ability_invis"],
+		"requires_ability": ABILITY_INVIS,
+		"increment": 0.30,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/ammo.png"),
+	},
+
+	# -------------------------
+	# EPIC SYNERGIES (data-only)
+	# -------------------------
+	{
+		"id": "synergy_flamethrower_bubble_burning_shield",
+		"text": "Burning Shield",
+		"description": "Bubble sets nearby enemies on fire.",
+		"rarity": Rarity.EPIC,
+		"requires_alt_weapon": ALT_WEAPON_FLAMETHROWER,
+		"requires_ability": ABILITY_BUBBLE,
+		"price": 500,
+		"tags": ["synergy"],
+		"icon": preload("res://assets/bullets/flamethrowerbullet.png"),
+		"stackable": false,
+	},
+	{
+		"id": "synergy_grenade_dash_explosive_trail",
+		"text": "Explosive Trail",
+		"description": "Dashing drops explosive charges behind you.",
+		"rarity": Rarity.EPIC,
+		"requires_alt_weapon": ALT_WEAPON_GRENADE,
+		"requires_ability": ABILITY_DASH,
+		"price": 500,
+		"tags": ["synergy"],
+		"icon": preload("res://assets/bullets/grenade.png"),
+		"stackable": false,
+	},
+	{
+		"id": "synergy_shuriken_slowmo_infinite_bounces",
+		"text": "Infinite Bounces",
+		"description": "Shurikens do not lose bounces while slowmo is active.",
+		"rarity": Rarity.EPIC,
+		"requires_alt_weapon": ALT_WEAPON_SHURIKEN,
+		"requires_ability": ABILITY_SLOWMO,
+		"price": 500,
+		"tags": ["synergy"],
+		"icon": preload("res://assets/bullets/shuriken.png"),
+		"stackable": false,
+	},
+	{
+		"id": "synergy_sniper_invis_assassins_shot",
+		"text": "Assassin's Shot",
+		"description": "First shot after exiting invis deals massive bonus damage.",
+		"rarity": Rarity.EPIC,
+		"requires_alt_weapon": ALT_WEAPON_SNIPER,
+		"requires_ability": ABILITY_INVIS,
+		"price": 500,
+		"tags": ["synergy"],
+		"icon": preload("res://assets/bullets/sniperbullet.png"),
+		"stackable": false,
+	},
+	{
+		"id": "synergy_turret_bubble_shielded_turret",
+		"text": "Shielded Turret",
+		"description": "Turret gains a defensive shield while bubble is active.",
+		"rarity": Rarity.EPIC,
+		"requires_alt_weapon": ALT_WEAPON_TURRET,
+		"requires_ability": ABILITY_BUBBLE,
+		"price": 500,
+		"tags": ["synergy"],
+		"icon": preload("res://assets/Separated/turreticon.png"),
+		"stackable": false,
 	},
 ]
 
@@ -216,111 +1193,13 @@ static func get_by_id(id: String) -> Dictionary:
 static func apply_upgrade(upgrade_id: String) -> void:
 	print("[UpgradesDB] Applying upgrade:", upgrade_id)
 
-	match upgrade_id:
-		# -------------------------
-		# GENERAL / CORE UPGRADES
-		# -------------------------
-		"max_hp_plus_1":
-			GameState.max_health += 10
-			GameState.set_health(GameState.health + 10)
-			print("  → Max HP now:", GameState.max_health)
-
-		"hp_refill":
-			GameState.set_health(GameState.max_health)
-			print("  → HP refilled to:", GameState.max_health)
-
-		"max_ammo_plus_1":
-			GameState.max_ammo += 1
-			GameState.set_ammo(GameState.ammo + 1)
-			print("  → Max Ammo now:", GameState.max_ammo)
-
-		"ammo_refill":
-			GameState.set_ammo(GameState.max_ammo)
-			print("  → Ammo refilled to:", GameState.max_ammo)
-
-		"ability_cooldown_minus_10":
-	# Reduce cooldown by 10% (stacks multiplicatively)
-			GameState.ability_cooldown_mult *= 0.9
-	
-			var reduction_percent = int((1.0 - GameState.ability_cooldown_mult) * 100)
-			print("  → Ability cooldown multiplier:", GameState.ability_cooldown_mult)
-			print("  → Total reduction:", reduction_percent, "%")
-
-		# -------------------------
-		# PRIMARY WEAPON UPGRADES
-		# -------------------------
-		"primary_damage_plus_10":
-			GameState.primary_damage *= 1.1
-			print("  → Primary damage now:", GameState.primary_damage)
-
-		"primary_fire_rate_plus_10":
-			GameState.fire_rate *= 0.9
-			print("  → Primary fire rate now:", GameState.fire_rate)
-
-		"primary_burst_plus_1":
-			GameState.primary_burst_count += 1
-			print("  → Primary burst count now:", GameState.primary_burst_count)
-
-		# -------------------------
-		# ALT WEAPON UNLOCKS (✅ FIXED INDICES)
-		# -------------------------
-		"unlock_shotgun":
-			GameState.set_alt_weapon(GameState.AltWeaponType.SHOTGUN)  # = 1
-			GameState.max_ammo = 6
-			GameState.set_ammo(6)
-			print("  → Shotgun unlocked! (AltWeaponType = 1)")
-
-		"unlock_sniper":
-			GameState.set_alt_weapon(GameState.AltWeaponType.SNIPER)  # = 2
-			GameState.max_ammo = 4
-			GameState.set_ammo(4)
-			print("  → Sniper unlocked! (AltWeaponType = 2)")
-
-		"unlock_flamethrower":
-			GameState.set_alt_weapon(GameState.AltWeaponType.FLAMETHROWER)  # = 3
-			GameState.max_ammo = 100
-			GameState.set_ammo(100)
-			print("  → Flamethrower unlocked! (AltWeaponType = 3)")
-
-		"unlock_grenade":
-			GameState.set_alt_weapon(GameState.AltWeaponType.GRENADE)  # = 4 ✅
-			GameState.max_ammo = 3
-			GameState.set_ammo(3)
-			print("  → Grenade Launcher unlocked! (AltWeaponType = 4)")
-
-		"unlock_shuriken":
-			GameState.set_alt_weapon(GameState.AltWeaponType.SHURIKEN)  # = 5
-			GameState.max_ammo = 8
-			GameState.set_ammo(8)
-			print("  → Shuriken unlocked! (AltWeaponType = 5)")
-
-		"unlock_turret":
-			GameState.set_alt_weapon(GameState.AltWeaponType.TURRET)  # = 6 ✅
-			GameState.max_ammo = 0
-			GameState.set_ammo(0)
-			print("  → Turret unlocked! (AltWeaponType = 6)")
-
-		# -------------------------
-		# ABILITY UNLOCKS
-		# -------------------------
-		"unlock_dash":
-			GameState.set_ability(GameState.AbilityType.DASH)
-			print("  → Dash unlocked!")
-
-		"unlock_slowmo":
-			GameState.set_ability(GameState.AbilityType.SLOWMO)
-			print("  → Bullet Time unlocked!")
-
-		"unlock_bubble":
-			GameState.set_ability(GameState.AbilityType.BUBBLE)
-			print("  → Shield Bubble unlocked!")
-
-		"unlock_invis":
-			GameState.set_ability(GameState.AbilityType.INVIS)
-			print("  → Invisibility Cloak unlocked!")
-
-		_:
-			push_warning("[UpgradesDB] No handler for upgrade_id: %s" % upgrade_id)
+	# Delegate to GameState which now owns upgrade application logic
+	if Engine.has_singleton("GameState"):
+		GameState.apply_upgrade(upgrade_id)
+	else:
+		# Fallback: try direct call (older setups)
+		if typeof(GameState) != TYPE_NIL and GameState.has_method("apply_upgrade"):
+			GameState.apply_upgrade(upgrade_id)
 
 	_sync_player_after_upgrade()
 

@@ -73,18 +73,29 @@ func _update_button_state() -> void:
 		return
 
 	var affordable := (upgrade_id != "") and (GameState.coins >= price)
-	buy_button.disabled = not affordable
+
+	# If upgrade is non-stackable and already owned, disable buy button
+	var owned_block := false
+	if upgrade_id != "":
+		var u := preload("res://scripts/Upgrades_DB.gd").get_by_id(upgrade_id)
+		if not u.is_empty():
+			var stackable := bool(u.get("stackable", true))
+			if not stackable and GameState.has_upgrade(upgrade_id):
+				owned_block = true
+
+	buy_button.disabled = not affordable or owned_block
 
 
 func _on_buy_pressed() -> void:
 	if upgrade_id == "" or GameState.coins < price:
 		return
 
-	# Pay
-	GameState.coins -= price
+	# Pay (use GameState helper so signals fire)
+	if not GameState.spend_coins(price):
+		return
 
 	# Apply the upgrade via the DB
-	UpgradesDB.apply_upgrade(upgrade_id)
+	preload("res://scripts/Upgrades_DB.gd").apply_upgrade(upgrade_id)
 
 	# Little feedback
 	if sfx_collect:

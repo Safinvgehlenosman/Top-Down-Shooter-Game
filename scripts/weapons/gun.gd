@@ -96,15 +96,15 @@ func handle_alt_fire(is_pressed: bool, aim_pos: Vector2) -> void:
 		return
 
 	# Current alt weapon choice from GameState
-	var alt_weapon: int = GameState.alt_weapon
+	var current_alt: int = GameState.alt_weapon
 
 	# No alt weapon, or turret (fires automatically) → no manual alt-fire
-	if alt_weapon == GameState.AltWeaponType.NONE \
-	or alt_weapon == GameState.AltWeaponType.TURRET:
+	if current_alt == GameState.AltWeaponType.NONE \
+	or current_alt == GameState.AltWeaponType.TURRET:
 		return
 
 	# Flamethrower has its own special handling
-	if alt_weapon == GameState.AltWeaponType.FLAMETHROWER:
+	if current_alt == GameState.AltWeaponType.FLAMETHROWER:
 		_handle_flamethrower_fire(aim_pos)
 		return
 
@@ -116,7 +116,7 @@ func handle_alt_fire(is_pressed: bool, aim_pos: Vector2) -> void:
 	if GameState.ammo <= 0 and not GameState.debug_infinite_ammo:
 		return
 
-	var data: Dictionary = GameState.ALT_WEAPON_DATA.get(alt_weapon, {})
+	var data: Dictionary = GameState.ALT_WEAPON_DATA.get(current_alt, {})
 	if data.is_empty():
 		return
 
@@ -138,7 +138,7 @@ func _handle_flamethrower_fire(aim_pos: Vector2) -> void:
 		return
 
 	var bullet_scene: PackedScene = data["bullet_scene"]
-	var bullet_speed: float = data.get("bullet_speed", 50.0)
+	var _bullet_speed: float = data.get("bullet_speed", 50.0)
 
 	var spread_deg: float = data.get("spread_degrees", 35.0)
 	var spread_rad: float = deg_to_rad(spread_deg)
@@ -156,10 +156,20 @@ func _handle_flamethrower_fire(aim_pos: Vector2) -> void:
 		var dir := base_dir.rotated(angle)
 
 		var bullet = bullet_scene.instantiate()
-		bullet.global_position = muzzle.global_position
+		# Spawn slightly in front of the muzzle to avoid overlapping the player
+		var spawn_pos := muzzle.global_position + dir * 12.0
+		bullet.global_position = spawn_pos
+		# Give the projectile its direction and let the projectile decide its speed
+		# (e.g. `fire_projectile.gd` picks a random speed from min_speed..max_speed)
 		bullet.direction = dir
-		bullet.speed = bullet_speed
-		bullet.damage = damage
+
+		# Make sure the cloud targets enemies (some projectile scenes default to "player")
+		if "target_group" in bullet:
+			bullet.target_group = "enemy"
+
+		# Set burn / lifetime properties if the projectile supports them
+		if "burn_damage_per_tick" in bullet:
+			bullet.burn_damage_per_tick = damage
 
 		if "lifetime" in bullet:
 			bullet.lifetime = base_lifetime * randf_range(0.75, 1.15)
