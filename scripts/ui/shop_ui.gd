@@ -282,7 +282,18 @@ func _update_ability_bar() -> void:
 # -------------------------------------------------------------------
 
 func _on_card_purchased() -> void:
+	# Skip refresh if in chest mode (chest has its own handler)
+	if is_chest_mode:
+		return
+	
 	_refresh_from_state_full()
+	# Refresh all cards to update prices and dynamic text
+	for card in cards_container.get_children():
+		if card.visible and card.has_method("setup"):
+			# Get the upgrade data again and refresh
+			var upgrade_data := preload("res://scripts/Upgrades_DB.gd").get_by_id(card.upgrade_id)
+			if not upgrade_data.is_empty():
+				card.setup(upgrade_data)
 	_update_card_button_states()
 
 func _on_continue_pressed() -> void:
@@ -408,6 +419,9 @@ func _on_chest_card_purchased() -> void:
 	"""Handle chest card purchase (free upgrade)."""
 	# Upgrade is already applied by card script
 	
+	# Close chest mode first
+	_close_chest_mode()
+	
 	# Despawn the chest with SFX
 	if active_chest and is_instance_valid(active_chest):
 		# Play despawn sound if available
@@ -432,13 +446,11 @@ func _on_chest_card_purchased() -> void:
 		if light:
 			light.visible = false
 		
-		# Queue free after sound finishes (or immediately if no sound)
-		if sfx_despawn:
-			await sfx_despawn.finished
-		active_chest.queue_free()
+		# Queue free after a short delay to let sound play
+		await get_tree().create_timer(0.3).timeout
+		if is_instance_valid(active_chest):
+			active_chest.queue_free()
 		active_chest = null
-	
-	_close_chest_mode()
 
 
 func _close_chest_mode() -> void:

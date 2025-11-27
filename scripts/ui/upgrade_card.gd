@@ -58,7 +58,27 @@ func setup(data: Dictionary) -> void:
 	if text == "" and upgrade_id != "":
 		text = upgrade_id.replace("_", " ").capitalize()
 
+	# Update text for scaling upgrades to show actual value
+	text = _get_dynamic_text()
+
 	_refresh()
+
+
+func _get_dynamic_text() -> String:
+	"""Calculate dynamic text for scaling upgrades."""
+	if upgrade_id == "max_hp_plus_1":
+		var purchases: int = int(GameState.upgrade_purchase_counts.get("max_hp_plus_1", 0)) + 1
+		var base_increase := 10.0
+		var scaled_increase := base_increase * pow(1.5, purchases - 1)
+		var inc_int := int(round(scaled_increase))
+		return "+" + str(inc_int) + " Max HP"
+	elif upgrade_id == "max_ammo_plus_1":
+		var purchases: int = int(GameState.upgrade_purchase_counts.get("max_ammo_plus_1", 0)) + 1
+		var base_ammo_inc := 1
+		var scaled_ammo_inc := int(pow(2, purchases - 1)) * base_ammo_inc
+		return "+" + str(scaled_ammo_inc) + " Max Ammo"
+	else:
+		return text
 
 
 func _refresh() -> void:

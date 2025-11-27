@@ -136,7 +136,7 @@ const ALL_UPGRADES: Array = [
 	},
 	{
 		"id": "unlock_flamethrower",
-		"text": "Unlock Flamethrower",
+		"text": "Unlock Flame",
 		"price": 300,
 		"rarity": Rarity.UNCOMMON,
 		"icon": preload("res://assets/bullets/flamethrowerbullet.png"),
@@ -154,7 +154,7 @@ const ALL_UPGRADES: Array = [
 	},
 	{
 		"id": "unlock_grenade",
-		"text": "Unlock Grenade Launcher",
+		"text": "Unlock Grenades",
 		"price": 300,
 		"rarity": Rarity.UNCOMMON,
 		"icon": preload("res://assets/bullets/grenade.png"),
