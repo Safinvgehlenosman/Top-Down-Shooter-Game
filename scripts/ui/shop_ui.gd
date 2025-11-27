@@ -24,6 +24,9 @@ const ABILITY_INVIS = GameState.AbilityType.INVIS
 @onready var cards_container := $Panel/Cards
 @onready var coin_label: Label = $CoinUI/CoinLabel
 
+# Chest mode flag
+var is_chest_mode: bool = false
+
 @onready var hp_fill: TextureProgressBar = $HPBar/HPFill
 @onready var hp_label: Label = $HPBar/HPLabel
 
@@ -130,7 +133,15 @@ func _get_rarity_weights_for_level(level: int) -> Dictionary:
 		UpgradesDB.Rarity.EPIC: epic / total,
 	}
 
-func _roll_rarity(weights: Dictionary) -> int:
+func _roll_rarity(weights: Dictionary = {}) -> int:
+	# Use provided weights or default to level-based weights
+	if weights.is_empty():
+		var gm := get_tree().get_first_node_in_group("game_manager")
+		var current_level := 1
+		if gm and "current_level" in gm:
+			current_level = gm.current_level
+		weights = _get_rarity_weights_for_level(current_level)
+	
 	var r := randf()
 	var acc := 0.0
 
@@ -280,3 +291,195 @@ func _on_continue_pressed() -> void:
 
 func refresh_from_state() -> void:
 	_refresh_from_state_full()
+
+
+# -------------------------------------------------------------------
+# CHEST MODE
+# -------------------------------------------------------------------
+
+func open_as_chest() -> void:
+	"""Open shop in chest mode with free upgrades."""
+	is_chest_mode = true
+	
+	# Pause game
+	get_tree().paused = true
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	
+	# Show shop
+	visible = true
+	
+	# Hide UI elements
+	var coin_ui = get_node_or_null("CoinUI")
+	if coin_ui:
+		coin_ui.visible = false
+	
+	var hp_bar = get_node_or_null("HPBar")
+	if hp_bar:
+		hp_bar.visible = false
+	
+	var ammo_ui = get_node_or_null("AmmoUI")
+	if ammo_ui:
+		ammo_ui.visible = false
+	
+	var level_ui = get_node_or_null("LevelUI")
+	if level_ui:
+		level_ui.visible = false
+	
+	if ability_bar_container:
+		ability_bar_container.visible = false
+	
+	var title_label = get_node_or_null("Panel/TitleLabel")
+	if title_label:
+		title_label.visible = false
+	
+	if continue_button:
+		continue_button.visible = false
+	
+	# Setup chest cards
+	_setup_chest_cards()
+
+
+func _setup_chest_cards() -> void:
+	"""Generate 3 free upgrades with chest rarity weights."""
+	# Disconnect old signals
+	for card in cards_container.get_children():
+		if card.purchased.is_connected(_on_card_purchased):
+			card.purchased.disconnect(_on_card_purchased)
+		if card.purchased.is_connected(_on_chest_card_purchased):
+			card.purchased.disconnect(_on_chest_card_purchased)
+	
+	var chest_weights := _get_chest_rarity_weights()
+	var all_upgrades: Array = preload("res://scripts/Upgrades_DB.gd").get_all()
+	var taken_ids: Array[String] = []
+	var offers: Array = []
+	
+	# Generate 3 upgrades
+	for i in range(3):
+		var rarity := _roll_rarity(chest_weights)
+		var candidates := _filter_upgrades(all_upgrades, rarity, taken_ids)
+		
+		# Fallback: any rarity if we ran out
+		if candidates.is_empty():
+			candidates = _filter_upgrades(all_upgrades, -1, taken_ids)
+		if candidates.is_empty():
+			break
+		
+		candidates.shuffle()
+		var chosen = candidates[0]
+		offers.append(chosen)
+		taken_ids.append(chosen["id"])
+	
+	# Setup cards - use middle 3 slots (indices 1, 2, 3)
+	var children := cards_container.get_children()
+	for i in range(children.size()):
+		var card = children[i]
+		# Show cards at positions 1, 2, 3 (middle three)
+		if i >= 1 and i <= 3:
+			var offer_index = i - 1  # Map card index to offer array (1->0, 2->1, 3->2)
+			if offer_index < offers.size():
+				card.visible = true
+				# Make a copy and set price to 0 for chest mode
+				var upgrade_data = offers[offer_index].duplicate()
+				upgrade_data["price"] = 0
+				card.setup(upgrade_data)
+				if not card.purchased.is_connected(_on_chest_card_purchased):
+					card.purchased.connect(_on_chest_card_purchased)
+			else:
+				card.visible = false
+		else:
+			card.visible = false
+
+
+func _get_chest_rarity_weights() -> Dictionary:
+	"""Return chest-specific rarity weights (no commons)."""
+	return {
+		UpgradesDB.Rarity.COMMON: 0.0,
+		UpgradesDB.Rarity.UNCOMMON: 0.6,
+		UpgradesDB.Rarity.RARE: 0.3,
+		UpgradesDB.Rarity.EPIC: 0.1,
+	}
+
+
+func _on_chest_card_purchased() -> void:
+	"""Handle chest card purchase (free upgrade)."""
+	# Upgrade is already applied by card script
+	_close_chest_mode()
+
+
+func _close_chest_mode() -> void:
+	"""Close chest mode and restore normal UI."""
+	is_chest_mode = false
+	
+	# Hide shop
+	visible = false
+	
+	# Unpause game
+	get_tree().paused = false
+	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	
+	# Show UI elements again
+	var coin_ui = get_node_or_null("CoinUI")
+	if coin_ui:
+		coin_ui.visible = true
+	
+	var hp_bar = get_node_or_null("HPBar")
+	if hp_bar:
+		hp_bar.visible = true
+	
+	var ammo_ui = get_node_or_null("AmmoUI")
+	if ammo_ui:
+		ammo_ui.visible = true
+	
+	var level_ui = get_node_or_null("LevelUI")
+	if level_ui:
+		level_ui.visible = true
+	
+	# Ability bar visibility is handled by _update_ability_bar()
+	
+	var title_label = get_node_or_null("Panel/TitleLabel")
+	if title_label:
+		title_label.visible = true
+	
+	if continue_button:
+		continue_button.visible = true
+
+# IMPLEMENT CHEST MODE:
+# 
+# Add variable at top:
+# - is_chest_mode: bool = false
+# 
+# Add new function: open_as_chest()
+# - Set is_chest_mode to true
+# - Pause game (get_tree().paused = true)
+# - Show mouse cursor (Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE))
+# - Make ShopUI visible
+# - Hide all UI EXCEPT Panel/Cards:
+#   - Hide CoinUI
+#   - Hide HPBar  
+#   - Hide AmmoUI
+#   - Hide LevelUI
+#   - Hide AbilityBar
+#   - Hide Panel/TitleLabel
+#   - Hide Panel/ContinueButton
+# - Generate 3 chest upgrades with custom rarity weights:
+#   - 60% Uncommon
+#   - 30% Rare  
+#   - 10% Epic
+# - Show only 3 cards (hide cards 4 and 5)
+# - Make cards show NO PRICE (set price to 0 or hide price label)
+# - When card is purchased, call _close_chest_mode() instead of normal flow
+# 
+# Add new function: _close_chest_mode()
+# - Set is_chest_mode back to false
+# - Hide ShopUI (visible = false)
+# - Unpause game (get_tree().paused = false)
+# - Hide mouse cursor (Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN))
+# - Show all normal UI elements again
+# 
+# Modify _setup_cards() to handle chest mode:
+# - If is_chest_mode, use 3 cards with chest rarity weights
+# - If normal mode, use 5 cards with normal rarity weights
+# 
+# Modify upgrade_card purchase signal:
+# - After purchase in chest mode, call _close_chest_mode()
+# - In normal mode, use existing logic

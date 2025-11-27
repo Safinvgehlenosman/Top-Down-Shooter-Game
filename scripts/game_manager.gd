@@ -2,7 +2,8 @@ extends Node
 
 @export var death_screen_path: NodePath
 @export var shop_path: NodePath
-@export var exit_door_path: NodePath      # not really used now, but ok to leave
+@export var exit_door_path: NodePath
+@export var chest_scene: PackedScene      # not really used now, but ok to leave
 @export var ui_root_path: NodePath
 
 @export var crate_scene: PackedScene
@@ -50,6 +51,11 @@ var alive_enemies: int = 0
 var door_spawn_point: Node2D = null
 var current_exit_door: Node2D = null
 var room_spawn_points: Array[Node2D] = []
+
+# Chest spawning
+var chest_spawn_point: Node2D = null
+var chest_spawned: bool = false
+var chest_instance: Area2D = null
 
 var game_ui: CanvasLayer
 var next_scene_path: String = ""
@@ -137,6 +143,11 @@ func _load_room() -> void:
 	alive_enemies = 0
 	door_spawn_point = null
 	room_spawn_points.clear()
+	
+	# Reset chest variables
+	chest_spawn_point = null
+	chest_spawned = false
+	chest_instance = null
 
 	# adjust spawn weights for current_level
 	_update_enemy_weights_for_level()
@@ -282,6 +293,15 @@ func _spawn_room_content() -> void:
 
 	# reserve one spawn for the door
 	door_spawn_point = room_spawn_points.pop_back()
+	
+	# reserve one spawn for the chest
+	if room_spawn_points.size() > 0:
+		chest_spawn_point = room_spawn_points.pop_back()
+	else:
+		chest_spawn_point = null
+	
+	chest_spawned = false
+	chest_instance = null
 
 	alive_enemies = 0
 
@@ -444,7 +464,17 @@ func _update_enemy_weights_for_level() -> void:
 
 func _on_enemy_died() -> void:
 	alive_enemies = max(alive_enemies - 1, 0)
+	
+	# Chest spawn logic
+	if not chest_spawned and chest_spawn_point != null:
+		# 30% chance to spawn chest on enemy death
+		if randf() < 0.3:
+			_spawn_chest()
+	
 	if alive_enemies == 0:
+		# Guarantee chest spawn if not spawned yet
+		if not chest_spawned:
+			_spawn_chest()
 		_spawn_exit_door()
 
 
@@ -476,6 +506,62 @@ func _spawn_exit_door() -> void:
 	if current_exit_door.has_method("open"):
 		current_exit_door.open()
 
+
+func _spawn_chest() -> void:
+	"""Spawn a chest at the reserved chest spawn point."""
+	# Guard checks
+	if chest_scene == null:
+		return
+	
+	if chest_spawn_point == null:
+		return
+	
+	if chest_spawned:
+		return  # Already spawned
+	
+	# Instantiate and position chest
+	chest_instance = chest_scene.instantiate()
+	chest_instance.global_position = chest_spawn_point.global_position
+	current_room.add_child(chest_instance)
+	
+	# Mark as spawned
+	chest_spawned = true
+	print("[GameManager] Chest spawned at", chest_spawn_point.global_position)
+
+# CHEST SPAWNING LOGIC:
+# 
+# Add variables at top with other spawn variables:
+# - chest_spawn_point: Node2D = null (reserved spawn for chest)
+# - chest_spawned: bool = false
+# - chest_instance: Node2D = null
+# 
+# In _spawn_room_content():
+# - Reserve TWO spawn points: one for door (existing), one for chest (new)
+# - Pop chest_spawn_point from room_spawn_points after door_spawn_point
+# - Set chest_spawned to false
+# - Reset chest_instance to null
+# 
+# Modify _on_enemy_died():
+# - After decrementing alive_enemies
+# - If chest not spawned yet AND chest_spawn_point exists
+# - Roll random chance (e.g., 30% per enemy death) to spawn chest
+# - If random succeeds, call _spawn_chest()
+# - If alive_enemies reaches 0, guarantee spawn chest if not spawned yet
+# 
+# Add new function: _spawn_chest()
+# - Check if chest_scene is null, return if so
+# - Check if chest_spawn_point is null, return if so
+# - Check if chest_spawned is true, return if so (prevent duplicate)
+# - Instantiate chest_scene
+# - Set position to chest_spawn_point.global_position
+# - Add as child to current_room
+# - Set chest_spawned to true
+# - Store reference in chest_instance variable
+# 
+# In _load_room():
+# - Reset chest_spawned to false
+# - Reset chest_instance to null
+# - Reset chest_spawn_point to null
 
 func _process(_delta: float) -> void:
 	pass

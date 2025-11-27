@@ -1,0 +1,56 @@
+[gd_scene load_steps=8 format=3 uid="uid://da26oiy1gxaxy"]
+
+[ext_resource type="Script" uid="uid://wv6b160qroim" path="res://scripts/chest.gd" id="1_gqd3d"]
+[ext_resource type="Texture2D" uid="uid://bg4nmpnf348rn" path="res://assets/16x16 Assorted RPG Icons/chests.png" id="1_oii8l"]
+[ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="2_sy5e1"]
+[ext_resource type="AudioStream" uid="uid://dnxnkd6ymcvtg" path="res://assets/Audios/CannonShoot.wav" id="4_yue2o"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_oii8l"]
+radius = 28.0
+
+[sub_resource type="Gradient" id="Gradient_3v2ag"]
+offsets = PackedFloat32Array(0.016129032, 0.8064516, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_yue2o"]
+gradient = SubResource("Gradient_3v2ag")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.517094, 0.52136755)
+fill_to = Vector2(0.76495725, 0.7777778)
+
+[node name="Chest" type="Area2D"]
+collision_layer = 16
+collision_mask = 2
+script = ExtResource("1_gqd3d")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("1_oii8l")
+region_enabled = true
+region_rect = Rect2(32, 1, 16, 14)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_oii8l")
+
+[node name="InteractPrompt" type="Label" parent="."]
+offset_left = -9.0
+offset_top = -15.0
+offset_right = 35.0
+offset_bottom = 1.0
+scale = Vector2(0.4, 0.4)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.1882353)
+theme_override_fonts/font = ExtResource("2_sy5e1")
+text = "\"E\""
+
+[node name="SFX_Spawn" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("4_yue2o")
+bus = &"SFX"
+
+[node name="PointLight2D" type="PointLight2D" parent="."]
+color = Color(0.9254902, 0.8745098, 0.39215687, 1)
+shadow_enabled = true
+texture = SubResource("GradientTexture2D_yue2o")
+texture_scale = 0.5
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

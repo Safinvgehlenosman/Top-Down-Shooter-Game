@@ -55,12 +55,24 @@ func setup(data: Dictionary) -> void:
 
 func _refresh() -> void:
 	if price_label:
-		if price > base_price:
-			price_label.text = str(price) + " ↑"  # Arrow shows it scaled
-			price_label.modulate = Color(1.0, 0.8, 0.2)  # Yellow = expensive
+		if price == 0:
+			# Hide price for free upgrades (chest mode)
+			price_label.visible = false
 		else:
-			price_label.text = str(price)
-			price_label.modulate = Color(1.0, 1.0, 1.0)  # White = base price
+			price_label.visible = true
+			if price > base_price:
+				price_label.text = str(price) + " ↑"  # Arrow shows it scaled
+				price_label.modulate = Color(1.0, 0.8, 0.2)  # Yellow = expensive
+			else:
+				price_label.text = str(price)
+				price_label.modulate = Color(1.0, 1.0, 1.0)  # White = base price
+	
+	# Hide coin icon for free upgrades
+	if coin_icon:
+		if price == 0:
+			coin_icon.visible = false
+		else:
+			coin_icon.visible = true
 
 	if desc_label:
 		desc_label.text = text
