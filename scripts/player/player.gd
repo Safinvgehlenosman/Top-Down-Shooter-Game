@@ -20,6 +20,9 @@ var max_health: int
 var knockback_strength: float
 var knockback_duration: float
 var invincible_time: float
+var alt_weapon: int = GameState.AltWeaponType.NONE
+
+
 
 # State
 var health: int = 0
@@ -40,14 +43,12 @@ const AIM_DEADZONE: float = 0.25
 const AIM_CURSOR_SPEED: float = 800.0  # tweak speed of controller cursor
 const AIM_SMOOTH: float = 10.0  # higher = snappier, lower = floatier
 
-const AltWeaponType = GameState.AltWeaponType
-var alt_weapon: AltWeaponType = AltWeaponType.NONE
 
-const ALT_WEAPON_DATA = {
-	AltWeaponType.SHOTGUN: {
+var ALT_WEAPON_DATA = {
+	GameState.AltWeaponType.SHOTGUN: {
 		"cooldown": 0.7,
 	},
-	AltWeaponType.SNIPER: {
+	GameState.AltWeaponType.SNIPER: {
 		"cooldown": 1.2,
 	},
 }
@@ -366,7 +367,7 @@ func sync_from_gamestate() -> void:
 	if has_node("Turret"):
 		var turret = $Turret
 
-		if alt_weapon == AltWeaponType.TURRET:
+		if alt_weapon == GameState.AltWeaponType.TURRET:
 			turret.visible = true
 
 			var data: Dictionary = GameState.ALT_WEAPON_DATA.get(GameState.alt_weapon, {})

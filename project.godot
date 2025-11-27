@@ -22,6 +22,7 @@ GameConfig="*res://scenes/game_config.tscn"
 PhantomCameraManager="*res://addons/phantom_camera/scripts/managers/phantom_camera_manager.gd"
 GameState="*res://scripts/game_state.gd"
 DebugController="*res://scripts/debug_controller.gd"
+UpgradesDB="*res://scripts/Upgrades_DB.gd"
 
 [display]
 

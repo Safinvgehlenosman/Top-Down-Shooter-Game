@@ -1,6 +1,10 @@
 extends CanvasLayer
 
-#signal shop_closed
+##
+## ShopUI.gd
+## Pulls upgrades from UpgradesDB, rolls rarities,
+## shows 5 cards, and applies upgrades via GameState.
+##
 
 const ALT_WEAPON_NONE := 0
 const ALT_WEAPON_SHOTGUN := 1
@@ -10,7 +14,6 @@ const ALT_WEAPON_FLAMETHROWER := 4
 const ALT_WEAPON_SHURIKEN := 5
 const ALT_WEAPON_GRENADE := 6
 
-
 const ABILITY_NONE := 0
 const ABILITY_DASH := 1
 const ABILITY_SLOWMO := 2
@@ -18,7 +21,7 @@ const ABILITY_BUBBLE := 3
 const ABILITY_INVIS := 4
 
 @onready var continue_button       := $Panel/ContinueButton
-@onready var cards                 := $Panel/Cards
+@onready var cards_container       := $Panel/Cards
 @onready var coin_label: Label     =  $CoinUI/CoinLabel
 
 @onready var hp_fill: TextureProgressBar = $HPBar/HPFill
@@ -30,175 +33,6 @@ const ABILITY_INVIS := 4
 @onready var ability_bar_container: Control      = $AbilityBar
 @onready var ability_bar: TextureProgressBar     = $AbilityBar/AbilityFill
 @onready var ability_label: Label                = $AbilityBar/AbilityLabel
-
-
-var upgrades := [
-	{
-		"id": "max_ammo_plus_1",
-		"price": 5,
-		"icon": preload("res://assets/Separated/bullet.png"),
-		"text": "+1 Max Ammo",
-		"requires_ammo_weapon": true,
-	},
-	{
-		"id": "fire_rate_plus_10",
-		"price": 5,
-		"icon": preload("res://assets/Separated/singlebullet.png"),
-		"text": "Shoot 5% faster"
-	},
-
-	{
-		"id": "shotgun_pellet_plus_1",
-		"price": 5,
-		"icon": preload("res://assets/bullets/shotgunbullet.png"),
-		"text": "+1 Shotgun Projectile",
-		"requires_alt_weapon": ALT_WEAPON_SHOTGUN
-	},
-
-	# NEW: weapon unlocks (only show when you have no alt weapon)
-	{
-		"id": "unlock_shotgun",
-		"price": 10,
-		"icon": preload("res://assets/bullets/shotgunbullet.png"),
-		"text": "Unlock Shotgun",
-		"requires_alt_weapon": ALT_WEAPON_NONE
-	},
-	{
-		"id": "unlock_sniper",
-		"price": 10,
-		"icon": preload("res://assets/bullets/sniperbullet.png"),
-		"text": "Unlock Sniper",
-		"requires_alt_weapon": ALT_WEAPON_NONE
-	},
-  
-	{
-		"id": "unlock_turret",
-		"price": 10,
-		"icon": preload("res://assets/Separated/turreticon.png"),
-		"text": "Unlock Turret Backpack",
-		"requires_alt_weapon": ALT_WEAPON_NONE
-	},
-	{
-		"id": "unlock_flamethrower",
-		"price": 10,
-		"icon": preload("res://assets/bullets/flamethrowerbullet.png"), # TODO: flame icon
-		"text": "Unlock Flamethrower",
-		"requires_alt_weapon": ALT_WEAPON_NONE
-	},
-	{
-		"id": "flame_range_plus_20",
-		"price": 5,
-		"icon": preload("res://assets/bullets/flamethrowerbullet.png"), # use whatever icon you want
-		"text": "+20% Flame Range",
-		"requires_alt_weapon": ALT_WEAPON_FLAMETHROWER,
-	},
-	{
-		"id": "unlock_shuriken",
-		"price": 10,
-		"icon": preload("res://assets/bullets/shuriken.png"),  # pick whatever sprite
-		"text": "Unlock Shuriken",
-		"requires_alt_weapon": ALT_WEAPON_NONE,
-	},
-	{
-		"id": "unlock_grenade",
-		"price": 10,
-		"icon": preload("res://assets/bullets/grenade.png"), # pick any icon you have
-		"text": "Unlock Grenade Launcher",
-		"requires_alt_weapon": ALT_WEAPON_NONE
-	},
-	{
-		"id": "grenade_radius_plus_20",
-		"price": 5,
-		"icon": preload("res://assets/bullets/grenade.png"),
-		"text": "+20px Grenade Radius",
-		"requires_alt_weapon": ALT_WEAPON_GRENADE
-	},
-
-
-	{
-		"id": "shuriken_bounce_plus_1",
-		"price": 5,
-		"icon": preload("res://assets/bullets/shuriken.png"),  # same or different icon
-		"text": "+1 Shuriken Bounce",
-		"requires_alt_weapon": ALT_WEAPON_SHURIKEN,
-	},
-
-
-
-	
-	{
-		"id": "turret_cooldown_minus_5",
-		"price": 5,
-		"icon": preload("res://assets/Separated/turreticon.png"), # placeholder
-		"text": "Turret fires 5% faster",
-		"requires_alt_weapon": ALT_WEAPON_TURRET,
-	},
-	{
-		"id": "sniper_damage_plus_5",
-		"price": 5,
-		"icon": preload("res://assets/bullets/sniperbullet.png"),
-		"text": "+5% Sniper Damage",
-		"requires_alt_weapon": ALT_WEAPON_SNIPER,
-	},
-
-	# --- Ability unlocks ------------------------------------------------
-	{
-		"id": "unlock_dash",
-		"price": 10,
-		"icon": preload("res://assets/Separated/ammo.png"),
-		"text": "Unlock Dash (Space)",
-		"requires_ability": ABILITY_NONE,
-	},
-	{
-		"id": "unlock_slowmo",
-		"price": 10,
-		"icon": preload("res://assets/Separated/ammo.png"),
-		"text": "Unlock Bullet Time (Space)",
-		"requires_ability": ABILITY_NONE,
-	},
-	{
-		"id": "unlock_bubble",
-		"price": 10,
-		"icon": preload("res://assets/shield.png"), # pick any shield sprite
-		"text": "Unlock Shield Bubble (Space)",
-		"requires_ability": ABILITY_NONE,
-	},
-	{
-		"id": "unlock_invis",
-		"price": 10,
-		"icon": preload("res://assets/Separated/ammo.png"), # swap to cloak/ghost icon later
-		"text": "Unlock Invisibility Cloak (Space)",
-		"requires_ability": ABILITY_NONE,
-	},
-	{
-		"id": "ability_cooldown_minus_10",
-		"price": 5,
-		"icon": preload("res://assets/Separated/ammo.png"),
-		"text": "-10% Ability Cooldown",
-		"requires_any_ability": true,
-	},
-
-	# Old upgrades
-	{
-		"id": "hp_refill",
-		"price": 3,
-		"icon": preload("res://assets/Separated/singleheart.png"),
-		"text": "Refill HP"
-	},
-	{
-		"id": "max_hp_plus_1",
-		"price": 10,
-		"icon": preload("res://assets/Separated/singleheart.png"),
-		"text": "+10 Max HP"   # ⬅ scaled text to match +10 effect
-	},
-	{
-		"id": "ammo_refill",
-		"price": 3,
-		"icon": preload("res://assets/Separated/bullet.png"),
-		"text": "Refill Ammo",
-		"requires_ammo_weapon": true,
-	},
-]
 
 
 func _ready() -> void:
@@ -216,45 +50,139 @@ func _ready() -> void:
 # -------------------------------------------------------------------
 
 func _setup_cards() -> void:
-	# Disconnect old signals so we don't double-connect
-	for card in cards.get_children():
+	# Disconnect old signals
+	for card in cards_container.get_children():
 		if card.purchased.is_connected(_on_card_purchased):
 			card.purchased.disconnect(_on_card_purchased)
 
-	var pool: Array = []
+	var offers := _roll_shop_offers()
 
-	for u in upgrades:
-		# Exact weapon requirement
-		if u.has("requires_alt_weapon") and u["requires_alt_weapon"] != GameState.alt_weapon:
+	var children := cards_container.get_children()
+	for i in range(children.size()):
+		var card = children[i]
+		if i < offers.size():
+			card.visible = true
+			card.setup(offers[i])
+			if not card.purchased.is_connected(_on_card_purchased):
+				card.purchased.connect(_on_card_purchased)
+		else:
+			card.visible = false
+
+
+func _roll_shop_offers() -> Array:
+	var result: Array = []
+	var taken_ids: Array[String] = []
+
+	var gm := get_tree().get_first_node_in_group("game_manager")
+	var current_level := 1
+	if gm and gm.has_method("debug_set_level"):
+		current_level = gm.current_level
+
+	var rarity_weights := _get_rarity_weights_for_level(current_level)
+	var all_upgrades: Array = UpgradesDB.get_all()
+
+	var max_cards = min(5, cards_container.get_child_count())
+
+	for i in range(max_cards):
+		var rarity := _roll_rarity(rarity_weights)
+		var candidates := _filter_upgrades(all_upgrades, rarity, taken_ids)
+
+		# Fallback: any rarity if we ran out for this tier
+		if candidates.is_empty():
+			candidates = _filter_upgrades(all_upgrades, -1, taken_ids)
+		if candidates.is_empty():
+			break
+
+		candidates.shuffle()
+		var chosen = candidates[0]
+		result.append(chosen)
+		taken_ids.append(chosen["id"])
+
+	return result
+
+
+func _get_rarity_weights_for_level(level: int) -> Dictionary:
+	# Base distribution
+	var common := 60.0
+	var uncommon := 30.0
+	var rare := 9.0
+	var epic := 1.0
+
+	# Every 5 levels, shift a bit towards higher rarities
+	var tiers = max(0, int((level - 1) / 5))
+	for i in range(tiers):
+		common = max(20.0, common - 5.0)
+		uncommon += 3.0
+		rare += 1.0
+		epic += 1.0
+
+	var total := common + uncommon + rare + epic
+	if total <= 0.0:
+		return {
+			UpgradesDB.Rarity.COMMON: 1.0,
+			UpgradesDB.Rarity.UNCOMMON: 0.0,
+			UpgradesDB.Rarity.RARE: 0.0,
+			UpgradesDB.Rarity.EPIC: 0.0,
+		}
+
+	return {
+		UpgradesDB.Rarity.COMMON: common / total,
+		UpgradesDB.Rarity.UNCOMMON: uncommon / total,
+		UpgradesDB.Rarity.RARE: rare / total,
+		UpgradesDB.Rarity.EPIC: epic / total,
+	}
+
+
+func _roll_rarity(weights: Dictionary) -> int:
+	var r := randf()
+	var acc := 0.0
+
+	for rarity in [UpgradesDB.Rarity.COMMON, UpgradesDB.Rarity.UNCOMMON, UpgradesDB.Rarity.RARE, UpgradesDB.Rarity.EPIC]:
+		acc += float(weights.get(rarity, 0.0))
+		if r <= acc:
+			return rarity
+
+	return UpgradesDB.Rarity.COMMON
+
+
+func _filter_upgrades(all_upgrades: Array, wanted_rarity: int, taken_ids: Array[String]) -> Array:
+	var res: Array = []
+
+	for u in all_upgrades:
+		var id: String = u.get("id", "")
+		if id == "" or id in taken_ids:
 			continue
 
-		# Generic "needs ammo-using weapon" requirement
-		if u.get("requires_ammo_weapon", false):
-			if GameState.alt_weapon == ALT_WEAPON_NONE or GameState.alt_weapon == ALT_WEAPON_TURRET:
-				continue
-
-		# Ability must be NONE
-		if u.has("requires_ability") and GameState.ability != u["requires_ability"]:
+		if wanted_rarity != -1 and u.get("rarity", UpgradesDB.Rarity.COMMON) != wanted_rarity:
 			continue
 
-		# Any ability required
-		if u.get("requires_any_ability", false) and GameState.ability == ABILITY_NONE:
+		if not _upgrade_meets_requirements(u):
 			continue
 
-		pool.append(u)
+		res.append(u)
 
-	pool.shuffle()
+	return res
 
-	var count: int = min(cards.get_child_count(), pool.size())
 
-	for i in range(count):
-		var card = cards.get_child(i)
-		var data = pool[i]
+func _upgrade_meets_requirements(u: Dictionary) -> bool:
+	# Exact weapon requirement
+	if u.has("requires_alt_weapon") and u["requires_alt_weapon"] != GameState.alt_weapon:
+		return false
 
-		card.setup(data)
+	# Needs any ammo-using weapon (NOT turret, since that fires automatically)
+	if u.get("requires_ammo_weapon", false):
+		if GameState.alt_weapon == ALT_WEAPON_NONE or GameState.alt_weapon == ALT_WEAPON_TURRET:
+			return false
 
-		if not card.purchased.is_connected(_on_card_purchased):
-			card.purchased.connect(_on_card_purchased)
+	# Ability must be NONE
+	if u.has("requires_ability") and GameState.ability != u["requires_ability"]:
+		return false
+
+	# Any ability required
+	if u.get("requires_any_ability", false) and GameState.ability == ABILITY_NONE:
+		return false
+
+	return true
 
 
 # -------------------------------------------------------------------
@@ -296,7 +224,7 @@ func _update_level_label() -> void:
 
 
 func _update_card_button_states() -> void:
-	for card in cards.get_children():
+	for card in cards_container.get_children():
 		if card.has_method("_update_button_state"):
 			card._update_button_state()
 
@@ -306,7 +234,6 @@ func _update_card_button_states() -> void:
 func _update_ability_bar() -> void:
 	var gs = GameState
 
-	# No ability equipped → hide bar
 	if gs.ability == ABILITY_NONE:
 		ability_bar_container.visible = false
 		return
@@ -327,7 +254,6 @@ func _update_ability_bar() -> void:
 	ability_bar.max_value = max_cd
 	ability_bar.value = max_cd - cd_left
 
-	# Show "remaining / total s"
 	if ability_label:
 		var remaining = round(cd_left * 10.0) / 10.0
 		var max_display = round(max_cd * 10.0) / 10.0
@@ -339,8 +265,9 @@ func _update_ability_bar() -> void:
 # -------------------------------------------------------------------
 
 func _on_card_purchased() -> void:
-	# Some upgrade changed stats → refresh everything visible in the shop
+	# Shop card applied an upgrade (via GameState) → refresh everything
 	_refresh_from_state_full()
+	_update_card_button_states()
 
 
 func _on_continue_pressed() -> void:
