@@ -195,6 +195,9 @@ var primary_damage: float = 1.0         # 🔥 This is a MULTIPLIER (1.0 = 100%)
 var primary_damage_base: float = 1.0
 var primary_damage_bonus: float = 0.0
 
+# Visual scaling for primary bullets (applied at spawn)
+var primary_bullet_size_multiplier: float = 1.0
+
 # Fire rate (cooldown) base + additive percent bonus (reduces cooldown)
 var fire_rate_base: float = 0.0
 var fire_rate_bonus_percent: float = 0.0
@@ -387,8 +390,12 @@ func set_alt_weapon(new_alt: int) -> void:
 	if new_alt == alt_weapon:
 		return
 	alt_weapon = new_alt
-	# If this alt weapon defines a max ammo, update run-time ammo pool
-	if ALT_WEAPON_DATA.has(alt_weapon) and ALT_WEAPON_DATA[alt_weapon].has("max_ammo"):
+	# If this alt weapon defines a max ammo, update run-time ammo pool.
+	# For NONE or TURRET we want the ammo UI to show "-/-", so set to 0.
+	if new_alt == AltWeaponType.NONE or new_alt == AltWeaponType.TURRET:
+		max_ammo = 0
+		set_ammo(0)
+	elif ALT_WEAPON_DATA.has(alt_weapon) and ALT_WEAPON_DATA[alt_weapon].has("max_ammo"):
 		var m := int(ALT_WEAPON_DATA[alt_weapon].get("max_ammo", GameConfig.player_max_ammo))
 		max_ammo = m
 		set_ammo(m)
@@ -538,12 +545,14 @@ func apply_upgrade(upgrade_id: String) -> void:
 			print("  → Fire rate (cooldown) now:", fire_rate)
 
 		"primary_bullet_size_rare":
-			# bullet size is usually handled by bullet scenes; store a global multiplier
-			# We'll use primary_damage as representative for now (no direct bullet size fields exist)
-			print("  → Primary bullet size upgrade applied (data-only)")
+			# Increase primary bullet visual size at spawn
+			primary_bullet_size_multiplier *= 1.25
+			print("  → Primary bullet size multiplier now:", primary_bullet_size_multiplier)
 
 		"primary_bullet_size_epic":
-			print("  → Primary bullet size epic applied (data-only)")
+			# Larger increase for epic
+			primary_bullet_size_multiplier *= 1.5
+			print("  → Primary bullet size multiplier now:", primary_bullet_size_multiplier)
 
 		# PRIMARY burst shot (existing id)
 		"primary_burst_plus_1":

@@ -73,7 +73,14 @@ func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):
 		is_collected = true
 
-		GameState.add_coins(10)
+		# Coin value scales with current level: level1=10, level2=11, etc.
+		var gm := get_tree().get_first_node_in_group("game_manager")
+		var level := 1
+		if gm:
+			level = int(gm.current_level)
+
+		var coin_value: int = int(10 + max(0, level - 1))
+		GameState.add_coins(coin_value)
 
 		# disable interaction & hide while sound plays
 		if collision:

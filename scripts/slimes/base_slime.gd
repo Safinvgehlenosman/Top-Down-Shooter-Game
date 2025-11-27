@@ -47,6 +47,10 @@ var lost_sight_timer: float = 0.0
 var last_anim: StringName = ""
 var last_frame: int = -1
 
+# Animation jitter so multiple slimes don't sync perfectly
+@export var animation_frame_jitter_max: int = 6
+@export var animation_speed_jitter_percent: float = 0.12
+
 # Internal state
 var player: Node2D
 var base_modulate: Color
@@ -90,7 +94,25 @@ func _ready() -> void:
 
 		_update_hp_bar()
 
-	animated_sprite.play("moving")
+	# De-sync animations between instances: pick a random start frame and slight speed jitter
+	if animated_sprite:
+		# Play first so animation resource is available
+		animated_sprite.play("moving")
+
+		# If sprite frames resource has the animation, clamp jitter to animation length
+		if animated_sprite.frames and animated_sprite.frames.has_animation("moving"):
+			var fc := int(animated_sprite.frames.get_frame_count("moving"))
+			if fc > 0:
+				var max_j := min(fc - 1, animation_frame_jitter_max)
+				var start_frame := randi() % (max_j + 1)
+				animated_sprite.frame = start_frame
+
+		# Small random speed variation so they don't animate in lockstep
+		var speed_mult := 1.0 + randf_range(-animation_speed_jitter_percent, animation_speed_jitter_percent)
+		if "speed_scale" in animated_sprite:
+			animated_sprite.speed_scale = speed_mult
+		elif animated_sprite.has_method("set_speed_scale"):
+			animated_sprite.set_speed_scale(speed_mult)
 
 
 func apply_level(level: int) -> void:

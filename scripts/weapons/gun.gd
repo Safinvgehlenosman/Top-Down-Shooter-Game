@@ -81,6 +81,9 @@ func handle_primary_fire(is_pressed: bool, aim_dir: Vector2) -> void:
 		bullet.global_position = muzzle.global_position
 		bullet.direction = dir
 		bullet.damage = int(final_damage)  # Convert to int for the bullet
+		# Apply primary bullet size multiplier from GameState
+		var m := float(GameState.primary_bullet_size_multiplier)
+		bullet.scale = bullet.scale * Vector2(m, m)
 		get_tree().current_scene.add_child(bullet)
 
 	if sfx_shoot:
@@ -215,7 +218,8 @@ func _fire_weapon(data: Dictionary, aim_pos: Vector2) -> void:
 		var bullet = bullet_scene.instantiate()
 		bullet.global_position = muzzle.global_position
 		bullet.direction = dir
-		bullet.speed = bullet_speed
+		# Halve alt-fire projectile speed for now (temporary tuning)
+		bullet.speed = float(bullet_speed) * 0.5
 		bullet.damage = damage
 		if "bounces_left" in bullet:
 			bullet.bounces_left = bounces

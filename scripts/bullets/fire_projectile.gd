@@ -34,55 +34,8 @@ var _wobble_phase: float = 0.0
 var _max_alpha: float = 1.0
 
 
-# Helper: recursively search descendants for a node that implements `apply_burn`
-func _search_descendants(root: Node, depth: int, max_depth: int) -> Node:
-	if depth > max_depth:
-		return null
-	for child in root.get_children():
-		if typeof(child) == TYPE_OBJECT:
-			var cn := child as Node
-			if cn == null:
-				continue
-			if cn.has_method("apply_burn"):
-				return cn
-			if cn.name.to_lower().find("health") != -1:
-				if cn.has_method("apply_burn"):
-					return cn
-			var found := _search_descendants(cn, depth + 1, max_depth)
-			if found:
-				return found
-	return null
-
-
-# Helper: find best target node for a collider `n` by checking the node,
-# its ancestors (for group membership or Health child) and some descendants.
-func _find_target_for_node(n: Node, max_ancestor_depth: int = 8) -> Node:
-	# 1) Check the node itself
-	if n.has_method("apply_burn"):
-		return n
-	if n.name.to_lower().find("health") != -1 and n.has_method("apply_burn"):
-		return n
-
-	# 2) Walk up ancestors and inspect each
-	var cur: Node = n
-	var depth := 0
-	while cur and depth < max_ancestor_depth:
-		if cur.is_in_group(str(target_group)):
-			return cur
-		if cur.has_node("Health"):
-			var hc := cur.get_node("Health")
-			if hc and hc.has_method("apply_burn"):
-				return hc
-		if cur.has_method("apply_burn"):
-			return cur
-		var found_desc := _search_descendants(cur, 0, 4)
-		if found_desc:
-			return found_desc
-		cur = cur.get_parent()
-		depth += 1
-
-	# 3) Finally, try searching descendants of the original collider
-	return _search_descendants(n, 0, 6)
+# Note: previous deep-search helpers removed — keep collision handling
+# simple and fast. If needed later, they can be restored.
 
 
 func _ready() -> void:
@@ -91,7 +44,8 @@ func _ready() -> void:
 
 	# Pick a random speed in range for this pellet (LOGIC UNCHANGED)
 	var s := randf_range(min_speed, max_speed)
-	velocity = direction.normalized() * s
+	# Temporarily scale flame/projectile speed down (halve)
+	velocity = direction.normalized() * s * 0.5
 
 	# --- Visual setup (no logic changes) -----------------------------
 	if sprite:
@@ -103,9 +57,10 @@ func _ready() -> void:
 		_base_sprite_pos = sprite.position
 		_max_alpha = sprite.modulate.a
 
-		# slight random size & rotation
+		# slight random size & rotation — scale flames down by half for tuning
 		var scale_rand := randf_range(0.9, 1.2)
-		sprite.scale = Vector2(scale_rand, scale_rand)
+		var final_scale := scale_rand * 0.5
+		sprite.scale = Vector2(final_scale, final_scale)
 		sprite.rotation = randf_range(-0.2, 0.2)
 
 	_wobble_phase = randf_range(0.0, TAU)
@@ -157,39 +112,43 @@ func _on_body_entered(body: Node2D) -> void:
 			print("[FireProjectile] ignored TileMap collision (floor)")
 		return
 
-	# Find a target (Health node or node with apply_burn) by inspecting the
-	# collider and walking ancestors; also search descendants as a fallback.
+	# Simple, fast target resolution:
+	# 1) Check collider for a `Health` child or `apply_burn` method.
+	# 2) Walk up parents up to 3 levels looking for the same.
+	var target_node: Node = null
 
-	# If debug prints are enabled, log the ancestor chain to help debugging
-	if debug_prints:
-		var chain := []
-		var walker: Node = body
-		while walker:
-			chain.append(str(walker.name) + "(" + str(walker.get_class()) + ") groups=" + str(walker.get_groups()))
-			walker = walker.get_parent()
-		print("[FireProjectile] ancestor_chain=", chain)
+	if body.has_node("Health"):
+		var hc := body.get_node("Health")
+		if hc and hc.has_method("apply_burn"):
+			target_node = hc
+	elif body.has_method("apply_burn"):
+		target_node = body
 
-	var target_node: Node = _find_target_for_node(body)
+	if target_node == null:
+		var p: Node = body.get_parent()
+		var depth := 0
+		while p and depth < 3:
+			if p.has_node("Health"):
+				var ph := p.get_node("Health")
+				if ph and ph.has_method("apply_burn"):
+					target_node = ph
+					break
+			if p.has_method("apply_burn"):
+				target_node = p
+				break
+			p = p.get_parent()
+			depth += 1
+
 	if target_node == null:
 		if debug_prints:
-			print("[FireProjectile] no target_node found for collider", body, "(full_chain above)")
+			print("[FireProjectile] no target found for collider", body)
 		return
-
-	# If the resolved node is a Health child, call apply_burn on it. Otherwise
-	# call apply_burn on the node itself if it supports it.
-	if debug_prints:
-		print("[FireProjectile] resolved target =>", target_node, "name=", target_node.name, "groups=", target_node.get_groups())
 
 	if target_node.has_method("apply_burn"):
 		target_node.apply_burn(burn_damage_per_tick, burn_duration, burn_tick_interval)
 	else:
-		# As a defensive fallback, try to find a Health child now and call it
-		var hc2 := target_node.get_node_or_null("Health")
-		if hc2 and hc2.has_method("apply_burn"):
-			hc2.apply_burn(burn_damage_per_tick, burn_duration, burn_tick_interval)
-		else:
-			if debug_prints:
-				print("[FireProjectile] resolved target has no apply_burn; giving up:", target_node)
+		if debug_prints:
+			print("[FireProjectile] resolved target has no apply_burn:", target_node)
 
 	# No direct impact damage, just the DoT
 	queue_free()

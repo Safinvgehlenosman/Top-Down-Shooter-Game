@@ -95,7 +95,8 @@ func _fire_at(target: Node2D) -> void:
 	var bullet = bullet_scene.instantiate()
 	bullet.global_position = muzzle.global_position
 	bullet.direction = dir
-	bullet.speed = bullet_speed
+	# Halve turret bullet speed for now (temporary tuning)
+	bullet.speed = float(bullet_speed) * 0.5
 	bullet.damage = damage
 
 	get_tree().current_scene.add_child(bullet)
