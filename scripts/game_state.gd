@@ -240,6 +240,9 @@ var bubble_duration_bonus_seconds: float = 0.0
 var slowmo_time_bonus_seconds: float = 0.0
 var invis_duration_bonus_percent: float = 0.0
 
+# Primary bullet size (this one can stay multiplicative as it's visual only)
+var primary_bullet_size_bonus_percent: float = 0.0
+
 # Synergy flags (data-only placeholders for later wiring)
 var synergy_flamethrower_bubble_unlocked: bool = false
 var synergy_grenade_dash_unlocked: bool = false
@@ -597,12 +600,16 @@ func apply_upgrade(upgrade_id: String) -> void:
 
 		"primary_bullet_size_rare":
 			# Increase primary bullet visual size at spawn
-			primary_bullet_size_multiplier *= 1.25
+			primary_bullet_size_bonus_percent += 0.25
+			primary_bullet_size_multiplier = 1.0 * (1.0 + primary_bullet_size_bonus_percent)
+			print("  → Primary bullet size bonus:", primary_bullet_size_bonus_percent)
 			print("  → Primary bullet size multiplier now:", primary_bullet_size_multiplier)
 
 		"primary_bullet_size_epic":
 			# Larger increase for epic
-			primary_bullet_size_multiplier *= 1.5
+			primary_bullet_size_bonus_percent += 0.50
+			primary_bullet_size_multiplier = 1.0 * (1.0 + primary_bullet_size_bonus_percent)
+			print("  → Primary bullet size bonus:", primary_bullet_size_bonus_percent)
 			print("  → Primary bullet size multiplier now:", primary_bullet_size_multiplier)
 
 		# PRIMARY burst shot (existing id)
@@ -627,39 +634,60 @@ func apply_upgrade(upgrade_id: String) -> void:
 			print("  → Shotgun pellets:", ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("pellets"))
 
 		"shotgun_spread_uncommon":
+			shotgun_spread_bonus_percent += -0.05  # -5% spread (tighter)
 			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN) and ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].has("spread_degrees"):
-				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["spread_degrees"] = float(ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("spread_degrees", 0.0) * 0.95)
+				# Recalculate from base (18.0)
+				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["spread_degrees"] = 18.0 * (1.0 + shotgun_spread_bonus_percent)
+			print("  → Shotgun spread bonus:", shotgun_spread_bonus_percent)
 			print("  → Shotgun spread now:", ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("spread_degrees"))
 
 		"shotgun_spread_rare":
+			shotgun_spread_bonus_percent += -0.10  # -10% spread (tighter)
 			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN) and ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].has("spread_degrees"):
-				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["spread_degrees"] = float(ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("spread_degrees", 0.0) * 0.90)
+				# Recalculate from base (18.0)
+				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["spread_degrees"] = 18.0 * (1.0 + shotgun_spread_bonus_percent)
+			print("  → Shotgun spread bonus:", shotgun_spread_bonus_percent)
 			print("  → Shotgun spread now:", ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("spread_degrees"))
 
 		"shotgun_knockback_rare":
+			shotgun_knockback_bonus_percent += 0.10
 			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN) and ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].has("recoil"):
-				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["recoil"] = float(ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("recoil", 0.0) * 1.10)
+				# Recalculate from base (140.0)
+				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["recoil"] = 140.0 * (1.0 + shotgun_knockback_bonus_percent)
+			print("  → Shotgun knockback bonus:", shotgun_knockback_bonus_percent)
 			print("  → Shotgun recoil now:", ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("recoil"))
 
 		"shotgun_knockback_epic":
+			shotgun_knockback_bonus_percent += 0.20
 			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN) and ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].has("recoil"):
-				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["recoil"] = float(ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("recoil", 0.0) * 1.20)
+				# Recalculate from base (140.0)
+				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["recoil"] = 140.0 * (1.0 + shotgun_knockback_bonus_percent)
+			print("  → Shotgun knockback bonus:", shotgun_knockback_bonus_percent)
 			print("  → Shotgun recoil now:", ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("recoil"))
 
 		# SNIPER
 		"sniper_damage_common":
+			sniper_damage_bonus_percent += 0.10
 			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER) and ALT_WEAPON_DATA[AltWeaponType.SNIPER].has("damage"):
-				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] = float(ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("damage", 0.0) * 1.10)
+				# Recalculate from base (35.0)
+				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] = 35.0 * (1.0 + sniper_damage_bonus_percent)
+			print("  → Sniper damage bonus:", sniper_damage_bonus_percent)
 			print("  → Sniper damage now:", ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("damage"))
 
 		"sniper_damage_uncommon":
+			sniper_damage_bonus_percent += 0.20
 			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER) and ALT_WEAPON_DATA[AltWeaponType.SNIPER].has("damage"):
-				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] = float(ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("damage", 0.0) * 1.20)
+				# Recalculate from base (35.0)
+				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] = 35.0 * (1.0 + sniper_damage_bonus_percent)
+			print("  → Sniper damage bonus:", sniper_damage_bonus_percent)
 			print("  → Sniper damage now:", ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("damage"))
 
 		"sniper_damage_rare":
+			sniper_damage_bonus_percent += 0.30
 			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER) and ALT_WEAPON_DATA[AltWeaponType.SNIPER].has("damage"):
-				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] = float(ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("damage", 0.0) * 1.30)
+				# Recalculate from base (35.0)
+				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] = 35.0 * (1.0 + sniper_damage_bonus_percent)
+			print("  → Sniper damage bonus:", sniper_damage_bonus_percent)
 			print("  → Sniper damage now:", ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("damage"))
 
 		"sniper_pierce_uncommon":
@@ -673,29 +701,44 @@ func apply_upgrade(upgrade_id: String) -> void:
 			print("  → Sniper pierce now:", ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("bounces"))
 
 		"sniper_charge_rare":
+			sniper_charge_bonus_percent += 0.15
 			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER) and ALT_WEAPON_DATA[AltWeaponType.SNIPER].has("damage"):
-				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] = float(ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("damage", 0.0) * 1.15)
+				# Recalculate from base (35.0) including both damage AND charge bonuses
+				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] = 35.0 * (1.0 + sniper_damage_bonus_percent + sniper_charge_bonus_percent)
+			print("  → Sniper charge bonus:", sniper_charge_bonus_percent)
 			print("  → Sniper charge damage bonus applied (data-only)")
 
 		"sniper_charge_epic":
+			sniper_charge_bonus_percent += 0.30
 			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER) and ALT_WEAPON_DATA[AltWeaponType.SNIPER].has("damage"):
-				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] = float(ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("damage", 0.0) * 1.30)
+				# Recalculate from base (35.0) including both damage AND charge bonuses
+				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] = 35.0 * (1.0 + sniper_damage_bonus_percent + sniper_charge_bonus_percent)
+			print("  → Sniper charge bonus:", sniper_charge_bonus_percent)
 			print("  → Sniper charge epic applied (data-only)")
 
 		# FLAMETHROWER
 		"flame_lifetime_common":
+			flamethrower_lifetime_bonus_percent += 0.10
 			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER) and ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].has("flame_lifetime"):
-				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"] = float(ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].get("flame_lifetime", 0.0) * 1.10)
+				# Recalculate from base (0.25)
+				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"] = 0.25 * (1.0 + flamethrower_lifetime_bonus_percent)
+			print("  → Flame lifetime bonus:", flamethrower_lifetime_bonus_percent)
 			print("  → Flame lifetime now:", ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].get("flame_lifetime"))
 
 		"flame_lifetime_uncommon":
+			flamethrower_lifetime_bonus_percent += 0.20
 			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER) and ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].has("flame_lifetime"):
-				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"] = float(ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].get("flame_lifetime", 0.0) * 1.20)
+				# Recalculate from base (0.25)
+				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"] = 0.25 * (1.0 + flamethrower_lifetime_bonus_percent)
+			print("  → Flame lifetime bonus:", flamethrower_lifetime_bonus_percent)
 			print("  → Flame lifetime now:", ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].get("flame_lifetime"))
 
 		"flame_lifetime_rare":
+			flamethrower_lifetime_bonus_percent += 0.30
 			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER) and ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].has("flame_lifetime"):
-				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"] = float(ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].get("flame_lifetime", 0.0) * 1.30)
+				# Recalculate from base (0.25)
+				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"] = 0.25 * (1.0 + flamethrower_lifetime_bonus_percent)
+			print("  → Flame lifetime bonus:", flamethrower_lifetime_bonus_percent)
 			print("  → Flame lifetime now:", ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].get("flame_lifetime"))
 
 		"flame_burn_uncommon":
@@ -705,13 +748,19 @@ func apply_upgrade(upgrade_id: String) -> void:
 			print("  → Flamethrower burn damage rare (data-only)")
 
 		"flame_size_rare":
+			flamethrower_size_bonus_percent += 0.10
 			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER) and ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].has("damage"):
-				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["damage"] = float(ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].get("damage", 0.0) * 1.10)
+				# Recalculate from base (4.0)
+				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["damage"] = 4.0 * (1.0 + flamethrower_size_bonus_percent)
+			print("  → Flame size bonus:", flamethrower_size_bonus_percent)
 			print("  → Flame size / damage proxy applied")
 
 		"flame_size_epic":
+			flamethrower_size_bonus_percent += 0.20
 			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER) and ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].has("damage"):
-				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["damage"] = float(ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].get("damage", 0.0) * 1.20)
+				# Recalculate from base (4.0)
+				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["damage"] = 4.0 * (1.0 + flamethrower_size_bonus_percent)
+			print("  → Flame size bonus:", flamethrower_size_bonus_percent)
 			print("  → Flame size epic applied")
 
 		# GRENADE
@@ -745,13 +794,19 @@ func apply_upgrade(upgrade_id: String) -> void:
 			# Fixed spread remains constant – no recompute
 
 		"grenade_damage_rare":
+			grenade_damage_bonus_percent += 0.10
 			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE) and ALT_WEAPON_DATA[AltWeaponType.GRENADE].has("damage"):
-				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["damage"] = float(ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("damage", 0.0) * 1.10)
+				# Recalculate from base (40.0)
+				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["damage"] = 40.0 * (1.0 + grenade_damage_bonus_percent)
+			print("  → Grenade damage bonus:", grenade_damage_bonus_percent)
 			print("  → Grenade damage:", ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("damage"))
 
 		"grenade_damage_epic":
+			grenade_damage_bonus_percent += 0.20
 			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE) and ALT_WEAPON_DATA[AltWeaponType.GRENADE].has("damage"):
-				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["damage"] = float(ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("damage", 0.0) * 1.20)
+				# Recalculate from base (40.0)
+				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["damage"] = 40.0 * (1.0 + grenade_damage_bonus_percent)
+			print("  → Grenade damage bonus:", grenade_damage_bonus_percent)
 			print("  → Grenade damage epic:", ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("damage"))
 
 		# SHURIKEN
@@ -771,59 +826,92 @@ func apply_upgrade(upgrade_id: String) -> void:
 			print("  → Shuriken bounces:", ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("bounces"))
 
 		"shuriken_speed_uncommon":
+			shuriken_speed_bonus_percent += 0.10
 			if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN) and ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].has("bullet_speed"):
-				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bullet_speed"] = float(ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("bullet_speed", 0.0) * 1.10)
+				# Recalculate from base (950.0)
+				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bullet_speed"] = 950.0 * (1.0 + shuriken_speed_bonus_percent)
+			print("  → Shuriken speed bonus:", shuriken_speed_bonus_percent)
 			print("  → Shuriken speed:", ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("bullet_speed"))
 
 		"shuriken_speed_rare":
+			shuriken_speed_bonus_percent += 0.20
 			if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN) and ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].has("bullet_speed"):
-				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bullet_speed"] = float(ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("bullet_speed", 0.0) * 1.20)
+				# Recalculate from base (950.0)
+				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bullet_speed"] = 950.0 * (1.0 + shuriken_speed_bonus_percent)
+			print("  → Shuriken speed bonus:", shuriken_speed_bonus_percent)
 			print("  → Shuriken speed:", ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("bullet_speed"))
 
 		"shuriken_ricochet_rare":
+			shuriken_ricochet_bonus_percent += 0.10
 			if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN) and ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].has("damage"):
-				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["damage"] = float(ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("damage", 0.0) * 1.10)
+				# Recalculate from base (12.0)
+				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["damage"] = 12.0 * (1.0 + shuriken_ricochet_bonus_percent)
+			print("  → Shuriken ricochet bonus:", shuriken_ricochet_bonus_percent)
 			print("  → Shuriken ricochet damage:", ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("damage"))
 
 		"shuriken_ricochet_epic":
+			shuriken_ricochet_bonus_percent += 0.20
 			if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN) and ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].has("damage"):
-				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["damage"] = float(ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("damage", 0.0) * 1.20)
+				# Recalculate from base (12.0)
+				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["damage"] = 12.0 * (1.0 + shuriken_ricochet_bonus_percent)
+			print("  → Shuriken ricochet bonus:", shuriken_ricochet_bonus_percent)
 			print("  → Shuriken ricochet damage epic:", ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("damage"))
 
 		# TURRET
 		"turret_fire_rate_common":
+			turret_fire_rate_bonus_percent += 0.05  # +5% faster (reduces cooldown)
 			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET) and ALT_WEAPON_DATA[AltWeaponType.TURRET].has("fire_rate"):
-				ALT_WEAPON_DATA[AltWeaponType.TURRET]["fire_rate"] = float(ALT_WEAPON_DATA[AltWeaponType.TURRET].get("fire_rate", 0.4) * 0.95)
+				# Recalculate from base (0.4) - lower is faster
+				ALT_WEAPON_DATA[AltWeaponType.TURRET]["fire_rate"] = 0.4 * (1.0 - turret_fire_rate_bonus_percent)
+			print("  → Turret fire rate bonus:", turret_fire_rate_bonus_percent)
 			print("  → Turret fire rate:", ALT_WEAPON_DATA[AltWeaponType.TURRET].get("fire_rate"))
 
 		"turret_fire_rate_uncommon":
+			turret_fire_rate_bonus_percent += 0.10  # +10% faster
 			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET) and ALT_WEAPON_DATA[AltWeaponType.TURRET].has("fire_rate"):
-				ALT_WEAPON_DATA[AltWeaponType.TURRET]["fire_rate"] = float(ALT_WEAPON_DATA[AltWeaponType.TURRET].get("fire_rate", 0.4) * 0.90)
+				# Recalculate from base (0.4) - lower is faster
+				ALT_WEAPON_DATA[AltWeaponType.TURRET]["fire_rate"] = 0.4 * (1.0 - turret_fire_rate_bonus_percent)
+			print("  → Turret fire rate bonus:", turret_fire_rate_bonus_percent)
 			print("  → Turret fire rate:", ALT_WEAPON_DATA[AltWeaponType.TURRET].get("fire_rate"))
 
 		"turret_fire_rate_rare":
+			turret_fire_rate_bonus_percent += 0.15  # +15% faster
 			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET) and ALT_WEAPON_DATA[AltWeaponType.TURRET].has("fire_rate"):
-				ALT_WEAPON_DATA[AltWeaponType.TURRET]["fire_rate"] = float(ALT_WEAPON_DATA[AltWeaponType.TURRET].get("fire_rate", 0.4) * 0.85)
+				# Recalculate from base (0.4) - lower is faster
+				ALT_WEAPON_DATA[AltWeaponType.TURRET]["fire_rate"] = 0.4 * (1.0 - turret_fire_rate_bonus_percent)
+			print("  → Turret fire rate bonus:", turret_fire_rate_bonus_percent)
 			print("  → Turret fire rate:", ALT_WEAPON_DATA[AltWeaponType.TURRET].get("fire_rate"))
 
 		"turret_range_uncommon":
+			turret_range_bonus_percent += 0.05
 			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET) and ALT_WEAPON_DATA[AltWeaponType.TURRET].has("range"):
-				ALT_WEAPON_DATA[AltWeaponType.TURRET]["range"] = float(ALT_WEAPON_DATA[AltWeaponType.TURRET].get("range", 220.0) * 1.05)
+				# Recalculate from base (220.0)
+				ALT_WEAPON_DATA[AltWeaponType.TURRET]["range"] = 220.0 * (1.0 + turret_range_bonus_percent)
+			print("  → Turret range bonus:", turret_range_bonus_percent)
 			print("  → Turret range:", ALT_WEAPON_DATA[AltWeaponType.TURRET].get("range"))
 
 		"turret_range_rare":
+			turret_range_bonus_percent += 0.10
 			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET) and ALT_WEAPON_DATA[AltWeaponType.TURRET].has("range"):
-				ALT_WEAPON_DATA[AltWeaponType.TURRET]["range"] = float(ALT_WEAPON_DATA[AltWeaponType.TURRET].get("range", 220.0) * 1.10)
+				# Recalculate from base (220.0)
+				ALT_WEAPON_DATA[AltWeaponType.TURRET]["range"] = 220.0 * (1.0 + turret_range_bonus_percent)
+			print("  → Turret range bonus:", turret_range_bonus_percent)
 			print("  → Turret range:", ALT_WEAPON_DATA[AltWeaponType.TURRET].get("range"))
 
 		"turret_bullet_speed_rare":
+			turret_bullet_speed_bonus_percent += 0.10
 			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET) and ALT_WEAPON_DATA[AltWeaponType.TURRET].has("bullet_speed"):
-				ALT_WEAPON_DATA[AltWeaponType.TURRET]["bullet_speed"] = float(ALT_WEAPON_DATA[AltWeaponType.TURRET].get("bullet_speed", 900.0) * 1.10)
+				# Recalculate from base (900.0)
+				ALT_WEAPON_DATA[AltWeaponType.TURRET]["bullet_speed"] = 900.0 * (1.0 + turret_bullet_speed_bonus_percent)
+			print("  → Turret bullet speed bonus:", turret_bullet_speed_bonus_percent)
 			print("  → Turret bullet speed:", ALT_WEAPON_DATA[AltWeaponType.TURRET].get("bullet_speed"))
 
 		"turret_bullet_speed_epic":
+			turret_bullet_speed_bonus_percent += 0.20
 			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET) and ALT_WEAPON_DATA[AltWeaponType.TURRET].has("bullet_speed"):
-				ALT_WEAPON_DATA[AltWeaponType.TURRET]["bullet_speed"] = float(ALT_WEAPON_DATA[AltWeaponType.TURRET].get("bullet_speed", 900.0) * 1.20)
+				# Recalculate from base (900.0)
+				ALT_WEAPON_DATA[AltWeaponType.TURRET]["bullet_speed"] = 900.0 * (1.0 + turret_bullet_speed_bonus_percent)
+			print("  → Turret bullet speed bonus:", turret_bullet_speed_bonus_percent)
 			print("  → Turret bullet speed epic:", ALT_WEAPON_DATA[AltWeaponType.TURRET].get("bullet_speed"))
 
 		# ABILITIES
