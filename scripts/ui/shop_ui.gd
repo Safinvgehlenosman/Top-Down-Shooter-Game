@@ -56,10 +56,12 @@ func _ready() -> void:
 # -------------------------------------------------------------------
 
 func _setup_cards() -> void:
-	# Disconnect old signals
+	# Disconnect old signals (both shop AND chest handlers)
 	for card in cards_container.get_children():
 		if card.purchased.is_connected(_on_card_purchased):
 			card.purchased.disconnect(_on_card_purchased)
+		if card.purchased.is_connected(_on_chest_card_purchased):
+			card.purchased.disconnect(_on_chest_card_purchased)
 
 	var offers := _roll_shop_offers()
 
@@ -68,6 +70,7 @@ func _setup_cards() -> void:
 		var card = children[i]
 		if i < offers.size():
 			card.visible = true
+			card.modulate = Color(1, 1, 1, 1)  # Reset to fully opaque
 			card.setup(offers[i])
 			if not card.purchased.is_connected(_on_card_purchased):
 				card.purchased.connect(_on_card_purchased)
@@ -297,11 +300,54 @@ func _on_card_purchased() -> void:
 	_update_card_button_states()
 
 func _on_continue_pressed() -> void:
+	# Only allow continue in normal shop mode, not chest mode
+	if is_chest_mode:
+		return
+	
 	var gm := get_tree().get_first_node_in_group("game_manager")
 	if gm and gm.has_method("load_next_level"):
 		gm.load_next_level()
 
 func refresh_from_state() -> void:
+	_refresh_from_state_full()
+
+
+# -------------------------------------------------------------------
+# SHOP OPENING (NORMAL MODE)
+# -------------------------------------------------------------------
+
+func open_as_shop() -> void:
+	"""Open shop in normal mode (via door)."""
+	# Ensure chest mode is OFF
+	is_chest_mode = false
+	active_chest = null
+	
+	# Make sure all UI elements are visible
+	var coin_ui = get_node_or_null("CoinUI")
+	if coin_ui:
+		coin_ui.visible = true
+	
+	var hp_bar = get_node_or_null("HPBar")
+	if hp_bar:
+		hp_bar.visible = true
+	
+	var ammo_ui = get_node_or_null("AmmoUI")
+	if ammo_ui:
+		ammo_ui.visible = true
+	
+	var level_ui = get_node_or_null("LevelUI")
+	if level_ui:
+		level_ui.visible = true
+	
+	var title_label = get_node_or_null("Panel/TitleLabel")
+	if title_label:
+		title_label.visible = true
+	
+	if continue_button:
+		continue_button.visible = true
+	
+	# Setup normal shop cards
+	_setup_cards()
 	_refresh_from_state_full()
 
 
@@ -353,7 +399,7 @@ func open_as_chest(chest: Node2D = null) -> void:
 
 
 func _setup_chest_cards() -> void:
-	"""Generate 3 free upgrades with chest rarity weights."""
+	"""Generate 5 free upgrades with chest rarity weights."""
 	# Disconnect old signals
 	for card in cards_container.get_children():
 		if card.purchased.is_connected(_on_card_purchased):
@@ -366,8 +412,8 @@ func _setup_chest_cards() -> void:
 	var taken_ids: Array[String] = []
 	var offers: Array = []
 	
-	# Generate 3 upgrades
-	for i in range(3):
+	# Generate 5 upgrades
+	for i in range(5):
 		var rarity := _roll_rarity(chest_weights)
 		var candidates := _filter_upgrades(all_upgrades, rarity, taken_ids)
 		
@@ -382,27 +428,21 @@ func _setup_chest_cards() -> void:
 		offers.append(chosen)
 		taken_ids.append(chosen["id"])
 	
-	# Setup cards - use middle 3 slots (indices 1, 2, 3) with spacers
+	# Setup all 5 cards
 	var children := cards_container.get_children()
 	for i in range(children.size()):
 		var card = children[i]
-		# Show cards at positions 1, 2, 3 (middle three)
-		if i >= 1 and i <= 3:
-			var offer_index = i - 1  # Map card index to offer array (1->0, 2->1, 3->2)
-			if offer_index < offers.size():
-				card.visible = true
-				# Make a copy and set price to 0 for chest mode
-				var upgrade_data = offers[offer_index].duplicate()
-				upgrade_data["price"] = 0
-				card.setup(upgrade_data)
-				if not card.purchased.is_connected(_on_chest_card_purchased):
-					card.purchased.connect(_on_chest_card_purchased)
-			else:
-				card.visible = false
-		else:
-			# Keep spacer cards visible but make them transparent to center the layout
+		if i < offers.size():
 			card.visible = true
-			card.modulate = Color(1, 1, 1, 0)  # Fully transparent
+			card.modulate = Color(1, 1, 1, 1)  # Fully opaque
+			# Make a copy and set price to 0 for chest mode
+			var upgrade_data = offers[i].duplicate()
+			upgrade_data["price"] = 0
+			card.setup(upgrade_data)
+			if not card.purchased.is_connected(_on_chest_card_purchased):
+				card.purchased.connect(_on_chest_card_purchased)
+		else:
+			card.visible = false
 
 
 func _get_chest_rarity_weights() -> Dictionary:

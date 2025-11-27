@@ -133,34 +133,6 @@ const ALL_UPGRADES: Array = [
 	},
 
 	# -------------------------
-	# MOVEMENT SPEED UPGRADES
-	# -------------------------
-	{
-		"id": "move_speed_uncommon",
-		"line_id": "move_speed",
-		"text": "+10% Move Speed",
-		"description": "Increase movement speed by 10% of base value.",
-		"price": 80,
-		"rarity": Rarity.UNCOMMON,
-		"tags": ["movement"],
-		"increment": 0.10,
-		"stackable": true,
-		"icon": preload("res://assets/Separated/ammo.png"),
-	},
-	{
-		"id": "move_speed_rare",
-		"line_id": "move_speed",
-		"text": "+25% Move Speed",
-		"description": "Increase movement speed by 25% of base value.",
-		"price": 180,
-		"rarity": Rarity.RARE,
-		"tags": ["movement"],
-		"increment": 0.25,
-		"stackable": true,
-		"icon": preload("res://assets/Separated/ammo.png"),
-	},
-
-	# -------------------------
 	# ALT WEAPON UNLOCKS
 	# -------------------------
 	{
@@ -267,7 +239,7 @@ const ALL_UPGRADES: Array = [
 		"line_id": "primary_damage",
 		"text": "+5% Primary Damage",
 		"description": "Increase primary weapon damage by 5%.",
-		"price": 60,
+		"price": 20,
 		"rarity": Rarity.COMMON,
 		"tags": ["weapon_primary"],
 		"increment": 0.05,
@@ -649,33 +621,6 @@ const ALL_UPGRADES: Array = [
 		"increment": 10,
 		"stackable": true,
 		"icon": preload("res://assets/bullets/grenade.png"),
-	},
-	# -------------------------
-	# SHIELD / BUBBLE DURATION UPGRADES
-	# -------------------------
-	{
-		"id": "bubble_duration_plus_0_5",
-		"text": "+0.5s Shield Duration",
-		"price": 150,
-		"rarity": Rarity.COMMON,
-		"icon": preload("res://assets/shield.png"),
-		"requires_ability": ABILITY_BUBBLE,
-	},
-	{
-		"id": "bubble_duration_plus_1",
-		"text": "+1s Shield Duration",
-		"price": 300,
-		"rarity": Rarity.UNCOMMON,
-		"icon": preload("res://assets/shield.png"),
-		"requires_ability": ABILITY_BUBBLE,
-	},
-	{
-		"id": "bubble_duration_plus_2",
-		"text": "+2s Shield Duration",
-		"price": 500,
-		"rarity": Rarity.RARE,
-		"icon": preload("res://assets/shield.png"),
-		"requires_ability": ABILITY_BUBBLE,
 	},
 
 	# Additional grenade / shuriken / turret / ability upgrades (data-only)

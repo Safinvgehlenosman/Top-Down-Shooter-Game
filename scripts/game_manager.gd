@@ -56,6 +56,9 @@ var room_spawn_points: Array[Node2D] = []
 var chest_spawn_point: Node2D = null
 var chest_spawned: bool = false
 var chest_instance: Area2D = null
+var chest_should_spawn_this_level: bool = false  # Rolled once per level
+
+@export_range(0.0, 1.0, 0.05) var chest_spawn_chance: float = 0.75  # 75% chance per level
 
 var game_ui: CanvasLayer
 var next_scene_path: String = ""
@@ -148,6 +151,9 @@ func _load_room() -> void:
 	chest_spawn_point = null
 	chest_spawned = false
 	chest_instance = null
+	
+	# Roll chest spawn chance for this level (75% by default)
+	chest_should_spawn_this_level = randf() < chest_spawn_chance
 
 	# adjust spawn weights for current_level
 	_update_enemy_weights_for_level()
@@ -465,15 +471,15 @@ func _update_enemy_weights_for_level() -> void:
 func _on_enemy_died() -> void:
 	alive_enemies = max(alive_enemies - 1, 0)
 	
-	# Chest spawn logic
-	if not chest_spawned and chest_spawn_point != null:
-		# 30% chance to spawn chest on enemy death
+	# Chest spawn logic (only if level rolled for chest)
+	if chest_should_spawn_this_level and not chest_spawned and chest_spawn_point != null:
+		# 30% chance to spawn chest on each enemy death
 		if randf() < 0.3:
 			_spawn_chest()
 	
 	if alive_enemies == 0:
-		# Guarantee chest spawn if not spawned yet
-		if not chest_spawned:
+		# Guarantee chest spawn if level rolled for it and not spawned yet
+		if chest_should_spawn_this_level and not chest_spawned:
 			_spawn_chest()
 		_spawn_exit_door()
 
@@ -591,7 +597,9 @@ func _open_shop() -> void:
 
 	if shop_ui:
 		shop_ui.visible = true
-		if shop_ui.has_method("refresh_from_state"):
+		if shop_ui.has_method("open_as_shop"):
+			shop_ui.open_as_shop()
+		elif shop_ui.has_method("refresh_from_state"):
 			shop_ui._setup_cards()
 			shop_ui.refresh_from_state()
 

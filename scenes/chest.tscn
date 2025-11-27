@@ -36,16 +36,18 @@ region_rect = Rect2(32, 1, 16, 14)
 shape = SubResource("CircleShape2D_oii8l")
 
 [node name="InteractPrompt" type="Label" parent="."]
-offset_left = -9.0
-offset_top = -18.0
-offset_right = 35.0
-offset_bottom = -2.0
+offset_left = -16.0
+offset_top = -24.0
+offset_right = 64.0
+offset_bottom = 11.0
 scale = Vector2(0.4, 0.4)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.1882353)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 6
 theme_override_fonts/font = ExtResource("2_sy5e1")
-text = "\"E\""
+text = "PRESS
+\"E\""
+horizontal_alignment = 1
 
 [node name="SFX_Spawn" type="AudioStreamPlayer2D" parent="."]
 position = Vector2(89, -18)
@@ -58,6 +60,7 @@ stream = ExtResource("5_yhylo")
 bus = &"SFX"
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
+scale = Vector2(0.515625, 0.46875)
 color = Color(0.9254902, 0.8745098, 0.39215687, 1)
 energy = 0.8
 shadow_enabled = true

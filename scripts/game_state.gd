@@ -35,7 +35,7 @@ const BulletScene_SHOTGUN := preload("res://scenes/bullets/shotgun_bullet.tscn")
 const BulletScene_SNIPER  := preload("res://scenes/bullets/sniper_bullet.tscn")
 const BulletScene_GRENADE := preload("res://scenes/bullets/grenade_bullet.tscn")
 const BulletScene_SHURIKEN := preload("res://scenes/bullets/shuriken_bullet.tscn")
-const BulletScene_FLAME    := preload("res://scenes/bullets/fire_projectile.tscn")
+const BulletScene_FLAME    := preload("res://scenes/bullets/flamethrower_bullet.tscn")
 const BulletScene_TURRET    := preload("res://scenes/bullets/turret_bullet.tscn")
 
 # Core config for each alt weapon
