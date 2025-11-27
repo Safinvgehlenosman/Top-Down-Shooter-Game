@@ -701,14 +701,16 @@ func apply_upgrade(upgrade_id: String) -> void:
 			print("  → Grenade radius now:", ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("explosion_radius"))
 
 		"grenade_fragments_uncommon":
-			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE):
-				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["bounces"] = int(ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("bounces", 0) + 1)
-			print("  → Grenade fragments (bounces) now:", ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("bounces"))
+			# Behave like shotgun pellet upgrade: add +1 simultaneous grenade
+			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE) and ALT_WEAPON_DATA[AltWeaponType.GRENADE].has("pellets"):
+				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["pellets"] = int(ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("pellets", 1) + 1)
+			print("  → Grenade pellets now:", ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("pellets"))
 
 		"grenade_fragments_rare":
-			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE):
-				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["bounces"] = int(ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("bounces", 0) + 2)
-			print("  → Grenade fragments (bounces) now:", ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("bounces"))
+			# Behave like shotgun pellet upgrade: add +2 simultaneous grenades
+			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE) and ALT_WEAPON_DATA[AltWeaponType.GRENADE].has("pellets"):
+				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["pellets"] = int(ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("pellets", 1) + 2)
+			print("  → Grenade pellets now:", ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("pellets"))
 
 		"grenade_damage_rare":
 			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE) and ALT_WEAPON_DATA[AltWeaponType.GRENADE].has("damage"):

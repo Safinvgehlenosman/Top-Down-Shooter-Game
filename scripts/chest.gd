@@ -69,4 +69,4 @@ func _open_chest() -> void:
 	# Get ShopUI and open as chest
 	var shop_ui = get_tree().get_first_node_in_group("shop")
 	if shop_ui and shop_ui.has_method("open_as_chest"):
-		shop_ui.open_as_chest()
+		shop_ui.open_as_chest(self)

@@ -26,6 +26,7 @@ const ABILITY_INVIS = GameState.AbilityType.INVIS
 
 # Chest mode flag
 var is_chest_mode: bool = false
+var active_chest: Node2D = null  # Reference to the chest that opened this shop
 
 @onready var hp_fill: TextureProgressBar = $HPBar/HPFill
 @onready var hp_label: Label = $HPBar/HPLabel
@@ -297,9 +298,10 @@ func refresh_from_state() -> void:
 # CHEST MODE
 # -------------------------------------------------------------------
 
-func open_as_chest() -> void:
+func open_as_chest(chest: Node2D = null) -> void:
 	"""Open shop in chest mode with free upgrades."""
 	is_chest_mode = true
+	active_chest = chest
 	
 	# Pause game
 	get_tree().paused = true
@@ -405,6 +407,12 @@ func _get_chest_rarity_weights() -> Dictionary:
 func _on_chest_card_purchased() -> void:
 	"""Handle chest card purchase (free upgrade)."""
 	# Upgrade is already applied by card script
+	
+	# Despawn the chest
+	if active_chest and is_instance_valid(active_chest):
+		active_chest.queue_free()
+		active_chest = null
+	
 	_close_chest_mode()
 
 
