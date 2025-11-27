@@ -105,6 +105,62 @@ const ALL_UPGRADES: Array = [
 	},
 
 	# -------------------------
+	# MOVEMENT SPEED UPGRADES
+	# -------------------------
+	{
+		"id": "move_speed_uncommon",
+		"line_id": "move_speed",
+		"text": "+10% Move Speed",
+		"description": "Increase movement speed by 10% of base value.",
+		"price": 80,
+		"rarity": Rarity.UNCOMMON,
+		"tags": ["movement"],
+		"increment": 0.10,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/ammo.png"),
+	},
+	{
+		"id": "move_speed_rare",
+		"line_id": "move_speed",
+		"text": "+25% Move Speed",
+		"description": "Increase movement speed by 25% of base value.",
+		"price": 180,
+		"rarity": Rarity.RARE,
+		"tags": ["movement"],
+		"increment": 0.25,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/ammo.png"),
+	},
+
+	# -------------------------
+	# MOVEMENT SPEED UPGRADES
+	# -------------------------
+	{
+		"id": "move_speed_uncommon",
+		"line_id": "move_speed",
+		"text": "+10% Move Speed",
+		"description": "Increase movement speed by 10% of base value.",
+		"price": 80,
+		"rarity": Rarity.UNCOMMON,
+		"tags": ["movement"],
+		"increment": 0.10,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/ammo.png"),
+	},
+	{
+		"id": "move_speed_rare",
+		"line_id": "move_speed",
+		"text": "+25% Move Speed",
+		"description": "Increase movement speed by 25% of base value.",
+		"price": 180,
+		"rarity": Rarity.RARE,
+		"tags": ["movement"],
+		"increment": 0.25,
+		"stackable": true,
+		"icon": preload("res://assets/Separated/ammo.png"),
+	},
+
+	# -------------------------
 	# ALT WEAPON UNLOCKS
 	# -------------------------
 	{

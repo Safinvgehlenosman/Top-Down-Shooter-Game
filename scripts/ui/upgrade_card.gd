@@ -69,7 +69,7 @@ func _get_dynamic_text() -> String:
 	if upgrade_id == "max_hp_plus_1":
 		var purchases: int = int(GameState.upgrade_purchase_counts.get("max_hp_plus_1", 0)) + 1
 		var base_increase := 10.0
-		var scaled_increase := base_increase * pow(1.5, purchases - 1)
+		var scaled_increase := base_increase * pow(1.1, purchases - 1)
 		var inc_int := int(round(scaled_increase))
 		return "+" + str(inc_int) + " Max HP"
 	elif upgrade_id == "max_ammo_plus_1":

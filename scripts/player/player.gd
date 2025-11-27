@@ -98,6 +98,10 @@ func _ready() -> void:
 
 	if GameState.fire_rate <= 0.0:
 		GameState.fire_rate = design_fire_rate
+	
+	if GameState.move_speed <= 0.0:
+		GameState.move_speed_base = GameConfig.player_move_speed
+		GameState.move_speed = GameState.move_speed_base
 
 	if GameState.shotgun_pellets <= 0:
 		GameState.shotgun_pellets = design_pellets
@@ -339,6 +343,9 @@ func sync_from_gamestate() -> void:
 	# Core stats from GameState
 	max_health = GameState.max_health
 	health     = GameState.health
+	
+	# Apply move speed from GameState
+	speed = GameState.move_speed
 
 	# Push into generic HealthComponent
 	if health_component:

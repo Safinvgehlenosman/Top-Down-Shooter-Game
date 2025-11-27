@@ -190,6 +190,11 @@ var ammo: int = 0
 var fire_rate: float = 0.0
 var shotgun_pellets: int = 0
 
+# Movement speed
+var move_speed: float = 0.0
+var move_speed_base: float = 0.0
+var move_speed_bonus_percent: float = 0.0
+
 # Primary weapon stats
 var primary_damage: float = 1.0         # 🔥 This is a MULTIPLIER (1.0 = 100%)
 var primary_damage_base: float = 1.0
@@ -473,10 +478,10 @@ func apply_upgrade(upgrade_id: String) -> void:
 	match upgrade_id:
 		# GENERAL / CORE
 		"max_hp_plus_1":
-			# Scaled max HP increase: base 10, each repeat multiplies by 1.5
+			# Scaled max HP increase: base 10, each repeat multiplies by 1.1
 			var purchases: int = int(upgrade_purchase_counts.get("max_hp_plus_1", 1))
 			var base_increase := 10.0
-			var scaled_increase := base_increase * pow(1.5, purchases - 1)
+			var scaled_increase := base_increase * pow(1.1, purchases - 1)
 			var inc_int := int(round(scaled_increase))
 			max_health += inc_int
 			# Heal by same amount (do not exceed new max)
@@ -576,6 +581,19 @@ func apply_upgrade(upgrade_id: String) -> void:
 			fire_rate_bonus_percent += 0.10
 			fire_rate = fire_rate_base * max(0.05, 1.0 - fire_rate_bonus_percent)
 			print("  → Fire rate (cooldown) now:", fire_rate)
+
+		# MOVEMENT SPEED (additive % of base, never exponential)
+		"move_speed_uncommon":
+			move_speed_bonus_percent += 0.10  # +10% of BASE
+			move_speed = move_speed_base * (1.0 + move_speed_bonus_percent)
+			print("  → Move speed bonus:", move_speed_bonus_percent)
+			print("  → Move speed now:", move_speed)
+
+		"move_speed_rare":
+			move_speed_bonus_percent += 0.25  # +25% of BASE
+			move_speed = move_speed_base * (1.0 + move_speed_bonus_percent)
+			print("  → Move speed bonus:", move_speed_bonus_percent)
+			print("  → Move speed now:", move_speed)
 
 		"primary_bullet_size_rare":
 			# Increase primary bullet visual size at spawn
