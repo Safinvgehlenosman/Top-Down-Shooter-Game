@@ -5,9 +5,11 @@ extends CanvasLayer
 @onready var ammo_label: Label               = $AmmoUI/AmmoLabel
 @onready var coin_label: Label               = $CoinUI/CoinLabel
 
-@onready var ability_bar_container: Control  = $AbilityBar
+@onready var ability_bar_container: Control = $AbilityBar
 @onready var ability_bar: TextureProgressBar = $AbilityBar/AbilityFill
-@onready var ability_label: Label            = $AbilityBar/AbilityLabel
+@onready var ability_label: Label = $AbilityBar/AbilityLabel
+
+const AbilityType = GameState.AbilityType
 
 
 func _ready() -> void:
@@ -24,7 +26,8 @@ func _ready() -> void:
 	_on_ammo_changed(gs.ammo, gs.max_ammo)
 
 	# hide ability bar by default
-	ability_bar_container.visible = false
+	if ability_bar_container:
+		ability_bar_container.visible = false
 
 
 func _process(_delta: float) -> void:
@@ -63,35 +66,52 @@ func _on_ammo_changed(new_value: int, max_value: int) -> void:
 
 func _update_ability_bar() -> void:
 	var gs = GameState
-
+	
 	# No ability equipped → hide entire bar UI
-	if gs.ability == gs.ABILITY_NONE:
-		ability_bar_container.visible = false
+	if gs.ability == AbilityType.NONE:
+		if ability_bar_container:
+			ability_bar_container.visible = false
 		return
-
+	
 	# Load runtime ability data
 	var data = gs.ABILITY_DATA.get(gs.ability, {})
 	if data.is_empty():
-		ability_bar_container.visible = false
+		if ability_bar_container:
+			ability_bar_container.visible = false
 		return
-
-	var max_cd: float = data.get("cooldown", 0.0)
-	if max_cd <= 0.0:
-		ability_bar_container.visible = false
+	
+	# Get BASE cooldown from ability data
+	var base_cd: float = data.get("cooldown", 0.0)
+	if base_cd <= 0.0:
+		if ability_bar_container:
+			ability_bar_container.visible = false
 		return
-
-	# If we reach here → ability exists & has cooldown → show the bar
-	ability_bar_container.visible = true
-
-	# Sync bar values
-	ability_bar.max_value = max_cd
-	var cd_left: float = gs.ability_cooldown_left
-	ability_bar.value = max_cd - cd_left
-
-	# Optional: show "remaining / total s"
+	
+	# ✅ Apply cooldown multiplier (from upgrades)
+	var multiplier: float = 1.0
+	if "ability_cooldown_mult" in gs:
+		multiplier = gs.ability_cooldown_mult
+	
+	# ✅ Actual cooldown after upgrades (this is what changes with purchases!)
+	var actual_max_cd: float = base_cd * multiplier
+	
+	# Show the bar
+	if ability_bar_container:
+		ability_bar_container.visible = true
+	
+	# ✅ CORRECT: Bar starts FULL, empties when used, fills back up
+	if ability_bar:
+		ability_bar.max_value = actual_max_cd
+		var cd_left: float = gs.ability_cooldown_left
+		# When cd_left = max → bar = 0 (empty)
+		# When cd_left = 0 → bar = max (full/ready)
+		var bar_value: float = actual_max_cd - cd_left
+		ability_bar.value = bar_value
+	
+	# ✅ Show time remaining (counts down to 0)
 	if ability_label:
-		var remaining = round(cd_left * 10.0) / 10.0
-		var max_display = round(max_cd * 10.0) / 10.0
+		var remaining = round(gs.ability_cooldown_left * 10.0) / 10.0
+		var max_display = round(actual_max_cd * 10.0) / 10.0
 		ability_label.text = "%s / %s s" % [remaining, max_display]
 		_autoscale_label_deferred(ability_label)
 

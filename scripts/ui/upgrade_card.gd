@@ -2,49 +2,93 @@ extends Control
 
 signal purchased
 
-@export var upgrade_id: String = ""
-@export var price: int = 0
-@export var icon: Texture2D
-@export var description: String = ""
+@onready var price_label: Label      = $PriceArea/TextureRect/PriceLabel
+@onready var coin_icon: TextureRect  = $PriceArea/TextureRect/CoinIcon
+@onready var icon_rect: TextureRect  = $Icon
+@onready var desc_label: Label       = $Label
+@onready var buy_button: Button      = $Button
+@onready var color_rect: ColorRect   = $ColorRect  # ← Background for rarity color
 
-@onready var sfx_collect: AudioStreamPlayer = $Button/SFX_Collect
-@onready var price_label: Label = $PriceArea/TextureRect/PriceLabel
-@onready var icon_rect: TextureRect = $Icon
-@onready var desc_label: Label = $Label
-@onready var buy_button: Button = $Button
+var sfx_collect: AudioStreamPlayer = null
+
+var upgrade_id: String = ""
+var price: int = 0
+var icon: Texture2D = null
+var text: String = ""
+var rarity: int = 0  # ← Store rarity
+
+# ✨ Rarity colors
+const RARITY_COLORS := {
+	UpgradesDB.Rarity.COMMON: Color(0.2, 0.8, 0.2, 0.3),      # Green (semi-transparent)
+	UpgradesDB.Rarity.UNCOMMON: Color(0.2, 0.5, 1.0, 0.3),    # Blue
+	UpgradesDB.Rarity.RARE: Color(0.7, 0.2, 1.0, 0.3),        # Purple
+	UpgradesDB.Rarity.EPIC: Color(1.0, 0.85, 0.0, 0.4),       # Gold (slightly more opaque)
+}
 
 func _ready() -> void:
-	_refresh()
-	buy_button.pressed.connect(_on_buy_pressed)
+	if has_node("SFX_Collect"):
+		sfx_collect = $SFX_Collect
 
-# Called from ShopUI to configure this card
-func setup(data: Dictionary) -> void:
-	upgrade_id = data.get("id", "")
-	price = data.get("price", 0)
-	icon = data.get("icon", null)
-	description = data.get("text", "")
+	if buy_button and not buy_button.pressed.is_connected(_on_buy_pressed):
+		buy_button.pressed.connect(_on_buy_pressed)
+
 	_refresh()
+
+
+func setup(data: Dictionary) -> void:
+	# Called by ShopUI with one of the dictionaries from UpgradesDB.get_all()
+	upgrade_id = data.get("id", "")
+	price      = int(data.get("price", 0))
+	icon       = data.get("icon", null)
+	text       = data.get("text", "")
+	rarity     = data.get("rarity", UpgradesDB.Rarity.COMMON)  # ← Get rarity
+
+	# Fallback so the card is never visually empty
+	if text == "" and upgrade_id != "":
+		text = upgrade_id.replace("_", " ").capitalize()
+
+	_refresh()
+
 
 func _refresh() -> void:
 	if price_label:
 		price_label.text = str(price)
+
+	if desc_label:
+		desc_label.text = text
+
 	if icon_rect:
 		icon_rect.texture = icon
-	if desc_label:
-		desc_label.text = description
+
+	# ✨ Set background color based on rarity
+	if color_rect:
+		var color = RARITY_COLORS.get(rarity, Color(0.2, 0.2, 0.2, 0.3))  # Default gray
+		color_rect.color = color
+
 	_update_button_state()
 
-func _update_button_state() -> void:
-	if buy_button:
-		buy_button.disabled = GameState.coins < price
 
-func _on_buy_pressed() -> void:
-	if GameState.coins < price:
+func _update_button_state() -> void:
+	if not buy_button:
 		return
 
+	var affordable := (upgrade_id != "") and (GameState.coins >= price)
+	buy_button.disabled = not affordable
+
+
+func _on_buy_pressed() -> void:
+	if upgrade_id == "" or GameState.coins < price:
+		return
+
+	# Pay
 	GameState.coins -= price
-	GameState.apply_upgrade(upgrade_id)
+
+	# Apply the upgrade via the DB
+	UpgradesDB.apply_upgrade(upgrade_id)
+
+	# Little feedback
+	if sfx_collect:
+		sfx_collect.play()
 
 	emit_signal("purchased")
 	_refresh()
-	sfx_collect.play()

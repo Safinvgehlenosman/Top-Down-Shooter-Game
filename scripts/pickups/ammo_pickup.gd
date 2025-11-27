@@ -59,18 +59,19 @@ func _on_body_entered(body: Node2D) -> void:
 
 	is_collected = true
 
-	# 🟡 1. Determine pickup amount from current alt-weapon
+	# 🟡 Determine pickup amount from current alt-weapon data
 	var amount := 0
 
-	if GameState.alt_weapon != GameState.ALT_WEAPON_NONE \
+	if GameState.alt_weapon != GameState.AltWeaponType.NONE \
 	and GameState.ALT_WEAPON_DATA.has(GameState.alt_weapon):
-
 		var data = GameState.ALT_WEAPON_DATA[GameState.alt_weapon]
 		amount = data.get("pickup_amount", 0)
+		print("[AmmoPickup] Weapon:", data.get("id", "unknown"), "gives", amount, "ammo")
 
-	# 🟡 2. Apply ammo → through GameState (NOT through player)
+	# 🟡 Apply ammo → through GameState
 	if amount > 0 and GameState.max_ammo > 0:
 		GameState.set_ammo(min(GameState.ammo + amount, GameState.max_ammo))
+		print("[AmmoPickup] Ammo now:", GameState.ammo, "/", GameState.max_ammo)
 
 	# Disable visibility + collision
 	if collision:

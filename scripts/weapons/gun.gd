@@ -15,11 +15,12 @@ var fire_rate: float = 0.0
 var fire_timer: float = 0.0
 var alt_fire_cooldown_timer: float = 0.0
 
-const AltWeaponType = GameState.ALT_WEAPON_NONE
+var alt_weapon: int = GameState.AltWeaponType.NONE
 
 
 func init_from_state() -> void:
 	fire_rate = GameState.fire_rate
+	print("[Gun] Initialized from GameState - fire_rate:", fire_rate)
 
 
 func update_timers(delta: float) -> void:
@@ -49,11 +50,15 @@ func handle_primary_fire(is_pressed: bool, aim_dir: Vector2) -> void:
 	if not GameState.debug_laser_mode and fire_timer > 0.0:
 		return
 
-	var damage: float = GameState.primary_damage
+	# 🔥 CALCULATE FINAL DAMAGE
+	# Base damage from config * GameState multiplier
+	var base_damage: float = GameConfig.bullet_base_damage
+	var damage_multiplier: float = GameState.primary_damage
+	var final_damage: float = base_damage * damage_multiplier
 
 	if GameState.debug_laser_mode:
 		fire_timer = 0.0
-		damage = 9999.0
+		final_damage = 9999.0
 	else:
 		if GameState.fire_rate <= 0.0:
 			GameState.fire_rate = GameConfig.player_fire_rate
@@ -66,6 +71,8 @@ func handle_primary_fire(is_pressed: bool, aim_dir: Vector2) -> void:
 	var spread_rad := deg_to_rad(spread_deg)
 	var start_offset := -float(burst - 1) / 2.0
 
+	print("[Gun] Firing - Base:", base_damage, "x Multiplier:", damage_multiplier, "= Final:", final_damage, "| Burst:", burst, "| Fire Rate:", GameState.fire_rate)
+
 	for i in range(burst):
 		var angle := (start_offset + i) * spread_rad
 		var dir := aim_dir.rotated(angle)
@@ -73,7 +80,7 @@ func handle_primary_fire(is_pressed: bool, aim_dir: Vector2) -> void:
 		var bullet := BulletScene_DEFAULT.instantiate()
 		bullet.global_position = muzzle.global_position
 		bullet.direction = dir
-		bullet.damage = damage
+		bullet.damage = int(final_damage)  # Convert to int for the bullet
 		get_tree().current_scene.add_child(bullet)
 
 	if sfx_shoot:
@@ -88,14 +95,20 @@ func handle_alt_fire(is_pressed: bool, aim_pos: Vector2) -> void:
 	if not is_pressed:
 		return
 
-	var alt_weapon := GameState.alt_weapon
+	# Current alt weapon choice from GameState
+	var alt_weapon: int = GameState.alt_weapon
 
-	if alt_weapon == GameState.ALT_WEAPON_NONE or alt_weapon == GameState.ALT_WEAPON_TURRET:
+	# No alt weapon, or turret (fires automatically) → no manual alt-fire
+	if alt_weapon == GameState.AltWeaponType.NONE \
+	or alt_weapon == GameState.AltWeaponType.TURRET:
 		return
 
-	if alt_weapon == GameState.ALT_WEAPON_FLAMETHROWER:
+	# Flamethrower has its own special handling
+	if alt_weapon == GameState.AltWeaponType.FLAMETHROWER:
 		_handle_flamethrower_fire(aim_pos)
 		return
+
+	# Normal alt-fire weapons below (shotgun / sniper / grenade / shuriken …)
 
 	if alt_fire_cooldown_timer > 0.0:
 		return
@@ -111,6 +124,7 @@ func handle_alt_fire(is_pressed: bool, aim_pos: Vector2) -> void:
 	_fire_weapon(data, aim_pos)
 
 
+
 # --------------------------------------------------------------------
 # FLAMETHROWER LOGIC
 # --------------------------------------------------------------------
@@ -119,7 +133,7 @@ func _handle_flamethrower_fire(aim_pos: Vector2) -> void:
 	if GameState.ammo <= 0 and not GameState.debug_infinite_ammo:
 		return
 
-	var data: Dictionary = GameState.ALT_WEAPON_DATA.get(GameState.ALT_WEAPON_FLAMETHROWER, {})
+	var data: Dictionary = GameState.ALT_WEAPON_DATA.get(GameState.AltWeaponType.FLAMETHROWER, {})
 	if data.is_empty():
 		return
 
