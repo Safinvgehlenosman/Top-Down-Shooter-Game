@@ -95,7 +95,7 @@ var ALT_WEAPON_DATA := {
 		"bullet_scene": BulletScene_GRENADE,
 		"bullet_speed": 500.0,
 		"pellets": 1,
-		"spread_degrees": 0.0,
+		"spread_degrees": 30.0, # Fixed per-pellet separation (not total arc)
 		"damage": 40.0,
 		"recoil": 90.0,
 		"ammo_cost": 1,
@@ -705,12 +705,14 @@ func apply_upgrade(upgrade_id: String) -> void:
 			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE) and ALT_WEAPON_DATA[AltWeaponType.GRENADE].has("pellets"):
 				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["pellets"] = int(ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("pellets", 1) + 1)
 			print("  → Grenade pellets now:", ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("pellets"))
+			# Fixed spread remains constant – no recompute
 
 		"grenade_fragments_rare":
 			# Behave like shotgun pellet upgrade: add +2 simultaneous grenades
 			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE) and ALT_WEAPON_DATA[AltWeaponType.GRENADE].has("pellets"):
 				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["pellets"] = int(ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("pellets", 1) + 2)
 			print("  → Grenade pellets now:", ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("pellets"))
+			# Fixed spread remains constant – no recompute
 
 		"grenade_damage_rare":
 			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE) and ALT_WEAPON_DATA[AltWeaponType.GRENADE].has("damage"):

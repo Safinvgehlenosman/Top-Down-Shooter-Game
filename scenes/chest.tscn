@@ -35,9 +35,9 @@ shape = SubResource("CircleShape2D_oii8l")
 
 [node name="InteractPrompt" type="Label" parent="."]
 offset_left = -9.0
-offset_top = -15.0
+offset_top = -18.0
 offset_right = 35.0
-offset_bottom = 1.0
+offset_bottom = -2.0
 scale = Vector2(0.4, 0.4)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.1882353)
 theme_override_fonts/font = ExtResource("2_sy5e1")
@@ -49,6 +49,7 @@ bus = &"SFX"
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
 color = Color(0.9254902, 0.8745098, 0.39215687, 1)
+energy = 0.8
 shadow_enabled = true
 texture = SubResource("GradientTexture2D_yue2o")
 texture_scale = 0.5
