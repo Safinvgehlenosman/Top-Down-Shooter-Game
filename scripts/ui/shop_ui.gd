@@ -408,8 +408,33 @@ func _on_chest_card_purchased() -> void:
 	"""Handle chest card purchase (free upgrade)."""
 	# Upgrade is already applied by card script
 	
-	# Despawn the chest
+	# Despawn the chest with SFX
 	if active_chest and is_instance_valid(active_chest):
+		# Play despawn sound if available
+		var sfx_despawn = active_chest.get_node_or_null("SFX_Despawn")
+		if sfx_despawn:
+			sfx_despawn.play()
+		
+		# Hide all visuals immediately
+		var sprite = active_chest.get_node_or_null("Sprite2D")
+		if sprite:
+			sprite.visible = false
+		
+		var collision = active_chest.get_node_or_null("CollisionShape2D")
+		if collision:
+			collision.set_deferred("disabled", true)
+		
+		var prompt = active_chest.get_node_or_null("InteractPrompt")
+		if prompt:
+			prompt.visible = false
+		
+		var light = active_chest.get_node_or_null("PointLight2D")
+		if light:
+			light.visible = false
+		
+		# Queue free after sound finishes (or immediately if no sound)
+		if sfx_despawn:
+			await sfx_despawn.finished
 		active_chest.queue_free()
 		active_chest = null
 	

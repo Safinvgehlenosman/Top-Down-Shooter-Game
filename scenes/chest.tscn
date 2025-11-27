@@ -1,9 +1,10 @@
-[gd_scene load_steps=8 format=3 uid="uid://da26oiy1gxaxy"]
+[gd_scene load_steps=9 format=3 uid="uid://da26oiy1gxaxy"]
 
 [ext_resource type="Script" uid="uid://wv6b160qroim" path="res://scripts/chest.gd" id="1_gqd3d"]
 [ext_resource type="Texture2D" uid="uid://bg4nmpnf348rn" path="res://assets/16x16 Assorted RPG Icons/chests.png" id="1_oii8l"]
 [ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="2_sy5e1"]
 [ext_resource type="AudioStream" uid="uid://dnxnkd6ymcvtg" path="res://assets/Audios/CannonShoot.wav" id="4_yue2o"]
+[ext_resource type="AudioStream" uid="uid://bkbbtse858d2x" path="res://assets/Audios/crate-break-1-93926.mp3" id="5_yhylo"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_oii8l"]
 radius = 28.0
@@ -45,6 +46,11 @@ text = "\"E\""
 
 [node name="SFX_Spawn" type="AudioStreamPlayer2D" parent="."]
 stream = ExtResource("4_yue2o")
+pitch_scale = 0.5
+bus = &"SFX"
+
+[node name="SFX_Despawn" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("5_yhylo")
 bus = &"SFX"
 
 [node name="PointLight2D" type="PointLight2D" parent="."]

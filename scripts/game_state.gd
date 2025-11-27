@@ -473,8 +473,15 @@ func apply_upgrade(upgrade_id: String) -> void:
 	match upgrade_id:
 		# GENERAL / CORE
 		"max_hp_plus_1":
-			max_health += 10
-			set_health(health + 10)
+			# Scaled max HP increase: base 10, each repeat multiplies by 1.5
+			var purchases: int = int(upgrade_purchase_counts.get("max_hp_plus_1", 1))
+			var base_increase := 10.0
+			var scaled_increase := base_increase * pow(1.5, purchases - 1)
+			var inc_int := int(round(scaled_increase))
+			max_health += inc_int
+			# Heal by same amount (do not exceed new max)
+			set_health(min(max_health, health + inc_int))
+			print("  → Max HP increase applied:", inc_int, "(purchase #", purchases, ")")
 			print("  → Max HP now:", max_health)
 
 		"hp_refill":
@@ -482,8 +489,13 @@ func apply_upgrade(upgrade_id: String) -> void:
 			print("  → HP refilled to:", max_health)
 
 		"max_ammo_plus_1":
-			max_ammo += 1
-			set_ammo(ammo + 1)
+			# Scaled max ammo increase: base 1, doubles each purchase (1,2,4,8,...)
+			var purchases_ammo: int = int(upgrade_purchase_counts.get("max_ammo_plus_1", 1))
+			var base_ammo_inc := 1
+			var scaled_ammo_inc := int(pow(2, purchases_ammo - 1)) * base_ammo_inc
+			max_ammo += scaled_ammo_inc
+			set_ammo(min(max_ammo, ammo + scaled_ammo_inc))
+			print("  → Max Ammo increase applied:", scaled_ammo_inc, "(purchase #", purchases_ammo, ")")
 			print("  → Max Ammo now:", max_ammo)
 
 		"ammo_refill":

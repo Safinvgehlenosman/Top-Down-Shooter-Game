@@ -18,6 +18,11 @@ var icon: Texture2D = null
 var text: String = ""
 var rarity: int = 0  # ← Store rarity
 
+const NON_SCALING_PRICE_UPGRADES := {
+	"hp_refill": true,
+	"ammo_refill": true,
+}
+
 # ✨ Rarity colors
 const RARITY_COLORS := {
 	UpgradesDB.Rarity.COMMON: Color(0.2, 0.8, 0.2, 0.3),      # Green (semi-transparent)
@@ -40,8 +45,11 @@ func setup(data: Dictionary) -> void:
 	# Called by ShopUI with one of the dictionaries from UpgradesDB.get_all()
 	upgrade_id = data.get("id", "")
 	base_price = int(data.get("price", 0))
-	# Calculate scaled price based on purchase count
-	price = GameState.get_upgrade_price(upgrade_id, base_price)
+	# Calculate scaled price unless excluded
+	if NON_SCALING_PRICE_UPGRADES.has(upgrade_id):
+		price = base_price
+	else:
+		price = GameState.get_upgrade_price(upgrade_id, base_price)
 	icon       = data.get("icon", null)
 	text       = data.get("text", "")
 	rarity     = data.get("rarity", UpgradesDB.Rarity.COMMON)  # ← Get rarity
@@ -114,8 +122,9 @@ func _on_buy_pressed() -> void:
 	if not GameState.spend_coins(price):
 		return
 
-	# Record purchase for price scaling
-	GameState.record_upgrade_purchase(upgrade_id)
+	# Record purchase for scaling unless excluded
+	if not NON_SCALING_PRICE_UPGRADES.has(upgrade_id):
+		GameState.record_upgrade_purchase(upgrade_id)
 
 	# Apply the upgrade via the DB
 	preload("res://scripts/Upgrades_DB.gd").apply_upgrade(upgrade_id)
