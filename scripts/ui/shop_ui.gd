@@ -369,7 +369,7 @@ func _setup_chest_cards() -> void:
 		offers.append(chosen)
 		taken_ids.append(chosen["id"])
 	
-	# Setup cards - use middle 3 slots (indices 1, 2, 3)
+	# Setup cards - use middle 3 slots (indices 1, 2, 3) with spacers
 	var children := cards_container.get_children()
 	for i in range(children.size()):
 		var card = children[i]
@@ -387,7 +387,9 @@ func _setup_chest_cards() -> void:
 			else:
 				card.visible = false
 		else:
-			card.visible = false
+			# Keep spacer cards visible but make them transparent to center the layout
+			card.visible = true
+			card.modulate = Color(1, 1, 1, 0)  # Fully transparent
 
 
 func _get_chest_rarity_weights() -> Dictionary:
