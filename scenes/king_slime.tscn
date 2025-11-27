@@ -107,6 +107,7 @@ scale = Vector2(3, 3)
 collision_layer = 4
 script = ExtResource("1_v0dom")
 speed = 20.0
+wander_speed = 10.0
 max_health = 10
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]

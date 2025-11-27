@@ -121,6 +121,7 @@ spread_degrees = 360.0
 pellet_min_speed = 80.0
 pellet_max_speed = 180.0
 speed = 40.0
+wander_speed = 20.0
 max_health = 30
 vision_radius = 150.0
 CoinScene = ExtResource("3_mou80")

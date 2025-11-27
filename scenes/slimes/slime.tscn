@@ -116,7 +116,7 @@ script = ExtResource("1_pjw23")
 speed = 60.0
 max_health = 30
 vision_radius = 150.0
-wander_speed = 25.0
+wander_speed = 30.0
 CoinScene = ExtResource("2_gstla")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]

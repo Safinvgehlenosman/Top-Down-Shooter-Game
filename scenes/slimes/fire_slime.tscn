@@ -120,6 +120,7 @@ spread_degrees = 40.0
 pellet_min_speed = 240.0
 pellet_max_speed = 290.0
 speed = 50.0
+wander_speed = 25.0
 max_health = 20
 CoinScene = ExtResource("3_son63")
 
