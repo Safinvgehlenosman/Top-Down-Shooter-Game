@@ -128,7 +128,6 @@ Development is tracked on Trello:
 
 ## 📸 Screenshots
 
-*(Screenshots coming soon - see [demo video](https://www.youtube.com/watch?v=cosuupup1mU) for now)*
 
 ### Core Gameplay
 <p align="center">
