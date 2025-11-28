@@ -594,4 +594,4 @@ position = Vector2(818, 132)
 position = Vector2(1006, 317)
 
 [node name="PlayerSpawn" type="Marker2D" parent="." groups=["player_spawn"]]
-position = Vector2(406.99997, 534)
+position = Vector2(432, 548)

@@ -3,7 +3,12 @@ extends Node
 @export var death_screen_path: NodePath
 @export var shop_path: NodePath
 @export var exit_door_path: NodePath
-@export var chest_scene: PackedScene      # not really used now, but ok to leave
+
+@export_group("Chest Scenes")
+@export var bronze_chest_scene: PackedScene
+@export var normal_chest_scene: PackedScene
+@export var gold_chest_scene: PackedScene
+
 @export var ui_root_path: NodePath
 
 @export var crate_scene: PackedScene
@@ -55,8 +60,6 @@ var room_spawn_points: Array[Node2D] = []
 # Chest spawning
 var chest_spawn_point: Node2D = null
 var chest_spawned: bool = false
-var chest_instance: Area2D = null
-var chest_should_spawn_this_level: bool = false  # Rolled once per level
 
 @export_range(0.0, 1.0, 0.05) var chest_spawn_chance: float = 0.75  # 75% chance per level
 
@@ -150,10 +153,6 @@ func _load_room() -> void:
 	# Reset chest variables
 	chest_spawn_point = null
 	chest_spawned = false
-	chest_instance = null
-	
-	# Roll chest spawn chance for this level (75% by default)
-	chest_should_spawn_this_level = randf() < chest_spawn_chance
 
 	# adjust spawn weights for current_level
 	_update_enemy_weights_for_level()
@@ -300,16 +299,16 @@ func _spawn_room_content() -> void:
 	# reserve one spawn for the door
 	door_spawn_point = room_spawn_points.pop_back()
 	
-	# reserve one spawn for the chest
-	if room_spawn_points.size() > 0:
+	# Reserve chest spawn point (75% chance per level)
+	chest_spawn_point = null
+	if randf() < chest_spawn_chance and room_spawn_points.size() > 0:
 		chest_spawn_point = room_spawn_points.pop_back()
-	else:
-		chest_spawn_point = null
+		print("[GameManager] Reserved chest spawn point at: ", chest_spawn_point.global_position)
 	
 	chest_spawned = false
-	chest_instance = null
 
 	alive_enemies = 0
+	var has_chest_dropper: bool = false  # Track if we've assigned chest dropper
 
 	for spawn in room_spawn_points:
 		var r := randf()
@@ -339,9 +338,17 @@ func _spawn_room_content() -> void:
 
 				current_room.add_child(enemy)
 				alive_enemies += 1
+				
+				# Mark one random enemy as chest dropper (equal chance per enemy)
+				if chest_spawn_point != null and not has_chest_dropper:
+					# Use probability that increases with each enemy to ensure one gets marked
+					if randf() < (1.0 / max(1, alive_enemies)):
+						enemy.set_meta("drops_chest", true)
+						has_chest_dropper = true
+						print("[GameManager] Marked enemy as chest dropper at position: ", enemy.global_position)
 
 				if enemy.has_signal("died"):
-					enemy.died.connect(_on_enemy_died)
+					enemy.died.connect(_on_enemy_died.bind(enemy))
 			continue
 
 		# --- CRATE ---------------------------------------------------
@@ -468,19 +475,18 @@ func _update_enemy_weights_for_level() -> void:
 
 # --- ENEMY DEATH / DOOR SPAWN --------------------------------------
 
-func _on_enemy_died() -> void:
+func _on_enemy_died(enemy: Node2D = null) -> void:
 	alive_enemies = max(alive_enemies - 1, 0)
 	
-	# Chest spawn logic (only if level rolled for chest)
-	if chest_should_spawn_this_level and not chest_spawned and chest_spawn_point != null:
-		# 30% chance to spawn chest on each enemy death
-		if randf() < 0.3:
-			_spawn_chest()
+	print("[GameManager] Enemy died. Remaining enemies: ", alive_enemies)
+	
+	# Check if this enemy should drop chest
+	if enemy != null and chest_spawn_point != null and enemy.has_meta("drops_chest") and not chest_spawned:
+		print("[GameManager] Chest dropper killed! Spawning chest...")
+		_spawn_chest_at_reserved_point()
+		chest_spawned = true
 	
 	if alive_enemies == 0:
-		# Guarantee chest spawn if level rolled for it and not spawned yet
-		if chest_should_spawn_this_level and not chest_spawned:
-			_spawn_chest()
 		_spawn_exit_door()
 
 
@@ -513,26 +519,41 @@ func _spawn_exit_door() -> void:
 		current_exit_door.open()
 
 
-func _spawn_chest() -> void:
-	"""Spawn a chest at the reserved chest spawn point."""
-	# Guard checks
-	if chest_scene == null:
-		return
-	
+func _spawn_chest_at_reserved_point() -> void:
+	"""Spawn a weighted random chest at the reserved chest spawn point."""
 	if chest_spawn_point == null:
 		return
 	
-	if chest_spawned:
-		return  # Already spawned
+	# Weighted random chest selection
+	# Bronze: 50%, Normal: 35%, Gold: 15%
+	var chest_roll := randf()
+	var chest_scene: PackedScene = null
 	
-	# Instantiate and position chest
-	chest_instance = chest_scene.instantiate()
-	chest_instance.global_position = chest_spawn_point.global_position
-	current_room.add_child(chest_instance)
+	if chest_roll < 0.50:  # 50% bronze
+		chest_scene = bronze_chest_scene
+	elif chest_roll < 0.85:  # 35% normal (0.50 + 0.35)
+		chest_scene = normal_chest_scene
+	else:  # 15% gold
+		chest_scene = gold_chest_scene
 	
-	# Mark as spawned
-	chest_spawned = true
-	print("[GameManager] Chest spawned at", chest_spawn_point.global_position)
+	# Fallback to normal if specific scene is missing
+	if chest_scene == null:
+		if normal_chest_scene != null:
+			chest_scene = normal_chest_scene
+		elif bronze_chest_scene != null:
+			chest_scene = bronze_chest_scene
+		elif gold_chest_scene != null:
+			chest_scene = gold_chest_scene
+		else:
+			push_warning("[GameManager] No chest scenes assigned!")
+			return
+	
+	var chest := chest_scene.instantiate()
+	chest.global_position = chest_spawn_point.global_position
+	current_room.add_child(chest)
+	
+	print("[GameManager] Spawned chest at reserved point")
+	chest_spawn_point = null  # Clear to prevent multiple spawns
 
 # CHEST SPAWNING LOGIC:
 # 

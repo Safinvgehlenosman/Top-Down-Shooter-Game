@@ -399,6 +399,49 @@ func open_as_chest(chest: Node2D = null) -> void:
 	_setup_chest_cards()
 
 
+func open_as_chest_with_loot(loot: Array) -> void:
+	"""Open shop in chest mode with predefined loot from chest."""
+	is_chest_mode = true
+	active_chest = null
+	
+	# Pause game
+	get_tree().paused = true
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	
+	# Show shop
+	visible = true
+	
+	# Hide UI elements
+	var coin_ui = get_node_or_null("CoinUI")
+	if coin_ui:
+		coin_ui.visible = false
+	
+	var hp_bar = get_node_or_null("HPBar")
+	if hp_bar:
+		hp_bar.visible = false
+	
+	var ammo_ui = get_node_or_null("AmmoUI")
+	if ammo_ui:
+		ammo_ui.visible = false
+	
+	var level_ui = get_node_or_null("LevelUI")
+	if level_ui:
+		level_ui.visible = false
+	
+	if ability_bar_container:
+		ability_bar_container.visible = false
+	
+	var title_label = get_node_or_null("Panel/TitleLabel")
+	if title_label:
+		title_label.visible = false
+	
+	if continue_button:
+		continue_button.visible = false
+	
+	# Setup cards with predefined loot
+	_setup_chest_cards_with_loot(loot)
+
+
 func _setup_chest_cards() -> void:
 	"""Generate 5 free upgrades with chest rarity weights."""
 	# Disconnect old signals
@@ -438,6 +481,32 @@ func _setup_chest_cards() -> void:
 			card.modulate = Color(1, 1, 1, 1)  # Fully opaque
 			# Make a copy and set price to 0 for chest mode
 			var upgrade_data = offers[i].duplicate()
+			upgrade_data["price"] = 0
+			card.setup(upgrade_data)
+			if not card.purchased.is_connected(_on_chest_card_purchased):
+				card.purchased.connect(_on_chest_card_purchased)
+		else:
+			card.visible = false
+
+
+func _setup_chest_cards_with_loot(loot: Array) -> void:
+	"""Setup cards with predefined loot from chest (rarity-based)."""
+	# Disconnect old signals
+	for card in cards_container.get_children():
+		if card.purchased.is_connected(_on_card_purchased):
+			card.purchased.disconnect(_on_card_purchased)
+		if card.purchased.is_connected(_on_chest_card_purchased):
+			card.purchased.disconnect(_on_chest_card_purchased)
+	
+	# Setup all cards with loot
+	var children := cards_container.get_children()
+	for i in range(children.size()):
+		var card = children[i]
+		if i < loot.size():
+			card.visible = true
+			card.modulate = Color(1, 1, 1, 1)  # Fully opaque
+			# Make a copy and set price to 0 for chest mode
+			var upgrade_data = loot[i].duplicate()
 			upgrade_data["price"] = 0
 			card.setup(upgrade_data)
 			if not card.purchased.is_connected(_on_chest_card_purchased):

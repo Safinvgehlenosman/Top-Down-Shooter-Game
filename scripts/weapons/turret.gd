@@ -5,7 +5,7 @@ extends Node2D
 @onready var sfx_shoot: AudioStreamPlayer2D = $SFX_Shoot  # NEW
 
 var fire_interval: float = 0.8
-var range: float = 100.0
+var turret_range: float = 100.0
 var spread_rad: float = deg_to_rad(20.0)
 var bullet_scene: PackedScene = null
 var bullet_speed: float = 100.0
@@ -17,7 +17,7 @@ var fire_timer: float = 0.0
 # Called from Player.sync_from_gamestate()
 func configure(data: Dictionary) -> void:
 	fire_interval = data.get("fire_interval", fire_interval)
-	range        = data.get("range", range)
+	turret_range = data.get("range", turret_range)
 
 	# get degrees from data, convert once to radians
 	var spread_deg: float = data.get("spread_degrees", 20.0)
@@ -50,7 +50,7 @@ func _process(delta: float) -> void:
 
 func _find_target() -> Node2D:
 	var best_target: Node2D = null
-	var best_dist := range
+	var best_dist := turret_range
 
 	for body in get_tree().get_nodes_in_group("enemy"):
 		if not body.is_inside_tree():
@@ -58,7 +58,7 @@ func _find_target() -> Node2D:
 
 		var to_target = body.global_position - global_position
 		var dist = to_target.length()
-		if dist > range:
+		if dist > turret_range:
 			continue
 
 		# Line-of-sight check

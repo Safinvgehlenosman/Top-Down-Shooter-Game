@@ -381,7 +381,7 @@ position = Vector2(81, 65)
 position = Vector2(162, 61)
 
 [node name="Spawn22" type="Marker2D" parent="SpawnPoints" groups=["spawn_point"]]
-position = Vector2(192, 297)
+position = Vector2(226, 275)
 
 [node name="Spawn23" type="Marker2D" parent="SpawnPoints" groups=["spawn_point"]]
 position = Vector2(217, 201)
@@ -429,4 +429,4 @@ position = Vector2(72, 185)
 position = Vector2(428, 92)
 
 [node name="PlayerSpawn" type="Marker2D" parent="." groups=["player_spawn"]]
-position = Vector2(57, 327)
+position = Vector2(80, 312)
