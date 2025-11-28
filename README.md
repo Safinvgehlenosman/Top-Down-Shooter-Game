@@ -130,6 +130,43 @@ Development is tracked on Trello:
 
 *(Screenshots coming soon - see [demo video](https://www.youtube.com/watch?v=cosuupup1mU) for now)*
 
+### Core Gameplay
+<p align="center">
+  <img src="screenshots/gameplay.png" width="45%" />
+  <img src="screenshots/turret.png" width="45%" />
+</p>
+
+*Left: Combat with multiple enemy types | Right: Turret backpack in action*
+
+### Progression System
+<p align="center">
+  <img src="screenshots/shop.png" width="45%" />
+  <img src="screenshots/chest.png" width="45%" />
+</p>
+
+*Left: Shop with upgrade cards | Right: Interactive chest with prompt*
+
+### Weapons & Abilities
+<p align="center">
+  <img src="screenshots/flamethrower.png" width="45%" />
+  <img src="screenshots/grenades.png" width="45%" />
+</p>
+
+<p align="center">
+  <img src="screenshots/invisibility.png" width="45%" />
+  <img src="screenshots/dash.png" width="45%" />
+</p>
+
+*Top: Flamethrower and Grenade Launcher | Bottom: Invisibility Cloak and Dash ability*
+
+### Level Features
+<p align="center">
+  <img src="screenshots/door.png" width="45%" />
+  <img src="screenshots/debug.png" width="45%" />
+</p>
+
+*Left: Exit door interaction | Right: Debug tools overlay*
+
 ---
 
 ## ▶️ How to Run
