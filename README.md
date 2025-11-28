@@ -1,4 +1,4 @@
-# Top-Down Shooter (Working Title)
+# Top-Down Shooter
 
 A fast-paced pixel-art top-down shooter built in Godot.  
 Features dynamic lighting, responsive controls, enemy AI, pickups, and a growing progression system.
