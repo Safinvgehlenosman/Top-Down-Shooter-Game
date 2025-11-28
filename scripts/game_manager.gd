@@ -613,24 +613,40 @@ func load_next_level() -> void:
 	if shop_ui:
 		shop_ui.visible = false
 
+	# Make sure fade is at full black
+	FadeTransition.set_black()
+	
+	# UNPAUSE FIRST so we can do work
 	get_tree().paused = false
-
-	# increase level, then reroll a room
+	
+	# Load the new room WHILE screen is black
 	current_level += 1
 	_update_level_ui()
 	_load_room()
-
+	
+	# Move player to spawn point BEFORE fade out
 	var player := get_tree().get_first_node_in_group("player")
-	if player and player.has_method("grant_spawn_invincibility"):
-		player.grant_spawn_invincibility(0.7) # tweak value
-
-	# refresh HP UI
+	if player:
+		# Give spawn invincibility (longer duration to cover fade + enemy spawn)
+		if player.has_method("grant_spawn_invincibility"):
+			player.grant_spawn_invincibility(2.0)  # 2 seconds of safety
+	
+	# Refresh HP UI
 	var hp_ui := get_tree().get_first_node_in_group("hp_ui")
 	if hp_ui and hp_ui.has_method("refresh_from_state"):
 		hp_ui.refresh_from_state()
 
 	if game_ui:
-		game_ui.visible = true         # show HUD again
+		game_ui.visible = true
+	
+	# Small delay to ensure everything is positioned
+	await get_tree().create_timer(0.2).timeout
+	
+	# NOW start fade out from black (player is already in new position)
+	FadeTransition.fade_out()
+	
+	# Wait for fade to finish
+	await FadeTransition.fade_out_finished
 
 
 func restart_run() -> void:

@@ -6,6 +6,7 @@ extends Area2D
 
 var door_open: bool = false
 var player_in_range: bool = false
+var is_transitioning: bool = false  # NEW
 
 # Interact prompt
 var interact_prompt: Label
@@ -40,7 +41,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	# Check for E key input
 	if Input.is_action_just_pressed("ui_accept") or Input.is_action_just_pressed("interact"):
-		if player_in_range and door_open:
+		if player_in_range and door_open and not is_transitioning:
 			_enter_shop()
 	
 	# Hover animation for prompt (same as chest)
@@ -100,6 +101,21 @@ func _on_animation_finished() -> void:
 
 
 func _enter_shop() -> void:
+	is_transitioning = true
+	
+	# Hide prompt immediately
+	if interact_prompt:
+		interact_prompt.visible = false
+	
+	# Start fade to black
+	FadeTransition.fade_in()
+	
+	# Wait for fade to finish
+	await FadeTransition.fade_in_finished
+	
+	# Now open shop over black screen
 	var gm := get_tree().get_first_node_in_group("game_manager")
 	if gm and gm.has_method("on_player_reached_exit"):
 		gm.on_player_reached_exit()
+	
+	is_transitioning = false

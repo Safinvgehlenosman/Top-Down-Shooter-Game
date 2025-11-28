@@ -12,6 +12,7 @@ layout_mode = 3
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
+mouse_filter = 1
 script = ExtResource("1_0hv3p")
 
 [node name="PriceArea" type="HBoxContainer" parent="."]

@@ -23,6 +23,7 @@ PhantomCameraManager="*res://addons/phantom_camera/scripts/managers/phantom_came
 GameState="*res://scripts/game_state.gd"
 DebugController="*res://scripts/debug_controller.gd"
 UpgradesDB="*res://scripts/Upgrades_DB.gd"
+FadeTransition="*res://scenes/ui/fade_transition.tscn"
 
 [debug]
 
