@@ -26,9 +26,9 @@ func init_from_state() -> void:
 
 
 func update_timers(delta: float) -> void:
+	# Use raw delta - gun timers ignore slowmo/bullet time
+	# (Players can shoot at full speed even during bullet time ability)
 	var dt := delta
-	if Engine.time_scale > 0.0:
-		dt = delta / Engine.time_scale
 
 	if fire_timer > 0.0:
 		fire_timer -= dt
