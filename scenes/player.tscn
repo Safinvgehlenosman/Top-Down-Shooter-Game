@@ -1,4 +1,4 @@
-[gd_scene load_steps=25 format=3 uid="uid://cwdo73t7wn5pp"]
+[gd_scene load_steps=26 format=3 uid="uid://cwdo73t7wn5pp"]
 
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="1_3vyb7"]
 [ext_resource type="Script" uid="uid://c08yjacbakryb" path="res://scripts/player/player.gd" id="1_g2els"]
@@ -12,6 +12,7 @@
 [ext_resource type="AudioStream" uid="uid://bux0mdx48mneh" path="res://assets/Audios/Shoot.wav" id="10_y4r1p"]
 [ext_resource type="Material" uid="uid://cy47t6cojlqrw" path="res://shaders/burn_material.tres" id="11_3v2ag"]
 [ext_resource type="AudioStream" uid="uid://c8cwf2bwmi50v" path="res://assets/Audios/Hit.wav" id="11_d2wvv"]
+[ext_resource type="AudioStream" uid="uid://cpdidnmdvil43" path="res://assets/Audios/empty-gun-shot-6209.mp3" id="13_jej6c"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_fjrip"]
 atlas = ExtResource("1_3vyb7")
@@ -184,6 +185,10 @@ region_rect = Rect2(41, 10, 12, 6)
 position = Vector2(-3.5714273, 3.8601104e-07)
 scale = Vector2(1.4285713, 1.4285713)
 
+[node name="SFX_Shoot" type="AudioStreamPlayer2D" parent="Turret"]
+stream = ExtResource("10_y4r1p")
+bus = &"SFX"
+
 [node name="Health" type="Node" parent="."]
 script = ExtResource("8_smehm")
 freeze_target_path = NodePath("../AnimatedSprite2D")
@@ -196,3 +201,6 @@ use_gamestate = true
 
 [node name="Ability" type="Node" parent="."]
 script = ExtResource("9_ur7pv")
+
+[node name="SFX_Empty" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("13_jej6c")
