@@ -4,6 +4,8 @@ signal damaged(amount: int)
 signal healed(amount: int)
 signal died
 
+const DamageNumberScene := preload("res://scenes/ui/damage_number.tscn")
+
 @export var freeze_target_path: NodePath      # e.g. "AnimatedSprite2D"
 @export var freeze_material: ShaderMaterial   # the blue frozen material
 
@@ -30,6 +32,11 @@ var health: int = 0
 var invincible_timer: float = 0.0
 
 var is_dead: bool = false
+
+# --- DAMAGE NUMBER STACKING -------------------------------------------
+var active_damage_number: Node2D = null
+var last_damage_time: float = 0.0
+const DAMAGE_COMBO_WINDOW: float = 10  # seconds to stack damage (increased for rapid fire)
 
 # --- BURN STATUS -----------------------------------------------------
 var burn_time_left: float = 0.0
@@ -177,6 +184,9 @@ func _apply_damage(amount: float, ignore_invincibility: bool) -> void:
 			owner.get_node("SFX_Hurt").play()
 
 		emit_signal("damaged", int(amount))
+		
+		# Spawn damage number
+		_spawn_damage_number(int(amount))
 	else:
 		emit_signal("healed", int(-amount))
 
@@ -191,6 +201,61 @@ func _apply_damage(amount: float, ignore_invincibility: bool) -> void:
 	if is_damage and health <= 0:
 		is_dead = true
 		emit_signal("died")
+
+
+func _spawn_damage_number(damage: int) -> void:
+	if not owner:
+		return
+	
+	var current_scene := get_tree().current_scene
+	if not current_scene:
+		return
+	
+	var current_time := Time.get_ticks_msec() / 1000.0
+	
+	# Check if we can stack onto existing damage number
+	if active_damage_number != null and is_instance_valid(active_damage_number):
+		var time_since_last := current_time - last_damage_time
+		
+		if time_since_last < DAMAGE_COMBO_WINDOW:
+			# Add to existing number instead of spawning new
+			if active_damage_number.has_method("add_damage"):
+				print("[HealthComponent] STACKING damage:", damage)
+				active_damage_number.add_damage(damage)
+				last_damage_time = current_time
+				return
+		else:
+			# Combo expired - stop following on old number
+			if active_damage_number.has_method("stop_following"):
+				active_damage_number.stop_following()
+	
+	# Spawn new damage number
+	var damage_number := DamageNumberScene.instantiate()
+	
+	# Calculate spawn position
+	var spawn_offset := Vector2(randf_range(-8, 8), -20)
+	var spawn_pos: Vector2 = owner.global_position + spawn_offset
+	
+	# ⭐ KEY FIX: Set position BEFORE adding to tree to prevent glitch
+	damage_number.position = spawn_pos
+	
+	# Now add to tree (node will already be at correct position)
+	current_scene.add_child(damage_number)
+	
+	# Call setup with owner as target
+	damage_number.setup(damage, false, owner)
+	
+	# Track as active damage number
+	active_damage_number = damage_number
+	last_damage_time = current_time
+	
+	# Connect to cleanup when freed
+	if not damage_number.tree_exiting.is_connected(_on_damage_number_freed):
+		damage_number.tree_exiting.connect(_on_damage_number_freed)
+
+
+func _on_damage_number_freed() -> void:
+	active_damage_number = null
 
 
 # --------------------------------------------------------------------

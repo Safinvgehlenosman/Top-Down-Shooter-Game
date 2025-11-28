@@ -12,6 +12,14 @@ var z_velocity: float = 0.0
 var has_landed: bool = false
 var is_collected: bool = false   # <-- new
 
+var magnet_velocity: Vector2 = Vector2.ZERO
+var magnet_acceleration: float = 800.0  # How fast pickups accelerate toward player
+var max_magnet_speed: float = 600.0     # Maximum speed cap
+
+var glow_active: bool = false
+var glow_pulse_time: float = 0.0
+@export var glow_pulse_speed: float = 3.0
+
 @onready var sprite: Node2D = $AnimatedSprite2D
 @onready var collision: CollisionShape2D = $CollisionShape2D
 @onready var sfx_land: AudioStreamPlayer2D = $SFX_Spawn
@@ -31,19 +39,59 @@ func launch() -> void:
 	z_velocity = jump_force
 
 
+func _set_glow_active(active: bool) -> void:
+	if light == null:
+		return
+	
+	glow_active = active
+	
+	if active:
+		var tween := create_tween()
+		tween.tween_property(light, "energy", 1.2, 0.2)
+	else:
+		var tween := create_tween()
+		tween.tween_property(light, "energy", 0.5, 0.2)
+
+
 func _physics_process(delta: float) -> void:
 	# After pickup: no more movement / magnet / light drifting
 	if is_collected:
 		return
 
-	# Magnet attraction (use global GameConfig values directly)
+	# Magnet attraction with acceleration
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	if player:
 		var dist: float = global_position.distance_to(player.global_position)
+		
 		if dist < GameConfig.pickup_magnet_range:
+			# Activate glow when in range
+			_set_glow_active(true)
+			
+			# Calculate direction to player
 			var dir: Vector2 = (player.global_position - global_position).normalized()
-			global_position += dir * GameConfig.pickup_magnet_strength * delta
-			return  # skip normal bounce movement when magnetizing
+			
+			# Stronger acceleration when very close (within 50 pixels)
+			var accel = magnet_acceleration
+			if dist < 50.0:
+				accel *= 2.0  # Double acceleration when close
+			
+			# Accelerate toward player
+			magnet_velocity += dir * accel * delta
+			
+			# Cap at maximum speed
+			if magnet_velocity.length() > max_magnet_speed:
+				magnet_velocity = magnet_velocity.normalized() * max_magnet_speed
+			
+			# Move with accumulated velocity
+			global_position += magnet_velocity * delta
+			
+			# Skip normal hop physics while being magnetized
+			return
+		else:
+			# Deactivate glow when out of range
+			_set_glow_active(false)
+			# Reset velocity when outside magnet range
+			magnet_velocity = Vector2.ZERO
 
 	# move horizontally
 	global_position += velocity * delta
@@ -64,6 +112,15 @@ func _physics_process(delta: float) -> void:
 
 	# visual offset for jump
 	sprite.position.y = -z_height
+
+
+func _process(delta: float) -> void:
+	# Pulse glow when active
+	if glow_active and light != null:
+		glow_pulse_time += delta * glow_pulse_speed
+		var pulse := (sin(glow_pulse_time) + 1.0) * 0.5
+		var energy = lerp(0.8, 1.4, pulse)
+		light.energy = energy
 
 
 func _on_body_entered(body: Node2D) -> void:

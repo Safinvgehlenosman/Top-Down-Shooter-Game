@@ -1,11 +1,12 @@
-[gd_scene load_steps=10 format=3 uid="uid://g5hfoeklt4g1"]
+[gd_scene load_steps=17 format=3 uid="uid://g5hfoeklt4g1"]
 
-[ext_resource type="Script" path="res://scripts/pickups/chest.gd" id="1_oc3qr"]
+[ext_resource type="Script" uid="uid://cybw6b62o1esj" path="res://scripts/pickups/chest.gd" id="1_oc3qr"]
 [ext_resource type="Texture2D" uid="uid://bg4nmpnf348rn" path="res://assets/16x16 Assorted RPG Icons/chests.png" id="2_1noaq"]
 [ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="3_gi6q4"]
-[ext_resource type="AudioStream" uid="uid://dnxnkd6ymcvtg" path="res://assets/Audios/CannonShoot.wav" id="4_47voh"]
+[ext_resource type="AudioStream" uid="uid://dcsoi2wmajv0l" path="res://assets/Audios/twinkle.mp3" id="4_1noaq"]
 [ext_resource type="AudioStream" uid="uid://bkbbtse858d2x" path="res://assets/Audios/crate-break-1-93926.mp3" id="5_owqwr"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="6_iwbng"]
+[ext_resource type="Texture2D" uid="uid://jw8qn34osfya" path="res://assets/CoinParticles.png" id="7_1noaq"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_oii8l"]
 radius = 28.0
@@ -21,6 +22,49 @@ height = 256
 fill = 1
 fill_from = Vector2(0.517094, 0.52136755)
 fill_to = Vector2(0.76495725, 0.7777778)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gi6q4"]
+atlas = ExtResource("7_1noaq")
+region = Rect2(0, 0, 15, 15)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_47voh"]
+atlas = ExtResource("7_1noaq")
+region = Rect2(15, 0, 15, 15)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_owqwr"]
+atlas = ExtResource("7_1noaq")
+region = Rect2(30, 0, 15, 15)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_iwbng"]
+atlas = ExtResource("7_1noaq")
+region = Rect2(0, 15, 15, 15)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f1bw2"]
+atlas = ExtResource("7_1noaq")
+region = Rect2(15, 15, 15, 15)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_oc3qr"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gi6q4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_47voh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_owqwr")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_iwbng")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_f1bw2")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
 
 [node name="GoldChest" type="Area2D"]
 collision_layer = 16
@@ -49,10 +93,11 @@ theme_override_fonts/font = ExtResource("3_gi6q4")
 text = "PRESS
 \"E\""
 horizontal_alignment = 1
+metadata/_edit_use_anchors_ = true
 
 [node name="SFX_Spawn" type="AudioStreamPlayer2D" parent="."]
 position = Vector2(89, -18)
-stream = ExtResource("4_47voh")
+stream = ExtResource("4_1noaq")
 pitch_scale = 0.5
 bus = &"SFX"
 
@@ -63,7 +108,6 @@ bus = &"SFX"
 [node name="PointLight2D" type="PointLight2D" parent="."]
 scale = Vector2(0.515625, 0.46875)
 color = Color(1, 0.843, 0, 1)
-energy = 1.0
 shadow_enabled = true
 texture = SubResource("GradientTexture2D_yue2o")
 texture_scale = 0.5
@@ -76,5 +120,29 @@ scale = Vector2(1.6666666, 0.975)
 texture = ExtResource("6_iwbng")
 region_enabled = true
 region_rect = Rect2(201.99591, 204.99461, 12.041901, 5.0242004)
+
+[node name="VFX_Glitter" type="AnimatedSprite2D" parent="."]
+z_index = -1
+position = Vector2(-7, -6)
+scale = Vector2(0.8, 0.8)
+sprite_frames = SubResource("SpriteFrames_oc3qr")
+autoplay = "default"
+frame = 4
+frame_progress = 1.0
+
+[node name="VFX_Glitter2" type="AnimatedSprite2D" parent="."]
+z_index = -1
+position = Vector2(5, 7)
+sprite_frames = SubResource("SpriteFrames_oc3qr")
+autoplay = "default"
+frame_progress = 0.6652822
+
+[node name="VFX_Glitter3" type="AnimatedSprite2D" parent="."]
+z_index = 1
+position = Vector2(7, -6)
+scale = Vector2(0.6, 0.6)
+sprite_frames = SubResource("SpriteFrames_oc3qr")
+autoplay = "default"
+frame_progress = 0.6652822
 
 [connection signal="body_entered" from="." to="." method="_on_body_entered"]
