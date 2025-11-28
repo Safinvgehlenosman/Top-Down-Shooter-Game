@@ -103,7 +103,13 @@ func _get_dynamic_text() -> String:
 		return "+" + str(inc_int) + " Max HP"
 	elif upgrade_id == "max_ammo_plus_1":
 		var purchases: int = int(GameState.upgrade_purchase_counts.get("max_ammo_plus_1", 0)) + 1
-		var base_ammo_inc := 1
+		
+		# Use weapon's pickup_amount as base (matches pickup value)
+		var base_ammo_inc := 1  # Fallback if no weapon
+		if GameState.alt_weapon != GameState.AltWeaponType.NONE and GameState.ALT_WEAPON_DATA.has(GameState.alt_weapon):
+			var data = GameState.ALT_WEAPON_DATA[GameState.alt_weapon]
+			base_ammo_inc = data.get("pickup_amount", 1)
+		
 		var scaled_ammo_inc := int(pow(2, purchases - 1)) * base_ammo_inc
 		return "+" + str(scaled_ammo_inc) + " Max Ammo"
 	else:

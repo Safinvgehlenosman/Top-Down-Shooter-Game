@@ -497,13 +497,19 @@ func apply_upgrade(upgrade_id: String) -> void:
 			print("  → HP refilled to:", max_health)
 
 		"max_ammo_plus_1":
-			# Scaled max ammo increase: base 1, doubles each purchase (1,2,4,8,...)
+			# Use weapon's pickup_amount as base increase (matches pickup value)
+			var base_ammo_inc := 1  # Fallback if no weapon equipped
+			
+			# Get pickup_amount from current alt weapon
+			if alt_weapon != AltWeaponType.NONE and ALT_WEAPON_DATA.has(alt_weapon):
+				var data = ALT_WEAPON_DATA[alt_weapon]
+				base_ammo_inc = data.get("pickup_amount", 1)
+			
 			var purchases_ammo: int = int(upgrade_purchase_counts.get("max_ammo_plus_1", 1))
-			var base_ammo_inc := 1
 			var scaled_ammo_inc := int(pow(2, purchases_ammo - 1)) * base_ammo_inc
 			max_ammo += scaled_ammo_inc
 			set_ammo(min(max_ammo, ammo + scaled_ammo_inc))
-			print("  → Max Ammo increase applied:", scaled_ammo_inc, "(purchase #", purchases_ammo, ")")
+			print("  → Max Ammo increase applied:", scaled_ammo_inc, "(purchase #", purchases_ammo, ", base=", base_ammo_inc, ")")
 			print("  → Max Ammo now:", max_ammo)
 
 		"ammo_refill":
