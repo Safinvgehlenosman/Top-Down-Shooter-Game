@@ -1,21 +1,105 @@
 extends Area2D
 
+@onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var collision_shape: CollisionShape2D = $CollisionShape2D
+@onready var sfx_spawn: AudioStreamPlayer2D = $SFX_Spawn
+
 var door_open: bool = false
+var player_in_range: bool = false
+
+# Interact prompt
+var interact_prompt: Label
+
+# Hover animation (same as chest)
+var hover_time: float = 0.0
+var base_prompt_pos: Vector2
+@export var hover_amplitude: float = 3.0
+@export var hover_speed: float = 2.0
+
+
+func _ready() -> void:
+	visible = false
+	
+	# Get reference to InteractPrompt
+	interact_prompt = get_node_or_null("InteractPrompt")
+	
+	# Hide interact_prompt by default
+	if interact_prompt:
+		interact_prompt.visible = false
+		base_prompt_pos = interact_prompt.position
+	
+	if animated_sprite:
+		animated_sprite.play("default")
+		animated_sprite.animation_finished.connect(_on_animation_finished)
+	
+	# Connect signals
+	body_entered.connect(_on_body_entered)
+	body_exited.connect(_on_body_exited)
+
+
+func _process(delta: float) -> void:
+	# Check for E key input
+	if Input.is_action_just_pressed("ui_accept") or Input.is_action_just_pressed("interact"):
+		if player_in_range and door_open:
+			_enter_shop()
+	
+	# Hover animation for prompt (same as chest)
+	if interact_prompt and interact_prompt.visible:
+		hover_time += delta
+		var offset_y := sin(hover_time * hover_speed) * hover_amplitude
+		interact_prompt.position.y = base_prompt_pos.y + offset_y
+
 
 func open() -> void:
 	door_open = true
 	visible = true
-	$SFX_Spawn.play()
-
-
+	
+	if animated_sprite:
+		animated_sprite.play("default")
+	
+	if sfx_spawn:
+		sfx_spawn.play()
 
 
 func _on_body_entered(body: Node2D) -> void:
 	if not door_open:
 		return
+	
+	if body.is_in_group("player"):
+		player_in_range = true
+		
+		# Play open animation
+		if animated_sprite:
+			animated_sprite.play("open")
+		
+		# Show prompt
+		if interact_prompt:
+			interact_prompt.visible = true
+			hover_time = 0.0
+
+
+func _on_body_exited(body: Node2D) -> void:
 	if not body.is_in_group("player"):
 		return
+	
+	player_in_range = false
+	
+	# Hide prompt
+	if interact_prompt:
+		interact_prompt.visible = false
+	
+	# Play close animation
+	if animated_sprite and door_open:
+		animated_sprite.play("close")
 
+
+func _on_animation_finished() -> void:
+	# After close animation finishes, return to default
+	if animated_sprite and animated_sprite.animation == "close":
+		animated_sprite.play("default")
+
+
+func _enter_shop() -> void:
 	var gm := get_tree().get_first_node_in_group("game_manager")
 	if gm and gm.has_method("on_player_reached_exit"):
 		gm.on_player_reached_exit()

@@ -1,11 +1,149 @@
-[gd_scene load_steps=7 format=3 uid="uid://b4fgncv3abcol"]
+[gd_scene load_steps=26 format=3 uid="uid://b4fgncv3abcol"]
 
 [ext_resource type="Script" uid="uid://d1rbg528xkxj6" path="res://scripts/ui/exit_door.gd" id="1_lxrmt"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="1_syxuu"]
 [ext_resource type="AudioStream" uid="uid://owqtcbpubn64" path="res://assets/Audios/Win.wav" id="2_yk4m6"]
+[ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="4_6m21m"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_syxuu"]
-size = Vector2(8, 10)
+[sub_resource type="CircleShape2D" id="CircleShape2D_sojrm"]
+radius = 72.49999
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6m21m"]
+atlas = ExtResource("1_syxuu")
+region = Rect2(128, 192, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sojrm"]
+atlas = ExtResource("1_syxuu")
+region = Rect2(96, 192, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fn25g"]
+atlas = ExtResource("1_syxuu")
+region = Rect2(64, 192, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yvv6m"]
+atlas = ExtResource("1_syxuu")
+region = Rect2(32, 192, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ne0bh"]
+atlas = ExtResource("1_syxuu")
+region = Rect2(0, 192, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jg4yw"]
+atlas = ExtResource("1_syxuu")
+region = Rect2(224, 160, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vdo87"]
+atlas = ExtResource("1_syxuu")
+region = Rect2(192, 160, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_murvp"]
+atlas = ExtResource("1_syxuu")
+region = Rect2(160, 160, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_h0t3n"]
+atlas = ExtResource("1_syxuu")
+region = Rect2(160, 160, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_y1viw"]
+atlas = ExtResource("1_syxuu")
+region = Rect2(160, 160, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_86ahk"]
+atlas = ExtResource("1_syxuu")
+region = Rect2(192, 160, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8kxbs"]
+atlas = ExtResource("1_syxuu")
+region = Rect2(224, 160, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lw5uk"]
+atlas = ExtResource("1_syxuu")
+region = Rect2(0, 192, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wxuir"]
+atlas = ExtResource("1_syxuu")
+region = Rect2(32, 192, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4mejj"]
+atlas = ExtResource("1_syxuu")
+region = Rect2(64, 192, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f0gmk"]
+atlas = ExtResource("1_syxuu")
+region = Rect2(96, 192, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sf62i"]
+atlas = ExtResource("1_syxuu")
+region = Rect2(128, 192, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_m5hrb"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6m21m")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sojrm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fn25g")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yvv6m")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ne0bh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jg4yw")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vdo87")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_murvp")
+}],
+"loop": false,
+"name": &"close",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_h0t3n")
+}],
+"loop": false,
+"name": &"default",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_y1viw")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_86ahk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8kxbs")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lw5uk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wxuir")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4mejj")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_f0gmk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sf62i")
+}],
+"loop": false,
+"name": &"open",
+"speed": 5.0
+}]
 
 [sub_resource type="Gradient" id="Gradient_kmthg"]
 offsets = PackedFloat32Array(0.016129032, 0.8064516, 1)
@@ -24,21 +162,22 @@ position = Vector2(0, -6)
 collision_mask = 2
 script = ExtResource("1_lxrmt")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
-texture = ExtResource("1_syxuu")
-region_enabled = true
-region_rect = Rect2(171, 170, 11, 12)
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="."]
+position = Vector2(-9.536743e-07, -1.9073486e-06)
+scale = Vector2(0.4, 0.4)
+shape = SubResource("CircleShape2D_sojrm")
 
-[node name="Sprite2D" type="Sprite2D" parent="Sprite2D"]
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_m5hrb")
+autoplay = "default"
+
+[node name="Sprite2D" type="Sprite2D" parent="AnimatedSprite2D"]
 z_index = -1
-position = Vector2(0, 6)
+position = Vector2(0.5, 6)
+scale = Vector2(1.0833334, 1)
 texture = ExtResource("1_syxuu")
 region_enabled = true
 region_rect = Rect2(202, 205, 12, 5)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, 1)
-shape = SubResource("RectangleShape2D_syxuu")
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
 color = Color(0.9254902, 0.8745098, 0.39215687, 1)
@@ -49,5 +188,19 @@ texture_scale = 0.5
 [node name="SFX_Spawn" type="AudioStreamPlayer2D" parent="."]
 stream = ExtResource("2_yk4m6")
 bus = &"SFX"
+
+[node name="InteractPrompt" type="Label" parent="."]
+offset_left = -16.0
+offset_top = -24.0
+offset_right = 64.0
+offset_bottom = 11.0
+scale = Vector2(0.4, 0.4)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.1882353)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_fonts/font = ExtResource("4_6m21m")
+text = "PRESS
+\"E\""
+horizontal_alignment = 1
 
 [connection signal="body_entered" from="." to="." method="_on_body_entered"]
