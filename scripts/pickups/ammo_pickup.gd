@@ -14,10 +14,6 @@ var magnet_velocity: Vector2 = Vector2.ZERO
 var magnet_acceleration: float = 800.0  # How fast pickups accelerate toward player
 var max_magnet_speed: float = 600.0     # Maximum speed cap
 
-var glow_active: bool = false
-var glow_pulse_time: float = 0.0
-@export var glow_pulse_speed: float = 3.0
-
 @onready var sprite: Node2D = $Sprite2D
 @onready var collision: CollisionShape2D = $CollisionShape2D
 @onready var sfx_pickup: AudioStreamPlayer2D = $SFX_Pickup
@@ -27,29 +23,6 @@ var is_collected: bool = false
 
 func _ready() -> void:
 	add_to_group("room_cleanup")
-
-
-func _set_glow_active(active: bool) -> void:
-	if light == null:
-		return
-	
-	glow_active = active
-	
-	if active:
-		var tween := create_tween()
-		tween.tween_property(light, "energy", 1.2, 0.2)
-	else:
-		var tween := create_tween()
-		tween.tween_property(light, "energy", 0.5, 0.2)
-
-
-func _process(delta: float) -> void:
-	# Pulse glow when active
-	if glow_active and light != null:
-		glow_pulse_time += delta * glow_pulse_speed
-		var pulse := (sin(glow_pulse_time) + 1.0) * 0.5
-		var energy: float = lerp(0.8, 1.4, pulse)
-		light.energy = energy
 
 func _physics_process(delta: float) -> void:
 	if is_collected:
@@ -61,9 +34,6 @@ func _physics_process(delta: float) -> void:
 		var dist = global_position.distance_to(player.global_position)
 		
 		if dist < GameConfig.pickup_magnet_range:
-			# Activate glow when in range
-			_set_glow_active(true)
-			
 			# Calculate direction to player
 			var dir = (player.global_position - global_position).normalized()
 			
@@ -85,8 +55,6 @@ func _physics_process(delta: float) -> void:
 			# Skip normal hop physics while being magnetized
 			return
 		else:
-			# Deactivate glow when out of range
-			_set_glow_active(false)
 			# Reset velocity when outside magnet range
 			magnet_velocity = Vector2.ZERO
 

@@ -65,18 +65,46 @@ func _setup_cards() -> void:
 			card.purchased.disconnect(_on_chest_card_purchased)
 
 	var offers := _roll_shop_offers()
-
+	
+	# Sort offers by rarity (highest rarity first)
+	offers = _sort_offers_by_rarity(offers)
+	
+	# Assign to positions: center (2), middle (1,3), outer (0,4)
+	# This puts rarest in center
+	var position_order = [2, 1, 3, 0, 4]  # Center-out order
 	var children := cards_container.get_children()
+	var used_positions = []  # Track which positions we've used
+	
+	for i in range(position_order.size()):
+		if i >= offers.size():
+			break
+		
+		var position = position_order[i]
+		if position >= children.size():
+			continue
+		
+		var card = children[position]
+		card.visible = true
+		card.modulate = Color(1, 1, 1, 1)  # Reset to fully opaque
+		card.setup(offers[i])
+		
+		if not card.purchased.is_connected(_on_card_purchased):
+			card.purchased.connect(_on_card_purchased)
+		
+		used_positions.append(position)
+		
+		# Set base scale based on position - DEFERRED to ensure it happens after _ready()
+		if position == 2:  # Center card
+			card.set_deferred("scale", Vector2(1.2, 1.2))
+		elif position == 1 or position == 3:  # Middle cards
+			card.set_deferred("scale", Vector2(1.0, 1.0))
+		else:  # Outer cards (0, 4)
+			card.set_deferred("scale", Vector2(0.9, 0.9))
+	
+	# Hide unused cards
 	for i in range(children.size()):
-		var card = children[i]
-		if i < offers.size():
-			card.visible = true
-			card.modulate = Color(1, 1, 1, 1)  # Reset to fully opaque
-			card.setup(offers[i])
-			if not card.purchased.is_connected(_on_card_purchased):
-				card.purchased.connect(_on_card_purchased)
-		else:
-			card.visible = false
+		if i not in used_positions:
+			children[i].visible = false
 
 func _roll_shop_offers() -> Array:
 	var result: Array = []
@@ -108,6 +136,28 @@ func _roll_shop_offers() -> Array:
 		taken_ids.append(chosen["id"])
 
 	return result
+
+func _sort_offers_by_rarity(offers: Array) -> Array:
+	"""Sort offers by rarity (highest first), then by price (highest first) for same rarity."""
+	var sorted = offers.duplicate()
+	
+	# Custom sort: higher rarity first, then higher price within same rarity
+	sorted.sort_custom(func(a, b):
+		var rarity_a = a.get("rarity", UpgradesDB.Rarity.COMMON)
+		var rarity_b = b.get("rarity", UpgradesDB.Rarity.COMMON)
+		
+		if rarity_a == rarity_b:
+			# Same rarity: sort by price (highest first)
+			var price_a = a.get("price", 0)
+			var price_b = b.get("price", 0)
+			return price_a > price_b
+		else:
+			# Higher rarity comes first
+			return rarity_a > rarity_b
+	)
+	
+	return sorted
+
 
 func _get_rarity_weights_for_level(level: int) -> Dictionary:
 	var common := 60.0
@@ -314,6 +364,80 @@ func refresh_from_state() -> void:
 
 
 # -------------------------------------------------------------------
+# CARD ANIMATION
+# -------------------------------------------------------------------
+
+func _animate_cards_in() -> void:
+	"""Animate cards in with sequential wiggle effect - each card completes before next starts."""
+	var cards := cards_container.get_children()
+	
+	# FIRST: Store base scales BEFORE modifying anything (these were set in _setup_cards)
+	var base_scales = {}
+	for i in range(cards.size()):
+		if cards[i].visible:
+			base_scales[i] = cards[i].scale  # Store the scale: 1.2 for center, 1.0 for middle, 0.9 for outer
+	
+	# THEN: Start all cards invisible and tiny for animation
+	for card in cards:
+		if not card.visible:
+			continue
+		
+		# ⭐ SET PIVOT TO CENTER so rotation happens from center
+		# Card size is 235x174 (based on upgrade_card.tscn)
+		card.pivot_offset = Vector2(117.5, 87.0)  # Half of 235x174
+		
+		card.modulate.a = 0.0
+		card.scale = Vector2(0.0, 0.0)  # This overwrites the base scale, but we saved it above
+		card.rotation = 0.0
+	
+	# Animate cards from center outward: 2 -> (1,3) -> (0,4)
+	# Define animation order and delays
+	var animation_groups = [
+		{"indices": [2], "delay": 0.0},      # Card 2 (center) - starts immediately
+		{"indices": [1, 3], "delay": 0.7},   # Cards 1 & 3 - start after card 2 finishes
+		{"indices": [0, 4], "delay": 1.4}    # Cards 0 & 4 - start after cards 1 & 3 finish
+	]
+	
+	for group in animation_groups:
+		for card_index in group["indices"]:
+			# Skip if index is out of range or card is invisible
+			if card_index >= cards.size():
+				continue
+			
+			var card = cards[card_index]
+			if not card.visible:
+				continue
+			
+			var delay = group["delay"]
+			
+			# Get the card's base scale from our stored values
+			var base_scale = base_scales.get(card_index, Vector2(1.0, 1.0))
+			var overshoot_scale = base_scale * 1.15  # 15% bigger than base for overshoot
+			
+			# Phase 1: Fade in and scale to overshoot
+			var tween := create_tween()
+			tween.set_parallel(true)
+			
+			# Fade in
+			tween.tween_property(card, "modulate:a", 1.0, 0.3).set_delay(delay)
+			
+			# Scale up to overshoot (1.2x base scale)
+			tween.tween_property(card, "scale", overshoot_scale, 0.3).set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			
+			# Phase 2: Wiggle (rotate left and right) - REDUCED ANGLES
+			tween.set_parallel(false)  # Sequential from here
+			tween.tween_property(card, "rotation", deg_to_rad(4), 0.08)
+			tween.tween_property(card, "rotation", deg_to_rad(-4), 0.08)
+			tween.tween_property(card, "rotation", deg_to_rad(2), 0.08)
+			tween.tween_property(card, "rotation", deg_to_rad(-2), 0.08)
+			tween.tween_property(card, "rotation", 0.0, 0.08)
+			
+			# Phase 3: Scale back to base scale (settle) - happens during wiggle
+			tween.set_parallel(true)
+			tween.tween_property(card, "scale", base_scale, 0.25).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+
+# -------------------------------------------------------------------
 # SHOP OPENING (NORMAL MODE)
 # -------------------------------------------------------------------
 
@@ -350,6 +474,9 @@ func open_as_shop() -> void:
 	# Setup normal shop cards
 	_setup_cards()
 	_refresh_from_state_full()
+	
+	# Animate cards in
+	call_deferred("_animate_cards_in")
 
 
 # -------------------------------------------------------------------
@@ -397,6 +524,9 @@ func open_as_chest(chest: Node2D = null) -> void:
 	
 	# Setup chest cards
 	_setup_chest_cards()
+	
+	# Animate cards in
+	call_deferred("_animate_cards_in")
 
 
 func open_as_chest_with_loot(loot: Array) -> void:
@@ -440,6 +570,9 @@ func open_as_chest_with_loot(loot: Array) -> void:
 	
 	# Setup cards with predefined loot
 	_setup_chest_cards_with_loot(loot)
+	
+	# Animate cards in
+	call_deferred("_animate_cards_in")
 
 
 func _setup_chest_cards() -> void:
@@ -472,21 +605,48 @@ func _setup_chest_cards() -> void:
 		offers.append(chosen)
 		taken_ids.append(chosen["id"])
 	
-	# Setup all 5 cards
+	# Sort by rarity
+	offers = _sort_offers_by_rarity(offers)
+	
+	# Assign to positions: center (2), middle (1,3), outer (0,4)
+	var position_order = [2, 1, 3, 0, 4]
 	var children := cards_container.get_children()
+	var used_positions = []  # Track which positions we've used
+	
+	for i in range(position_order.size()):
+		if i >= offers.size():
+			break
+		
+		var position = position_order[i]
+		if position >= children.size():
+			continue
+		
+		var card = children[position]
+		card.visible = true
+		card.modulate = Color(1, 1, 1, 1)
+		
+		# Make a copy and set price to 0 for chest mode
+		var upgrade_data = offers[i].duplicate()
+		upgrade_data["price"] = 0
+		card.setup(upgrade_data)
+		
+		if not card.purchased.is_connected(_on_chest_card_purchased):
+			card.purchased.connect(_on_chest_card_purchased)
+		
+		used_positions.append(position)
+		
+		# Set base scale based on position - DEFERRED
+		if position == 2:  # Center card
+			card.set_deferred("scale", Vector2(1.2, 1.2))
+		elif position == 1 or position == 3:  # Middle cards
+			card.set_deferred("scale", Vector2(1.0, 1.0))
+		else:  # Outer cards (0, 4)
+			card.set_deferred("scale", Vector2(0.9, 0.9))
+	
+	# Hide unused cards
 	for i in range(children.size()):
-		var card = children[i]
-		if i < offers.size():
-			card.visible = true
-			card.modulate = Color(1, 1, 1, 1)  # Fully opaque
-			# Make a copy and set price to 0 for chest mode
-			var upgrade_data = offers[i].duplicate()
-			upgrade_data["price"] = 0
-			card.setup(upgrade_data)
-			if not card.purchased.is_connected(_on_chest_card_purchased):
-				card.purchased.connect(_on_chest_card_purchased)
-		else:
-			card.visible = false
+		if i not in used_positions:
+			children[i].visible = false
 
 
 func _setup_chest_cards_with_loot(loot: Array) -> void:
@@ -498,21 +658,48 @@ func _setup_chest_cards_with_loot(loot: Array) -> void:
 		if card.purchased.is_connected(_on_chest_card_purchased):
 			card.purchased.disconnect(_on_chest_card_purchased)
 	
-	# Setup all cards with loot
+	# Sort loot by rarity
+	var sorted_loot = _sort_offers_by_rarity(loot)
+	
+	# Assign to positions: center (2), middle (1,3), outer (0,4)
+	var position_order = [2, 1, 3, 0, 4]
 	var children := cards_container.get_children()
+	var used_positions = []  # Track which positions we've used
+	
+	for i in range(position_order.size()):
+		if i >= sorted_loot.size():
+			break
+		
+		var position = position_order[i]
+		if position >= children.size():
+			continue
+		
+		var card = children[position]
+		card.visible = true
+		card.modulate = Color(1, 1, 1, 1)
+		
+		# Make a copy and set price to 0 for chest mode
+		var upgrade_data = sorted_loot[i].duplicate()
+		upgrade_data["price"] = 0
+		card.setup(upgrade_data)
+		
+		if not card.purchased.is_connected(_on_chest_card_purchased):
+			card.purchased.connect(_on_chest_card_purchased)
+		
+		used_positions.append(position)
+		
+		# Set base scale based on position - DEFERRED
+		if position == 2:  # Center card
+			card.set_deferred("scale", Vector2(1.2, 1.2))
+		elif position == 1 or position == 3:  # Middle cards
+			card.set_deferred("scale", Vector2(1.0, 1.0))
+		else:  # Outer cards (0, 4)
+			card.set_deferred("scale", Vector2(0.9, 0.9))
+	
+	# Hide unused cards
 	for i in range(children.size()):
-		var card = children[i]
-		if i < loot.size():
-			card.visible = true
-			card.modulate = Color(1, 1, 1, 1)  # Fully opaque
-			# Make a copy and set price to 0 for chest mode
-			var upgrade_data = loot[i].duplicate()
-			upgrade_data["price"] = 0
-			card.setup(upgrade_data)
-			if not card.purchased.is_connected(_on_chest_card_purchased):
-				card.purchased.connect(_on_chest_card_purchased)
-		else:
-			card.visible = false
+		if i not in used_positions:
+			children[i].visible = false
 
 
 func _get_chest_rarity_weights() -> Dictionary:

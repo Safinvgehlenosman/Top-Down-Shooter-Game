@@ -10,6 +10,7 @@ signal purchased
 @onready var color_rect: ColorRect   = $ColorRect  # ← Background for rarity color
 
 var sfx_collect: AudioStreamPlayer = null
+var background_panel: Panel = null  # Panel for rounded corners
 
 var upgrade_id: String = ""
 var base_price: int = 0
@@ -37,6 +38,34 @@ func _ready() -> void:
 
 	if buy_button and not buy_button.pressed.is_connected(_on_buy_pressed):
 		buy_button.pressed.connect(_on_buy_pressed)
+	
+	# Create a Panel for rounded corners background
+	if color_rect and not background_panel:
+		background_panel = Panel.new()
+		background_panel.z_index = -4096
+		background_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		background_panel.position = Vector2.ZERO
+		background_panel.size = color_rect.size
+		
+		# Create StyleBox for rounded corners
+		var style = StyleBoxFlat.new()
+		style.bg_color = Color(0.2, 0.2, 0.2, 0.3)  # Default color (will be updated in refresh)
+		style.corner_radius_top_left = 10
+		style.corner_radius_top_right = 10
+		style.corner_radius_bottom_left = 10
+		style.corner_radius_bottom_right = 10
+		background_panel.add_theme_stylebox_override("panel", style)
+		
+		# Add panel before ColorRect (lower z-index)
+		add_child(background_panel)
+		move_child(background_panel, 0)
+		
+		# Hide the ColorRect since we're using Panel now
+		color_rect.visible = false
+	
+	# Set pivot to center for proper rotation/scaling
+	# Use actual card size (235x174 based on ColorRect/Button)
+	pivot_offset = Vector2(235.0 / 2.0, 174.0 / 2.0)
 
 	_refresh()
 
@@ -109,9 +138,13 @@ func _refresh() -> void:
 		icon_rect.texture = icon
 
 	# ✨ Set background color based on rarity
-	if color_rect:
+	if background_panel:
 		var color = RARITY_COLORS.get(rarity, Color(0.2, 0.2, 0.2, 0.3))  # Default gray
-		color_rect.color = color
+		
+		# Update the Panel's StyleBox color
+		var style = background_panel.get_theme_stylebox("panel")
+		if style and style is StyleBoxFlat:
+			style.bg_color = color
 
 	_update_button_state()
 

@@ -98,7 +98,6 @@ metadata/_edit_use_anchors_ = true
 [node name="SFX_Spawn" type="AudioStreamPlayer2D" parent="."]
 position = Vector2(89, -18)
 stream = ExtResource("4_1noaq")
-pitch_scale = 0.5
 bus = &"SFX"
 
 [node name="SFX_Despawn" type="AudioStreamPlayer2D" parent="."]
