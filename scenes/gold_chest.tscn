@@ -105,7 +105,8 @@ stream = ExtResource("5_owqwr")
 bus = &"SFX"
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
-scale = Vector2(0.515625, 0.46875)
+position = Vector2(1.1920929e-07, 0)
+scale = Vector2(0.82968754, 0.8)
 color = Color(1, 0.843, 0, 1)
 shadow_enabled = true
 texture = SubResource("GradientTexture2D_yue2o")

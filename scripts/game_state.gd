@@ -723,51 +723,46 @@ func apply_upgrade(upgrade_id: String) -> void:
 			print("  → Sniper charge epic applied (data-only)")
 
 		# FLAMETHROWER
-		"flame_lifetime_common":
+		"flamethrower_lifetime_common":
 			flamethrower_lifetime_bonus_percent += 0.10
 			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER) and ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].has("flame_lifetime"):
-				# Recalculate from base (0.25)
 				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"] = 0.25 * (1.0 + flamethrower_lifetime_bonus_percent)
-			print("  → Flame lifetime bonus:", flamethrower_lifetime_bonus_percent)
-			print("  → Flame lifetime now:", ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].get("flame_lifetime"))
+			print("  → Flamethrower lifetime bonus:", flamethrower_lifetime_bonus_percent)
+			print("  → Flamethrower lifetime now:", ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].get("flame_lifetime"))
 
-		"flame_lifetime_uncommon":
+		"flamethrower_lifetime_uncommon":
 			flamethrower_lifetime_bonus_percent += 0.20
 			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER) and ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].has("flame_lifetime"):
-				# Recalculate from base (0.25)
 				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"] = 0.25 * (1.0 + flamethrower_lifetime_bonus_percent)
-			print("  → Flame lifetime bonus:", flamethrower_lifetime_bonus_percent)
-			print("  → Flame lifetime now:", ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].get("flame_lifetime"))
+			print("  → Flamethrower lifetime bonus:", flamethrower_lifetime_bonus_percent)
+			print("  → Flamethrower lifetime now:", ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].get("flame_lifetime"))
 
-		"flame_lifetime_rare":
+		"flamethrower_lifetime_rare":
 			flamethrower_lifetime_bonus_percent += 0.30
 			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER) and ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].has("flame_lifetime"):
-				# Recalculate from base (0.25)
 				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"] = 0.25 * (1.0 + flamethrower_lifetime_bonus_percent)
-			print("  → Flame lifetime bonus:", flamethrower_lifetime_bonus_percent)
-			print("  → Flame lifetime now:", ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].get("flame_lifetime"))
+			print("  → Flamethrower lifetime bonus:", flamethrower_lifetime_bonus_percent)
+			print("  → Flamethrower lifetime now:", ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].get("flame_lifetime"))
 
-		"flame_burn_uncommon":
+		"flamethrower_burn_uncommon":
 			print("  → Flamethrower burn damage increase (data-only)")
 
-		"flame_burn_rare":
+		"flamethrower_burn_rare":
 			print("  → Flamethrower burn damage rare (data-only)")
 
-		"flame_size_rare":
+		"flamethrower_size_rare":
 			flamethrower_size_bonus_percent += 0.10
 			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER) and ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].has("damage"):
-				# Recalculate from base (4.0)
 				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["damage"] = 4.0 * (1.0 + flamethrower_size_bonus_percent)
-			print("  → Flame size bonus:", flamethrower_size_bonus_percent)
-			print("  → Flame size / damage proxy applied")
+			print("  → Flamethrower size bonus:", flamethrower_size_bonus_percent)
+			print("  → Flamethrower size / damage proxy applied")
 
-		"flame_size_epic":
+		"flamethrower_size_epic":
 			flamethrower_size_bonus_percent += 0.20
 			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER) and ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].has("damage"):
-				# Recalculate from base (4.0)
 				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["damage"] = 4.0 * (1.0 + flamethrower_size_bonus_percent)
-			print("  → Flame size bonus:", flamethrower_size_bonus_percent)
-			print("  → Flame size epic applied")
+			print("  → Flamethrower size bonus:", flamethrower_size_bonus_percent)
+			print("  → Flamethrower size epic applied")
 
 		# GRENADE
 		"grenade_radius_common":

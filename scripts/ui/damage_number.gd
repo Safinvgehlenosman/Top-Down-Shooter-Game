@@ -47,7 +47,7 @@ func setup(damage: int, is_crit: bool = false, target: Node2D = null) -> void:
 
 
 func add_damage(additional_damage: int) -> void:
-	var old_total := total_damage
+	var _old_total := total_damage
 	total_damage += additional_damage
 	
 	# RESET lifetime completely so it stays visible

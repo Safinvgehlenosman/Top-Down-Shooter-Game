@@ -164,7 +164,7 @@ const ALL_UPGRADES: Array = [
 	},
 	{
 		"id": "unlock_flamethrower",
-		"text": "Unlock Flame",
+		"text": "Unlock Flamethrower",
 		"price": 300,
 		"rarity": Rarity.UNCOMMON,
 		"icon": preload("res://assets/bullets/flamethrowerbullet.png"),
@@ -298,30 +298,18 @@ const ALL_UPGRADES: Array = [
 	},
 
 	# Primary Bullet Size (Line C)
-	{
-		"id": "primary_bullet_size_rare",
-		"line_id": "primary_bullet_size",
-		"text": "+10% Bullet Size",
-		"description": "Increase primary bullet size by 10%.",
-		"price": 120,
-		"rarity": Rarity.RARE,
-		"tags": ["weapon_primary"],
-		"increment": 0.10,
-		"stackable": true,
-		"icon": preload("res://assets/Separated/singlebullet.png"),
-	},
-	{
-		"id": "primary_bullet_size_epic",
-		"line_id": "primary_bullet_size",
-		"text": "+20% Bullet Size",
-		"description": "Increase primary bullet size by 20%.",
-		"price": 250,
-		"rarity": Rarity.EPIC,
-		"tags": ["weapon_primary"],
-		"increment": 0.20,
-		"stackable": true,
-		"icon": preload("res://assets/Separated/singlebullet.png"),
-	},
+	   {
+		   "id": "primary_bullet_size_epic",
+		   "line_id": "primary_bullet_size",
+		   "text": "+10% Bullet Size",
+		   "description": "Increase primary bullet size by 10%.",
+		   "price": 200,
+		   "rarity": Rarity.EPIC,
+		   "tags": ["weapon_primary"],
+		   "increment": 0.10,
+		   "stackable": true,
+		   "icon": preload("res://assets/Separated/singlebullet.png"),
+	   },
 
 	# SHOTGUN
 	{
@@ -517,10 +505,10 @@ const ALL_UPGRADES: Array = [
 
 	# FLAMETHROWER
 	{
-		"id": "flame_lifetime_common",
-		"line_id": "flame_lifetime",
-		"text": "+10% Flame Lifetime",
-		"description": "Increase flamethrower flame lifetime by 10%.",
+		"id": "flamethrower_lifetime_common",
+		"line_id": "flamethrower_lifetime",
+		"text": "+10% Flamethrower Lifetime",
+		"description": "Increase flamethrower lifetime by 10%.",
 		"price": 30,
 		"rarity": Rarity.COMMON,
 		"tags": ["weapon_flamethrower"],
@@ -530,8 +518,8 @@ const ALL_UPGRADES: Array = [
 		"icon": preload("res://assets/bullets/flamethrowerbullet.png"),
 	},
 	{
-		"id": "flame_lifetime_uncommon",
-		"line_id": "flame_lifetime",
+		"id": "flamethrower_lifetime_uncommon",
+		"line_id": "flamethrower_lifetime",
 		"text": "+20% Flame Lifetime",
 		"description": "Increase flamethrower flame lifetime by 20%.",
 		"price": 60,
@@ -543,8 +531,8 @@ const ALL_UPGRADES: Array = [
 		"icon": preload("res://assets/bullets/flamethrowerbullet.png"),
 	},
 	{
-		"id": "flame_lifetime_rare",
-		"line_id": "flame_lifetime",
+		"id": "flamethrower_lifetime_rare",
+		"line_id": "flamethrower_lifetime",
 		"text": "+30% Flame Lifetime",
 		"description": "Increase flamethrower flame lifetime by 30%.",
 		"price": 120,
@@ -556,8 +544,8 @@ const ALL_UPGRADES: Array = [
 		"icon": preload("res://assets/bullets/flamethrowerbullet.png"),
 	},
 	{
-		"id": "flame_burn_uncommon",
-		"line_id": "flame_burn",
+		"id": "flamethrower_burn_uncommon",
+		"line_id": "flamethrower_burn",
 		"text": "+10% Burn Damage",
 		"description": "Increase flame burn damage by 10%.",
 		"price": 60,
@@ -569,8 +557,8 @@ const ALL_UPGRADES: Array = [
 		"icon": preload("res://assets/bullets/flamethrowerbullet.png"),
 	},
 	{
-		"id": "flame_burn_rare",
-		"line_id": "flame_burn",
+		"id": "flamethrower_burn_rare",
+		"line_id": "flamethrower_burn",
 		"text": "+20% Burn Damage",
 		"description": "Increase flame burn damage by 20%.",
 		"price": 120,
@@ -582,8 +570,8 @@ const ALL_UPGRADES: Array = [
 		"icon": preload("res://assets/bullets/flamethrowerbullet.png"),
 	},
 	{
-		"id": "flame_size_rare",
-		"line_id": "flame_size",
+		"id": "flamethrower_size_rare",
+		"line_id": "flamethrower_size",
 		"text": "+10% Flame Size",
 		"description": "Increase flame size by 10%.",
 		"price": 120,
@@ -595,8 +583,8 @@ const ALL_UPGRADES: Array = [
 		"icon": preload("res://assets/bullets/flamethrowerbullet.png"),
 	},
 	{
-		"id": "flame_size_epic",
-		"line_id": "flame_size",
+		"id": "flamethrower_size_epic",
+		"line_id": "flamethrower_size",
 		"text": "+20% Flame Size",
 		"description": "Increase flame size by 20%.",
 		"price": 250,

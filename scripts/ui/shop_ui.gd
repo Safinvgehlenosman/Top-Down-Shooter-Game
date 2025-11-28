@@ -20,6 +20,20 @@ const ABILITY_SLOWMO = GameState.AbilityType.SLOWMO
 const ABILITY_BUBBLE = GameState.AbilityType.BUBBLE
 const ABILITY_INVIS = GameState.AbilityType.INVIS
 
+# Helper: derive base upgrade id (so only one rarity per type appears)
+func _get_base_upgrade_id(up: Dictionary) -> String:
+	var id: String = up.get("id", "")
+	if up.has("line_id"):
+		return String(up.get("line_id"))
+	var parts := id.split("_")
+	if parts.size() > 1:
+		var last := parts[-1].to_lower()
+		if last in ["common", "uncommon", "rare", "epic"]:
+			parts.remove_at(parts.size() - 1)
+		elif parts[-1].is_valid_int():
+			parts.remove_at(parts.size() - 1)
+	return "_".join(parts)
+
 @onready var continue_button := $Panel/ContinueButton
 @onready var cards_container := $Panel/Cards
 @onready var coin_label: Label = $CoinUI/CoinLabel
@@ -109,6 +123,7 @@ func _setup_cards() -> void:
 func _roll_shop_offers() -> Array:
 	var result: Array = []
 	var taken_ids: Array[String] = []
+	var taken_bases := {}
 
 	var gm := get_tree().get_first_node_in_group("game_manager")
 	var current_level := 1
@@ -122,18 +137,25 @@ func _roll_shop_offers() -> Array:
 
 	for i in range(max_cards):
 		var rarity := _roll_rarity(rarity_weights)
-		var candidates := _filter_upgrades(all_upgrades, rarity, taken_ids)
-
-		# Fallback: any rarity if we ran out
+		var candidates := _filter_upgrades(all_upgrades, rarity, taken_ids, taken_bases)
 		if candidates.is_empty():
-			candidates = _filter_upgrades(all_upgrades, -1, taken_ids)
+			candidates = _filter_upgrades(all_upgrades, -1, taken_ids, taken_bases)
 		if candidates.is_empty():
 			break
-
 		candidates.shuffle()
-		var chosen = candidates[0]
+		# Pick first whose base not used (defensive)
+		var chosen: Dictionary = {}
+		for c in candidates:
+			var base := _get_base_upgrade_id(c)
+			if not taken_bases.has(base):
+				chosen = c
+				break
+		if chosen == null:
+			chosen = candidates[0]
 		result.append(chosen)
 		taken_ids.append(chosen["id"])
+		var chosen_base := _get_base_upgrade_id(chosen)
+		taken_bases[chosen_base] = true
 
 	return result
 
@@ -207,7 +229,7 @@ func _roll_rarity(weights: Dictionary = {}) -> int:
 
 	return UpgradesDB.Rarity.COMMON
 
-func _filter_upgrades(all_upgrades: Array, wanted_rarity: int, taken_ids: Array[String]) -> Array:
+func _filter_upgrades(all_upgrades: Array, wanted_rarity: int, taken_ids: Array[String], taken_bases: Dictionary) -> Array:
 	var res: Array = []
 
 	for u in all_upgrades:
@@ -226,6 +248,10 @@ func _filter_upgrades(all_upgrades: Array, wanted_rarity: int, taken_ids: Array[
 		if not stackable and GameState.has_upgrade(id):
 			continue
 
+		# Enforce base uniqueness (skip if base already used)
+		var base_id := _get_base_upgrade_id(u)
+		if taken_bases.has(base_id):
+			continue
 		res.append(u)
 
 	return res
@@ -587,23 +613,33 @@ func _setup_chest_cards() -> void:
 	var chest_weights := _get_chest_rarity_weights()
 	var all_upgrades: Array = preload("res://scripts/Upgrades_DB.gd").get_all()
 	var taken_ids: Array[String] = []
+	var taken_bases := {}
 	var offers: Array = []
 	
 	# Generate 5 upgrades
 	for i in range(5):
 		var rarity := _roll_rarity(chest_weights)
-		var candidates := _filter_upgrades(all_upgrades, rarity, taken_ids)
+		var candidates := _filter_upgrades(all_upgrades, rarity, taken_ids, taken_bases)
 		
 		# Fallback: any rarity if we ran out
 		if candidates.is_empty():
-			candidates = _filter_upgrades(all_upgrades, -1, taken_ids)
+			candidates = _filter_upgrades(all_upgrades, -1, taken_ids, taken_bases)
 		if candidates.is_empty():
 			break
 		
 		candidates.shuffle()
-		var chosen = candidates[0]
+		var chosen: Dictionary = {}
+		for c in candidates:
+			var base := _get_base_upgrade_id(c)
+			if not taken_bases.has(base):
+				chosen = c
+				break
+		if chosen == null:
+			chosen = candidates[0]
 		offers.append(chosen)
 		taken_ids.append(chosen["id"])
+		var base_chosen := _get_base_upgrade_id(chosen)
+		taken_bases[base_chosen] = true
 	
 	# Sort by rarity
 	offers = _sort_offers_by_rarity(offers)

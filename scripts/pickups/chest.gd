@@ -100,66 +100,74 @@ func _open_chest() -> void:
 		# Fallback for older shop_ui without custom loot support
 		shop_ui.open_as_chest()
 
+	# Despawn chest immediately after opening shop
+	_despawn_chest()
+
+func _despawn_chest() -> void:
+	# Fade out and queue_free
+	var tween := create_tween()
+	tween.tween_property(self, "modulate:a", 0.0, 0.3)
+	tween.tween_callback(queue_free)
+
 
 ## Generate loot based on chest type
 func _generate_loot() -> Array:
 	var loot := []
-	
+	var used_upgrade_bases := {}
 	match chest_type:
 		ChestType.BRONZE:
 			# 2 Common, 3 Uncommon
-			loot.append_array(_get_random_upgrades_by_rarity(UpgradesDB.Rarity.COMMON, 2))
-			loot.append_array(_get_random_upgrades_by_rarity(UpgradesDB.Rarity.UNCOMMON, 3))
-		
+			loot.append_array(_get_random_upgrades_by_rarity(UpgradesDB.Rarity.COMMON, 2, used_upgrade_bases))
+			loot.append_array(_get_random_upgrades_by_rarity(UpgradesDB.Rarity.UNCOMMON, 3, used_upgrade_bases))
 		ChestType.NORMAL:
 			# 2 Uncommon, 3 Rare
-			loot.append_array(_get_random_upgrades_by_rarity(UpgradesDB.Rarity.UNCOMMON, 2))
-			loot.append_array(_get_random_upgrades_by_rarity(UpgradesDB.Rarity.RARE, 3))
-		
+			loot.append_array(_get_random_upgrades_by_rarity(UpgradesDB.Rarity.UNCOMMON, 2, used_upgrade_bases))
+			loot.append_array(_get_random_upgrades_by_rarity(UpgradesDB.Rarity.RARE, 3, used_upgrade_bases))
 		ChestType.GOLD:
 			# 1 Uncommon, 3 Rare, 1 Epic
-			loot.append_array(_get_random_upgrades_by_rarity(UpgradesDB.Rarity.UNCOMMON, 1))
-			loot.append_array(_get_random_upgrades_by_rarity(UpgradesDB.Rarity.RARE, 3))
-			loot.append_array(_get_random_upgrades_by_rarity(UpgradesDB.Rarity.EPIC, 1))
-	
-	# Shuffle to mix rarities
+			loot.append_array(_get_random_upgrades_by_rarity(UpgradesDB.Rarity.UNCOMMON, 1, used_upgrade_bases))
+			loot.append_array(_get_random_upgrades_by_rarity(UpgradesDB.Rarity.RARE, 3, used_upgrade_bases))
+			loot.append_array(_get_random_upgrades_by_rarity(UpgradesDB.Rarity.EPIC, 1, used_upgrade_bases))
 	loot.shuffle()
-	
 	print("[Chest] Generated %d upgrades for %s chest" % [loot.size(), _get_chest_type_name()])
 	return loot
+func _get_base_upgrade_id(upgrade_id: String) -> String:
+	var parts := upgrade_id.split("_")
+	if parts.size() > 1:
+		var last_part := parts[-1]
+		if last_part.is_valid_int():
+			parts.remove_at(parts.size() - 1)
+	return "_".join(parts)
 
 
 ## Get random upgrades of specific rarity that meet requirements
-func _get_random_upgrades_by_rarity(rarity: int, count: int) -> Array:
+func _get_random_upgrades_by_rarity(rarity: int, count: int, used_bases: Dictionary) -> Array:
 	var filtered := _filter_by_rarity(rarity)
-	
 	if filtered.is_empty():
 		push_warning("[Chest] No valid upgrades found for rarity %d" % rarity)
 		return []
-	
 	var selected := []
 	var attempts := 0
-	var max_attempts := count * 10  # Prevent infinite loops
-	
+	var max_attempts := count * 10
 	while selected.size() < count and attempts < max_attempts:
 		attempts += 1
-		
-		# Pick random upgrade from filtered pool
 		var upgrade = filtered.pick_random()
-		
+		var upgrade_id: String = upgrade.get("id", "")
+		var base_id := _get_base_upgrade_id(upgrade_id)
 		# Check if already selected (no duplicates)
-		var duplicate := false
+		var is_duplicate := false
 		for s in selected:
-			if s.get("id") == upgrade.get("id"):
-				duplicate = true
+			if s.get("id") == upgrade_id:
+				is_duplicate = true
 				break
-		
-		if not duplicate:
+		# NEW: Check if base upgrade type already used
+		if used_bases.has(base_id):
+			continue
+		if not is_duplicate:
 			selected.append(upgrade)
-	
+			used_bases[base_id] = true
 	if selected.size() < count:
 		push_warning("[Chest] Could only find %d/%d unique upgrades for rarity %d" % [selected.size(), count, rarity])
-	
 	return selected
 
 
@@ -167,7 +175,7 @@ func _get_random_upgrades_by_rarity(rarity: int, count: int) -> Array:
 func _filter_by_rarity(rarity: int) -> Array:
 	var filtered := []
 	
-	for upgrade in UpgradesDB.get_all():
+	for upgrade in UpgradesDB.ALL_UPGRADES:
 		# Check rarity match
 		if upgrade.get("rarity") != rarity:
 			continue
@@ -224,7 +232,7 @@ func _meets_requirements(upgrade: Dictionary) -> bool:
 
 ## Check if player has an ammo-consuming weapon
 func _player_has_ammo_weapon() -> bool:
-	var weapon_type := GameState.alt_weapon
+	var weapon_type: int = GameState.alt_weapon
 	
 	# Weapons that consume ammo
 	var ammo_weapons := [
