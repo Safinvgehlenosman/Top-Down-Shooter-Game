@@ -55,21 +55,48 @@ func _update_hit_feedback(delta: float) -> void:
 # --------------------------------------------------------------------
 
 func _spawn_loot() -> void:
-	# Crates now only drop ammo or bullets, 50/50
+	# Dynamic pickup spawn based on player needs
+	var hp_percent := 1.0
+	var ammo_percent := 1.0
+	
+	# Calculate HP percentage
+	if GameState.max_health > 0:
+		hp_percent = float(GameState.health) / float(GameState.max_health)
+	
+	# Calculate ammo percentage (only if player has ammo weapon)
+	if GameState.max_ammo > 0:
+		ammo_percent = float(GameState.ammo) / float(GameState.max_ammo)
+	
+	# Determine heart spawn chance based on player needs
+	var heart_chance := 0.5  # default 50/50
+	
+	if hp_percent < 0.5 and ammo_percent >= 0.25:
+		# Low HP, sufficient ammo → prioritize hearts
+		heart_chance = 0.75
+	elif ammo_percent < 0.25 and hp_percent >= 0.5:
+		# Low ammo, sufficient HP → prioritize ammo
+		heart_chance = 0.25
+	# else: both low or both high → keep 50/50
+	
 	var roll := randf()
-
-	if roll < 0.5:
+	
+	if roll < heart_chance:
+		# Heart pickup
+		if HeartScene:
+			var heart := HeartScene.instantiate()
+			heart.global_position = global_position
+			get_tree().current_scene.add_child(heart)
+		elif CoinScene:
+			# Fallback to coin if no heart scene
+			var coin := CoinScene.instantiate()
+			coin.global_position = global_position
+			get_tree().current_scene.add_child(coin)
+	else:
 		# Ammo pickup
 		if AmmoScene:
 			var ammo := AmmoScene.instantiate()
 			ammo.global_position = global_position
 			get_tree().current_scene.add_child(ammo)
-	else:
-		# Bullet / coin / whatever you use as other ammo type
-		if CoinScene:
-			var bullet := CoinScene.instantiate()
-			bullet.global_position = global_position
-			get_tree().current_scene.add_child(bullet)
 
 
 
