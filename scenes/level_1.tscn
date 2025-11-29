@@ -78,6 +78,11 @@ enemy_scenes = Array[PackedScene]([ExtResource("11_7nomh"), ExtResource("13_x2xx
 enemy_weights = Array[float]([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 enemy_chance = 0.7
 crate_chance = 0.4
+themed_room_1_slimes = Array[PackedScene]([ExtResource("11_7nomh")])
+themed_room_2_slimes = Array[PackedScene]([ExtResource("18_tr1x6"), ExtResource("13_x2xxo")])
+themed_room_3_slimes = Array[PackedScene]([ExtResource("19_tr1x6"), ExtResource("12_1s4pk")])
+themed_room_4_slimes = Array[PackedScene]([ExtResource("18_tr1x6"), ExtResource("19_tr1x6"), ExtResource("21_wbtxt")])
+themed_room_5_slimes = Array[PackedScene]([ExtResource("15_x2xxo")])
 
 [node name="ShopUI" parent="." instance=ExtResource("3_tr1x6")]
 visible = false

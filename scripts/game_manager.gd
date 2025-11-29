@@ -132,6 +132,10 @@ func _update_level_ui() -> void:
 	var label := get_tree().get_first_node_in_group("level_label") as Label
 	if label:
 		label.text = "%d" % current_level
+		if _is_themed_room(current_level):
+			label.modulate = Color(1, 0.2, 0.2) # Red
+		else:
+			label.modulate = Color(1, 1, 1) # White
 
 
 # --- ROOM / LEVEL LOADING -------------------------------------------
@@ -310,8 +314,37 @@ func _spawn_room_content() -> void:
 	alive_enemies = 0
 	var has_chest_dropper: bool = false  # Track if we've assigned chest dropper
 
+	var themed_room := _is_themed_room(current_level)
+	var themed_slimes := _get_themed_room_slimes(current_level)
+
 	for spawn in room_spawn_points:
 		var r := randf()
+
+		if themed_room:
+			# Only spawn themed slimes, no crates
+			if themed_slimes.size() > 0:
+				var enemy_scene := themed_slimes[randi() % themed_slimes.size()]
+				if enemy_scene:
+					var desired_pos := spawn.global_position
+					var safe_pos := _find_safe_spawn_position(desired_pos)
+					if not _is_spawn_valid(safe_pos):
+						continue
+					var enemy := enemy_scene.instantiate()
+					enemy.global_position = safe_pos
+					if enemy.has_method("apply_level"):
+						enemy.apply_level(current_level)
+					current_room.add_child(enemy)
+					alive_enemies += 1
+					if chest_spawn_point != null and not has_chest_dropper:
+						if randf() < (1.0 / max(1, alive_enemies)):
+							enemy.set_meta("drops_chest", true)
+							has_chest_dropper = true
+							print("[GameManager] Marked enemy as chest dropper at position: ", enemy.global_position)
+					if enemy.has_signal("died"):
+						enemy.died.connect(_on_enemy_died.bind(enemy))
+			continue
+			# No crates or nothing in themed rooms
+			continue
 
 		# --- ENEMY ---------------------------------------------------
 		if r < enemy_chance:
@@ -352,7 +385,7 @@ func _spawn_room_content() -> void:
 			continue
 
 		# --- CRATE ---------------------------------------------------
-		if r < enemy_chance + crate_chance and crate_scene:
+		if r < enemy_chance + crate_chance and crate_scene and not themed_room:
 			var crate := crate_scene.instantiate()
 			crate.global_position = spawn.global_position
 			current_room.add_child(crate)
@@ -520,22 +553,24 @@ func _spawn_exit_door() -> void:
 
 
 func _spawn_chest_at_reserved_point() -> void:
-	"""Spawn a weighted random chest at the reserved chest spawn point."""
+	"""Spawn a weighted random chest at the reserved chest spawn point. In themed rooms, always spawn gold chest."""
 	if chest_spawn_point == null:
 		return
-	
-	# Weighted random chest selection
-	# Bronze: 50%, Normal: 35%, Gold: 15%
-	var chest_roll := randf()
+
 	var chest_scene: PackedScene = null
-	
-	if chest_roll < 0.50:  # 50% bronze
-		chest_scene = bronze_chest_scene
-	elif chest_roll < 0.85:  # 35% normal (0.50 + 0.35)
-		chest_scene = normal_chest_scene
-	else:  # 15% gold
+	if _is_themed_room(current_level):
 		chest_scene = gold_chest_scene
-	
+	else:
+		# Weighted random chest selection
+		# Bronze: 50%, Normal: 35%, Gold: 15%
+		var chest_roll := randf()
+		if chest_roll < 0.50:  # 50% bronze
+			chest_scene = bronze_chest_scene
+		elif chest_roll < 0.85:  # 35% normal (0.50 + 0.35)
+			chest_scene = normal_chest_scene
+		else:  # 15% gold
+			chest_scene = gold_chest_scene
+
 	# Fallback to normal if specific scene is missing
 	if chest_scene == null:
 		if normal_chest_scene != null:
@@ -547,11 +582,11 @@ func _spawn_chest_at_reserved_point() -> void:
 		else:
 			push_warning("[GameManager] No chest scenes assigned!")
 			return
-	
+
 	var chest := chest_scene.instantiate()
 	chest.global_position = chest_spawn_point.global_position
 	current_room.add_child(chest)
-	
+
 	print("[GameManager] Spawned chest at reserved point")
 	chest_spawn_point = null  # Clear to prevent multiple spawns
 
@@ -770,3 +805,43 @@ func _clear_room_transient_objects() -> void:
 	for n in nodes:
 		if is_instance_valid(n):
 			n.queue_free()
+
+
+# --- THEMED ROOM CONFIGURATION ---
+@export_group("Themed Rooms")
+@export var themed_room_interval: int = 5
+@export var first_themed_room_level: int = 10
+
+@export_subgroup("Themed Room 1 (Level 10)")
+@export var themed_room_1_slimes: Array[PackedScene] = []
+@export_subgroup("Themed Room 2 (Level 15)")
+@export var themed_room_2_slimes: Array[PackedScene] = []
+@export_subgroup("Themed Room 3 (Level 20)")
+@export var themed_room_3_slimes: Array[PackedScene] = []
+@export_subgroup("Themed Room 4 (Level 25)")
+@export var themed_room_4_slimes: Array[PackedScene] = []
+@export_subgroup("Themed Room 5 (Level 30)")
+@export var themed_room_5_slimes: Array[PackedScene] = []
+
+func _is_themed_room(level: int) -> bool:
+	if level < first_themed_room_level:
+		return false
+	return (level - first_themed_room_level) % themed_room_interval == 0
+
+func _get_themed_room_slimes(level: int) -> Array[PackedScene]:
+	if not _is_themed_room(level):
+		return []
+	var themed_room_index = int((level - first_themed_room_level) / themed_room_interval)
+	match themed_room_index:
+		0:
+			return themed_room_1_slimes
+		1:
+			return themed_room_2_slimes
+		2:
+			return themed_room_3_slimes
+		3:
+			return themed_room_4_slimes
+		4:
+			return themed_room_5_slimes
+		_:
+			return themed_room_5_slimes if themed_room_5_slimes.size() > 0 else []
