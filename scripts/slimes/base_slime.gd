@@ -91,6 +91,12 @@ func _ready() -> void:
 	if hit_light:
 		original_light_color = hit_light.color
 
+	# Apply global difficulty tweak: 1.2x movement speeds and 1.2x health
+	# Do this before wiring the health component so bars reflect new values
+	speed *= 1.2
+	wander_speed *= 1.2
+	max_health = int(round(max_health * 1.2))
+
 	# --- Health component wiring ---
 	if health_component:
 		health_component.max_health = max_health

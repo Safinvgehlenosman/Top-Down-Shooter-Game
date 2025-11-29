@@ -9,6 +9,13 @@ extends "res://scripts/slimes/base_slime.gd"
 var shoot_timer: float = 0.0
 
 
+func _ready() -> void:
+	# Ensure base setup runs
+	super._ready()
+	# Increase projectile speed to match global pacing
+	projectile_speed *= 1.2
+
+
 func _physics_process(delta: float) -> void:
 	# base AI (movement, aggro, hit logic)
 	super(delta)

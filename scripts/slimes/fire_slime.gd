@@ -15,6 +15,9 @@ var shoot_timer: float = 0.0
 
 func _ready() -> void:
 	super._ready()
+	# Increase pellet speeds to match global pacing
+	pellet_min_speed *= 1.2
+	pellet_max_speed *= 1.2
 	# tiny random offset so groups of fire slimes don’t fire in perfect sync
 	shoot_timer = randf_range(0.0, shoot_interval * 0.5)
 

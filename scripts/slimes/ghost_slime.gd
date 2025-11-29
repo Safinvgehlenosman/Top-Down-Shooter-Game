@@ -21,7 +21,9 @@ func _ready() -> void:
 	# Run base slime setup
 	super._ready()
 
-	# Override base stats
+	# Override base stats (apply 1.2x speed, 1.2x HP to ghost exports too)
+	ghost_speed *= 1.2
+	ghost_health = int(round(ghost_health * 1.2))
 	speed = ghost_speed
 	var hc := $Health
 
