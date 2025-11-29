@@ -146,6 +146,11 @@ func _on_debug_text_changed(new_text: String) -> void:
 
 	var command = parts[0].to_lower()
 	var partial = parts[1] if parts.size() > 1 else ""
+	
+	# Don't show autocomplete if we already have more than 2 words (e.g., "upgrade something 100")
+	if parts.size() > 2:
+		autocomplete_list.hide()
+		return
 
 	var suggestions: Array = []
 
@@ -375,16 +380,35 @@ func _cmd_ability(parts: Array) -> void:
 
 func _cmd_upgrade(parts: Array) -> void:
 	if parts.size() < 2:
-		print("[DEBUG] Usage: upgrade <upgrade_id>")
+		print("[DEBUG] Usage: upgrade <upgrade_id> [count]")
 		print("[DEBUG] Examples: primary_damage_plus_10, shotgun_unlock, max_hp_plus_1")
+		print("[DEBUG] Optional: upgrade primary_fire_rate_uncommon 10 (apply 10 times)")
 		print("[DEBUG] See Upgrades_DB.gd for full list")
 		return
 	
 	var upgrade_id = parts[1]
+	var count = 1
 	
-	# Apply upgrade through GameState (UpgradesDB.apply_upgrade is static)
-	GameState.apply_upgrade(upgrade_id)
-	print("[DEBUG] Applied upgrade:", upgrade_id)
+	# Optional third parameter: number of times to apply
+	if parts.size() >= 3 and parts[2].is_valid_int():
+		count = int(parts[2])
+		count = clamp(count, 1, 100)  # Safety clamp
+	
+	# Apply upgrade N times
+	for i in range(count):
+		GameState.apply_upgrade(upgrade_id)
+	
+	# Sync player Health component after upgrades (especially max_hp_plus_1)
+	var player := get_tree().get_first_node_in_group("player")
+	if player:
+		var hc := player.get_node_or_null("Health")
+		if hc and hc.has_method("sync_from_gamestate"):
+			hc.sync_from_gamestate()
+	
+	if count > 1:
+		print("[DEBUG] Applied upgrade '", upgrade_id, "' x", count)
+	else:
+		print("[DEBUG] Applied upgrade:", upgrade_id)
 
 
 func _cmd_coins(parts: Array) -> void:
@@ -403,20 +427,22 @@ func _cmd_health(parts: Array) -> void:
 		return
 	
 	var amount = int(parts[1])
+	
+	# If setting health above current max, increase max_health first
+	if amount > GameState.max_health:
+		GameState.max_health = amount
+		print("[DEBUG] Increased max_health to", amount)
+	
 	# Update GameState via setter to emit signals/UI
 	GameState.set_health(amount)
 	print("[DEBUG] Set GameState health to", GameState.health, "/", GameState.max_health)
 
-	# Also update the player's runtime Health component so hits don't revert
+	# Sync player Health component from GameState
 	var player := get_tree().get_first_node_in_group("player")
 	if player:
 		var hc := player.get_node_or_null("Health")
-		if hc and hc.has_method("set"):
-			# Directly set the health property on the Health script
-			hc.health = clamp(amount, 0, hc.max_health if "max_health" in hc else GameState.max_health)
-			if hc.has_method("_emit_health_changed"):
-				# If component has a method to notify UI, call it (optional)
-				hc._emit_health_changed()
+		if hc and hc.has_method("sync_from_gamestate"):
+			hc.sync_from_gamestate()
 			print("[DEBUG] Synced player Health component to", hc.health)
 
 
@@ -441,12 +467,12 @@ func _cmd_help() -> void:
 	print("=== DEBUG CONSOLE COMMANDS ===")
 	print("level <num>                - Jump to level (e.g., level 15)")
 	print("weapon <name> [ammo]       - Equip weapon, optional ammo override (e.g., weapon shotgun 10)")
-	print("ability <name>     - Equip ability (dash, slow, bubble, invis, none)")
-	print("upgrade <id>       - Add upgrade (e.g., primary_damage_plus_10, shotgun_unlock)")
-	print("coins <amount>     - Set coins (e.g., coins 999)")
-	print("health <amount>    - Set health (e.g., health 50)")
-	print("clear              - Remove all upgrades/weapons/abilities")
-	print("help               - Show this help")
+	print("ability <name>             - Equip ability (dash, slow, bubble, invis, none)")
+	print("upgrade <id> [count]       - Add upgrade 1 or N times (e.g., upgrade primary_damage_common 10)")
+	print("coins <amount>             - Set coins (e.g., coins 999)")
+	print("health <amount>            - Set health (e.g., health 50)")
+	print("clear                      - Remove all upgrades/weapons/abilities")
+	print("help                       - Show this help")
 	print("")
 	print("TIP: You can still just type a number to jump to that level!")
 	print("===============================")

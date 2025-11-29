@@ -5,16 +5,12 @@ func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("debug_open_shop"):
 		_debug_open_shop()
 
-	if event.is_action_pressed("debug_add_coins"):
-		_debug_give_coins()
-
 	if event.is_action_pressed("debug_kill_slimes"):
 		_debug_kill_slimes()
 
 	if event.is_action_pressed("debug_next_level"):
 		_debug_open_level_popup()
 
-	# NEW: toggles
 	if event.is_action_pressed("debug_toggle_god_mode"):
 		_debug_toggle_god_mode()
 
@@ -24,11 +20,11 @@ func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("debug_toggle_noclip"):
 		_debug_toggle_noclip()
 
-	if event.is_action_pressed("debug_toggle_overlay"):
-		_debug_toggle_overlay()
-
 	if event.is_action_pressed("debug_laser_mode"):
 		_debug_toggle_laser_mode()
+
+	if event.is_action_pressed("debug_toggle_overlay"):
+		_debug_toggle_overlay()
 
 # ------------------------------------------------------------
 # DEBUG ACTIONS
@@ -41,11 +37,6 @@ func _debug_open_shop() -> void:
 		print("[DEBUG] Shop opened.")
 	else:
 		print("[DEBUG] Could not find GameManager._open_shop()")
-
-
-func _debug_give_coins() -> void:
-	GameState.add_coins(99999)
-	print("[DEBUG] +99999 coins")
 
 
 func _debug_kill_slimes() -> void:
@@ -72,7 +63,7 @@ func _debug_open_level_popup() -> void:
 
 
 # ------------------------------------------------------------
-# GOD MODE / INFINITE AMMO / NOCLIP
+# DEBUG TOGGLES
 # ------------------------------------------------------------
 
 func _debug_toggle_god_mode() -> void:
@@ -99,8 +90,9 @@ func _debug_toggle_noclip() -> void:
 	print("[DEBUG] Noclip:", GameState.debug_noclip)
 	_update_overlay_text()
 
+
 func _debug_toggle_laser_mode() -> void:
-	GameState.debug_laser_mode = not GameState.debug_laser_mode
+	GameState.debug_laser_mode = !GameState.debug_laser_mode
 	var state := "ON" if GameState.debug_laser_mode else "OFF"
 	print("[DEBUG] Laser mode:", state)
 	_update_overlay_text()
@@ -130,24 +122,23 @@ func _update_overlay_text() -> void:
 	if overlay == null or not overlay.has_method("set_text"):
 		return
 
-	var god_str    = "ON" if GameState.debug_god_mode else "OFF"
-	var ammo_str   = "ON" if GameState.debug_infinite_ammo else "OFF"
+	var god_str = "ON" if GameState.debug_god_mode else "OFF"
+	var ammo_str = "ON" if GameState.debug_infinite_ammo else "OFF"
 	var noclip_str = "ON" if GameState.debug_noclip else "OFF"
-	var laser_str  = "ON" if GameState.debug_laser_mode else "OFF"
+	var laser_str = "ON" if GameState.debug_laser_mode else "OFF"
 
 	var text := """
 DEBUG HOTKEYS
 -------------
 
 F1 – Open shop
-F2 – +99999 coins
 F3 – Kill all enemies (spawn door)
 F4 – Debug console (level, weapons, abilities, upgrades - type 'help')
 
 F5 – God mode: %s
 F6 – Infinite ammo: %s
-F7 – Noclip (disable player collision): %s
-Shift+F8 – Laser mode (0 CD, huge dmg): %s
+F7 – Noclip: %s
+Shift+F8 – Laser mode: %s
 
 F12 – Toggle this overlay
 """ % [god_str, ammo_str, noclip_str, laser_str]
