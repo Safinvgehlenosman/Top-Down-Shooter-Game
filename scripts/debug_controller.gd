@@ -142,7 +142,7 @@ DEBUG HOTKEYS
 F1 – Open shop
 F2 – +99999 coins
 F3 – Kill all enemies (spawn door)
-F4 – Open level popup (set level)
+F4 – Debug console (level, weapons, abilities, upgrades - type 'help')
 
 F5 – God mode: %s
 F6 – Infinite ammo: %s
