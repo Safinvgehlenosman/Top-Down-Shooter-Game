@@ -4,6 +4,8 @@ extends Control
 @onready var label: Label = $Panel/Label
 @onready var line_edit: LineEdit = $Panel/LineEdit
 @onready var button: Button = $Panel/Button
+@onready var autocomplete_list: ItemList = $Panel/AutocompleteList if has_node("Panel/AutocompleteList") else null
+var _autocomplete_suggestions: Array = []
 
 
 func _ready() -> void:
@@ -17,6 +19,33 @@ func _ready() -> void:
 	button.pressed.connect(_on_button_pressed)
 	line_edit.text_submitted.connect(_on_line_edit_submitted)
 
+	# Create autocomplete list if not present
+	if autocomplete_list == null:
+		autocomplete_list = ItemList.new()
+		autocomplete_list.name = "AutocompleteList"
+		panel.add_child(autocomplete_list)
+		# Basic layout: below the line edit
+		autocomplete_list.position = Vector2(line_edit.position.x, line_edit.position.y + line_edit.size.y + 8)
+		autocomplete_list.size = Vector2(panel.size.x - 20.0, 180.0)
+		autocomplete_list.visible = false
+		autocomplete_list.select_mode = ItemList.SELECT_SINGLE
+		# Simple styling
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color(0.1, 0.1, 0.15, 0.95)
+		style.border_color = Color(0.3, 0.3, 0.4)
+		style.border_width_left = 1
+		style.border_width_right = 1
+		style.border_width_top = 1
+		style.border_width_bottom = 1
+		autocomplete_list.add_theme_stylebox_override("panel", style)
+
+	# Connect text change and gui input
+	line_edit.text_changed.connect(_on_debug_text_changed)
+	line_edit.gui_input.connect(_on_debug_input_gui_input)
+	# Connect autocomplete selection
+	autocomplete_list.item_selected.connect(_on_autocomplete_selected)
+	autocomplete_list.hide()
+
 
 func open_popup() -> void:
 	visible = true
@@ -25,6 +54,8 @@ func open_popup() -> void:
 
 	line_edit.text = ""
 	line_edit.grab_focus()
+	# Reset autocomplete
+	autocomplete_list.hide()
 
 
 func _on_button_pressed() -> void:
@@ -33,6 +64,8 @@ func _on_button_pressed() -> void:
 
 func _on_line_edit_submitted(_text: String) -> void:
 	_apply_level_from_input()
+	# Hide autocomplete after submit
+	autocomplete_list.hide()
 
 
 func _apply_level_from_input() -> void:
@@ -90,11 +123,152 @@ func _apply_level_from_input() -> void:
 				print("[DEBUG] Unknown command:", command, "- Type 'help' for commands")
 
 	_close_popup()
+	# Ensure dropdown hidden
+	autocomplete_list.hide()
 
 
 func _close_popup() -> void:
 	visible = false
 	get_tree().paused = false
+	autocomplete_list.hide()
+
+# --- AUTOCOMPLETE LOGIC --------------------------------------------
+
+func _on_debug_text_changed(new_text: String) -> void:
+	if new_text.is_empty():
+		autocomplete_list.hide()
+		return
+
+	var parts = new_text.split(" ", false)
+	if parts.is_empty():
+		autocomplete_list.hide()
+		return
+
+	var command = parts[0].to_lower()
+	var partial = parts[1] if parts.size() > 1 else ""
+
+	var suggestions: Array = []
+
+	match command:
+		"weapon":
+			suggestions = _get_weapon_suggestions(partial)
+		"ability":
+			suggestions = _get_ability_suggestions(partial)
+		"upgrade":
+			suggestions = _get_upgrade_suggestions(partial)
+		"level":
+			# numeric only
+			autocomplete_list.hide()
+			return
+		_:
+			if partial == "":
+				suggestions = ["weapon", "ability", "upgrade", "coins", "health", "level", "clear", "help"]
+
+	if suggestions.size() > 0:
+		# Normalize to plain strings to avoid typed array issues
+		var normalized: Array = []
+		for s in suggestions:
+			normalized.append(String(s))
+		_show_autocomplete(normalized)
+	else:
+		autocomplete_list.hide()
+
+func _get_weapon_suggestions(partial: String) -> Array:
+	var weapons = ["shotgun", "sniper", "flamethrower", "grenade", "shuriken", "turret", "none"]
+	if partial == "":
+		return weapons
+	var filtered: Array = []
+	for w in weapons:
+		if w.begins_with(partial.to_lower()):
+			filtered.append(w)
+	return filtered
+
+func _get_ability_suggestions(partial: String) -> Array:
+	var abilities = ["dash", "slow", "bubble", "invisibility", "invis", "none"]
+	if partial == "":
+		return abilities
+	var filtered: Array = []
+	for a in abilities:
+		if a.begins_with(partial.to_lower()):
+			filtered.append(a)
+	return filtered
+
+
+func _get_upgrade_suggestions(partial: String) -> Array:
+	var upgrades: Array = []
+	# Access the autoloaded UpgradesDB singleton's ALL_UPGRADES constant directly
+	if UpgradesDB and "ALL_UPGRADES" in UpgradesDB:
+		var allu = UpgradesDB.ALL_UPGRADES
+		for u in allu:
+			if typeof(u) == TYPE_DICTIONARY and u.has("id"):
+				upgrades.append(String(u["id"]))
+	if partial == "":
+		return upgrades
+	var filtered: Array = []
+	for id in upgrades:
+		if id.begins_with(partial.to_lower()):
+			filtered.append(id)
+	return filtered
+
+func _show_autocomplete(suggestions: Array) -> void:
+	autocomplete_list.clear()
+	_autocomplete_suggestions = suggestions
+	for s in suggestions:
+		autocomplete_list.add_item(s)
+	autocomplete_list.show()
+	if autocomplete_list.get_item_count() > 0:
+		autocomplete_list.select(0)
+
+func _on_autocomplete_selected(index: int) -> void:
+	if index < 0 or index >= _autocomplete_suggestions.size():
+		return
+	var selected = _autocomplete_suggestions[index]
+	var current_text = line_edit.text
+	var parts = current_text.split(" ", false)
+	if parts.size() > 0:
+		var command = parts[0]
+		line_edit.text = command + " " + selected
+		line_edit.caret_column = line_edit.text.length()
+	autocomplete_list.hide()
+	line_edit.grab_focus()
+
+func _on_debug_input_gui_input(event: InputEvent) -> void:
+	if not autocomplete_list.visible:
+		return
+	if event is InputEventKey and event.pressed:
+		match event.keycode:
+			KEY_DOWN:
+				var sel := autocomplete_list.get_selected_items()
+				var idx: int = sel[0] if sel.size() > 0 else -1
+				var count: int = autocomplete_list.get_item_count()
+				if count == 0:
+					return
+				var next_idx: int = 0
+				if idx >= 0:
+					next_idx = (idx + 1) % count
+				else:
+					next_idx = 0
+				autocomplete_list.select(next_idx)
+				autocomplete_list.ensure_current_is_visible()
+				get_viewport().set_input_as_handled()
+			KEY_UP:
+				var sel2 := autocomplete_list.get_selected_items()
+				var idx2: int = sel2[0] if sel2.size() > 0 else 0
+				var count2: int = autocomplete_list.get_item_count()
+				if count2 == 0:
+					return
+				var next_idx2: int = (idx2 - 1 + count2) % count2
+				autocomplete_list.select(next_idx2)
+				autocomplete_list.ensure_current_is_visible()
+				get_viewport().set_input_as_handled()
+			KEY_ENTER, KEY_KP_ENTER:
+				var cur := autocomplete_list.get_selected_items()
+				if cur.size() > 0:
+					_on_autocomplete_selected(cur[0])
+				get_viewport().set_input_as_handled()
+			KEY_ESCAPE:
+				autocomplete_list.hide()
+				get_viewport().set_input_as_handled()
 
 
 # ============================================================================
@@ -208,8 +382,8 @@ func _cmd_upgrade(parts: Array) -> void:
 	
 	var upgrade_id = parts[1]
 	
-	# Apply upgrade through UpgradesDB
-	UpgradesDB.apply_upgrade(upgrade_id)
+	# Apply upgrade through GameState (UpgradesDB.apply_upgrade is static)
+	GameState.apply_upgrade(upgrade_id)
 	print("[DEBUG] Applied upgrade:", upgrade_id)
 
 
