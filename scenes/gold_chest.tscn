@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3 uid="uid://g5hfoeklt4g1"]
+[gd_scene load_steps=18 format=3 uid="uid://g5hfoeklt4g1"]
 
 [ext_resource type="Script" uid="uid://cybw6b62o1esj" path="res://scripts/pickups/chest.gd" id="1_oc3qr"]
 [ext_resource type="Texture2D" uid="uid://bg4nmpnf348rn" path="res://assets/16x16 Assorted RPG Icons/chests.png" id="2_1noaq"]
@@ -65,6 +65,9 @@ animations = [{
 "name": &"default",
 "speed": 5.0
 }]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1noaq"]
+size = Vector2(12, 11.1428585)
 
 [node name="GoldChest" type="Area2D"]
 collision_layer = 16
@@ -144,5 +147,14 @@ scale = Vector2(0.6, 0.6)
 sprite_frames = SubResource("SpriteFrames_oc3qr")
 autoplay = "default"
 frame_progress = 0.6652822
+
+[node name="Blocker" type="StaticBody2D" parent="."]
+position = Vector2(0, 9)
+collision_mask = 39
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Blocker"]
+position = Vector2(-2.3841858e-07, -8.428571)
+scale = Vector2(0.99999994, 0.99999994)
+shape = SubResource("RectangleShape2D_1noaq")
 
 [connection signal="body_entered" from="." to="." method="_on_body_entered"]

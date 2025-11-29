@@ -186,12 +186,17 @@ func _physics_process(delta: float) -> void:
 
 	# decay knockback over time
 	if knockback_velocity.length() > 0.0:
-		knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, knockback_friction * delta)
+		knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, knockback_friction * scaled_delta)
 
 	if velocity.x < -1:
 		animated_sprite.flip_h = false
 	elif velocity.x > 1:
 		animated_sprite.flip_h = true
+
+	# Scale velocity for move_and_slide (which uses raw delta)
+	# We need to compensate because move_and_slide uses the engine's delta,
+	# but our velocity was calculated with scaled_delta
+	velocity *= time_scale
 
 	move_and_slide()
 
@@ -284,7 +289,7 @@ func _update_ai(delta: float) -> void:
 			last_seen_player_pos = player.global_position
 			lost_sight_timer = 0.0
 		else:
-			lost_sight_timer += delta
+			lost_sight_timer += delta  # Keep this as raw delta - it's a timer independent of slowmo
 			if lost_sight_timer >= deaggro_delay:
 				aggro = false
 

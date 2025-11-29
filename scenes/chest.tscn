@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://da26oiy1gxaxy"]
+[gd_scene load_steps=11 format=3 uid="uid://da26oiy1gxaxy"]
 
 [ext_resource type="Script" uid="uid://cybw6b62o1esj" path="res://scripts/pickups/chest.gd" id="1_gqd3d"]
 [ext_resource type="Texture2D" uid="uid://bg4nmpnf348rn" path="res://assets/16x16 Assorted RPG Icons/chests.png" id="1_oii8l"]
@@ -21,6 +21,9 @@ height = 256
 fill = 1
 fill_from = Vector2(0.517094, 0.52136755)
 fill_to = Vector2(0.76495725, 0.7777778)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_w02o5"]
+size = Vector2(12, 11.1428585)
 
 [node name="Chest" type="Area2D"]
 collision_layer = 16
@@ -75,5 +78,14 @@ scale = Vector2(1.6666666, 0.975)
 texture = ExtResource("6_w02o5")
 region_enabled = true
 region_rect = Rect2(201.99591, 204.99461, 12.041901, 5.0242004)
+
+[node name="Blocker" type="StaticBody2D" parent="."]
+position = Vector2(0, 9)
+collision_mask = 39
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Blocker"]
+position = Vector2(-2.3841858e-07, -8.428571)
+scale = Vector2(0.99999994, 0.99999994)
+shape = SubResource("RectangleShape2D_w02o5")
 
 [connection signal="body_entered" from="." to="." method="_on_body_entered"]

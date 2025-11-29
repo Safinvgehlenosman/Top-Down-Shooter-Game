@@ -1,6 +1,6 @@
-[gd_scene load_steps=10 format=3 uid="uid://crvedo2icpk0b"]
+[gd_scene load_steps=11 format=3 uid="uid://crvedo2icpk0b"]
 
-[ext_resource type="Script" path="res://scripts/pickups/chest.gd" id="1_va4or"]
+[ext_resource type="Script" uid="uid://cybw6b62o1esj" path="res://scripts/pickups/chest.gd" id="1_va4or"]
 [ext_resource type="Texture2D" uid="uid://bg4nmpnf348rn" path="res://assets/16x16 Assorted RPG Icons/chests.png" id="2_2ry5c"]
 [ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="3_dxie2"]
 [ext_resource type="AudioStream" uid="uid://dnxnkd6ymcvtg" path="res://assets/Audios/CannonShoot.wav" id="4_mverh"]
@@ -21,6 +21,9 @@ height = 256
 fill = 1
 fill_from = Vector2(0.517094, 0.52136755)
 fill_to = Vector2(0.76495725, 0.7777778)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_va4or"]
+size = Vector2(8.571429, 8.571428)
 
 [node name="BronzeChest" type="Area2D"]
 collision_layer = 16
@@ -76,5 +79,14 @@ scale = Vector2(1.6666666, 0.975)
 texture = ExtResource("6_db7c2")
 region_enabled = true
 region_rect = Rect2(201.99591, 204.99461, 12.041901, 5.0242004)
+
+[node name="Blocker" type="StaticBody2D" parent="."]
+position = Vector2(0, 9)
+collision_mask = 39
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Blocker"]
+position = Vector2(0, -7.1428556)
+scale = Vector2(0.99999994, 0.99999994)
+shape = SubResource("RectangleShape2D_va4or")
 
 [connection signal="body_entered" from="." to="." method="_on_body_entered"]
