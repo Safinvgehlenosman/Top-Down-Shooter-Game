@@ -1,6 +1,6 @@
 [gd_scene load_steps=10 format=3 uid="uid://da26oiy1gxaxy"]
 
-[ext_resource type="Script" path="res://scripts/pickups/chest.gd" id="1_gqd3d"]
+[ext_resource type="Script" uid="uid://cybw6b62o1esj" path="res://scripts/pickups/chest.gd" id="1_gqd3d"]
 [ext_resource type="Texture2D" uid="uid://bg4nmpnf348rn" path="res://assets/16x16 Assorted RPG Icons/chests.png" id="1_oii8l"]
 [ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="2_sy5e1"]
 [ext_resource type="AudioStream" uid="uid://dnxnkd6ymcvtg" path="res://assets/Audios/CannonShoot.wav" id="4_yue2o"]
@@ -26,12 +26,11 @@ fill_to = Vector2(0.76495725, 0.7777778)
 collision_layer = 16
 collision_mask = 2
 script = ExtResource("1_gqd3d")
-chest_type = 1
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = ExtResource("1_oii8l")
 region_enabled = true
-region_rect = Rect2(80, 1, 16, 14)
+region_rect = Rect2(32, 1, 16, 14)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_oii8l")

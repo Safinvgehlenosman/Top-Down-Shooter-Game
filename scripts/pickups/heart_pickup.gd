@@ -48,7 +48,7 @@ func _physics_process(delta: float) -> void:
 			# Calculate direction to player
 			var dir: Vector2 = (player.global_position - global_position).normalized()
 			# Add damping to prevent runaway velocity
-			magnet_velocity *= 0.95  # Apply 5% friction each frame
+			magnet_velocity *= 0.90  # Apply 10% friction each frame
 			# Stronger acceleration when very close (within 50 pixels)
 			var accel = magnet_acceleration
 			if dist < 50.0:

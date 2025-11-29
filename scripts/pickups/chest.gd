@@ -22,7 +22,7 @@ var base_prompt_pos: Vector2
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 @onready var sfx_spawn: AudioStreamPlayer2D = get_node_or_null("SFX_Spawn")
-@onready var sfx_open: AudioStreamPlayer2D = get_node_or_null("SFX_Open")
+@onready var sfx_despawn: AudioStreamPlayer2D = get_node_or_null("SFX_Despawn")
 
 
 func _ready() -> void:
@@ -87,10 +87,6 @@ func _open_chest() -> void:
 	if collision_shape:
 		collision_shape.set_deferred("disabled", true)
 	
-	# Play open sound if exists
-	if sfx_open:
-		sfx_open.play()
-	
 	# Get ShopUI and open as chest with rarity-filtered loot
 	var shop_ui = get_tree().get_first_node_in_group("shop")
 	if shop_ui and shop_ui.has_method("open_as_chest_with_loot"):
@@ -104,6 +100,10 @@ func _open_chest() -> void:
 	_despawn_chest()
 
 func _despawn_chest() -> void:
+	# Play despawn sound before fading out
+	if sfx_despawn:
+		sfx_despawn.play()
+	
 	# Fade out and queue_free
 	var tween := create_tween()
 	tween.tween_property(self, "modulate:a", 0.0, 0.3)
@@ -132,10 +132,17 @@ func _generate_loot() -> Array:
 	print("[Chest] Generated %d upgrades for %s chest" % [loot.size(), _get_chest_type_name()])
 	return loot
 func _get_base_upgrade_id(upgrade_id: String) -> String:
+	# Check if upgrade data has a line_id (use that as base)
+	# Note: This version takes a String id, so we can't check the upgrade dict
+	# But we can strip rarity suffixes like shop_ui does
 	var parts := upgrade_id.split("_")
 	if parts.size() > 1:
-		var last_part := parts[-1]
-		if last_part.is_valid_int():
+		var last := parts[-1].to_lower()
+		# Remove rarity suffix if present
+		if last in ["common", "uncommon", "rare", "epic"]:
+			parts.remove_at(parts.size() - 1)
+		# Remove numeric suffix if present
+		elif parts[-1].is_valid_int():
 			parts.remove_at(parts.size() - 1)
 	return "_".join(parts)
 

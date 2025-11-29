@@ -55,6 +55,10 @@ func _find_target() -> Node2D:
 	for body in get_tree().get_nodes_in_group("enemy"):
 		if not body.is_inside_tree():
 			continue
+		
+		# Skip ghost slimes (turret can't target them)
+		if body.name.to_lower().contains("ghost"):
+			continue
 
 		var to_target = body.global_position - global_position
 		var dist = to_target.length()

@@ -66,7 +66,9 @@ func handle_primary_fire(is_pressed: bool, aim_dir: Vector2) -> void:
 	else:
 		if GameState.fire_rate <= 0.0:
 			GameState.fire_rate = GameConfig.player_fire_rate
-		var cooldown = max(GameState.fire_rate, 0.01)
+		# Fire rate is a cooldown - divide by fire_rate_bonus to make it faster
+		var fire_rate_multiplier = 1.0 + GameState.fire_rate_bonus_percent
+		var cooldown = max(GameState.fire_rate / fire_rate_multiplier, 0.01)
 		fire_timer = cooldown
 
 	# Burst logic – number of bullets per shot

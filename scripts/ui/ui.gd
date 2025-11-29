@@ -11,6 +11,8 @@ extends CanvasLayer
 
 const AbilityType = GameState.AbilityType
 
+var coin_animation_cooldown: float = 0.0
+
 
 func _ready() -> void:
 	var gs = GameState
@@ -31,6 +33,10 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
+	# Reduce coin animation cooldown
+	if coin_animation_cooldown > 0:
+		coin_animation_cooldown -= _delta
+	
 	# Lightweight — cheap and safe
 	_on_health_changed(GameState.health, GameState.max_health)
 	_update_ability_bar()
@@ -41,8 +47,14 @@ func _process(_delta: float) -> void:
 # --------------------------------------------------------------------
 
 func _on_coins_changed(new_value: int) -> void:
+	var old_value = int(coin_label.text) if coin_label.text != "" else 0
 	coin_label.text = str(new_value)
 	_autoscale_label_deferred(coin_label)
+	
+	# ⭐ Animate only if coins increased AND not on cooldown
+	if new_value > old_value and coin_animation_cooldown <= 0:
+		_animate_coin_feedback()
+		coin_animation_cooldown = 0.5  # Prevent spam for 0.5 seconds
 
 
 func _on_health_changed(new_value: int, max_value: int) -> void:
@@ -141,3 +153,28 @@ func _autoscale_label(label: Label) -> void:
 func _autoscale_label_deferred(label: Label) -> void:
 	# Defer so layout/size is updated before we measure
 	call_deferred("_autoscale_label", label)
+
+
+# --------------------------------------------------------------------
+# COIN COLLECTION FEEDBACK
+# --------------------------------------------------------------------
+
+func _animate_coin_feedback() -> void:
+	if not coin_label:
+		return
+	
+	# Kill any existing tween
+	if coin_label.has_meta("coin_tween"):
+		var old_tween = coin_label.get_meta("coin_tween")
+		if old_tween and old_tween is Tween:
+			old_tween.kill()
+	
+	# Create simple color flash tween
+	var tween := create_tween()
+	coin_label.set_meta("coin_tween", tween)
+	
+	# Flash to bright gold
+	tween.tween_property(coin_label, "modulate", Color(1.0, 0.85, 0.0), 0.1)
+	
+	# Back to white
+	tween.tween_property(coin_label, "modulate", Color.WHITE, 0.2)
