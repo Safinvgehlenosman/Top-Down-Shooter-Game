@@ -8,6 +8,7 @@ extends Control
 
 func _ready() -> void:
 	visible = false
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
 	# Updated label text
 	label.text = "Debug Console (type 'help' for commands)"
@@ -127,49 +128,42 @@ func _cmd_weapon(parts: Array) -> void:
 	
 	match weapon_name:
 		"shotgun":
-			GameState.alt_weapon = UpgradesDB.ALT_WEAPON_SHOTGUN
-			GameState.alt_weapon_ammo = 10
-			GameState.max_alt_weapon_ammo = 10
+			GameState.set_alt_weapon(GameState.AltWeaponType.SHOTGUN)
 			print("[DEBUG] Equipped shotgun")
 		
 		"sniper":
-			GameState.alt_weapon = UpgradesDB.ALT_WEAPON_SNIPER
-			GameState.alt_weapon_ammo = 5
-			GameState.max_alt_weapon_ammo = 5
+			GameState.set_alt_weapon(GameState.AltWeaponType.SNIPER)
 			print("[DEBUG] Equipped sniper")
 		
 		"flamethrower", "flame":
-			GameState.alt_weapon = UpgradesDB.ALT_WEAPON_FLAMETHROWER
-			GameState.alt_weapon_ammo = 50
-			GameState.max_alt_weapon_ammo = 50
+			GameState.set_alt_weapon(GameState.AltWeaponType.FLAMETHROWER)
 			print("[DEBUG] Equipped flamethrower")
 		
 		"grenade":
-			GameState.alt_weapon = UpgradesDB.ALT_WEAPON_GRENADE
-			GameState.alt_weapon_ammo = 5
-			GameState.max_alt_weapon_ammo = 5
+			GameState.set_alt_weapon(GameState.AltWeaponType.GRENADE)
 			print("[DEBUG] Equipped grenade")
 		
 		"shuriken":
-			GameState.alt_weapon = UpgradesDB.ALT_WEAPON_SHURIKEN
-			GameState.alt_weapon_ammo = 20
-			GameState.max_alt_weapon_ammo = 20
+			GameState.set_alt_weapon(GameState.AltWeaponType.SHURIKEN)
 			print("[DEBUG] Equipped shuriken")
 		
 		"turret":
-			GameState.alt_weapon = UpgradesDB.ALT_WEAPON_TURRET
-			GameState.alt_weapon_ammo = 3
-			GameState.max_alt_weapon_ammo = 3
+			GameState.set_alt_weapon(GameState.AltWeaponType.TURRET)
 			print("[DEBUG] Equipped turret")
 		
 		"none":
-			GameState.alt_weapon = UpgradesDB.ALT_WEAPON_NONE
-			GameState.alt_weapon_ammo = 0
-			GameState.max_alt_weapon_ammo = 0
+			GameState.set_alt_weapon(GameState.AltWeaponType.NONE)
 			print("[DEBUG] Removed weapon")
 		
 		_:
 			print("[DEBUG] Unknown weapon:", weapon_name)
+
+	# Optional: parts[2] = ammo override (e.g., "weapon shotgun 10")
+	if parts.size() >= 3 and parts[2].is_valid_int():
+		var amt := int(parts[2])
+		# Clamp to current weapon's max_ammo after set_alt_weapon applied
+		GameState.set_ammo(clamp(amt, 0, GameState.max_ammo))
+		print("[DEBUG] Ammo set to", GameState.ammo, "/", GameState.max_ammo)
 
 
 func _cmd_ability(parts: Array) -> void:
@@ -235,8 +229,21 @@ func _cmd_health(parts: Array) -> void:
 		return
 	
 	var amount = int(parts[1])
-	GameState.health = amount
-	print("[DEBUG] Set health to", amount)
+	# Update GameState via setter to emit signals/UI
+	GameState.set_health(amount)
+	print("[DEBUG] Set GameState health to", GameState.health, "/", GameState.max_health)
+
+	# Also update the player's runtime Health component so hits don't revert
+	var player := get_tree().get_first_node_in_group("player")
+	if player:
+		var hc := player.get_node_or_null("Health")
+		if hc and hc.has_method("set"):
+			# Directly set the health property on the Health script
+			hc.health = clamp(amount, 0, hc.max_health if "max_health" in hc else GameState.max_health)
+			if hc.has_method("_emit_health_changed"):
+				# If component has a method to notify UI, call it (optional)
+				hc._emit_health_changed()
+			print("[DEBUG] Synced player Health component to", hc.health)
 
 
 func _cmd_clear() -> void:
@@ -258,8 +265,8 @@ func _cmd_clear() -> void:
 
 func _cmd_help() -> void:
 	print("=== DEBUG CONSOLE COMMANDS ===")
-	print("level <num>        - Jump to level (e.g., level 15)")
-	print("weapon <name>      - Equip weapon (shotgun, sniper, flamethrower, grenade, shuriken, turret, none)")
+	print("level <num>                - Jump to level (e.g., level 15)")
+	print("weapon <name> [ammo]       - Equip weapon, optional ammo override (e.g., weapon shotgun 10)")
 	print("ability <name>     - Equip ability (dash, slow, bubble, invis, none)")
 	print("upgrade <id>       - Add upgrade (e.g., primary_damage_plus_10, shotgun_unlock)")
 	print("coins <amount>     - Set coins (e.g., coins 999)")
