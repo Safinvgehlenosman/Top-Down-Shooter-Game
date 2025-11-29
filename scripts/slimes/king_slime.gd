@@ -1,1 +1,1 @@
-extends "res://scripts/base_slime.gd"
+extends "res://scripts/slimes/base_slime.gd"

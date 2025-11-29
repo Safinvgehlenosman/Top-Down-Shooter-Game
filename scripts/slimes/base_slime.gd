@@ -82,6 +82,11 @@ var is_dead: bool = false
 @export var knockback_friction: float = 600.0
 var knockback_velocity: Vector2 = Vector2.ZERO
 
+# Time scale (for bullet time ability)
+var time_scale: float = 1.0
+var base_move_speed: float = 0.0
+var base_wander_speed: float = 0.0
+
 
 func _ready() -> void:
 	player = get_tree().get_first_node_in_group("player") as Node2D
@@ -91,11 +96,22 @@ func _ready() -> void:
 	if hit_light:
 		original_light_color = hit_light.color
 
+	# Store base speeds before any multipliers
+	base_move_speed = speed
+	base_wander_speed = wander_speed
+
 	# Apply global difficulty tweak: 1.2x movement speeds and 1.2x health
 	# Do this before wiring the health component so bars reflect new values
 	speed *= 1.2
 	wander_speed *= 1.2
 	max_health = int(round(max_health * 1.2))
+
+	# Update base speeds after difficulty multiplier
+	base_move_speed = speed
+	base_wander_speed = wander_speed
+
+	# Apply level-based speed scaling (1.0x -> 2.0x over 50 levels)
+	_apply_speed_scaling()
 
 	# --- Health component wiring ---
 	if health_component:
@@ -147,22 +163,25 @@ func apply_level(level: int) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	# Apply time_scale to delta for bullet time effect
+	var scaled_delta = delta * time_scale
+
 	# contact damage timer
 	if contact_timer > 0.0:
-		contact_timer -= delta
+		contact_timer -= scaled_delta
 	if contact_timer <= 0.0:
 		_try_contact_damage()
 
 	# decrement per-instance land-sound cooldown
 	if _land_sound_cd > 0.0:
-		_land_sound_cd = max(0.0, _land_sound_cd - delta)
+		_land_sound_cd = max(0.0, _land_sound_cd - scaled_delta)
 
 	if is_dead:
-		_update_hit_feedback(delta)
+		_update_hit_feedback(scaled_delta)
 		return
 
-	_update_hit_feedback(delta)
-	_update_ai(delta)
+	_update_hit_feedback(scaled_delta)
+	_update_ai(scaled_delta)
 	_update_animation_sfx()
 
 	# decay knockback over time
@@ -528,3 +547,28 @@ func _maybe_play_land_sound() -> void:
 func force_deaggro() -> void:
 	aggro = false
 	lost_sight_timer = deaggro_delay
+
+
+func _apply_speed_scaling() -> void:
+	"""Scale movement speed from 1.0x to 2.0x linearly over 50 levels."""
+	var game_manager = get_tree().get_first_node_in_group("game_manager")
+	if not game_manager:
+		return
+
+	var level = game_manager.current_level if "current_level" in game_manager else 1
+
+	# Linear scaling: 1.0 + (level - 1) / 50.0, capped at 2.0x
+	var speed_multiplier = 1.0 + min((level - 1) / 50.0, 1.0)
+
+	# Apply to movement speed
+	if base_move_speed > 0.0:
+		speed = base_move_speed * speed_multiplier
+
+	# Apply to wander speed
+	if base_wander_speed > 0.0:
+		wander_speed = base_wander_speed * speed_multiplier
+
+
+func set_time_scale(scale_value: float) -> void:
+	"""Set time scale for bullet time effect."""
+	time_scale = clamp(scale_value, 0.0, 1.0)

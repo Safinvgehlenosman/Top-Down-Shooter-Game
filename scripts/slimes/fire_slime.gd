@@ -6,19 +6,12 @@ extends "res://scripts/slimes/base_slime.gd"
 @export var burst_count: int = 14            # pellets per volley
 @export var spread_degrees: float = 80.0     # width of the cloud
 
-# random speed range per pellet (for messy cloud)
-@export var pellet_min_speed: float = 40.0
-@export var pellet_max_speed: float = 90.0
-
 var shoot_timer: float = 0.0
 
 
 func _ready() -> void:
 	super._ready()
-	# Increase pellet speeds to match global pacing
-	pellet_min_speed *= 1.2
-	pellet_max_speed *= 1.2
-	# tiny random offset so groups of fire slimes don’t fire in perfect sync
+	# tiny random offset so groups of fire slimes don't fire in perfect sync
 	shoot_timer = randf_range(0.0, shoot_interval * 0.5)
 
 
@@ -66,8 +59,7 @@ func _shoot_burst(base_dir: Vector2) -> void:
 		p.global_position = global_position
 		p.direction = dir
 
-		# random speed per pellet to make cloud feel messy
-		if "speed" in p:
-			p.speed = randf_range(pellet_min_speed, pellet_max_speed)
+		# Projectile uses its own min_speed/max_speed exports (150-250)
+		# No need to override - it randomizes in _ready()
 
 		get_tree().current_scene.add_child(p)

@@ -265,8 +265,11 @@ func _start_slowmo(data: Dictionary) -> void:
 
 	slowmo_running = true
 
-	Engine.time_scale = factor
-	player.speed = base_speed / max(factor, 0.01)
+	# Don't use Engine.time_scale - slow enemies individually instead
+	var enemies = get_tree().get_nodes_in_group("enemy")
+	for enemy in enemies:
+		if enemy.has_method("set_time_scale"):
+			enemy.set_time_scale(factor)
 
 
 func _end_ability() -> void:
@@ -276,8 +279,11 @@ func _end_ability() -> void:
 
 	if slowmo_running:
 		slowmo_running = false
-		Engine.time_scale = 1.0
-		player.speed = base_speed
+		# Restore enemy time scales
+		var enemies = get_tree().get_nodes_in_group("enemy")
+		for enemy in enemies:
+			if enemy.has_method("set_time_scale"):
+				enemy.set_time_scale(1.0)
 
 	if invis_running:
 		invis_running = false

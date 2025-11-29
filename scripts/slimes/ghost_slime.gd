@@ -18,17 +18,31 @@ var _sprite_base_pos: Vector2
 var _light_base_energy: float = 0.0
 
 func _ready() -> void:
-	# Run base slime setup
+	# Set exports for base speed before super (inherited variables)
+	speed = ghost_speed
+	wander_speed = ghost_speed * 0.5
+
+	# Run base slime setup (which will store base speeds and apply scaling)
 	super._ready()
 
-	# Override base stats (apply 1.2x speed, 1.2x HP to ghost exports too)
-	ghost_speed *= 1.2
-	ghost_health = int(round(ghost_health * 1.2))
-	speed = ghost_speed
+	# Override health to always be 1 (scaled by 1.2x difficulty = still low)
 	var hc := $Health
-
 	hc.max_health = ghost_health
 	hc.health = ghost_health
+
+	# Apply ghost-specific EXTRA speed scaling on top of base scaling
+	var game_manager = get_tree().get_first_node_in_group("game_manager")
+	if game_manager and "current_level" in game_manager:
+		var level = game_manager.current_level
+
+		# Ghost gets general scaling from base (1.0x to 2.0x over 50 levels)
+		# PLUS extra ghost bonus (+3% per level, capped at 2.0x)
+		var ghost_bonus_mult = 1.0 + (level - 1) * 0.03
+		ghost_bonus_mult = min(ghost_bonus_mult, 2.0)
+
+		# Apply bonus on top of already-scaled speed from base
+		speed = speed * ghost_bonus_mult
+		speed = min(speed, ghost_speed * 3.0)  # Cap at 3x base for sanity
 
 
 	# Always aggro from start

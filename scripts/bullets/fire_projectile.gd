@@ -1,9 +1,9 @@
 extends Area2D
 
-@export var min_speed: float = 80.0
-@export var max_speed: float = 140.0
+@export var min_speed: float = 150.0
+@export var max_speed: float = 250.0
 @export var friction: float = 260.0       # how fast it slows down
-@export var lifetime: float = 2.0         # how long the cloud stays
+@export var lifetime: float = 3.0         # how long the cloud stays
 @export var target_group: StringName = "player"
 # 🔥 burn parameters (DOT)
 @export var burn_damage_per_tick: float = 1.0
@@ -42,10 +42,12 @@ func _ready() -> void:
 	time_left = lifetime
 	add_to_group("enemy_bullet")
 
-	# Pick a random speed in range for this pellet (LOGIC UNCHANGED)
+	# Pick a random speed in range for this pellet
 	var s := randf_range(min_speed, max_speed)
-	# Temporarily scale flame/projectile speed down (halve)
-	velocity = direction.normalized() * s * 0.5
+	velocity = direction.normalized() * s
+
+	if debug_prints:
+		print("[FireProjectile] Spawned - Speed: ", s, " Lifetime: ", lifetime, " Direction: ", direction)
 
 	# --- Visual setup (no logic changes) -----------------------------
 	if sprite:
@@ -57,10 +59,9 @@ func _ready() -> void:
 		_base_sprite_pos = sprite.position
 		_max_alpha = sprite.modulate.a
 
-		# slight random size & rotation — scale flames down by half for tuning
-		var scale_rand := randf_range(0.9, 1.2)
-		var final_scale := scale_rand * 0.5
-		sprite.scale = Vector2(final_scale, final_scale)
+		# slight random size & rotation
+		var scale_rand := randf_range(0.8, 1.1)
+		sprite.scale = Vector2(scale_rand, scale_rand)
 		sprite.rotation = randf_range(-0.2, 0.2)
 
 	_wobble_phase = randf_range(0.0, TAU)
@@ -72,9 +73,9 @@ func _physics_process(delta: float) -> void:
 		queue_free()
 		return
 
-	# --- Move (LOGIC UNCHANGED) --------------------------------------
+	# --- Move --------------------------------------
 	position += velocity * delta
-	velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
+	# No friction - maintain speed to travel far
 
 	# --- Wobble / bobbing (visual only) ------------------------------
 	if sprite and wobble_amplitude > 0.0:

@@ -60,6 +60,15 @@ func _shoot_at_player() -> void:
 	proj.speed = projectile_speed
 	proj.target_group = "player"
 
+	# Scale damage based on level (+10% per level)
+	if "damage" in proj:
+		var game_manager = get_tree().get_first_node_in_group("game_manager")
+		if game_manager and "current_level" in game_manager:
+			var level = game_manager.current_level
+			var base_damage = 5.0
+			var scaled_damage = base_damage * (1.0 + (level - 1) * 0.1)
+			proj.damage = int(scaled_damage)
+
 	get_tree().current_scene.add_child(proj)
 
 
