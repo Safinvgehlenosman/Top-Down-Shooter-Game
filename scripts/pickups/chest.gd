@@ -112,24 +112,91 @@ func _despawn_chest() -> void:
 
 ## Generate loot based on chest type
 func _generate_loot() -> Array:
+	print("[Chest] ========== GENERATING CHEST UPGRADES ==========")
+	print("[Chest] Chest type: ", _get_chest_type_name())
+	
 	var loot := []
 	var used_upgrade_bases := {}
+	var target_count := 5
+	
 	match chest_type:
 		ChestType.BRONZE:
 			# 2 Common, 3 Uncommon
+			print("[Chest] Target: 2 Common + 3 Uncommon = 5 total")
 			loot.append_array(_get_random_upgrades_by_rarity(UpgradesDB.Rarity.COMMON, 2, used_upgrade_bases))
 			loot.append_array(_get_random_upgrades_by_rarity(UpgradesDB.Rarity.UNCOMMON, 3, used_upgrade_bases))
 		ChestType.NORMAL:
 			# 2 Uncommon, 3 Rare
+			print("[Chest] Target: 2 Uncommon + 3 Rare = 5 total")
 			loot.append_array(_get_random_upgrades_by_rarity(UpgradesDB.Rarity.UNCOMMON, 2, used_upgrade_bases))
 			loot.append_array(_get_random_upgrades_by_rarity(UpgradesDB.Rarity.RARE, 3, used_upgrade_bases))
 		ChestType.GOLD:
 			# 1 Uncommon, 3 Rare, 1 Epic
+			print("[Chest] Target: 1 Uncommon + 3 Rare + 1 Epic = 5 total")
 			loot.append_array(_get_random_upgrades_by_rarity(UpgradesDB.Rarity.UNCOMMON, 1, used_upgrade_bases))
 			loot.append_array(_get_random_upgrades_by_rarity(UpgradesDB.Rarity.RARE, 3, used_upgrade_bases))
 			loot.append_array(_get_random_upgrades_by_rarity(UpgradesDB.Rarity.EPIC, 1, used_upgrade_bases))
+	
+	print("[Chest] Initial upgrades generated: ", loot.size())
+	
+	# ⭐ SAFETY: If we couldn't get 5 upgrades, fill with any valid upgrade
+	if loot.size() < target_count:
+		print("[Chest] WARNING: Only got ", loot.size(), " upgrades, filling rest with any valid upgrade")
+		
+		var attempts := 0
+		var max_attempts := 100
+		
+		while loot.size() < target_count and attempts < max_attempts:
+			attempts += 1
+			
+			# Get any upgrade that meets requirements
+			var all_valid := []
+			for upgrade in UpgradesDB.ALL_UPGRADES:
+				# ⭐ Skip chaos upgrades
+				if upgrade.get("effect") == "chaos_challenge":
+					continue
+				
+				if _meets_requirements(upgrade):
+					# Skip chaos upgrades
+					if upgrade.get("effect") == "chaos_challenge":
+						continue
+					all_valid.append(upgrade)
+			
+			if all_valid.is_empty():
+				print("[Chest] ERROR: No valid upgrades available at all!")
+				break
+			
+			var filler_upgrade = all_valid.pick_random()
+			var filler_id: String = filler_upgrade.get("id", "")
+			var filler_base := _get_base_upgrade_id(filler_id)
+			
+			# Check for duplicates
+			var is_duplicate := false
+			for existing in loot:
+				if existing.get("id") == filler_id:
+					is_duplicate = true
+					break
+			
+			# Check if base already used
+			if used_upgrade_bases.has(filler_base):
+				continue
+			
+			if not is_duplicate:
+				loot.append(filler_upgrade)
+				used_upgrade_bases[filler_base] = true
+				print("[Chest] Added filler upgrade: ", filler_upgrade.get("name"), " (", filler_upgrade.get("rarity"), ")")
+		
+		if attempts >= max_attempts:
+			print("[Chest] WARNING: Hit max attempts while filling upgrades")
+	
 	loot.shuffle()
-	print("[Chest] Generated %d upgrades for %s chest" % [loot.size(), _get_chest_type_name()])
+	
+	print("[Chest] Final upgrade count: ", loot.size())
+	print("[Chest] Upgrades: ")
+	for i in range(loot.size()):
+		print("[Chest]   ", i + 1, ". ", loot[i].get("name"), " (rarity: ", loot[i].get("rarity"), ")")
+	print("[Chest] ================================================")
+	
 	return loot
 func _get_base_upgrade_id(upgrade_id: String) -> String:
 	# Check if upgrade data has a line_id (use that as base)
@@ -150,31 +217,43 @@ func _get_base_upgrade_id(upgrade_id: String) -> String:
 ## Get random upgrades of specific rarity that meet requirements
 func _get_random_upgrades_by_rarity(rarity: int, count: int, used_bases: Dictionary) -> Array:
 	var filtered := _filter_by_rarity(rarity)
+	
+	print("[Chest] Getting ", count, " upgrades for rarity ", rarity)
+	print("[Chest] Available upgrades in pool: ", filtered.size())
+	
 	if filtered.is_empty():
 		push_warning("[Chest] No valid upgrades found for rarity %d" % rarity)
 		return []
+	
 	var selected := []
 	var attempts := 0
-	var max_attempts := count * 10
+	var max_attempts := count * 20  # Increased from 10 to 20
+	
 	while selected.size() < count and attempts < max_attempts:
 		attempts += 1
 		var upgrade = filtered.pick_random()
 		var upgrade_id: String = upgrade.get("id", "")
 		var base_id := _get_base_upgrade_id(upgrade_id)
+		
 		# Check if already selected (no duplicates)
 		var is_duplicate := false
 		for s in selected:
 			if s.get("id") == upgrade_id:
 				is_duplicate = true
 				break
-		# NEW: Check if base upgrade type already used
+		
+		# Check if base upgrade type already used
 		if used_bases.has(base_id):
 			continue
+		
 		if not is_duplicate:
 			selected.append(upgrade)
 			used_bases[base_id] = true
+			print("[Chest] Added: ", upgrade.get("name"), " - Total: ", selected.size())
+	
 	if selected.size() < count:
-		push_warning("[Chest] Could only find %d/%d unique upgrades for rarity %d" % [selected.size(), count, rarity])
+		push_warning("[Chest] Could only find %d/%d unique upgrades for rarity %d (attempts: %d)" % [selected.size(), count, rarity, attempts])
+	
 	return selected
 
 
@@ -183,6 +262,10 @@ func _filter_by_rarity(rarity: int) -> Array:
 	var filtered := []
 	
 	for upgrade in UpgradesDB.ALL_UPGRADES:
+		# ⭐ Skip chaos upgrades from normal chests
+		if upgrade.get("effect") == "chaos_challenge":
+			continue
+		
 		# Check rarity match
 		if upgrade.get("rarity") != rarity:
 			continue

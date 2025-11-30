@@ -276,6 +276,10 @@ func _filter_upgrades(all_upgrades: Array, wanted_rarity: int, taken_ids: Array[
 		var id: String = u.get("id", "")
 		if id == "" or id in taken_ids:
 			continue
+		
+		# ⭐ EXCLUDE CHAOS UPGRADES FROM NORMAL SHOPS/CHESTS
+		if u.get("effect") == "chaos_challenge":
+			continue
 
 		if wanted_rarity != -1 and u.get("rarity", UpgradesDB.Rarity.COMMON) != wanted_rarity:
 			continue
@@ -601,6 +605,15 @@ func open_as_chest(chest: Node2D = null) -> void:
 
 func open_as_chest_with_loot(loot: Array) -> void:
 	"""Open shop in chest mode with predefined loot from chest."""
+	print("[ShopUI] ========== OPEN AS CHEST WITH LOOT ==========")
+	print("[ShopUI] Upgrade count: ", loot.size())
+	
+	for i in range(loot.size()):
+		var upgrade = loot[i]
+		print("[ShopUI]   ", i + 1, ". ", upgrade.get("name"), " (effect: ", upgrade.get("effect"), ", rarity: ", upgrade.get("rarity"), ")")
+	
+	print("[ShopUI] =================================================")
+	
 	is_chest_mode = true
 	active_chest = null
 	
@@ -647,8 +660,16 @@ func open_as_chest_with_loot(loot: Array) -> void:
 
 func _setup_chest_cards() -> void:
 	"""Generate 5 free upgrades with chest rarity weights."""
+	var children := cards_container.get_children()
+	
+	# ⭐ FORCE RESET: Set ALL cards to full opacity FIRST (prevents transparency bugs)
+	for card in children:
+		card.modulate = Color(1, 1, 1, 1)
+		card.visible = true
+		card.mouse_filter = Control.MOUSE_FILTER_STOP
+	
 	# Disconnect old signals
-	for card in cards_container.get_children():
+	for card in children:
 		if card.purchased.is_connected(_on_card_purchased):
 			card.purchased.disconnect(_on_card_purchased)
 		if card.purchased.is_connected(_on_chest_card_purchased):
@@ -690,7 +711,7 @@ func _setup_chest_cards() -> void:
 	
 	# Assign to positions: center (2), middle (1,3), outer (0,4)
 	var position_order = [2, 1, 3, 0, 4]
-	var children := cards_container.get_children()
+	# Reuse children array from above
 	var used_positions = []  # Track which positions we've used
 	
 	for i in range(position_order.size()):
@@ -731,8 +752,17 @@ func _setup_chest_cards() -> void:
 
 func _setup_chest_cards_with_loot(loot: Array) -> void:
 	"""Setup cards with predefined loot from chest (rarity-based)."""
+	print("[ShopUI] _setup_chest_cards_with_loot called with ", loot.size(), " items")
+	
+	# ⭐ FORCE RESET: Set ALL cards to full opacity FIRST (prevents transparency bugs)
+	var children := cards_container.get_children()
+	for card in children:
+		card.modulate = Color(1, 1, 1, 1)
+		card.visible = true
+		card.mouse_filter = Control.MOUSE_FILTER_STOP
+	
 	# Disconnect old signals
-	for card in cards_container.get_children():
+	for card in children:
 		if card.purchased.is_connected(_on_card_purchased):
 			card.purchased.disconnect(_on_card_purchased)
 		if card.purchased.is_connected(_on_chest_card_purchased):
@@ -740,8 +770,9 @@ func _setup_chest_cards_with_loot(loot: Array) -> void:
 	
 	# Sort loot by rarity
 	var sorted_loot = _sort_offers_by_rarity(loot)
+	print("[ShopUI] Sorted loot size: ", sorted_loot.size())
 	
-	var children := cards_container.get_children()
+	# Reuse children array from above
 	
 	# Special case: if only 1 item (like chaos chest), center it by making side cards invisible
 	if sorted_loot.size() == 1:
@@ -865,7 +896,12 @@ func _on_chest_card_purchased() -> void:
 
 func _close_chest_mode() -> void:
 	"""Close chest mode and restore normal UI."""
+	print("[ShopUI] Closing chest mode, resetting card states")
+	
 	is_chest_mode = false
+	
+	# ⭐ Reset all cards to default state to prevent chaos/single-card state from persisting
+	_reset_all_cards()
 	
 	# Hide shop
 	visible = false
@@ -892,6 +928,38 @@ func _close_chest_mode() -> void:
 		level_ui.visible = true
 	
 	# Ability bar visibility is handled by _update_ability_bar()
+
+
+func _reset_all_cards() -> void:
+	"""Reset all cards to default visible state (fixes chaos chest leaving cards invisible)."""
+	print("[ShopUI] Resetting all card states")
+	
+	var children := cards_container.get_children()
+	
+	for card in children:
+		# Reset visibility and opacity
+		card.visible = true
+		card.modulate = Color(1, 1, 1, 1)
+		card.mouse_filter = Control.MOUSE_FILTER_STOP
+		card.scale = Vector2(1.0, 1.0)
+		
+		# Remove any tooltips
+		var tooltip = card.get_node_or_null("TooltipLabel")
+		if tooltip:
+			tooltip.queue_free()
+		
+		# Make all child nodes visible again
+		for child in card.get_children():
+			if child is CanvasItem and child.name != "TooltipLabel":
+				child.visible = true
+		
+		# Disconnect any existing signals
+		if card.purchased.is_connected(_on_card_purchased):
+			card.purchased.disconnect(_on_card_purchased)
+		if card.purchased.is_connected(_on_chest_card_purchased):
+			card.purchased.disconnect(_on_chest_card_purchased)
+	
+	print("[ShopUI] Card reset complete")
 	
 	var title_label = get_node_or_null("Panel/TitleLabel")
 	if title_label:

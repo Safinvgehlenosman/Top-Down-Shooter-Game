@@ -1,6 +1,6 @@
 [gd_scene load_steps=5 format=3 uid="uid://dgx1nktjgb64c"]
 
-[ext_resource type="Script" path="res://scripts/ui/hp_number.gd" id="1_hp"]
+[ext_resource type="Script" uid="uid://ur47vb5sb17e" path="res://scripts/ui/hp_number.gd" id="1_hp"]
 [ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="2_y5vvv"]
 
 [sub_resource type="Gradient" id="Gradient_3v2ag"]
@@ -32,7 +32,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
-position = Vector2(21, 10)
+position = Vector2(43.333332, 6.666667)
 color = Color(1, 0, 0.9882353, 1)
 shadow_enabled = true
 texture = SubResource("GradientTexture2D_ig17g")

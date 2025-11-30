@@ -83,6 +83,36 @@ func _ready() -> void:
 
 func setup(data: Dictionary) -> void:
 	# Called by ShopUI with one of the dictionaries from UpgradesDB.get_all()
+	
+	print("[UpgradeCard] Setting up card: ", data.get("name", "Unknown"))
+	
+	# ========== COMPREHENSIVE VISUAL STATE RESET ==========
+	# Reset EVERYTHING to ensure no leftover state from previous use
+	
+	# Color & opacity - FULL reset
+	modulate = Color(1.0, 1.0, 1.0, 1.0)  # Explicit full white, full opacity
+	self_modulate = Color(1.0, 1.0, 1.0, 1.0)  # Also reset self_modulate
+	
+	# Transform - don't touch scale (shop_ui manages this for card positioning)
+	rotation = 0.0
+	
+	# Visibility & interaction
+	visible = true
+	mouse_filter = Control.MOUSE_FILTER_STOP
+	
+	# Z-index
+	z_index = 0
+	
+	print("[UpgradeCard] Visual reset - modulate: ", modulate, ", scale: ", scale)
+	
+	# Remove old tooltip if exists
+	var old_tooltip = get_node_or_null("TooltipLabel")
+	if old_tooltip:
+		old_tooltip.queue_free()
+		print("[UpgradeCard] Removed old tooltip")
+	
+	is_chaos_card = false
+	
 	upgrade_id = data.get("id", "")
 	base_price = int(data.get("price", 0))
 	# Calculate scaled price unless excluded
@@ -105,8 +135,11 @@ func setup(data: Dictionary) -> void:
 	if data.get("effect") == "chaos_challenge":
 		is_chaos_card = true
 		_create_tooltip(data)
+		print("[UpgradeCard] Created chaos tooltip")
 
 	_refresh()
+	
+	print("[UpgradeCard] Setup complete for: ", data.get("name", "Unknown"))
 
 
 func _get_dynamic_text() -> String:
@@ -231,6 +264,8 @@ func _on_buy_pressed() -> void:
 	if sfx_collect:
 		sfx_collect.play()
 
+	# ⭐ NOTE: Do NOT touch scale here - shop_ui manages card scales for layout
+	# Only emit signal and refresh this card's state
 	emit_signal("purchased")
 	_refresh()
 
@@ -275,13 +310,13 @@ func _create_tooltip(upgrade: Dictionary) -> void:
 	
 	tooltip_label.add_theme_stylebox_override("normal", style_box)
 	
-	# Position tooltip (above card)
+	# Position tooltip (above card) - RELATIVE positioning
 	tooltip_label.position = Vector2(10, -70)
 	
 	# Start hidden
 	tooltip_label.visible = false
 	
-	# Add to card
+	# Add to card (as child, so it moves with card)
 	add_child(tooltip_label)
 	
 	print("[UpgradeCard] Tooltip created for chaos card")

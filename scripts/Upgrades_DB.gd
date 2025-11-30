@@ -1188,6 +1188,20 @@ static func get_all() -> Array:
 	return ALL_UPGRADES
 
 
+static func get_non_chaos_upgrades() -> Array:
+	"""Get all upgrades except chaos challenge upgrades (for normal shops/chests)."""
+	var filtered := []
+	
+	for upgrade in ALL_UPGRADES:
+		# Skip chaos upgrades
+		if upgrade.get("effect") == "chaos_challenge":
+			continue
+		
+		filtered.append(upgrade)
+	
+	return filtered
+
+
 static func get_by_id(id: String) -> Dictionary:
 	for u in ALL_UPGRADES:
 		if u.get("id", "") == id:
