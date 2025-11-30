@@ -103,6 +103,9 @@ func _calculate_upgrade_price(upgrade: Dictionary) -> int:
 
 
 func _setup_cards() -> void:
+	# ⭐ Reset all cards first to clear any chaos/single-card state
+	_reset_all_cards()
+	
 	# Disconnect old signals (both shop AND chest handlers)
 	for card in cards_container.get_children():
 		if card.purchased.is_connected(_on_card_purchased):
@@ -280,6 +283,11 @@ func _filter_upgrades(all_upgrades: Array, wanted_rarity: int, taken_ids: Array[
 		# ⭐ EXCLUDE CHAOS UPGRADES FROM NORMAL SHOPS/CHESTS
 		if u.get("effect") == "chaos_challenge":
 			continue
+		
+		# ⭐ EXCLUDE HP UPGRADES DURING ACTIVE CHAOS CHALLENGE
+		if not GameState.active_chaos_challenge.is_empty():
+			if id == "max_hp_plus_1" or id == "hp_refill":
+				continue
 
 		if wanted_rarity != -1 and u.get("rarity", UpgradesDB.Rarity.COMMON) != wanted_rarity:
 			continue

@@ -314,9 +314,13 @@ func _spawn_room_content() -> void:
 	print("[GameManager] Chest spawn chance: ", should_spawn_chest)
 	
 	# Determine if chaos chest should spawn this level (if flagged)
-	var should_spawn_chaos_chest: bool = chaos_chest_spawned_this_cycle and GameState.active_chaos_challenge.is_empty()
+	# ⭐ Don't spawn if all chaos upgrades have been purchased
+	var all_chaos_purchased := _are_all_chaos_upgrades_purchased()
+	var should_spawn_chaos_chest: bool = chaos_chest_spawned_this_cycle and GameState.active_chaos_challenge.is_empty() and not all_chaos_purchased
 	if should_spawn_chaos_chest:
 		print("[GameManager] Chaos chest will spawn when a random enemy dies")
+	elif chaos_chest_spawned_this_cycle and all_chaos_purchased:
+		print("[GameManager] Chaos chest won't spawn - all chaos upgrades already purchased")
 	
 	chest_spawned = false
 
@@ -463,17 +467,17 @@ func _calculate_crate_count_for_level(level: int) -> int:
 
 
 func _get_enemy_ratio_for_level(level: int) -> float:
-	"""Get the enemy spawn ratio for a given level. Smoothly transitions from 50% to 75%."""
-	# Level 1: 50% enemies (0.5)
-	# Level 50+: 75% enemies (0.75)
+	"""Get the enemy spawn ratio for a given level. Smoothly transitions from 70% to 95%."""
+	# Level 1: 70% enemies (0.7)
+	# Level 50+: 95% enemies (0.95)
 	
 	if level >= 50:
-		return 0.75
+		return 0.95
 	
-	# Linear interpolation from 0.5 to 0.75 over 50 levels
-	# ratio = 0.5 + (0.25 * progress)
+	# Linear interpolation from 0.7 to 0.95 over 50 levels
+	# ratio = 0.7 + (0.25 * progress)
 	var progress = float(level - 1) / 49.0  # 0.0 at level 1, 1.0 at level 50
-	var ratio = 0.5 + (0.25 * progress)
+	var ratio = 0.7 + (0.25 * progress)
 	
 	return ratio
 

@@ -86,7 +86,7 @@ func handle_primary_fire(is_pressed: bool, aim_dir: Vector2) -> void:
 		var bullet := BulletScene_DEFAULT.instantiate()
 		bullet.global_position = muzzle.global_position
 		bullet.direction = dir
-		bullet.damage = int(final_damage)
+		bullet.damage = roundi(final_damage)  # Round instead of truncate
 		var m := float(GameState.primary_bullet_size_multiplier)
 		bullet.scale = bullet.scale * Vector2(m, m)
 		get_tree().current_scene.add_child(bullet)

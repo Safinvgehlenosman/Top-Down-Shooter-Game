@@ -292,12 +292,12 @@ const ALL_UPGRADES: Array = [
 	{
 		"id": "primary_fire_rate_rare",
 		"line_id": "primary_fire_rate",
-		"text": "+10% Primary Fire Rate",
-		"description": "Increase primary fire rate by 10% (faster).",
+		"text": "+20% Primary Fire Rate",
+		"description": "Increase primary fire rate by 20% (faster).",
 		"price": 120,
 		"rarity": Rarity.RARE,
 		"tags": ["weapon_primary"],
-		"increment": 0.10,
+		"increment": 0.20,
 		"stackable": true,
 		"icon": preload("res://assets/Separated/singlebullet.png"),
 	},
@@ -1200,6 +1200,17 @@ static func get_non_chaos_upgrades() -> Array:
 		filtered.append(upgrade)
 	
 	return filtered
+
+
+static func get_chaos_upgrades() -> Array:
+	"""Get all chaos challenge upgrades."""
+	var chaos_upgrades := []
+	
+	for upgrade in ALL_UPGRADES:
+		if upgrade.get("effect") == "chaos_challenge":
+			chaos_upgrades.append(upgrade)
+	
+	return chaos_upgrades
 
 
 static func get_by_id(id: String) -> Dictionary:

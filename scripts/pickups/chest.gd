@@ -266,6 +266,12 @@ func _filter_by_rarity(rarity: int) -> Array:
 		if upgrade.get("effect") == "chaos_challenge":
 			continue
 		
+		# ⭐ Skip HP upgrades during chaos challenge
+		var id: String = upgrade.get("id", "")
+		if not GameState.active_chaos_challenge.is_empty():
+			if id == "max_hp_plus_1" or id == "hp_refill":
+				continue
+		
 		# Check rarity match
 		if upgrade.get("rarity") != rarity:
 			continue

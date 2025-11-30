@@ -67,6 +67,12 @@ func _spawn_loot() -> void:
 	if GameState.max_ammo > 0:
 		ammo_percent = float(GameState.ammo) / float(GameState.max_ammo)
 	
+	# ⭐ Check if chaos challenge is active (no HP upgrades allowed)
+	var chaos_active := not GameState.active_chaos_challenge.is_empty()
+	
+	# ⭐ Check if weapon uses ammo (NONE and TURRET don't use ammo)
+	var weapon_uses_ammo: bool = GameState.alt_weapon_type != GameState.AltWeaponType.NONE and GameState.alt_weapon_type != GameState.AltWeaponType.TURRET
+	
 	# Determine heart spawn chance based on player needs
 	var heart_chance := 0.5  # default 50/50
 	
@@ -81,8 +87,14 @@ func _spawn_loot() -> void:
 	var roll := randf()
 	
 	if roll < heart_chance:
-		# Heart pickup
-		if HeartScene:
+		# Heart pickup (or coin if chaos is active)
+		if chaos_active:
+			# ⭐ During chaos challenge, spawn coins instead of hearts
+			if CoinScene:
+				var coin := CoinScene.instantiate()
+				coin.global_position = global_position
+				get_tree().current_scene.add_child(coin)
+		elif HeartScene:
 			var heart := HeartScene.instantiate()
 			heart.global_position = global_position
 			get_tree().current_scene.add_child(heart)
@@ -92,11 +104,18 @@ func _spawn_loot() -> void:
 			coin.global_position = global_position
 			get_tree().current_scene.add_child(coin)
 	else:
-		# Ammo pickup
-		if AmmoScene:
+		# Ammo pickup (or coin if weapon doesn't use ammo)
+		if not weapon_uses_ammo:
+			# ⭐ Weapon doesn't use ammo, spawn coins instead
+			if CoinScene:
+				var coin := CoinScene.instantiate()
+				coin.global_position = global_position
+				get_tree().current_scene.add_child(coin)
+		elif AmmoScene:
 			var ammo := AmmoScene.instantiate()
 			ammo.global_position = global_position
 			get_tree().current_scene.add_child(ammo)
+
 
 
 

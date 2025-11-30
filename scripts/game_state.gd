@@ -618,7 +618,7 @@ func apply_upgrade(upgrade_id: String) -> void:
 			print("  → Fire rate (cooldown) now:", fire_rate)
 
 		"primary_fire_rate_rare":
-			fire_rate_bonus_percent += 0.10
+			fire_rate_bonus_percent += 0.20
 			fire_rate = fire_rate_base * max(0.05, 1.0 - fire_rate_bonus_percent)
 			print("  → Fire rate (cooldown) now:", fire_rate)
 
