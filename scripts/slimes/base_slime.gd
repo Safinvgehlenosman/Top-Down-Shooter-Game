@@ -25,9 +25,31 @@ var contact_timer: float = 0.0
 @export var obstacle_avoidance_strength: float = 0.3
 @export var personal_space_distance: float = 20.0  # Min distance from player/walls
 @export var enable_flanking: bool = true
-@export var flank_speed_multiplier: float = 0.6  # Speed while flanking
+@export var flank_speed_multiplier: float = 0.5  # Speed while flanking (reduced from 0.6)
 @export var sprint_when_losing_los: bool = true
 @export var sprint_multiplier: float = 1.3
+
+# Pack hunting behaviors
+@export var enable_pack_hunting: bool = true
+@export var pack_detection_radius: float = 150.0
+@export var pack_speed_bonus: float = 1.10  # 10% speed boost when in pack (reduced from 15%)
+@export var min_pack_size: int = 2  # How many allies needed for pack bonus
+
+# Ambush detection
+@export var enable_ambush_detection: bool = true
+@export var ambush_speed_multiplier: float = 1.25  # 25% faster when player trapped (reduced from 40%)
+@export var ambush_aggro_boost: float = 1.3  # Wider aggro range
+
+# Tactical retreat
+@export var enable_tactical_retreat: bool = true
+@export var retreat_hp_threshold: float = 0.25  # Retreat below 25% HP
+@export var retreat_if_alone: bool = true  # Only retreat if no allies nearby
+@export var retreat_speed_multiplier: float = 1.15  # Move faster when retreating (reduced from 20%)
+
+# Pack spreading (surround player)
+@export var enable_pack_spreading: bool = true
+@export var spread_radius: float = 80.0  # How far from player to position
+@export var min_pack_size_for_spread: int = 3  # Need 3+ for spreading
 
 # How much we grow per level
 @export var health_growth_per_level: float = 0.05
@@ -46,6 +68,19 @@ var contact_timer: float = 0.0
 @export var last_seen_search_speed: float = 1.0  # speed multiplier while moving to last seen pos
 var last_seen_player_pos: Vector2 = Vector2.ZERO
 var lost_sight_timer: float = 0.0
+
+# Stuck detection
+@export var stuck_detection_enabled: bool = true
+@export var stuck_time_threshold: float = 2.0    # seconds of barely moving to be "stuck"
+@export var stuck_velocity_threshold: float = 10.0  # pixels/sec to be considered stuck
+var stuck_timer: float = 0.0
+var last_position: Vector2 = Vector2.ZERO
+var unstuck_angle_offset: float = 0.0  # radians to offset approach when stuck
+
+# Pack member cache (to avoid repeated tree searches)
+var pack_members_cache: Array = []
+var pack_cache_timer: float = 0.0
+var pack_cache_interval: float = 0.5  # refresh every 0.5 seconds
 
 @onready var sfx_land: AudioStreamPlayer2D = $SFX_Land
 @onready var sfx_hurt: AudioStreamPlayer2D = $SFX_Hurt
@@ -104,6 +139,7 @@ var base_wander_speed: float = 0.0
 
 func _ready() -> void:
 	player = get_tree().get_first_node_in_group("player") as Node2D
+	last_position = global_position  # Initialize stuck detection
 
 	base_modulate = animated_sprite.modulate
 
@@ -114,15 +150,12 @@ func _ready() -> void:
 	base_move_speed = speed
 	base_wander_speed = wander_speed
 
-	# Apply global difficulty tweak: 1.2x movement speeds and 1.2x health
-	# Do this before wiring the health component so bars reflect new values
-	speed *= 1.2
-	wander_speed *= 1.2
-	max_health = int(round(max_health * 1.2))
-
-	# Update base speeds after difficulty multiplier
-	base_move_speed = speed
-	base_wander_speed = wander_speed
+	# ❌ REMOVED - Smart AI makes them harder now, don't need raw stat buffs
+	# Old approach: Dumb AI + 1.2x speed/health = artificially harder
+	# New approach: Smart AI + balanced stats = naturally harder
+	# speed *= 1.2
+	# wander_speed *= 1.2
+	# max_health = int(round(max_health * 1.2))
 
 	# Apply level-based speed scaling (1.0x -> 2.0x over 50 levels)
 	_apply_speed_scaling()
@@ -195,9 +228,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	_update_hit_feedback(scaled_delta)
-	
-	# Rotate raycasts to face movement direction
-	_update_raycast_directions()
+	_update_behavior_visuals()
 	
 	_update_ai(scaled_delta)
 	_update_animation_sfx()
@@ -235,14 +266,27 @@ func _try_contact_damage() -> void:
 func _update_ai(delta: float) -> void:
 	if not player:
 		return
-
+	
+	# Update stuck detection
+	if stuck_detection_enabled:
+		_update_stuck_detection(delta)
+	
+	# Update pack cache periodically
+	pack_cache_timer -= delta
+	if pack_cache_timer <= 0.0:
+		pack_cache_timer = pack_cache_interval
+		_refresh_pack_cache()
+	
+	# Local speed variable - never modify base_move_speed or speed directly
+	var effective_speed: float = base_move_speed
+	
 	# ------------------------------------------------------
-	# PLAYER INVISIBLE → forget them and wander normally
+	# PLAYER INVISIBLE → wander mode
 	# ------------------------------------------------------
 	if GameState.player_invisible:
 		aggro = false
-
-		# normal wander logic
+		stuck_timer = 0.0
+		
 		wander_timer -= delta
 		if wander_timer <= 0.0:
 			wander_timer = wander_change_interval
@@ -250,146 +294,141 @@ func _update_ai(delta: float) -> void:
 				randf_range(-1.0, 1.0),
 				randf_range(-1.0, 1.0)
 			).normalized()
-
+		
 		velocity = wander_direction * wander_speed
-
-		# Add obstacle avoidance
-		var obstacle_avoid_invisible = _get_obstacle_avoidance()
-		velocity += obstacle_avoid_invisible
-
-		# separation so they don't stack
-		var separation: Vector2 = Vector2.ZERO
-		for other in get_tree().get_nodes_in_group("enemy"):
-			if other == self:
-				continue
-
-			var other_node := other as Node2D
-			if other_node == null:
-				continue
-
-			var diff: Vector2 = global_position - other_node.global_position
-			var dist_sep: float = diff.length()
-			if dist_sep > 0.0 and dist_sep < separation_radius:
-				separation += diff.normalized() * (1.0 - dist_sep / separation_radius)
-
-		velocity += separation * separation_strength * speed
-
-		# wall avoidance
-		var motion := velocity * delta
-		if test_move(global_transform, motion):
-			var motion_x := Vector2(motion.x, 0.0)
-			var motion_y := Vector2(0.0, motion.y)
-
-			if not test_move(global_transform, motion_x):
-				motion = motion_x
-			elif not test_move(global_transform, motion_y):
-				motion = motion_y
-			else:
-				motion = Vector2.ZERO
-
-			if delta > 0.0:
-				velocity = motion / delta
-
-		# knockback still applies
-		velocity += knockback_velocity
-		return
-
+	
 	# ------------------------------------------------------
 	# NORMAL BEHAVIOUR (player visible)
 	# ------------------------------------------------------
-	var to_player: Vector2 = player.global_position - global_position
-	var distance: float = to_player.length()
-	var can_see := _can_see_player()
-	var about_to_lose_los := false
-	
-	# Check if player is about to break LOS
-	if can_see and raycast_forward and raycast_forward.is_colliding():
-		var collider = raycast_forward.get_collider()
-		
-		if collider != player:
-			# Wall between us! Player about to break LOS!
-			about_to_lose_los = true
-
-	# aggro logic
-	if distance <= aggro_radius and can_see:
-		aggro = true
-		last_seen_player_pos = player.global_position
-		lost_sight_timer = 0.0
-	elif aggro:
-		if can_see:
-			last_seen_player_pos = player.global_position
-			lost_sight_timer = 0.0
-		else:
-			lost_sight_timer += delta  # Keep this as raw delta - it's a timer independent of slowmo
-			if lost_sight_timer >= deaggro_delay:
-				aggro = false
-
-	# movement decisions
-	if aggro:
-		if can_see:
-			var forward: Vector2 = to_player.normalized()
-			var right: Vector2 = Vector2(-forward.y, forward.x)
-			var strafe: Vector2 = right * strafe_amount
-
-			var dir: Vector2 = (forward + strafe).normalized()
-			var current_speed = speed
-			
-			# SPRINT if about to lose sight!
-			if sprint_when_losing_los and about_to_lose_los:
-				current_speed *= sprint_multiplier
-			
-			velocity = dir * current_speed
-		elif lost_sight_timer < deaggro_delay:
-			var to_last_seen := last_seen_player_pos - global_position
-			if to_last_seen.length() > 4.0:
-				var dir_search := to_last_seen.normalized()
-				velocity = dir_search * speed * last_seen_search_speed
-			else:
-				velocity = Vector2.ZERO
 	else:
-		wander_timer -= delta
-		if wander_timer <= 0.0:
-			wander_timer = wander_change_interval
-			wander_direction = Vector2(
-				randf_range(-1.0, 1.0),
-				randf_range(-1.0, 1.0)
-			).normalized()
-
-		velocity = wander_direction * wander_speed
-
+		var to_player: Vector2 = player.global_position - global_position
+		var distance: float = to_player.length()
+		var can_see := _can_see_player()
+		
+		# TACTICAL RETREAT - Run away if low HP and alone
+		if _should_retreat():
+			aggro = false
+			stuck_timer = 0.0
+			effective_speed *= retreat_speed_multiplier
+			
+			var away_from_player: Vector2 = (global_position - player.global_position).normalized()
+			velocity = away_from_player * effective_speed
+		
+		# NORMAL AI
+		else:
+			# CHECK FOR AMBUSH OPPORTUNITY
+			var player_cornered: bool = _is_player_cornered()
+			
+			# Modify aggro radius based on ambush
+			var effective_aggro_radius: float = aggro_radius
+			if player_cornered:
+				effective_aggro_radius *= ambush_aggro_boost
+			
+			# Aggro logic with improved persistence
+			if not aggro and distance <= effective_aggro_radius and can_see:
+				aggro = true
+				last_seen_player_pos = player.global_position
+				lost_sight_timer = 0.0
+			
+			# Maintain aggro
+			if aggro:
+				if can_see:
+					last_seen_player_pos = player.global_position
+					lost_sight_timer = 0.0
+				else:
+					lost_sight_timer += delta
+				
+				# De-aggro conditions
+				var deaggro_distance = 270.0
+				if distance > deaggro_distance or lost_sight_timer >= deaggro_delay:
+					aggro = false
+			
+			# Apply speed bonuses to effective_speed
+			if player_cornered and aggro:
+				effective_speed *= ambush_speed_multiplier
+			
+			# Movement decisions
+			if aggro:
+				if can_see:
+					# PACK HUNTING BONUS
+					var pack_status: Dictionary = _get_pack_status()
+					
+					if pack_status.in_pack:
+						effective_speed *= pack_speed_bonus
+					
+					# Normal chase with strafe
+					var forward: Vector2 = to_player.normalized()
+					var right: Vector2 = Vector2(-forward.y, forward.x)
+					var dir: Vector2 = (forward + right * strafe_amount).normalized()
+					
+					# Apply stuck offset if needed
+					if abs(unstuck_angle_offset) > 0.01:
+						dir = dir.rotated(unstuck_angle_offset)
+					
+					velocity = dir * effective_speed
+				
+				elif lost_sight_timer < deaggro_delay:
+					# Search last seen position
+					var to_last_seen := last_seen_player_pos - global_position
+					if to_last_seen.length() > 4.0:
+						velocity = to_last_seen.normalized() * effective_speed * last_seen_search_speed
+					else:
+						velocity = Vector2.ZERO
+			else:
+				# Wander
+				stuck_timer = 0.0
+				
+				wander_timer -= delta
+				if wander_timer <= 0.0:
+					wander_timer = wander_change_interval
+					wander_direction = Vector2(
+						randf_range(-1.0, 1.0),
+						randf_range(-1.0, 1.0)
+					).normalized()
+				
+				velocity = wander_direction * wander_speed
+	
+	# ------------------------------------------------------
+	# SHARED LOGIC (applies to all states)
+	# ------------------------------------------------------
+	
 	# Prevent getting stuck inside player
 	if player:
 		var to_player_vec = player.global_position - global_position
 		var dist_to_player = to_player_vec.length()
 		
-		# Too close! Push away!
 		if dist_to_player < personal_space_distance and dist_to_player > 0:
 			var push_away = -to_player_vec.normalized()
 			var push_strength = (1.0 - dist_to_player / personal_space_distance)
-			velocity += push_away * speed * push_strength * 0.5
-
-	# Add obstacle avoidance
-	var obstacle_avoid_normal = _get_obstacle_avoidance()
-	velocity += obstacle_avoid_normal
-
-	# separation
-	var separation2: Vector2 = Vector2.ZERO
-	for other in get_tree().get_nodes_in_group("enemy"):
-		if other == self:
+			velocity += push_away * base_move_speed * push_strength * 0.5
+	
+	# Raycast-based obstacle avoidance
+	var obstacle_avoid = _get_raycast_avoidance(velocity)
+	velocity += obstacle_avoid
+	
+	# Separation force
+	var separation: Vector2 = Vector2.ZERO
+	var nearby_enemies: Array = pack_members_cache if pack_members_cache.size() > 0 else get_tree().get_nodes_in_group("enemy")
+	
+	for other in nearby_enemies:
+		if other == self or not is_instance_valid(other):
 			continue
-
-		var other_node2 := other as Node2D
-		if other_node2 == null:
+		
+		var other_node := other as Node2D
+		if other_node == null:
 			continue
-
-		var diff2: Vector2 = global_position - other_node2.global_position
-		var dist_sep2: float = diff2.length()
-		if dist_sep2 > 0.0 and dist_sep2 < separation_radius:
-			separation2 += diff2.normalized() * (1.0 - dist_sep2 / separation_radius)
-
-	velocity += separation2 * separation_strength * speed
-
-	# finally, add knockback
+		
+		var diff: Vector2 = global_position - other_node.global_position
+		var dist: float = diff.length()
+		
+		if dist > 0.0 and dist < separation_radius:
+			separation += diff.normalized() * (1.0 - dist / separation_radius)
+	
+	# Weaker separation during aggro so packs can swarm
+	var sep_strength: float = separation_strength * 0.5 if aggro else separation_strength
+	velocity += separation * sep_strength * base_move_speed
+	
+	# Knockback (always applies)
 	velocity += knockback_velocity
 
 
@@ -419,92 +458,280 @@ func _can_see_player() -> bool:
 	return result.get("collider") == player
 
 
-func _update_raycast_directions() -> void:
-	"""Rotate raycasts to face the direction slime is trying to move."""
-	if velocity.length() < 1.0:
-		return  # Not moving, don't update
+func _get_raycast_avoidance(desired_velocity: Vector2) -> Vector2:
+	"""Raycast-based obstacle avoidance - steers around walls intelligently."""
+	if desired_velocity.length() < 1.0:
+		return Vector2.ZERO
 	
-	var move_angle = velocity.angle()
-	
-	if raycast_forward:
-		raycast_forward.rotation = move_angle
-	
-	if raycast_left:
-		# 45 degrees to the left
-		raycast_left.rotation = move_angle - PI / 4
-	
-	if raycast_right:
-		# 45 degrees to the right
-		raycast_right.rotation = move_angle + PI / 4
-
-
-func _get_obstacle_avoidance() -> Vector2:
-	"""Check raycasts and calculate avoidance vector. Now includes flanking!"""
 	var avoidance = Vector2.ZERO
+	var move_dir = desired_velocity.normalized()
 	
-	# Forward raycast - highest priority
+	# Update raycast directions to face movement
+	if raycast_forward:
+		raycast_forward.target_position = move_dir * raycast_length
+	if raycast_left:
+		raycast_left.target_position = move_dir.rotated(-PI/4) * raycast_length
+	if raycast_right:
+		raycast_right.target_position = move_dir.rotated(PI/4) * raycast_length
+	
+	# Force update
+	if raycast_forward:
+		raycast_forward.force_raycast_update()
+	if raycast_left:
+		raycast_left.force_raycast_update()
+	if raycast_right:
+		raycast_right.force_raycast_update()
+	
+	# Check forward raycast
 	if raycast_forward and raycast_forward.is_colliding():
 		var collision_point = raycast_forward.get_collision_point()
 		var to_collision = collision_point - global_position
 		var distance = to_collision.length()
 		
-		# FLANKING: If forward blocked, check sides and GO AROUND
-		if enable_flanking and distance < 30.0:
-			var can_flank_left = raycast_left and not raycast_left.is_colliding()
-			var can_flank_right = raycast_right and not raycast_right.is_colliding()
+		if distance < 40.0:
+			# Wall ahead! Check which side is clearer
+			var left_clear = raycast_left and not raycast_left.is_colliding()
+			var right_clear = raycast_right and not raycast_right.is_colliding()
 			
-			if can_flank_left and can_flank_right:
-				# Both sides clear - pick randomly
+			if left_clear and right_clear:
+				# Both sides clear - pick the side that keeps us moving toward goal
 				if randf() > 0.5:
-					avoidance += velocity.normalized().rotated(-PI/2) * speed * flank_speed_multiplier
+					avoidance = move_dir.rotated(-PI/2) * speed * 0.8
 				else:
-					avoidance += velocity.normalized().rotated(PI/2) * speed * flank_speed_multiplier
-			
-			elif can_flank_left:
-				# Only left is clear
-				avoidance += velocity.normalized().rotated(-PI/2) * speed * flank_speed_multiplier
-			
-			elif can_flank_right:
-				# Only right is clear
-				avoidance += velocity.normalized().rotated(PI/2) * speed * flank_speed_multiplier
-			
+					avoidance = move_dir.rotated(PI/2) * speed * 0.8
+			elif left_clear:
+				avoidance = move_dir.rotated(-PI/2) * speed * 0.8
+			elif right_clear:
+				avoidance = move_dir.rotated(PI/2) * speed * 0.8
 			else:
-				# Can't flank - push away from obstacle (old behavior)
-				var away = -to_collision.normalized()
-				var strength = (1.0 - distance / 30.0) * obstacle_avoidance_strength
-				avoidance += away * strength * speed
-		
-		elif distance < 30.0:
-			# Flanking disabled - just avoid
-			var away = -to_collision.normalized()
-			var strength = (1.0 - distance / 30.0) * obstacle_avoidance_strength
-			avoidance += away * strength * speed
+				# Both sides blocked - back up slightly
+				avoidance = -move_dir * speed * 0.3
 	
-	# Left diagonal
+	# Check side raycasts for fine-tuning
 	if raycast_left and raycast_left.is_colliding():
 		var collision_point = raycast_left.get_collision_point()
-		var to_collision = collision_point - global_position
-		var distance = to_collision.length()
-		
-		# Only avoid if close
-		if distance < 25.0:
-			var right = velocity.normalized().rotated(PI / 2)
-			var strength = (1.0 - distance / 25.0) * obstacle_avoidance_strength * 0.5
-			avoidance += right * strength * speed
+		var distance = collision_point.distance_to(global_position)
+		if distance < 30.0:
+			# Wall on left - nudge right
+			avoidance += move_dir.rotated(PI/2) * speed * 0.3
 	
-	# Right diagonal
 	if raycast_right and raycast_right.is_colliding():
 		var collision_point = raycast_right.get_collision_point()
-		var to_collision = collision_point - global_position
-		var distance = to_collision.length()
-		
-		# Only avoid if close
-		if distance < 25.0:
-			var left = velocity.normalized().rotated(-PI / 2)
-			var strength = (1.0 - distance / 25.0) * obstacle_avoidance_strength * 0.5
-			avoidance += left * strength * speed
+		var distance = collision_point.distance_to(global_position)
+		if distance < 30.0:
+			# Wall on right - nudge left
+			avoidance += move_dir.rotated(-PI/2) * speed * 0.3
 	
 	return avoidance
+
+
+func _get_pack_status() -> Dictionary:
+	"""Check if this slime is part of a pack hunting the player."""
+	if not enable_pack_hunting:
+		return {"in_pack": false, "pack_size": 0, "allies": []}
+	
+	var allies_hunting: Array = []
+	
+	# Find nearby allies that can also see the player
+	for enemy in get_tree().get_nodes_in_group("enemy"):
+		if enemy == self or not is_instance_valid(enemy):
+			continue
+		
+		var dist: float = global_position.distance_to(enemy.global_position)
+		
+		if dist < pack_detection_radius:
+			# Check if ally can see player too
+			if is_instance_valid(enemy) and enemy.has_method("_can_see_player") and enemy._can_see_player():
+				allies_hunting.append(enemy)
+	
+	var in_pack: bool = allies_hunting.size() >= min_pack_size
+	
+	return {
+		"in_pack": in_pack,
+		"pack_size": allies_hunting.size() + 1,
+		"allies": allies_hunting
+	}
+
+
+func _is_player_cornered() -> bool:
+	"""Check if player has their back against a wall (ambush opportunity!)"""
+	if not enable_ambush_detection or not player:
+		return false
+	
+	var space_state = get_world_2d().direct_space_state
+	var player_pos: Vector2 = player.global_position
+	
+	# Cast rays from player in 8 directions
+	var directions: Array = [
+		Vector2.RIGHT,
+		Vector2.LEFT,
+		Vector2.UP,
+		Vector2.DOWN,
+		Vector2.ONE.normalized(),
+		Vector2(-1, 1).normalized(),
+		Vector2(1, -1).normalized(),
+		Vector2(-1, -1).normalized()
+	]
+	
+	var blocked_directions: int = 0
+	
+	for dir in directions:
+		var query = PhysicsRayQueryParameters2D.create(
+			player_pos,
+			player_pos + dir * 60.0
+		)
+		query.exclude = [player, self]
+		query.collision_mask = 1  # Walls only
+		
+		var result = space_state.intersect_ray(query)
+		
+		if not result.is_empty():
+			blocked_directions += 1
+	
+	# If 5+ directions blocked, player is cornered!
+	return blocked_directions >= 5
+
+
+func _should_retreat() -> bool:
+	"""Check if slime should tactically retreat."""
+	if not enable_tactical_retreat or not health_component:
+		return false
+	
+	var hp_percent: float = float(health_component.health) / float(health_component.max_health)
+	
+	# Not low enough HP to retreat
+	if hp_percent > retreat_hp_threshold:
+		return false
+	
+	# Check if alone (if retreat_if_alone is true)
+	if retreat_if_alone:
+		var allies_nearby: int = 0
+		
+		for enemy in get_tree().get_nodes_in_group("enemy"):
+			if enemy == self or not is_instance_valid(enemy):
+				continue
+			
+			var dist: float = global_position.distance_to(enemy.global_position)
+			if dist < 120.0:
+				allies_nearby += 1
+		
+		# Has allies nearby - don't retreat
+		if allies_nearby > 0:
+			return false
+	
+	return true
+
+
+func _get_flanking_position() -> Vector2:
+	"""Calculate position to surround player as part of pack."""
+	if not enable_pack_spreading or not player:
+		return player.global_position
+	
+	var pack_status: Dictionary = _get_pack_status()
+	
+	# Not enough allies for spreading
+	if pack_status.pack_size < min_pack_size_for_spread:
+		return player.global_position
+	
+	# Get all pack members including self
+	var pack_members: Array = pack_status.allies + [self]
+	
+	# Find our index in the pack
+	var my_index: int = pack_members.find(self)
+	
+	if my_index == -1:
+		return player.global_position
+	
+	# Calculate angle for this slime to take flanking position
+	var angle_step: float = TAU / pack_status.pack_size
+	var my_angle: float = angle_step * my_index
+	
+	# Position around player at spread_radius
+	var target_offset: Vector2 = Vector2.from_angle(my_angle) * spread_radius
+	var target_pos: Vector2 = player.global_position + target_offset
+	
+	return target_pos
+
+
+func _update_behavior_visuals() -> void:
+	"""Visual feedback for different AI states."""
+	if not animated_sprite or not hit_light:
+		return
+	
+	# Reset to default
+	var target_modulate: Color = base_modulate
+	var target_light_color: Color = original_light_color
+	var target_light_energy: float = 1.5
+	
+	# Check current behavior state
+	if _should_retreat():
+		# RETREATING - Blue tint, dim light
+		target_modulate = Color(0.8, 0.8, 1.0)
+		target_light_color = Color(0.5, 0.5, 1.0)
+		target_light_energy = 0.5
+	
+	elif _is_player_cornered():
+		# AMBUSH - Red aggressive glow
+		target_modulate = Color(1.2, 0.9, 0.9)
+		target_light_color = Color(1.0, 0.3, 0.3)
+		target_light_energy = 1.8
+	
+	elif _get_pack_status().in_pack:
+		# PACK HUNTING - Orange cooperative glow
+		target_modulate = Color(1.1, 1.0, 0.9)
+		target_light_color = Color(1.0, 0.7, 0.3)
+		target_light_energy = 1.6
+	
+	# Smooth transition to target values
+	animated_sprite.modulate = animated_sprite.modulate.lerp(target_modulate, 0.1)
+	hit_light.color = hit_light.color.lerp(target_light_color, 0.1)
+	hit_light.energy = lerp(hit_light.energy, target_light_energy, 0.1)
+
+
+func _refresh_pack_cache() -> void:
+	"""Refresh the cached list of nearby pack members (performance optimization)."""
+	pack_members_cache.clear()
+	
+	for enemy in get_tree().get_nodes_in_group("enemy"):
+		if enemy == self or not is_instance_valid(enemy):
+			continue
+		
+		var dist: float = global_position.distance_to(enemy.global_position)
+		
+		# Cache enemies within a reasonable distance
+		if dist < pack_detection_radius * 1.5:
+			pack_members_cache.append(enemy)
+
+
+func _update_stuck_detection(delta: float) -> void:
+	"""Detect if slime is stuck and apply unstuck behavior."""
+	if not aggro:
+		stuck_timer = 0.0
+		unstuck_angle_offset = 0.0
+		return
+	
+	# Check if we've moved much
+	var distance_moved = global_position.distance_to(last_position)
+	
+	if distance_moved < stuck_velocity_threshold * delta:
+		# Not moving much
+		stuck_timer += delta
+		
+		if stuck_timer >= stuck_time_threshold:
+			# We're stuck! Apply a random angle offset
+			unstuck_angle_offset = randf_range(-PI/3, PI/3)  # +/- 60 degrees
+			stuck_timer = 0.0  # Reset timer
+	else:
+		# Moving fine, decay the offset
+		if abs(unstuck_angle_offset) > 0.01:
+			unstuck_angle_offset *= 0.95  # Gradually remove offset
+		else:
+			unstuck_angle_offset = 0.0
+		
+		stuck_timer = max(0.0, stuck_timer - delta * 2.0)  # Decay stuck timer
+	
+	# Update last position
+	last_position = global_position
 
 
 # --- VISUAL / AUDIO FEEDBACK ---------------------------------------
@@ -678,15 +905,16 @@ func force_deaggro() -> void:
 
 
 func _apply_speed_scaling() -> void:
-	"""Scale movement speed from 1.0x to 2.0x linearly over 50 levels."""
+	"""Scale movement speed from 1.0x to 1.5x linearly over 100 levels."""
 	var game_manager = get_tree().get_first_node_in_group("game_manager")
 	if not game_manager:
 		return
 
 	var level = game_manager.current_level if "current_level" in game_manager else 1
 
-	# Linear scaling: 1.0 + (level - 1) / 50.0, capped at 2.0x
-	var speed_multiplier = 1.0 + min((level - 1) / 50.0, 1.0)
+	# Linear scaling: 1.0 + (level - 1) / 100.0, capped at 1.5x
+	# More moderate scaling - smart AI provides difficulty, not raw speed
+	var speed_multiplier = 1.0 + min((level - 1) / 100.0, 0.5)
 
 	# Apply to movement speed
 	if base_move_speed > 0.0:
@@ -700,6 +928,3 @@ func _apply_speed_scaling() -> void:
 func set_time_scale(scale_value: float) -> void:
 	"""Set time scale for bullet time effect."""
 	time_scale = clamp(scale_value, 0.0, 1.0)
-
-
-
