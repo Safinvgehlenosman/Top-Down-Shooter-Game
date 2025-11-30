@@ -83,6 +83,11 @@ var pack_members_cache: Array = []
 var pack_cache_timer: float = 0.0
 var pack_cache_interval: float = 0.5  # refresh every 0.5 seconds
 
+# Retreat state tracking (prevents jittery back-and-forth)
+var is_retreating: bool = false
+var retreat_cooldown: float = 0.0
+var retreat_cooldown_time: float = 2.0  # Must wait 2 seconds before stopping retreat
+
 @onready var sfx_land: AudioStreamPlayer2D = $SFX_Land
 @onready var sfx_hurt: AudioStreamPlayer2D = $SFX_Hurt
 @onready var sfx_death: AudioStreamPlayer2D = $SFX_Death
@@ -226,6 +231,10 @@ func _physics_process(delta: float) -> void:
 	# decrement per-instance land-sound cooldown
 	if _land_sound_cd > 0.0:
 		_land_sound_cd = max(0.0, _land_sound_cd - scaled_delta)
+	
+	# Decay retreat cooldown
+	if retreat_cooldown > 0.0:
+		retreat_cooldown -= scaled_delta
 
 	if is_dead:
 		_update_hit_feedback(scaled_delta)
@@ -310,7 +319,21 @@ func _update_ai(delta: float) -> void:
 		var can_see := _can_see_player()
 		
 		# TACTICAL RETREAT - Run away if low HP and alone
-		if _should_retreat():
+		# Use state tracking to prevent jittery transitions
+		var should_retreat_now: bool = _should_retreat()
+		
+		if should_retreat_now and not is_retreating:
+			# Start retreating
+			is_retreating = true
+			retreat_cooldown = retreat_cooldown_time
+		elif is_retreating and retreat_cooldown <= 0.0:
+			# Cooldown expired, check if we can stop retreating
+			var hp_percent: float = float(health_component.health) / float(health_component.max_health)
+			# Use higher threshold to stop retreating (hysteresis)
+			if hp_percent > retreat_hp_threshold + 0.15 or not should_retreat_now:
+				is_retreating = false
+		
+		if is_retreating:
 			aggro = false
 			stuck_timer = 0.0
 			effective_speed *= retreat_speed_multiplier
