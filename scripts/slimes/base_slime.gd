@@ -15,13 +15,23 @@ var contact_timer: float = 0.0
 @onready var hp_fill: TextureProgressBar = $HPBar/HPFill
 @onready var health_component: Node = $Health
 
+# Raycast references for obstacle avoidance
+@onready var raycast_forward: RayCast2D = $RayCastForward
+@onready var raycast_left: RayCast2D = $RayCastLeft
+@onready var raycast_right: RayCast2D = $RayCastRight
+
+# Obstacle avoidance settings
+@export var raycast_length: float = 50.0
+@export var obstacle_avoidance_strength: float = 0.3
+@export var personal_space_distance: float = 20.0  # Min distance from player/walls
+
 # How much we grow per level
 @export var health_growth_per_level: float = 0.05
 @export var damage_growth_per_level: float = 0.05
 
 # Movement / behaviour tuning
 @export var separation_radius: float = 24.0      # how close slimes can get to each other
-@export var separation_strength: float = 0.7     # how strongly they push away
+@export var separation_strength: float = 0.3     # how strongly they push away
 @export var strafe_amount: float = 0.3           # sideways movement while chasing
 @export var aggro_radius: float = 180.0          # player distance that triggers aggro
 @export var wander_speed: float = 40.0           # speed while idle wandering
@@ -181,6 +191,10 @@ func _physics_process(delta: float) -> void:
 		return
 
 	_update_hit_feedback(scaled_delta)
+	
+	# Rotate raycasts to face movement direction
+	_update_raycast_directions()
+	
 	_update_ai(scaled_delta)
 	_update_animation_sfx()
 
@@ -234,6 +248,10 @@ func _update_ai(delta: float) -> void:
 			).normalized()
 
 		velocity = wander_direction * wander_speed
+
+		# Add obstacle avoidance
+		var obstacle_avoid_invisible = _get_obstacle_avoidance()
+		velocity += obstacle_avoid_invisible
 
 		# separation so they don't stack
 		var separation: Vector2 = Vector2.ZERO
@@ -320,6 +338,21 @@ func _update_ai(delta: float) -> void:
 
 		velocity = wander_direction * wander_speed
 
+	# Prevent getting stuck inside player
+	if player:
+		var to_player_vec = player.global_position - global_position
+		var dist_to_player = to_player_vec.length()
+		
+		# Too close! Push away!
+		if dist_to_player < personal_space_distance and dist_to_player > 0:
+			var push_away = -to_player_vec.normalized()
+			var push_strength = (1.0 - dist_to_player / personal_space_distance)
+			velocity += push_away * speed * push_strength * 0.5
+
+	# Add obstacle avoidance
+	var obstacle_avoid_normal = _get_obstacle_avoidance()
+	velocity += obstacle_avoid_normal
+
 	# separation
 	var separation2: Vector2 = Vector2.ZERO
 	for other in get_tree().get_nodes_in_group("enemy"):
@@ -336,22 +369,6 @@ func _update_ai(delta: float) -> void:
 			separation2 += diff2.normalized() * (1.0 - dist_sep2 / separation_radius)
 
 	velocity += separation2 * separation_strength * speed
-
-	# wall avoidance
-	var motion2 := velocity * delta
-	if test_move(global_transform, motion2):
-		var motion_x2 := Vector2(motion2.x, 0.0)
-		var motion_y2 := Vector2(0.0, motion2.y)
-
-		if not test_move(global_transform, motion_x2):
-			motion2 = motion_x2
-		elif not test_move(global_transform, motion_y2):
-			motion2 = motion_y2
-		else:
-			motion2 = Vector2.ZERO
-
-		if delta > 0.0:
-			velocity = motion2 / delta
 
 	# finally, add knockback
 	velocity += knockback_velocity
@@ -382,6 +399,67 @@ func _can_see_player() -> bool:
 
 	return result.get("collider") == player
 
+
+func _update_raycast_directions() -> void:
+	"""Rotate raycasts to face the direction slime is trying to move."""
+	if velocity.length() < 1.0:
+		return  # Not moving, don't update
+	
+	var move_angle = velocity.angle()
+	
+	if raycast_forward:
+		raycast_forward.rotation = move_angle
+	
+	if raycast_left:
+		# 45 degrees to the left
+		raycast_left.rotation = move_angle - PI / 4
+	
+	if raycast_right:
+		# 45 degrees to the right
+		raycast_right.rotation = move_angle + PI / 4
+
+
+func _get_obstacle_avoidance() -> Vector2:
+	"""Check raycasts and calculate avoidance vector."""
+	var avoidance = Vector2.ZERO
+	
+	# Forward raycast - highest priority
+	if raycast_forward and raycast_forward.is_colliding():
+		var collision_point = raycast_forward.get_collision_point()
+		var to_collision = collision_point - global_position
+		var distance = to_collision.length()
+		
+		# Only avoid if really close
+		if distance < 30.0:
+			var away = -to_collision.normalized()
+			var strength = (1.0 - distance / 30.0) * obstacle_avoidance_strength
+			avoidance += away * strength * speed
+	
+	# Left diagonal
+	if raycast_left and raycast_left.is_colliding():
+		var collision_point = raycast_left.get_collision_point()
+		var to_collision = collision_point - global_position
+		var distance = to_collision.length()
+		
+		# Only avoid if close
+		if distance < 25.0:
+			var right = velocity.normalized().rotated(PI / 2)
+			var strength = (1.0 - distance / 25.0) * obstacle_avoidance_strength * 0.5
+			avoidance += right * strength * speed
+	
+	# Right diagonal
+	if raycast_right and raycast_right.is_colliding():
+		var collision_point = raycast_right.get_collision_point()
+		var to_collision = collision_point - global_position
+		var distance = to_collision.length()
+		
+		# Only avoid if close
+		if distance < 25.0:
+			var left = velocity.normalized().rotated(-PI / 2)
+			var strength = (1.0 - distance / 25.0) * obstacle_avoidance_strength * 0.5
+			avoidance += left * strength * speed
+	
+	return avoidance
 
 
 # --- VISUAL / AUDIO FEEDBACK ---------------------------------------
@@ -577,3 +655,6 @@ func _apply_speed_scaling() -> void:
 func set_time_scale(scale_value: float) -> void:
 	"""Set time scale for bullet time effect."""
 	time_scale = clamp(scale_value, 0.0, 1.0)
+
+
+

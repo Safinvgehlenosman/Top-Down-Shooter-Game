@@ -117,11 +117,9 @@ script = ExtResource("1_sri36")
 projectile_scene = ExtResource("2_ykb4d")
 burst_count = 10
 spread_degrees = 40.0
-pellet_min_speed = 240.0
-pellet_max_speed = 290.0
 speed = 50.0
-wander_speed = 25.0
 max_health = 20
+wander_speed = 25.0
 CoinScene = ExtResource("3_son63")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
@@ -206,5 +204,14 @@ max_value = 5.0
 value = 3.0
 texture_progress = ExtResource("14_w5lr4")
 tint_progress = Color(1, 0, 0.078431375, 1)
+
+[node name="RayCastForward" type="RayCast2D" parent="."]
+target_position = Vector2(50, 0)
+
+[node name="RayCastLeft" type="RayCast2D" parent="."]
+target_position = Vector2(35, -35)
+
+[node name="RayCastRight" type="RayCast2D" parent="."]
+target_position = Vector2(35, 35)
 
 [connection signal="body_entered" from="Hitbox" to="." method="_on_hitbox_body_entered"]

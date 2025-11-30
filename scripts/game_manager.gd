@@ -311,16 +311,11 @@ func _spawn_room_content() -> void:
 	
 	# Determine if chest should spawn this level (75% chance)
 	var should_spawn_chest: bool = randf() < chest_spawn_chance
-	print("[GameManager] Chest spawn chance: ", should_spawn_chest)
 	
 	# Determine if chaos chest should spawn this level (if flagged)
 	# ⭐ Don't spawn if all chaos upgrades have been purchased
 	var all_chaos_purchased := _are_all_chaos_upgrades_purchased()
 	var should_spawn_chaos_chest: bool = chaos_chest_spawned_this_cycle and GameState.active_chaos_challenge.is_empty() and not all_chaos_purchased
-	if should_spawn_chaos_chest:
-		print("[GameManager] Chaos chest will spawn when a random enemy dies")
-	elif chaos_chest_spawned_this_cycle and all_chaos_purchased:
-		print("[GameManager] Chaos chest won't spawn - all chaos upgrades already purchased")
 	
 	chest_spawned = false
 
@@ -350,8 +345,6 @@ func _spawn_room_content() -> void:
 	if total_entities > room_spawn_points.size():
 		# Prioritize enemies over crates
 		crate_count = max(0, room_spawn_points.size() - enemy_count)
-	
-	print("[GameManager] Level ", current_level, ": Spawning ", enemy_count, " enemies and ", crate_count, " crates")
 	
 	# Shuffle spawn points for randomness
 	room_spawn_points.shuffle()
@@ -401,17 +394,25 @@ func _spawn_room_content() -> void:
 	# --- MARK RANDOM ENEMIES AS CHEST DROPPERS ---
 	# After spawning all enemies, mark random ones to drop chests
 	
-	if should_spawn_chest and not spawned_enemies.is_empty():
-		spawned_enemies.shuffle()
-		var chest_dropper = spawned_enemies[0]
-		chest_dropper.set_meta("drops_chest", true)
-		print("[GameManager] Random enemy will drop chest when killed")
-	
+	# ⭐ FIX: Chaos chest should spawn first to avoid overlapping with normal chest
 	if should_spawn_chaos_chest and not spawned_enemies.is_empty():
 		spawned_enemies.shuffle()
 		var chaos_dropper = spawned_enemies[0]
 		chaos_dropper.set_meta("drops_chaos_chest", true)
-		print("[GameManager] Random enemy will drop chaos chest when killed")
+	
+	if should_spawn_chest and not spawned_enemies.is_empty():
+		spawned_enemies.shuffle()
+		var chest_dropper = spawned_enemies[0]
+		# ⭐ Ensure chaos chest and normal chest don't spawn from same enemy
+		if chest_dropper.has_meta("drops_chaos_chest"):
+			if spawned_enemies.size() > 1:
+				chest_dropper = spawned_enemies[1]
+			else:
+				# Only one enemy - skip normal chest
+				chest_dropper = null
+		
+		if chest_dropper:
+			chest_dropper.set_meta("drops_chest", true)
 	
 	# --- SPAWN CRATES ---
 	if not themed_room and crate_scene:
@@ -598,21 +599,18 @@ func _update_enemy_weights_for_level() -> void:
 func _on_enemy_died(enemy: Node2D = null) -> void:
 	alive_enemies = max(alive_enemies - 1, 0)
 	
-	print("[GameManager] Enemy died. Remaining enemies: ", alive_enemies)
-	
 	# Check if this enemy should drop chest
 	if enemy != null and enemy.has_meta("drops_chest") and not chest_spawned:
-		print("[GameManager] Chest dropper killed! Spawning chest...")
 		_spawn_chest_at_enemy_position(enemy.global_position)
 		chest_spawned = true
 	
 	# ⭐ Check if this enemy should drop chaos chest
 	if enemy != null and enemy.has_meta("drops_chaos_chest"):
-		print("[GameManager] Chaos chest dropper killed! Spawning chaos chest...")
 		_spawn_chaos_chest_at_enemy_position(enemy.global_position)
 	
 	if alive_enemies == 0:
 		# ⭐ Progress chaos challenge if active
+		print("[GameManager] All enemies dead. Active chaos challenge: '", GameState.active_chaos_challenge, "'")
 		if not GameState.active_chaos_challenge.is_empty():
 			GameState.increment_chaos_challenge_progress()
 		
@@ -680,8 +678,6 @@ func _spawn_chest_at_enemy_position(position: Vector2) -> void:
 	chest.global_position = position
 	current_room.add_child(chest)
 
-	print("[GameManager] Spawned chest at enemy death position: ", position)
-
 # CHEST SPAWNING LOGIC:
 # 
 # Add variables at top with other spawn variables:
@@ -744,6 +740,12 @@ func _open_shop() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
 	if shop_ui:
+		# ⬅0 Check if shops are disabled by chaos challenge
+		if GameState.shop_disabled:
+			print("[GameManager] Shops are disabled by chaos challenge!")
+			# TODO: Show message to player
+			return
+		
 		shop_ui.visible = true
 		if shop_ui.has_method("open_as_shop"):
 			shop_ui.open_as_shop()
@@ -911,7 +913,6 @@ func _check_chaos_chest_spawn() -> void:
 	if new_cycle > current_level_cycle:
 		current_level_cycle = new_cycle
 		chaos_chest_spawned_this_cycle = false
-		print("[GameManager] Entered chaos chest cycle ", new_cycle + 1, " (levels ", new_cycle * 10 + 1, "-", new_cycle * 10 + 10, ")")
 	
 	# If chaos chest already spawned this cycle, skip
 	if chaos_chest_spawned_this_cycle:
@@ -925,7 +926,6 @@ func _check_chaos_chest_spawn() -> void:
 	
 	if randf() < spawn_chance:
 		chaos_chest_spawned_this_cycle = true
-		print("[GameManager] Chaos chest will spawn this level (level ", current_level, ")!")
 		# Flag is set; actual spawn happens in _spawn_room_content()
 
 
@@ -943,8 +943,6 @@ func _spawn_chaos_chest_at_enemy_position(position: Vector2) -> void:
 		chaos_chest.chaos_chest_opened.connect(_on_chaos_chest_opened)
 	
 	current_room.add_child(chaos_chest)
-	
-	print("[GameManager] Chaos chest spawned at enemy position: ", position)
 	
 	# Clear spawn point
 	chaos_chest_spawn_point = null
@@ -969,8 +967,6 @@ func _are_all_chaos_upgrades_purchased() -> bool:
 
 func _on_chaos_chest_opened(chaos_upgrade: Dictionary) -> void:
 	"""Handle chaos chest interaction - show upgrade via shop UI"""
-	print("[GameManager] Chaos chest opened! Showing chaos upgrade via shop UI")
-	
 	if not shop_ui:
 		push_error("[GameManager] No shop_ui reference!")
 		return

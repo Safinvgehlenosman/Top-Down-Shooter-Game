@@ -171,6 +171,9 @@ func _process_movement(_delta: float) -> void:
 	if input_dir != Vector2.ZERO:
 		input_dir = input_dir.normalized()
 
+	# ⭐ Always read current speed from GameState (for chaos challenges)
+	var current_speed: float = GameState.move_speed
+
 	# Ask HealthComponent how slowed we are (1.0 = normal)
 	var slow_factor: float = 1.0
 	if health_component and health_component.has_method("get_move_slow_factor"):
@@ -183,9 +186,9 @@ func _process_movement(_delta: float) -> void:
 			# Dash ignores slow (nice counterplay). Remove if you want frozen dashes too.
 			velocity = dash_velocity
 		else:
-			velocity = input_dir * speed * slow_factor
+			velocity = input_dir * current_speed * slow_factor
 	else:
-		velocity = input_dir * speed * slow_factor
+		velocity = input_dir * current_speed * slow_factor
 
 	# Apply knockback on top of input movement
 	if knockback_timer > 0.0:

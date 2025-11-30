@@ -201,4 +201,13 @@ value = 3.0
 texture_progress = ExtResource("10_wlyjp")
 tint_progress = Color(1, 0, 0.078431375, 1)
 
+[node name="RayCastForward" type="RayCast2D" parent="."]
+target_position = Vector2(50, 0)
+
+[node name="RayCastLeft" type="RayCast2D" parent="."]
+target_position = Vector2(35, -35)
+
+[node name="RayCastRight" type="RayCast2D" parent="."]
+target_position = Vector2(35, 35)
+
 [connection signal="body_entered" from="Hitbox" to="." method="_on_hitbox_body_entered"]

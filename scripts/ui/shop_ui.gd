@@ -97,8 +97,6 @@ func _calculate_upgrade_price(upgrade: Dictionary) -> int:
 	
 	var final_price = int(base_price * rarity_multiplier)
 	
-	print("[Shop] Upgrade:", upgrade.get("text", "Unknown"), "Rarity:", rarity, "Price:", final_price)
-	
 	return final_price
 
 
@@ -613,15 +611,6 @@ func open_as_chest(chest: Node2D = null) -> void:
 
 func open_as_chest_with_loot(loot: Array) -> void:
 	"""Open shop in chest mode with predefined loot from chest."""
-	print("[ShopUI] ========== OPEN AS CHEST WITH LOOT ==========")
-	print("[ShopUI] Upgrade count: ", loot.size())
-	
-	for i in range(loot.size()):
-		var upgrade = loot[i]
-		print("[ShopUI]   ", i + 1, ". ", upgrade.get("name"), " (effect: ", upgrade.get("effect"), ", rarity: ", upgrade.get("rarity"), ")")
-	
-	print("[ShopUI] =================================================")
-	
 	is_chest_mode = true
 	active_chest = null
 	
@@ -760,8 +749,6 @@ func _setup_chest_cards() -> void:
 
 func _setup_chest_cards_with_loot(loot: Array) -> void:
 	"""Setup cards with predefined loot from chest (rarity-based)."""
-	print("[ShopUI] _setup_chest_cards_with_loot called with ", loot.size(), " items")
-	
 	# ⭐ FORCE RESET: Set ALL cards to full opacity FIRST (prevents transparency bugs)
 	var children := cards_container.get_children()
 	for card in children:
@@ -771,7 +758,8 @@ func _setup_chest_cards_with_loot(loot: Array) -> void:
 		card.scale = Vector2(1.0, 1.0)  # ⭐ Reset scale too
 		# ⭐ Also restore child visibility (was hidden for single-card mode)
 		for child in card.get_children():
-			if child is CanvasItem:
+			# Restore all except: TooltipLabel (temporary), ColorRect (hidden by design)
+			if child is CanvasItem and child.name != "TooltipLabel" and child.name != "ColorRect":
 				child.visible = true
 	
 	# Disconnect old signals
@@ -783,7 +771,6 @@ func _setup_chest_cards_with_loot(loot: Array) -> void:
 	
 	# Sort loot by rarity
 	var sorted_loot = _sort_offers_by_rarity(loot)
-	print("[ShopUI] Sorted loot size: ", sorted_loot.size())
 	
 	# Reuse children array from above
 	
@@ -909,8 +896,6 @@ func _on_chest_card_purchased() -> void:
 
 func _close_chest_mode() -> void:
 	"""Close chest mode and restore normal UI."""
-	print("[ShopUI] Closing chest mode, resetting card states")
-	
 	is_chest_mode = false
 	
 	# ⭐ Reset all cards to default state to prevent chaos/single-card state from persisting
@@ -945,8 +930,6 @@ func _close_chest_mode() -> void:
 
 func _reset_all_cards() -> void:
 	"""Reset all cards to default visible state (fixes chaos chest leaving cards invisible)."""
-	print("[ShopUI] Resetting all card states")
-	
 	var children := cards_container.get_children()
 	
 	for card in children:
@@ -971,8 +954,6 @@ func _reset_all_cards() -> void:
 			card.purchased.disconnect(_on_card_purchased)
 		if card.purchased.is_connected(_on_chest_card_purchased):
 			card.purchased.disconnect(_on_chest_card_purchased)
-	
-	print("[ShopUI] Card reset complete")
 	
 	var title_label = get_node_or_null("Panel/TitleLabel")
 	if title_label:

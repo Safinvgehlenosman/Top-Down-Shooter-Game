@@ -96,32 +96,23 @@ func _on_player_interact() -> void:
 
 
 func _get_chaos_upgrade() -> Dictionary:
-	"""Find and return a chaos upgrade from the database"""
+	"""Find and return a chaos upgrade from the database using shuffle system"""
+	# ⭐ Get next pact from shuffle pool
+	var pact_id = GameState.get_next_chaos_pact_id()
+	
+	print("[ChaosChest] Looking for pact with value:", pact_id)
+	
 	var UpgradesDB = preload("res://scripts/Upgrades_DB.gd")
 	var all_upgrades = UpgradesDB.get_all()
 	
-	# Filter for chaos upgrades
-	var chaos_upgrades: Array = []
-	
+	# Find the upgrade with this specific value
 	for upgrade in all_upgrades:
-		var upgrade_rarity = upgrade.get("rarity")
-		
-		# Check if it's CHAOS rarity
-		if upgrade_rarity == UpgradesDB.Rarity.CHAOS:
-			chaos_upgrades.append(upgrade)
-		elif upgrade.get("effect") == "chaos_challenge":
-			# Fallback: check by effect type
-			chaos_upgrades.append(upgrade)
+		if upgrade.get("value") == pact_id and upgrade.get("effect") == "chaos_challenge":
+			print("[ChaosChest] Found chaos pact:", upgrade.get("text"))
+			return upgrade
 	
-	if chaos_upgrades.is_empty():
-		push_error("[ChaosChest] No chaos upgrades found in database!")
-		return {}
-	
-	# Pick one random chaos upgrade
-	var selected = chaos_upgrades.pick_random()
-	print("[ChaosChest] Selected: ", selected.get("text"))
-	
-	return selected
+	push_error("[ChaosChest] Could not find chaos pact with ID:", pact_id)
+	return {}
 
 
 func _despawn_chest() -> void:

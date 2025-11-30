@@ -22,7 +22,6 @@ var alt_weapon: int = GameState.AltWeaponType.NONE
 
 func init_from_state() -> void:
 	fire_rate = GameState.fire_rate
-	print("[Gun] Initialized from GameState - fire_rate:", fire_rate)
 
 
 func update_timers(delta: float) -> void:
@@ -51,6 +50,10 @@ func add_ammo(amount: int) -> void:
 func handle_primary_fire(is_pressed: bool, aim_dir: Vector2) -> void:
 	if not is_pressed:
 		return
+	
+	# ⬅0 Check if primary fire is disabled by chaos challenge
+	if GameState.primary_fire_disabled:
+		return
 
 	if not GameState.debug_laser_mode and fire_timer > 0.0:
 		return
@@ -76,8 +79,6 @@ func handle_primary_fire(is_pressed: bool, aim_dir: Vector2) -> void:
 	var spread_deg := 6.0
 	var spread_rad := deg_to_rad(spread_deg)
 	var start_offset := -float(burst - 1) / 2.0
-
-	print("[Gun] Firing - Base:", base_damage, "x Multiplier:", damage_multiplier, "= Final:", final_damage, "| Burst:", burst, "| Fire Rate:", GameState.fire_rate)
 
 	for i in range(burst):
 		var angle := (start_offset + i) * spread_rad

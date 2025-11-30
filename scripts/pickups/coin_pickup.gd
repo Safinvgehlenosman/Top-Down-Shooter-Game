@@ -96,6 +96,12 @@ func _on_body_entered(body: Node2D) -> void:
 
 		# Get coin value based on level (randomized ranges)
 		var coin_value: int = _get_coin_value_for_level()
+		
+		# ⭐ If coin pickups are disabled by chaos challenge, set value to 0
+		if GameState.coin_pickups_disabled:
+			print("[CoinPickup] Coin pickups disabled by chaos challenge! Value set to 0")
+			coin_value = 0
+		
 		GameState.add_coins(coin_value)
 		
 		# Spawn coin number popup

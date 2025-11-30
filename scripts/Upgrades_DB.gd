@@ -90,13 +90,6 @@ const ALL_UPGRADES: Array = [
 		"rarity": Rarity.UNCOMMON,
 		"icon": preload("res://assets/Separated/singlebullet.png"),
 	},
-	{
-		"id": "primary_fire_rate_plus_10",
-		"text": "+10% Primary Fire Rate",
-		"price": 200,
-		"rarity": Rarity.UNCOMMON,
-		"icon": preload("res://assets/Separated/singlebullet.png"),
-	},
 	# ⭐ +1 PRIMARY SHOT - EPIC RARITY ONLY (very powerful upgrade)
 	{
 		"id": "primary_burst_plus_1",
@@ -1174,7 +1167,43 @@ const ALL_UPGRADES: Array = [
 		"effect": "chaos_challenge",
 		"value": "half_hp_double_damage",
 		"price": 0,  # Chaos upgrades are always free
-		"icon": preload("res://assets/Separated/ammo.png"),  # Use chaos icon if available
+		"icon": preload("res://assets/Separated/ammo.png"),
+		"stackable": false,
+	},
+	# ⭐ NEW CHAOS PACT 2
+	{
+		"id": "chaos_half_speed_double_speed",
+		"text": "Chaos Pact: Speed Demon",
+		"description": "Your MOVE SPEED is HALVED!\nSurvive 3 rooms to permanently DOUBLE your base move speed!",
+		"rarity": Rarity.CHAOS,
+		"effect": "chaos_challenge",
+		"value": "half_speed_double_speed",
+		"price": 0,
+		"icon": preload("res://assets/Separated/ammo.png"),
+		"stackable": false,
+	},
+	# ⭐ NEW CHAOS PACT 3
+	{
+		"id": "chaos_no_shop_1000_coins",
+		"text": "Chaos Pact: Coin Hoarder",
+		"description": "COIN PICKUPS DISABLED! Coins set to 0!\nSurvive 5 rooms to gain 1000 COINS!",
+		"rarity": Rarity.CHAOS,
+		"effect": "chaos_challenge",
+		"value": "no_shop_1000_coins",
+		"price": 0,
+		"icon": preload("res://assets/Separated/ammo.png"),
+		"stackable": false,
+	},
+	# ⭐ NEW CHAOS PACT 4
+	{
+		"id": "chaos_no_primary_fire_triple_rate",
+		"text": "Chaos Pact: Trigger Happy",
+		"description": "PRIMARY FIRE DISABLED!\nSurvive 3 rooms to DOUBLE your FIRE RATE permanently!",
+		"rarity": Rarity.CHAOS,
+		"effect": "chaos_challenge",
+		"value": "no_primary_fire_triple_rate",
+		"price": 0,
+		"icon": preload("res://assets/Separated/ammo.png"),
 		"stackable": false,
 	},
 ]

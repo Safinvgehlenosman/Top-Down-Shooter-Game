@@ -269,6 +269,14 @@ var chaos_challenge_progress: int = 0
 var chaos_challenge_target: int = 5  # Survive 5 rooms
 var chaos_challenge_completed: bool = false
 var original_max_health: int = 0  # Store original max HP before challenge
+var original_move_speed: float = 0.0  # Store original move speed
+var shop_disabled: bool = false  # Shops disabled flag
+var primary_fire_disabled: bool = false  # Primary fire disabled flag
+var coin_pickups_disabled: bool = false  # Coin pickups disabled flag
+
+# ⭐ Chaos Pact Shuffle System
+var chaos_pact_pool: Array = []  # Available chaos pacts
+var chaos_pact_history: Array = []  # Already seen this cycle
 
 
 # flags
@@ -286,6 +294,8 @@ var debug_noclip: bool = false
 
 func _ready() -> void:
 	start_new_run()
+	# ⭐ Initialize chaos pact pool
+	_reset_chaos_pact_pool()
 
 func start_new_run() -> void:
 	# Base values come from GameConfig
@@ -1048,6 +1058,19 @@ func apply_upgrade(upgrade_id: String) -> void:
 		"chaos_half_hp_double_damage":
 			print("  → Starting chaos challenge: half_hp_double_damage")
 			start_chaos_challenge("half_hp_double_damage")
+		
+		# ⭐ NEW CHAOS CHALLENGES
+		"chaos_half_speed_double_speed":
+			print("  → Starting chaos challenge: half_speed_double_speed")
+			start_chaos_challenge("half_speed_double_speed")
+		
+		"chaos_no_shop_1000_coins":
+			print("  → Starting chaos challenge: no_shop_1000_coins")
+			start_chaos_challenge("no_shop_1000_coins")
+		
+		"chaos_no_primary_fire_triple_rate":
+			print("  → Starting chaos challenge: no_primary_fire_triple_rate")
+			start_chaos_challenge("no_primary_fire_triple_rate")
 
 		_:
 			push_warning("[GameState] No handler for upgrade_id: %s" % upgrade_id)
@@ -1069,36 +1092,63 @@ func start_chaos_challenge(challenge_id: String) -> void:
 	chaos_challenge_progress = 0
 	chaos_challenge_completed = false
 	
-	print("[GameState] ========== CHAOS CHALLENGE STARTED ==========")
-	print("[GameState] Challenge ID:", challenge_id)
+	print("[GameState] ========================================")
+	print("[GameState] STARTING CHAOS CHALLENGE:", challenge_id)
+	print("[GameState] ========================================")
 	
 	# ⭐ Apply challenge penalty immediately
 	match challenge_id:
 		"half_hp_double_damage":
 			chaos_challenge_target = 5
-			
-			# Store original max HP
 			original_max_health = max_health
-			print("[GameState] Original max HP:", original_max_health)
-			
-			# Halve max HP
 			max_health = int(max_health / 2.0)
-			print("[GameState] New max HP:", max_health)
-			
-			# Halve current HP (so player doesn't die instantly if at full HP)
 			health = int(health / 2.0)
-			health = max(health, 1)  # Don't let them die from accepting!
-			print("[GameState] New current HP:", health)
-			print("[GameState] Must survive", chaos_challenge_target, "rooms")
-			print("[GameState] =============================================")
-			
-			# Emit signal to update UI
+			health = max(health, 1)
+			print("[GameState] Max HP halved! Survive 5 rooms for 2x damage!")
 			health_changed.emit(health, max_health)
+		
+		# ⭐ NEW CHAOS PACT 1
+		"half_speed_double_speed":
+			chaos_challenge_target = 3
+			original_move_speed = move_speed
+			move_speed = move_speed / 2.0
+			move_speed_base = move_speed  # Update base too
+			print("[GameState] Move speed halved! Original:", original_move_speed, "New:", move_speed)
+			print("[GameState] Survive 3 rooms to DOUBLE base move speed!")
+			# ⭐ Force update player's actual speed NOW
+			var player = get_tree().get_first_node_in_group("player")
+			if player and player.has_method("sync_player_stats"):
+				player.sync_player_stats()
+				print("[GameState] Player speed synced to:", player.speed)
+		
+		# ⬅0 NEW CHAOS PACT 2
+		"no_shop_1000_coins":
+			chaos_challenge_target = 5
+			coin_pickups_disabled = true
+			coins = 0  # Reset coins to 0
+			print("[GameState] Coin pickups DISABLED! Coins set to 0!")
+			print("[GameState] Survive 5 rooms to gain 1000 coins!")
+			coins_changed.emit(coins)
+		
+		# ⭐ NEW CHAOS PACT 3
+		"no_primary_fire_triple_rate":
+			chaos_challenge_target = 3
+			primary_fire_disabled = true
+			print("[GameState] Primary fire DISABLED!")
+			print("[GameState] Survive 3 rooms to DOUBLE your fire rate!")
+	
+	print("[GameState] Target rooms:", chaos_challenge_target)
+	print("[GameState] Challenge state after start:")
+	print("[GameState] - move_speed:", move_speed)
+	print("[GameState] - coin_pickups_disabled:", coin_pickups_disabled)
+	print("[GameState] - primary_fire_disabled:", primary_fire_disabled)
+	print("[GameState] - coins:", coins)
+	print("[GameState] ========================================")
 
 
 func increment_chaos_challenge_progress() -> void:
 	"""Increment progress towards completing the chaos challenge."""
-	if active_chaos_challenge.is_empty() or chaos_challenge_completed:
+	if active_chaos_challenge.is_empty():
 		return
 	
 	chaos_challenge_progress += 1
@@ -1113,31 +1163,91 @@ func _complete_chaos_challenge() -> void:
 	"""Complete the chaos challenge and grant rewards!"""
 	chaos_challenge_completed = true
 	
-	print("[GameState] ⭐⭐⭐ CHAOS CHALLENGE COMPLETED! ⭐⭐⭐")
+	print("[GameState] ========================================")
+	print("[GameState] COMPLETING CHAOS CHALLENGE:", active_chaos_challenge)
+	print("[GameState] ========================================")
 	
 	# Apply reward based on challenge type
 	match active_chaos_challenge:
 		"half_hp_double_damage":
-			# ⭐ Restore max HP to original value
 			max_health = original_max_health
-			
-			# Restore current HP to full
 			health = max_health
-			
-			# ⭐ Double damage permanently!
 			primary_damage_base *= 2.0
 			primary_damage = primary_damage_base * (1.0 + primary_damage_bonus)
-			
-			print("[GameState] Max HP restored to: ", max_health)
-			print("[GameState] Health fully restored!")
-			print("[GameState] Damage DOUBLED! New base damage: ", primary_damage_base)
-			
-			# Emit signals to update UI
+			print("[GameState] Max HP restored! Damage DOUBLED!")
 			health_changed.emit(health, max_health)
+		
+		# ⭐ NEW COMPLETION 1
+		"half_speed_double_speed":
+			# Double the ORIGINAL base speed (not current halved speed!)
+			move_speed = original_move_speed * 2.0
+			move_speed_base = move_speed  # Update base too
+			print("[GameState] Move speed DOUBLED! New speed:", move_speed)
+			# ⭐ Force update player's actual speed
+			var player = get_tree().get_first_node_in_group("player")
+			if player and player.has_method("sync_player_stats"):
+				player.sync_player_stats()
+				print("[GameState] Updated player's speed variable to:", player.speed)
+		
+		# ⬅0 NEW COMPLETION 2
+		"no_shop_1000_coins":
+			coin_pickups_disabled = false
+			coins = 1000  # Set to 1000 directly (not +=)
+			print("[GameState] Coin pickups RE-ENABLED!")
+			print("[GameState] Coins set to 1000! (was:", coins - 1000, ")")
+			coins_changed.emit(coins)
+		
+		# ⬅0 NEW COMPLETION 3
+		"no_primary_fire_triple_rate":
+			# ⭐ RE-ENABLE primary fire FIRST!
+			primary_fire_disabled = false
+			print("[GameState] Primary fire RE-ENABLED!")
+			# THEN increase fire rate (double it)
+			fire_rate_bonus_percent += 1.0  # 100% increase (double fire rate)
+			fire_rate = fire_rate_base * max(0.05, 1.0 - fire_rate_bonus_percent)
+			print("[GameState] Fire rate DOUBLED! New rate:", fire_rate)
+	
+	print("[GameState] Challenge state after completion:")
+	print("[GameState] - move_speed:", move_speed)
+	print("[GameState] - coin_pickups_disabled:", coin_pickups_disabled)
+	print("[GameState] - primary_fire_disabled:", primary_fire_disabled)
+	print("[GameState] - coins:", coins)
+	print("[GameState] - fire_rate:", fire_rate)
+	print("[GameState] ========================================")
 	
 	# Clear challenge
 	active_chaos_challenge = ""
+
+
+# -------------------------------------------------------------------
+# CHAOS PACT SHUFFLE SYSTEM
+# -------------------------------------------------------------------
+
+func _reset_chaos_pact_pool() -> void:
+	"""Initialize and shuffle the chaos pact pool."""
+	chaos_pact_pool = [
+		"half_hp_double_damage",
+		"half_speed_double_speed",
+		"no_shop_1000_coins",
+		"no_primary_fire_triple_rate"
+	]
+	chaos_pact_pool.shuffle()
 	
-	# TODO: Show completion notification/visual effect
-	# EventBus.emit_signal("chaos_challenge_completed")
+	print("[GameState] Chaos pact pool initialized and shuffled:", chaos_pact_pool)
+
+
+func get_next_chaos_pact_id() -> String:
+	"""Get next chaos pact from shuffle pool, ensures no duplicates until all seen."""
+	# If pool is empty, reset it
+	if chaos_pact_pool.is_empty():
+		print("[GameState] Chaos pool empty, reshuffling all pacts!")
+		_reset_chaos_pact_pool()
+	
+	# Get next pact from pool
+	var pact_id = chaos_pact_pool.pop_front()
+	
+	print("[GameState] Selected chaos pact:", pact_id)
+	print("[GameState] Remaining in pool:", chaos_pact_pool.size())
+	
+	return pact_id
 

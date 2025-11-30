@@ -30,11 +30,11 @@ const NON_SCALING_PRICE_UPGRADES := {
 
 # ✨ Rarity colors
 const RARITY_COLORS := {
-	UpgradesDB.Rarity.COMMON: Color(0.2, 0.8, 0.2, 0.3),      # Green (semi-transparent)
-	UpgradesDB.Rarity.UNCOMMON: Color(0.2, 0.5, 1.0, 0.3),    # Blue
-	UpgradesDB.Rarity.RARE: Color(0.7, 0.2, 1.0, 0.3),        # Purple
-	UpgradesDB.Rarity.EPIC: Color(1.0, 0.85, 0.0, 0.4),       # Gold (slightly more opaque)
-	UpgradesDB.Rarity.CHAOS: Color(1.0, 0.1, 0.1, 0.6),       # Bright red (danger!)
+	UpgradesDB.Rarity.COMMON: Color(0.2, 0.8, 0.2, 0.8),      # Green (more opaque)
+	UpgradesDB.Rarity.UNCOMMON: Color(0.2, 0.5, 1.0, 0.8),    # Blue (more opaque)
+	UpgradesDB.Rarity.RARE: Color(0.7, 0.2, 1.0, 0.8),        # Purple (more opaque)
+	UpgradesDB.Rarity.EPIC: Color(1.0, 0.85, 0.0, 0.85),      # Gold (more opaque)
+	UpgradesDB.Rarity.CHAOS: Color(1.0, 0.1, 0.1, 0.9),       # Bright red (highly opaque)
 }
 
 func _ready() -> void:
@@ -84,8 +84,6 @@ func _ready() -> void:
 func setup(data: Dictionary) -> void:
 	# Called by ShopUI with one of the dictionaries from UpgradesDB.get_all()
 	
-	print("[UpgradeCard] Setting up card: ", data.get("name", "Unknown"))
-	
 	# ========== COMPREHENSIVE VISUAL STATE RESET ==========
 	# Reset EVERYTHING to ensure no leftover state from previous use
 	
@@ -103,13 +101,10 @@ func setup(data: Dictionary) -> void:
 	# Z-index
 	z_index = 0
 	
-	print("[UpgradeCard] Visual reset - modulate: ", modulate, ", scale: ", scale)
-	
 	# Remove old tooltip if exists
 	var old_tooltip = get_node_or_null("TooltipLabel")
 	if old_tooltip:
 		old_tooltip.queue_free()
-		print("[UpgradeCard] Removed old tooltip")
 	
 	is_chaos_card = false
 	
@@ -135,11 +130,8 @@ func setup(data: Dictionary) -> void:
 	if data.get("effect") == "chaos_challenge":
 		is_chaos_card = true
 		_create_tooltip(data)
-		print("[UpgradeCard] Created chaos tooltip")
 
 	_refresh()
-	
-	print("[UpgradeCard] Setup complete for: ", data.get("name", "Unknown"))
 
 
 func _get_dynamic_text() -> String:
@@ -318,8 +310,6 @@ func _create_tooltip(upgrade: Dictionary) -> void:
 	
 	# Add to card (as child, so it moves with card)
 	add_child(tooltip_label)
-	
-	print("[UpgradeCard] Tooltip created for chaos card")
 
 
 func _on_mouse_entered() -> void:
