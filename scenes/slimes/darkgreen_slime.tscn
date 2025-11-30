@@ -1,6 +1,7 @@
-[gd_scene load_steps=28 format=3 uid="uid://d3oi7m6c8ysa6"]
+[gd_scene load_steps=29 format=3 uid="uid://d3oi7m6c8ysa6"]
 
 [ext_resource type="Script" uid="uid://dvweoy7ell6cp" path="res://scripts/slimes/darkgreen_slime.gd" id="1_7qf5q"]
+[ext_resource type="Material" path="res://shaders/alpha_slime_material.tres" id="2_nbb4n"]
 [ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="2_ullxd"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="4_i8e30"]
 [ext_resource type="Texture2D" uid="uid://brflkgxc2wxdb" path="res://assets/blueslime.png" id="4_ullxd"]
@@ -116,6 +117,7 @@ script = ExtResource("1_7qf5q")
 speed = 100.0
 max_health = 10
 vision_radius = 90.0
+alpha_material = ExtResource("2_nbb4n")
 wander_speed = 50.0
 CoinScene = ExtResource("2_ullxd")
 

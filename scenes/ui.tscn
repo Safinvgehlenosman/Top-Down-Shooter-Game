@@ -1,123 +1,114 @@
-[gd_scene load_steps=14 format=3 uid="uid://c7fcp73v6wu5d"]
+[gd_scene load_steps=15 format=3 uid="uid://c7fcp73v6wu5d"]
 
-[ext_resource type="Texture2D" uid="uid://crcvb7pieh4iv" path="res://assets/HP Bar/hp_5.png" id="1_cgfq5"]
 [ext_resource type="Script" uid="uid://b7yr6kx17nvlm" path="res://scripts/ui/ui.gd" id="1_qsv74"]
 [ext_resource type="Script" uid="uid://bun2ukfdgaq3m" path="res://scripts/ui/screen_flash.gd" id="2_7dvkv"]
-[ext_resource type="Texture2D" uid="uid://wvuudlu11n78" path="res://assets/Separated/progressbarfill2.png" id="2_vdcm2"]
+[ext_resource type="Texture2D" uid="uid://calswj744fuku" path="res://assets/Affinity/ammo.png" id="2_vdcm2"]
+[ext_resource type="Texture2D" uid="uid://b6tygw5jlyjio" path="res://assets/Affinity/coins+level.png" id="3_6rmj2"]
+[ext_resource type="Texture2D" uid="uid://q2cw8tfoeiga" path="res://assets/Affinity/coins.png" id="3_qsv74"]
 [ext_resource type="Script" uid="uid://dpqjf535o4wfs" path="res://scripts/ui/screen_flash_heal.gd" id="3_vdcm2"]
+[ext_resource type="Texture2D" uid="uid://u1uumvdqn8dx" path="res://assets/Affinity/test.png" id="3_vsj0x"]
 [ext_resource type="Script" uid="uid://c5rit853wljdq" path="res://scripts/ui/death_screen.gd" id="4_6rmj2"]
 [ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="5_vsj0x"]
 [ext_resource type="FontFile" uid="uid://4xsaqwwtj2c1" path="res://assets/Fonts/PixelOperator8.ttf" id="6_qsv74"]
 [ext_resource type="Script" uid="uid://c2yqcdrh4ns2s" path="res://scripts/ui/pause_screen.gd" id="7_h1mc3"]
-[ext_resource type="Texture2D" uid="uid://d1defhln5t7rq" path="res://assets/Separated/CoinsUI.png" id="8_cof4p"]
-[ext_resource type="Texture2D" uid="uid://bfmuu7477yfan" path="res://assets/Separated/AmmoUI.png" id="9_f7tlh"]
-[ext_resource type="Texture2D" uid="uid://qnv2ml5qltqh" path="res://assets/Separated/StairsUI.png" id="10_6rmj2"]
+[ext_resource type="Texture2D" uid="uid://bqa41ebeio3l3" path="res://assets/Affinity/abilitybar.png" id="7_qsv74"]
+[ext_resource type="Texture2D" uid="uid://cbw2m6t388jw0" path="res://assets/Affinity/hpbar.png" id="8_h1mc3"]
 [ext_resource type="PackedScene" uid="uid://bngmwso5qhlyx" path="res://scenes/vhs_layer.tscn" id="11_vdcm2"]
 
 [node name="UI" type="CanvasLayer"]
 script = ExtResource("1_qsv74")
 
-[node name="HPBar" type="TextureRect" parent="." groups=["hp_ui"]]
-texture_filter = 1
-texture_repeat = 1
-offset_top = -6.0
-offset_right = 32.0
-offset_bottom = 4.0
-scale = Vector2(6, 6)
-texture = ExtResource("1_cgfq5")
-stretch_mode = 2
+[node name="Ammo" type="TextureRect" parent="."]
+offset_top = 77.0
+offset_right = 700.0
+offset_bottom = 477.0
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("2_vdcm2")
 
-[node name="HPFill" type="TextureProgressBar" parent="HPBar"]
+[node name="AmmoLabel" type="Label" parent="Ammo"]
+layout_mode = 0
+offset_left = 26.666666
+offset_top = 136.66666
+offset_right = 246.66666
+offset_bottom = 250.00002
+theme_override_fonts/font = ExtResource("5_vsj0x")
+theme_override_font_sizes/font_size = 32
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Coins" type="TextureRect" parent="."]
+offset_left = 1068.0
+offset_top = 56.0
+offset_right = 1768.0
+offset_bottom = 456.0
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("3_qsv74")
+
+[node name="CoinsLabel" type="Label" parent="Coins"]
+layout_mode = 0
+offset_left = 26.666666
+offset_top = 136.66666
+offset_right = 246.66666
+offset_bottom = 250.00002
+theme_override_fonts/font = ExtResource("5_vsj0x")
+theme_override_font_sizes/font_size = 64
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Level" type="TextureRect" parent="." groups=["level_label"]]
+offset_left = 1067.0
+offset_top = -14.000001
+offset_right = 1767.0
+offset_bottom = 386.0
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("3_6rmj2")
+
+[node name="LevelLabel" type="Label" parent="Level" groups=["level_label"]]
+layout_mode = 0
+offset_left = 26.666666
+offset_top = 136.66666
+offset_right = 246.66666
+offset_bottom = 250.00002
+theme_override_fonts/font = ExtResource("5_vsj0x")
+theme_override_font_sizes/font_size = 64
+text = "
+"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PlayerInfo" type="TextureRect" parent="."]
+offset_top = -14.0
+offset_right = 700.0
+offset_bottom = 386.0
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("3_vsj0x")
+
+[node name="AbilityProgressBar" type="TextureProgressBar" parent="PlayerInfo"]
+z_index = -1
+layout_mode = 0
+offset_top = 136.66666
+offset_right = 700.0
+offset_bottom = 536.6666
+value = 50.0
+texture_progress = ExtResource("7_qsv74")
+
+[node name="HPFill" type="TextureProgressBar" parent="PlayerInfo"]
+z_index = -1
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 1.166666
-offset_top = 3.1666667
-offset_right = -1.833334
-offset_bottom = -2.833333
 grow_horizontal = 2
 grow_vertical = 2
-max_value = 5.0
-value = 3.0
-texture_progress = ExtResource("2_vdcm2")
-tint_progress = Color(1, 0, 0.078431375, 1)
-
-[node name="HPLabel" type="Label" parent="HPBar"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -14.5
-offset_top = -2.0
-offset_right = 214.66667
-offset_bottom = 31.333
-grow_horizontal = 2
-grow_vertical = 2
-scale = Vector2(0.12, 0.12)
-size_flags_horizontal = 8
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 10
-theme_override_constants/shadow_outline_size = 10
-theme_override_fonts/font = ExtResource("5_vsj0x")
-vertical_alignment = 1
-clip_text = true
-
-[node name="AbilityBar" type="TextureRect" parent="." groups=["hp_ui"]]
-texture_filter = 1
-texture_repeat = 1
-offset_top = 42.000004
-offset_right = 32.0
-offset_bottom = 52.000004
-scale = Vector2(6, 6)
-texture = ExtResource("1_cgfq5")
-stretch_mode = 2
-
-[node name="AbilityFill" type="TextureProgressBar" parent="AbilityBar"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 0.833333
-offset_top = 3.166666
-offset_right = -2.166668
-offset_bottom = -2.833334
-grow_horizontal = 2
-grow_vertical = 2
-max_value = 5.0
-step = 0.01
-value = 3.0
-texture_progress = ExtResource("2_vdcm2")
-tint_progress = Color(1, 0.7882353, 0.21176471, 1)
-
-[node name="AbilityLabel" type="Label" parent="AbilityBar"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -14.5
-offset_top = -2.000001
-offset_right = 214.66667
-offset_bottom = 31.333336
-grow_horizontal = 2
-grow_vertical = 2
-scale = Vector2(0.12, 0.12)
-size_flags_horizontal = 8
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 10
-theme_override_constants/shadow_outline_size = 10
-theme_override_fonts/font = ExtResource("5_vsj0x")
-vertical_alignment = 1
-clip_text = true
+value = 50.0
+texture_progress = ExtResource("8_h1mc3")
 
 [node name="Flash" type="ColorRect" parent="." groups=["screen_flash"]]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_right = 1213.0
+offset_bottom = 686.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(1, 0.015686275, 0.21960784, 0)
@@ -127,10 +118,8 @@ script = ExtResource("2_7dvkv")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -2.0
-offset_top = -11.0
-offset_right = -2.0
-offset_bottom = -11.0
+offset_right = 1144.0
+offset_bottom = 634.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.05490196, 1, 0, 0)
@@ -239,104 +228,8 @@ theme_override_font_sizes/font_size = 64
 text = "PAUSED"
 horizontal_alignment = 1
 
-[node name="CoinUI" type="TextureRect" parent="."]
-offset_left = 1032.0
-offset_top = 42.0
-offset_right = 1064.0
-offset_bottom = 52.0
-scale = Vector2(6, 6)
-texture = ExtResource("8_cof4p")
-
-[node name="CoinLabel" type="Label" parent="CoinUI"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -15.000001
-offset_top = 1.9999999
-offset_right = 68.0
-offset_bottom = 52.0
-grow_horizontal = 2
-scale = Vector2(0.12, 0.12)
-size_flags_horizontal = 8
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 10
-theme_override_constants/shadow_outline_size = 10
-theme_override_fonts/font = ExtResource("5_vsj0x")
-horizontal_alignment = 1
-vertical_alignment = 1
-clip_text = true
-
-[node name="LevelUI" type="TextureRect" parent="."]
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -120.0
-offset_top = -6.0
-offset_right = -88.0
-offset_bottom = 4.0
-grow_horizontal = 0
-scale = Vector2(6, 6)
-texture = ExtResource("10_6rmj2")
-
-[node name="LevelLabel" type="Label" parent="LevelUI" groups=["level_label"]]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -14.75
-offset_top = 2.125
-offset_right = 68.25
-offset_bottom = 52.125
-grow_horizontal = 2
-scale = Vector2(0.12, 0.12)
-size_flags_horizontal = 8
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 10
-theme_override_constants/shadow_outline_size = 10
-theme_override_fonts/font = ExtResource("5_vsj0x")
-theme_override_font_sizes/font_size = 16
-horizontal_alignment = 1
-vertical_alignment = 1
-clip_text = true
-
-[node name="AmmoUI" type="TextureRect" parent="."]
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -1152.0
-offset_top = -54.0
-offset_right = -1120.0
-offset_bottom = -44.0
-grow_horizontal = 0
-grow_vertical = 0
-scale = Vector2(6, 6)
-texture = ExtResource("9_f7tlh")
-
-[node name="AmmoLabel" type="Label" parent="AmmoUI"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -15.0
-offset_top = 1.9999995
-offset_right = 101.66667
-offset_bottom = 52.0
-grow_horizontal = 2
-scale = Vector2(0.12, 0.12)
-size_flags_horizontal = 8
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 10
-theme_override_constants/shadow_outline_size = 10
-theme_override_fonts/font = ExtResource("5_vsj0x")
-theme_override_font_sizes/font_size = 16
-horizontal_alignment = 1
-vertical_alignment = 1
-clip_text = true
-
 [node name="VHSLayer" parent="." instance=ExtResource("11_vdcm2")]
+visible = false
 
 [connection signal="pressed" from="DeathScreen/Content/RestartButton" to="DeathScreen" method="_on_restart_button_pressed"]
 [connection signal="pressed" from="DeathScreen/Content/QuitButton" to="DeathScreen" method="_on_quit_button_pressed"]

@@ -1,7 +1,8 @@
-[gd_scene load_steps=29 format=3 uid="uid://dkiblxaxpjj7c"]
+[gd_scene load_steps=30 format=3 uid="uid://dkiblxaxpjj7c"]
 
 [ext_resource type="Script" uid="uid://dm3cuuhskl12n" path="res://scripts/slimes/poison_slime.gd" id="1_lc8kg"]
 [ext_resource type="PackedScene" uid="uid://e2ens20cba54" path="res://scenes/slimes/poison_projectile.tscn" id="2_nganf"]
+[ext_resource type="Material" path="res://shaders/alpha_slime_material.tres" id="3_37jjl"]
 [ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="3_mou80"]
 [ext_resource type="Texture2D" uid="uid://xyta8eli1ed" path="res://assets/poisonslime.png" id="5_gqrom"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="6_mnjl1"]
@@ -123,6 +124,7 @@ pellet_max_speed = 180.0
 speed = 40.0
 max_health = 30
 vision_radius = 150.0
+alpha_material = ExtResource("3_37jjl")
 wander_speed = 20.0
 CoinScene = ExtResource("3_mou80")
 

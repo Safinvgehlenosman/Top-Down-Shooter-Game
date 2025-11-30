@@ -300,10 +300,10 @@ func _ready() -> void:
 func start_new_run() -> void:
 	# Base values come from GameConfig
 	max_health = GameConfig.player_max_health
-	health     = max_health
+	set_health(max_health)  # Use setter to emit signal
 
 	max_ammo   = GameConfig.player_max_ammo
-	ammo       = max_ammo
+	set_ammo(max_ammo)  # Use setter to emit signal
 
 	# Reset fire stats
 	fire_rate_base = GameConfig.player_fire_rate

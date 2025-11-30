@@ -1,8 +1,9 @@
-[gd_scene load_steps=29 format=3 uid="uid://cqim488pqgwa"]
+[gd_scene load_steps=30 format=3 uid="uid://cqim488pqgwa"]
 
 [ext_resource type="Script" uid="uid://cwadqyd2jrm74" path="res://scripts/slimes/purple_slime.gd" id="1_o0hry"]
 [ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="2_5vw4l"]
 [ext_resource type="PackedScene" uid="uid://c1ddwf2sacphd" path="res://scenes/bullets/enemyprojectile.tscn" id="2_818gd"]
+[ext_resource type="Material" path="res://shaders/alpha_slime_material.tres" id="3_84keh"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="4_4btqv"]
 [ext_resource type="AudioStream" uid="uid://dl8r8jnncqnmf" path="res://assets/Audios/Hurt.wav" id="5_bf0kl"]
 [ext_resource type="Texture2D" uid="uid://dsok60txc11jj" path="res://assets/purpleslime.png" id="5_revln"]
@@ -120,6 +121,7 @@ speed = 40.0
 max_health = 40
 vision_radius = 200.0
 health_growth_per_level = 0.03
+alpha_material = ExtResource("3_84keh")
 wander_speed = 20.0
 CoinScene = ExtResource("2_5vw4l")
 

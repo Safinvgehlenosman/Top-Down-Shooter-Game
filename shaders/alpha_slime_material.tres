@@ -1,0 +1,9 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://cxvq8y2n3h4qr"]
+
+[ext_resource type="Shader" path="res://shaders/alpha_slime_shader.gdshader" id="1_alpha"]
+
+[resource]
+shader = ExtResource("1_alpha")
+shader_parameter/alpha_tint_color = Color(0.8, 0.4, 1, 1)
+shader_parameter/pulse_strength = 0.3
+shader_parameter/pulse_speed = 2.0

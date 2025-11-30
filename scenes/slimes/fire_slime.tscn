@@ -1,9 +1,10 @@
-[gd_scene load_steps=29 format=3 uid="uid://cs7ihugsroow2"]
+[gd_scene load_steps=30 format=3 uid="uid://cs7ihugsroow2"]
 
 [ext_resource type="Texture2D" uid="uid://h8v2n05n2ryy" path="res://assets/fireslime.png" id="1_3rmme"]
 [ext_resource type="Script" uid="uid://c408tfsaimou5" path="res://scripts/slimes/fire_slime.gd" id="1_sri36"]
 [ext_resource type="PackedScene" uid="uid://cv5pv01n43dm2" path="res://scenes/bullets/fire_projectile.tscn" id="2_ykb4d"]
 [ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="3_son63"]
+[ext_resource type="Material" path="res://shaders/alpha_slime_material.tres" id="3_u1faj"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="6_e0il6"]
 [ext_resource type="AudioStream" uid="uid://dl8r8jnncqnmf" path="res://assets/Audios/Hurt.wav" id="7_bbhrb"]
 [ext_resource type="AudioStream" uid="uid://6jgtwphqqvnt" path="res://assets/Audios/SlimeLand.wav" id="8_cmako"]
@@ -119,6 +120,7 @@ burst_count = 10
 spread_degrees = 40.0
 speed = 50.0
 max_health = 20
+alpha_material = ExtResource("3_u1faj")
 wander_speed = 25.0
 CoinScene = ExtResource("3_son63")
 

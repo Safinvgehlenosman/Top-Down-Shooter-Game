@@ -44,7 +44,7 @@ var contact_timer: float = 0.0
 @export var enable_tactical_retreat: bool = true
 @export var retreat_hp_threshold: float = 0.5  # Retreat below 50% HP
 @export var retreat_if_alone: bool = true  # Only retreat if no allies nearby
-@export var retreat_speed_multiplier: float = 1.25  # Move 25% faster when retreating
+@export var retreat_speed_multiplier: float = 1.5  # Move 1.5x faster when retreating
 
 # Pack spreading (surround player)
 @export var enable_pack_spreading: bool = true
@@ -54,6 +54,10 @@ var contact_timer: float = 0.0
 # How much we grow per level
 @export var health_growth_per_level: float = 0.05
 @export var damage_growth_per_level: float = 0.05
+
+# Alpha variant system
+@export var alpha_material: Material  # Shader material for alpha slimes
+var is_alpha: bool = false
 
 # Movement / behaviour tuning
 @export var separation_radius: float = 24.0      # how close slimes can get to each other
@@ -141,6 +145,42 @@ var knockback_velocity: Vector2 = Vector2.ZERO
 var time_scale: float = 1.0
 var base_move_speed: float = 0.0
 var base_wander_speed: float = 0.0
+
+
+func make_alpha() -> void:
+	"""Convert this slime into an alpha variant with enhanced stats and visuals."""
+	if is_alpha:
+		return  # Already alpha, don't apply again
+	
+	is_alpha = true
+	
+	# Visual changes: 1.5x scale
+	scale = Vector2(1.5, 1.5)
+	
+	# Apply alpha shader material if available
+	if alpha_material and animated_sprite:
+		animated_sprite.material = alpha_material
+	
+	# Stat changes: 2x HP
+	if health_component:
+		max_health = max_health * 2
+		health_component.max_health = max_health
+		health_component.health = max_health
+		_update_hp_bar()
+	
+	# Stat changes: 1.5x damage
+	contact_damage = int(round(contact_damage * 1.5))
+	
+	# Stat changes: 0.5x speed (slower)
+	speed = speed * 0.5
+	wander_speed = wander_speed * 0.5
+	base_move_speed = speed
+	base_wander_speed = wander_speed
+
+
+func is_alpha_variant() -> bool:
+	"""Check if this slime is an alpha variant."""
+	return is_alpha
 
 
 func _ready() -> void:

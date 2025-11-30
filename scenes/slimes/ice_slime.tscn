@@ -1,8 +1,9 @@
-[gd_scene load_steps=29 format=3 uid="uid://wyjj07qulq2n"]
+[gd_scene load_steps=30 format=3 uid="uid://wyjj07qulq2n"]
 
 [ext_resource type="Script" uid="uid://cceb7bill2as7" path="res://scripts/slimes/ice_slime.gd" id="1_f6i3m"]
 [ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="2_i03xf"]
 [ext_resource type="PackedScene" uid="uid://eu5i5gb8771d" path="res://scenes/bullets/ice_projectile.tscn" id="2_ss21a"]
+[ext_resource type="Material" path="res://shaders/alpha_slime_material.tres" id="3_qgsdp"]
 [ext_resource type="Texture2D" uid="uid://bphraonej5m30" path="res://assets/iceslime.png" id="4_y14di"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="5_qgsdp"]
 [ext_resource type="AudioStream" uid="uid://dl8r8jnncqnmf" path="res://assets/Audios/Hurt.wav" id="6_7e7yk"]
@@ -120,6 +121,7 @@ spread_degrees = 120.0
 speed = 40.0
 max_health = 60
 vision_radius = 150.0
+alpha_material = ExtResource("3_qgsdp")
 aggro_radius = 90.0
 wander_speed = 20.0
 CoinScene = ExtResource("2_i03xf")

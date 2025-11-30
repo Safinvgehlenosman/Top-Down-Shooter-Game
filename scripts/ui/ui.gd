@@ -1,15 +1,16 @@
 extends CanvasLayer
 
-@onready var hp_fill: TextureProgressBar     = $HPBar/HPFill
-@onready var hp_label: Label                 = $HPBar/HPLabel
-@onready var ammo_label: Label               = $AmmoUI/AmmoLabel
-@onready var coin_label: Label               = $CoinUI/CoinLabel
+# New UI structure - updated node paths
+@onready var hp_progress_bar: TextureProgressBar = get_node_or_null("PlayerInfo/HPFill")
+@onready var ability_progress_bar: TextureProgressBar = get_node_or_null("PlayerInfo/AbilityProgressBar")
+@onready var ammo_label: Label = get_node_or_null("Ammo/AmmoLabel")
+@onready var coin_label: Label = get_node_or_null("Coins/CoinsLabel")
+@onready var level_label: Label = get_node_or_null("Level/LevelLabel")
 
-@onready var ability_bar_container: Control = $AbilityBar
-@onready var ability_bar: TextureProgressBar = $AbilityBar/AbilityFill
-@onready var ability_label: Label = $AbilityBar/AbilityLabel
-
-const AbilityType = GameState.AbilityType
+# Use GameState enums directly
+const ABILITY_NONE = GameState.AbilityType.NONE
+const ALT_WEAPON_NONE = GameState.AltWeaponType.NONE
+const ALT_WEAPON_TURRET = GameState.AltWeaponType.TURRET
 
 var coin_animation_cooldown: float = 0.0
 
@@ -23,13 +24,11 @@ func _ready() -> void:
 	gs.connect("ammo_changed",   Callable(self, "_on_ammo_changed"))
 
 	# initial sync
-	_on_coins_changed(gs.coins)
-	_on_health_changed(gs.health, gs.max_health)
-	_on_ammo_changed(gs.ammo, gs.max_ammo)
+	_refresh_from_state_full()
 
 	# hide ability bar by default
-	if ability_bar_container:
-		ability_bar_container.visible = false
+	if ability_progress_bar:
+		ability_progress_bar.visible = false
 
 
 func _process(_delta: float) -> void:
@@ -37,9 +36,93 @@ func _process(_delta: float) -> void:
 	if coin_animation_cooldown > 0:
 		coin_animation_cooldown -= _delta
 	
-	# Lightweight — cheap and safe
-	_on_health_changed(GameState.health, GameState.max_health)
+	# Update displays
+	_update_hp_from_state()
+	_update_ammo_from_state()
 	_update_ability_bar()
+	_update_level_label()
+
+
+# --------------------------------------------------------------------
+# STATE REFRESH
+# --------------------------------------------------------------------
+
+func _refresh_from_state_full() -> void:
+	_update_coin_label()
+	_update_hp_from_state()
+	_update_ammo_from_state()
+	_update_level_label()
+	_update_ability_bar()
+
+
+func _update_coin_label() -> void:
+	if not coin_label:
+		return
+	coin_label.text = str(GameState.coins)
+
+
+func _update_hp_from_state() -> void:
+	if not hp_progress_bar:
+		return
+	hp_progress_bar.max_value = GameState.max_health
+	hp_progress_bar.value = GameState.health
+
+
+func _update_ammo_from_state() -> void:
+	if not ammo_label:
+		return
+	# Display ammo only for ammo-using alt weapons; show "-/-" for NONE or TURRET
+	if GameState.alt_weapon == ALT_WEAPON_NONE or GameState.alt_weapon == ALT_WEAPON_TURRET:
+		ammo_label.text = "-/-"
+	else:
+		ammo_label.text = "%d/%d" % [GameState.ammo, GameState.max_ammo]
+
+
+func _update_level_label() -> void:
+	if not level_label:
+		return
+	var gm := get_tree().get_first_node_in_group("game_manager")
+	if gm and "current_level" in gm:
+		level_label.text = str(gm.current_level)
+
+
+func _update_ability_bar() -> void:
+	# Check if node exists
+	if not ability_progress_bar:
+		return
+	
+	# Hide if no ability unlocked
+	if GameState.ability == ABILITY_NONE:
+		ability_progress_bar.visible = false
+		return
+	
+	var data = GameState.ABILITY_DATA.get(GameState.ability, {})
+	if data.is_empty():
+		ability_progress_bar.visible = false
+		return
+	
+	# Get BASE cooldown
+	var base_cd: float = data.get("cooldown", 0.0)
+	if base_cd <= 0.0:
+		ability_progress_bar.visible = false
+		return
+	
+	# Apply cooldown multiplier (from upgrades)
+	var multiplier: float = 1.0
+	if "ability_cooldown_mult" in GameState:
+		multiplier = GameState.ability_cooldown_mult
+	
+	# Actual cooldown after upgrades
+	var actual_max_cd: float = base_cd * multiplier
+	
+	# Show the bar (ability is unlocked)
+	ability_progress_bar.visible = true
+	
+	# Bar fills as cooldown recovers
+	ability_progress_bar.max_value = actual_max_cd
+	var cd_left: float = GameState.ability_cooldown_left
+	var bar_value: float = actual_max_cd - cd_left
+	ability_progress_bar.value = bar_value
 
 
 # --------------------------------------------------------------------
@@ -47,9 +130,10 @@ func _process(_delta: float) -> void:
 # --------------------------------------------------------------------
 
 func _on_coins_changed(new_value: int) -> void:
+	if not coin_label:
+		return
 	var old_value = int(coin_label.text) if coin_label.text != "" else 0
-	coin_label.text = str(new_value)
-	_autoscale_label_deferred(coin_label)
+	_update_coin_label()
 	
 	# ⭐ Animate only if coins increased AND not on cooldown
 	if new_value > old_value and coin_animation_cooldown <= 0:
@@ -57,102 +141,12 @@ func _on_coins_changed(new_value: int) -> void:
 		coin_animation_cooldown = 0.5  # Prevent spam for 0.5 seconds
 
 
-func _on_health_changed(new_value: int, max_value: int) -> void:
-	hp_fill.max_value = max_value
-	hp_fill.value = new_value
-	hp_label.text = "%d/%d" % [new_value, max_value]
-	_autoscale_label_deferred(hp_label)
+func _on_health_changed(_new_value: int, _max_value: int) -> void:
+	_update_hp_from_state()
 
 
-func _on_ammo_changed(new_value: int, max_value: int) -> void:
-	# Show "-/-" when no alt weapon or when it's the turret (which doesn't use player ammo)
-	if GameState.alt_weapon == GameState.AltWeaponType.NONE or GameState.alt_weapon == GameState.AltWeaponType.TURRET:
-		ammo_label.text = "-/-"
-	else:
-		ammo_label.text = "%d/%d" % [new_value, max_value]
-	_autoscale_label_deferred(ammo_label)
-
-
-# --------------------------------------------------------------------
-# ABILITY BAR VISIBILITY + COOLDOWN
-# --------------------------------------------------------------------
-
-func _update_ability_bar() -> void:
-	var gs = GameState
-	
-	# No ability equipped → hide entire bar UI
-	if gs.ability == AbilityType.NONE:
-		if ability_bar_container:
-			ability_bar_container.visible = false
-		return
-	
-	# Load runtime ability data
-	var data = gs.ABILITY_DATA.get(gs.ability, {})
-	if data.is_empty():
-		if ability_bar_container:
-			ability_bar_container.visible = false
-		return
-	
-	# Get BASE cooldown from ability data
-	var base_cd: float = data.get("cooldown", 0.0)
-	if base_cd <= 0.0:
-		if ability_bar_container:
-			ability_bar_container.visible = false
-		return
-	
-	# ✅ Apply cooldown multiplier (from upgrades)
-	var multiplier: float = 1.0
-	if "ability_cooldown_mult" in gs:
-		multiplier = gs.ability_cooldown_mult
-	
-	# ✅ Actual cooldown after upgrades (this is what changes with purchases!)
-	var actual_max_cd: float = base_cd * multiplier
-	
-	# Show the bar
-	if ability_bar_container:
-		ability_bar_container.visible = true
-	
-	# ✅ CORRECT: Bar starts FULL, empties when used, fills back up
-	if ability_bar:
-		ability_bar.max_value = actual_max_cd
-		var cd_left: float = gs.ability_cooldown_left
-		# When cd_left = max → bar = 0 (empty)
-		# When cd_left = 0 → bar = max (full/ready)
-		var bar_value: float = actual_max_cd - cd_left
-		ability_bar.value = bar_value
-	
-	# ✅ Show time remaining (counts down to 0)
-	if ability_label:
-		var remaining = round(gs.ability_cooldown_left * 10.0) / 10.0
-		var max_display = round(actual_max_cd * 10.0) / 10.0
-		ability_label.text = "%s / %s s" % [remaining, max_display]
-		_autoscale_label_deferred(ability_label)
-
-
-# --------------------------------------------------------------------
-# LABEL AUTOSCALE HELPERS
-# --------------------------------------------------------------------
-
-const LABEL_MAX_FONT_SIZE := 16
-const LABEL_MIN_FONT_SIZE := 8
-
-func _autoscale_label(label: Label) -> void:
-	if label == null:
-		return
-
-	# Start at max size
-	var size := LABEL_MAX_FONT_SIZE
-	label.add_theme_font_size_override("font_size", size)
-
-	# Shrink until it fits or we hit min size
-	while size > LABEL_MIN_FONT_SIZE and label.get_minimum_size().x > label.size.x:
-		size -= 1
-		label.add_theme_font_size_override("font_size", size)
-
-
-func _autoscale_label_deferred(label: Label) -> void:
-	# Defer so layout/size is updated before we measure
-	call_deferred("_autoscale_label", label)
+func _on_ammo_changed(_new_value: int, _max_value: int) -> void:
+	_update_ammo_from_state()
 
 
 # --------------------------------------------------------------------

@@ -69,6 +69,9 @@ var chaos_chest_spawn_point: Node2D = null
 var chaos_chest_spawned_this_cycle: bool = false
 var current_level_cycle: int = 0  # Which 10-level cycle we're in
 
+# Alpha Slime Variant spawning
+var has_spawned_alpha_this_level: bool = false
+
 var game_ui: CanvasLayer
 var next_scene_path: String = ""
 
@@ -163,6 +166,9 @@ func _load_room() -> void:
 	# Reset chest variables
 	chest_spawn_point = null
 	chest_spawned = false
+	
+	# Reset alpha slime tracking
+	has_spawned_alpha_this_level = false
 
 	# adjust spawn weights for current_level
 	_update_enemy_weights_for_level()
@@ -390,6 +396,21 @@ func _spawn_room_content() -> void:
 				enemy.died.connect(_on_enemy_died.bind(enemy))
 			
 			spawn_index += 1
+	
+	# --- ALPHA VARIANT SPAWNING ---
+	# After all enemies are spawned, try to make one an alpha (5% fixed chance, max one per level)
+	if not has_spawned_alpha_this_level and not spawned_enemies.is_empty():
+		for enemy in spawned_enemies:
+			# Check if this enemy is a slime (has make_alpha method)
+			if not enemy.has_method("make_alpha"):
+				continue
+			
+			# Roll 5% chance (FIXED, not level-scaled)
+			if randf() < 0.05:
+				if enemy.has_method("make_alpha"):
+					enemy.make_alpha()
+					has_spawned_alpha_this_level = true
+					break  # Only one alpha per level
 	
 	# --- MARK RANDOM ENEMIES AS CHEST DROPPERS ---
 	# After spawning all enemies, mark random ones to drop chests
