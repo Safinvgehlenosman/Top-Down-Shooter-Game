@@ -333,14 +333,17 @@ func _spawn_room_content() -> void:
 	var enemy_count := 0
 	var crate_count := 0
 	
+	# Get actual available spawn points (minus door spawn)
+	var available_spawns = room_spawn_points.size()
+	
 	if themed_room:
 		# Themed rooms: spawn many enemies, no crates
-		enemy_count = _calculate_enemy_count_for_level(current_level)
+		enemy_count = _calculate_enemy_count_for_level(current_level, available_spawns)
 		crate_count = 0
 	else:
 		# Normal rooms: balanced mix of enemies and crates
-		enemy_count = _calculate_enemy_count_for_level(current_level)
-		crate_count = _calculate_crate_count_for_level(current_level)
+		enemy_count = _calculate_enemy_count_for_level(current_level, available_spawns)
+		crate_count = _calculate_crate_count_for_level(current_level, available_spawns)
 	
 	# Make sure we don't exceed available spawn points
 	var total_entities = enemy_count + crate_count
@@ -429,29 +432,29 @@ func _spawn_room_content() -> void:
 
 # --- SPAWN COUNT CALCULATION ---------------------------------------
 
-func _calculate_enemy_count_for_level(level: int) -> int:
+func _calculate_enemy_count_for_level(level: int, available_spawns: int) -> int:
 	"""Calculate how many enemies to spawn based on current level and spawn ratio."""
-	# Total spawn points available (rough estimate, actual may vary)
-	var total_spawns = 10  # Average spawn points per room
+	# Use actual spawn points available in the room
+	var total_spawns = available_spawns
 	
 	# Calculate enemy/crate split ratio
-	# Level 1: 50% enemies
-	# Level 50+: 75% enemies
+	# Level 1: 70% enemies
+	# Level 50+: 95% enemies
 	var enemy_ratio = _get_enemy_ratio_for_level(level)
 	
 	# Calculate enemy count based on ratio
 	var enemy_count = int(total_spawns * enemy_ratio)
 	
-	# Clamp to reasonable values
-	enemy_count = clamp(enemy_count, 3, 12)
+	# Clamp to reasonable values (min 3, max based on available spawns)
+	enemy_count = clamp(enemy_count, 3, available_spawns)
 	
 	return enemy_count
 
 
-func _calculate_crate_count_for_level(level: int) -> int:
+func _calculate_crate_count_for_level(level: int, available_spawns: int) -> int:
 	"""Calculate how many crates to spawn based on current level and spawn ratio."""
-	# Total spawn points available
-	var total_spawns = 10
+	# Use actual spawn points available
+	var total_spawns = available_spawns
 	
 	# Calculate crate ratio (inverse of enemy ratio)
 	var enemy_ratio = _get_enemy_ratio_for_level(level)
@@ -460,8 +463,8 @@ func _calculate_crate_count_for_level(level: int) -> int:
 	# Calculate crate count based on ratio
 	var crate_count = int(total_spawns * crate_ratio)
 	
-	# Clamp to reasonable values
-	crate_count = clamp(crate_count, 2, 5)
+	# Clamp to reasonable values (min 1, max based on remaining spawns)
+	crate_count = clamp(crate_count, 1, available_spawns)
 	
 	return crate_count
 

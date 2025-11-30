@@ -768,6 +768,11 @@ func _setup_chest_cards_with_loot(loot: Array) -> void:
 		card.modulate = Color(1, 1, 1, 1)
 		card.visible = true
 		card.mouse_filter = Control.MOUSE_FILTER_STOP
+		card.scale = Vector2(1.0, 1.0)  # ⭐ Reset scale too
+		# ⭐ Also restore child visibility (was hidden for single-card mode)
+		for child in card.get_children():
+			if child is CanvasItem:
+				child.visible = true
 	
 	# Disconnect old signals
 	for card in children:

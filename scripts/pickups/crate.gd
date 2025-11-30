@@ -71,7 +71,7 @@ func _spawn_loot() -> void:
 	var chaos_active := not GameState.active_chaos_challenge.is_empty()
 	
 	# ⭐ Check if weapon uses ammo (NONE and TURRET don't use ammo)
-	var weapon_uses_ammo: bool = GameState.alt_weapon_type != GameState.AltWeaponType.NONE and GameState.alt_weapon_type != GameState.AltWeaponType.TURRET
+	var weapon_uses_ammo: bool = GameState.alt_weapon != GameState.AltWeaponType.NONE and GameState.alt_weapon != GameState.AltWeaponType.TURRET
 	
 	# Determine heart spawn chance based on player needs
 	var heart_chance := 0.5  # default 50/50
