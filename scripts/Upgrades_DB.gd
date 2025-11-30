@@ -11,7 +11,8 @@ enum Rarity {
 	COMMON,
 	UNCOMMON,
 	RARE,
-	EPIC
+	EPIC,
+	CHAOS  # ⭐ Special chaos rarity for challenge upgrades
 }
 
 # ✅ THESE MUST MATCH GameState.AltWeaponType ENUM EXACTLY
@@ -1159,6 +1160,21 @@ const ALL_UPGRADES: Array = [
 		"price": 500,
 		"tags": ["synergy"],
 		"icon": preload("res://assets/Separated/turreticon.png"),
+		"stackable": false,
+	},
+
+	# -------------------------
+	# CHAOS UPGRADES (Challenge System)
+	# -------------------------
+	{
+		"id": "chaos_half_hp_double_damage",
+		"text": "Chaos Pact: Double Damage",
+		"description": "Your MAX HP is HALVED!\nSurvive 5 rooms to permanently DOUBLE your damage and restore HP.",
+		"rarity": Rarity.CHAOS,
+		"effect": "chaos_challenge",
+		"value": "half_hp_double_damage",
+		"price": 0,  # Chaos upgrades are always free
+		"icon": preload("res://assets/Separated/ammo.png"),  # Use chaos icon if available
 		"stackable": false,
 	},
 ]

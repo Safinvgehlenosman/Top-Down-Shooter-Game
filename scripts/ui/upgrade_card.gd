@@ -30,6 +30,7 @@ const RARITY_COLORS := {
 	UpgradesDB.Rarity.UNCOMMON: Color(0.2, 0.5, 1.0, 0.3),    # Blue
 	UpgradesDB.Rarity.RARE: Color(0.7, 0.2, 1.0, 0.3),        # Purple
 	UpgradesDB.Rarity.EPIC: Color(1.0, 0.85, 0.0, 0.4),       # Gold (slightly more opaque)
+	UpgradesDB.Rarity.CHAOS: Color(1.0, 0.1, 0.1, 0.6),       # Bright red (danger!)
 }
 
 func _ready() -> void:

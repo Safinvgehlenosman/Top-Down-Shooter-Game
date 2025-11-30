@@ -263,6 +263,13 @@ var acquired_upgrades: Array = []
 # Track how many times each upgrade has been purchased this run (for price scaling)
 var upgrade_purchase_counts: Dictionary = {}
 
+# Chaos Challenge tracking (Hades-style challenge system)
+var active_chaos_challenge: String = ""
+var chaos_challenge_progress: int = 0
+var chaos_challenge_target: int = 5  # Survive 5 rooms
+var chaos_challenge_completed: bool = false
+var original_max_health: int = 0  # Store original max HP before challenge
+
 
 # flags
 var player_invisible: bool = false
@@ -340,6 +347,12 @@ func start_new_run() -> void:
 	coins            = 0
 	player_invisible = false
 	upgrade_purchase_counts.clear()
+	
+	# Reset chaos challenge state
+	active_chaos_challenge = ""
+	chaos_challenge_progress = 0
+	chaos_challenge_completed = false
+	original_max_health = 0
 
 	alt_weapon       = AltWeaponType.NONE
 	ability          = AbilityType.NONE
@@ -1031,6 +1044,11 @@ func apply_upgrade(upgrade_id: String) -> void:
 			synergy_turret_bubble_unlocked = true
 			# TODO: Implement shielded turret while bubble is active
 
+		# CHAOS CHALLENGES
+		"chaos_half_hp_double_damage":
+			print("  → Starting chaos challenge: half_hp_double_damage")
+			start_chaos_challenge("half_hp_double_damage")
+
 		_:
 			push_warning("[GameState] No handler for upgrade_id: %s" % upgrade_id)
 
@@ -1039,3 +1057,87 @@ func apply_upgrade(upgrade_id: String) -> void:
 	_record_acquired_upgrade(upgrade_id)
 
 	_emit_all_signals()
+
+
+# -------------------------------------------------------------------
+# CHAOS CHALLENGE SYSTEM (Hades-style challenges)
+# -------------------------------------------------------------------
+
+func start_chaos_challenge(challenge_id: String) -> void:
+	"""Start a chaos challenge with immediate penalty."""
+	active_chaos_challenge = challenge_id
+	chaos_challenge_progress = 0
+	chaos_challenge_completed = false
+	
+	print("[GameState] ========== CHAOS CHALLENGE STARTED ==========")
+	print("[GameState] Challenge ID:", challenge_id)
+	
+	# ⭐ Apply challenge penalty immediately
+	match challenge_id:
+		"half_hp_double_damage":
+			chaos_challenge_target = 5
+			
+			# Store original max HP
+			original_max_health = max_health
+			print("[GameState] Original max HP:", original_max_health)
+			
+			# Halve max HP
+			max_health = int(max_health / 2.0)
+			print("[GameState] New max HP:", max_health)
+			
+			# Halve current HP (so player doesn't die instantly if at full HP)
+			health = int(health / 2.0)
+			health = max(health, 1)  # Don't let them die from accepting!
+			print("[GameState] New current HP:", health)
+			print("[GameState] Must survive", chaos_challenge_target, "rooms")
+			print("[GameState] =============================================")
+			
+			# Emit signal to update UI
+			health_changed.emit(health, max_health)
+
+
+func increment_chaos_challenge_progress() -> void:
+	"""Increment progress towards completing the chaos challenge."""
+	if active_chaos_challenge.is_empty() or chaos_challenge_completed:
+		return
+	
+	chaos_challenge_progress += 1
+	
+	print("[GameState] Chaos challenge progress: ", chaos_challenge_progress, "/", chaos_challenge_target)
+	
+	if chaos_challenge_progress >= chaos_challenge_target:
+		_complete_chaos_challenge()
+
+
+func _complete_chaos_challenge() -> void:
+	"""Complete the chaos challenge and grant rewards!"""
+	chaos_challenge_completed = true
+	
+	print("[GameState] ⭐⭐⭐ CHAOS CHALLENGE COMPLETED! ⭐⭐⭐")
+	
+	# Apply reward based on challenge type
+	match active_chaos_challenge:
+		"half_hp_double_damage":
+			# ⭐ Restore max HP to original value
+			max_health = original_max_health
+			
+			# Restore current HP to full
+			health = max_health
+			
+			# ⭐ Double damage permanently!
+			primary_damage_base *= 2.0
+			primary_damage = primary_damage_base * (1.0 + primary_damage_bonus)
+			
+			print("[GameState] Max HP restored to: ", max_health)
+			print("[GameState] Health fully restored!")
+			print("[GameState] Damage DOUBLED! New base damage: ", primary_damage_base)
+			
+			# Emit signals to update UI
+			health_changed.emit(health, max_health)
+	
+	# Clear challenge
+	active_chaos_challenge = ""
+	
+	# TODO: Show completion notification/visual effect
+	# EventBus.emit_signal("chaos_challenge_completed")
+

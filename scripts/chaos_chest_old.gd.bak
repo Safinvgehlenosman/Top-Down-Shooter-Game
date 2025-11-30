@@ -1,0 +1,198 @@
+extends Area2D
+
+##
+## ChaosChest.gd
+## Hades-style challenge chest system
+## Shows player a challenge with risk/reward
+##
+
+signal chest_opened
+
+@onready var sprite: Sprite2D = $Sprite2D
+@onready var interact_prompt: Label = $InteractPrompt
+@onready var collision: CollisionShape2D = $CollisionShape2D
+@onready var light: PointLight2D = $PointLight2D
+
+var player_in_range: bool = false
+var is_opened: bool = false
+
+
+func _ready() -> void:
+	# Set up signals
+	body_entered.connect(_on_body_entered)
+	body_exited.connect(_on_body_exited)
+	
+	# Hide prompt initially
+	if interact_prompt:
+		interact_prompt.visible = false
+	
+	# Set chaos chest color (purple/magenta)
+	if sprite:
+		sprite.modulate = Color(0.8, 0.2, 0.8)  # Purple chaos color
+	
+	if light:
+		light.color = Color(0.8, 0.2, 0.8)
+		light.energy = 1.5
+
+
+func _process(_delta: float) -> void:
+	if player_in_range and not is_opened and Input.is_action_just_pressed("interact"):
+		_open_chest()
+
+
+func _on_body_entered(body: Node2D) -> void:
+	if body.is_in_group("player"):
+		player_in_range = true
+		if interact_prompt and not is_opened:
+			interact_prompt.visible = true
+
+
+func _on_body_exited(body: Node2D) -> void:
+	if body.is_in_group("player"):
+		player_in_range = false
+		if interact_prompt:
+			interact_prompt.visible = false
+
+
+func _open_chest() -> void:
+	"""Open the chaos chest and show challenge card."""
+	if is_opened:
+		return
+	
+	is_opened = true
+	
+	# Hide prompt
+	if interact_prompt:
+		interact_prompt.visible = false
+	
+	# Show chaos challenge UI
+	_show_chaos_challenge_card()
+
+
+func _show_chaos_challenge_card() -> void:
+	"""Display the chaos challenge using the existing upgrade card system."""
+	print("[ChaosChest] ========== CHAOS CHEST DEBUG ==========")
+	
+	# Get chaos upgrades from database
+	var chaos_upgrades: Array = []
+	var all_upgrades = preload("res://scripts/Upgrades_DB.gd").get_all()
+	var UpgradesDB = preload("res://scripts/Upgrades_DB.gd")
+	
+	print("[ChaosChest] Total upgrades in database: ", all_upgrades.size())
+	print("[ChaosChest] CHAOS Rarity enum value: ", UpgradesDB.Rarity.CHAOS)
+	
+	var checked_count = 0
+	for upgrade in all_upgrades:
+		var upgrade_rarity = upgrade.get("rarity")
+		var upgrade_name = upgrade.get("text", upgrade.get("id", "UNKNOWN"))
+		checked_count += 1
+		
+		# Debug every upgrade to find the chaos one
+		if upgrade_rarity == UpgradesDB.Rarity.CHAOS:
+			print("[ChaosChest] ✅ CHAOS UPGRADE FOUND: ", upgrade_name, " (rarity=", upgrade_rarity, ")")
+			chaos_upgrades.append(upgrade)
+		elif checked_count <= 5 or upgrade_name.contains("chaos") or upgrade_name.contains("Chaos"):
+			# Show first 5 upgrades and any containing "chaos" for debugging
+			print("[ChaosChest]    Checked: ", upgrade_name, " (rarity=", upgrade_rarity, ")")
+	
+	print("[ChaosChest] Total upgrades checked: ", checked_count)
+	print("[ChaosChest] Total CHAOS upgrades found: ", chaos_upgrades.size())
+	
+	if chaos_upgrades.is_empty():
+		push_error("[ChaosChest] ❌ ERROR: No chaos upgrades found in database!")
+		push_error("[ChaosChest] Check that CHAOS rarity exists in Upgrades_DB.gd and upgrade has rarity=CHAOS")
+		return
+	
+	# Pick random chaos upgrade
+	var selected_chaos = chaos_upgrades.pick_random()
+	print("[ChaosChest] Selected chaos upgrade: ", selected_chaos.get("text"))
+	print("[ChaosChest] Description: ", selected_chaos.get("description"))
+	print("[ChaosChest] ==========================================")
+	
+	# Pause game
+	get_tree().paused = true
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	
+	# Create dark overlay
+	var overlay = ColorRect.new()
+	overlay.name = "ChaosOverlay"
+	overlay.color = Color(0, 0, 0, 0.9)
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.z_index = 100
+	
+	# Create container for card
+	var container = CenterContainer.new()
+	container.set_anchors_preset(Control.PRESET_FULL_RECT)
+	
+	# Load and instantiate upgrade card
+	var card_scene = preload("res://scenes/upgrade_card.tscn")
+	var card = card_scene.instantiate()
+	
+	# Setup card with chaos upgrade
+	card.setup(selected_chaos)
+	card.scale = Vector2(2.0, 2.0)  # Make it bigger for emphasis
+	
+	# Store the upgrade value for the accept callback
+	var upgrade_value = selected_chaos.get("value", "")
+	
+	# Find and modify the button
+	var buy_button = card.get_node_or_null("Button")
+	if buy_button:
+		buy_button.text = "ACCEPT CHALLENGE"
+		# Disconnect default signal and connect custom handler
+		for connection in buy_button.pressed.get_connections():
+			buy_button.pressed.disconnect(connection["callable"])
+		buy_button.pressed.connect(_on_chaos_accepted.bind(overlay, upgrade_value))
+	
+	container.add_child(card)
+	overlay.add_child(container)
+	get_tree().root.add_child(overlay)
+
+
+func _on_chaos_accepted(overlay: Control, challenge_value: String) -> void:
+	"""Player accepted the chaos challenge!"""
+	print("[ChaosChest] Challenge ACCEPTED: ", challenge_value)
+	
+	# Start the chaos challenge using the upgrade value
+	GameState.start_chaos_challenge(challenge_value)
+	
+	# Close UI
+	overlay.queue_free()
+	get_tree().paused = false
+	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	
+	# Emit signal
+	chest_opened.emit()
+	
+	# Despawn chest with visual effect
+	_despawn_chest()
+
+
+func _on_challenge_declined(overlay: Control) -> void:
+	"""Player declined the chaos challenge."""
+	print("[ChaosChest] Challenge DECLINED!")
+	
+	# Close UI
+	overlay.queue_free()
+	get_tree().paused = false
+	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	
+	# Reset opened state so they can try again
+	is_opened = false
+
+
+func _despawn_chest() -> void:
+	"""Despawn the chest with visual effects."""
+	# Hide visuals
+	if sprite:
+		sprite.visible = false
+	
+	if collision:
+		collision.set_deferred("disabled", true)
+	
+	if light:
+		light.visible = false
+	
+	# Queue free after short delay
+	await get_tree().create_timer(0.1).timeout
+	queue_free()

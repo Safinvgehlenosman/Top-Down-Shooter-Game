@@ -8,6 +8,7 @@ extends Node
 @export var bronze_chest_scene: PackedScene
 @export var normal_chest_scene: PackedScene
 @export var gold_chest_scene: PackedScene
+@export var chaos_chest_scene: PackedScene  # ⭐ Chaos chest (challenge system)
 
 @export var ui_root_path: NodePath
 
@@ -62,6 +63,11 @@ var chest_spawn_point: Node2D = null
 var chest_spawned: bool = false
 
 @export_range(0.0, 1.0, 0.05) var chest_spawn_chance: float = 0.75  # 75% chance per level
+
+# Chaos Chest spawning (every 10 levels)
+var chaos_chest_spawn_point: Node2D = null
+var chaos_chest_spawned_this_cycle: bool = false
+var current_level_cycle: int = 0  # Which 10-level cycle we're in
 
 var game_ui: CanvasLayer
 var next_scene_path: String = ""
@@ -309,6 +315,13 @@ func _spawn_room_content() -> void:
 		chest_spawn_point = room_spawn_points.pop_back()
 		print("[GameManager] Reserved chest spawn point at: ", chest_spawn_point.global_position)
 	
+	# Reserve chaos chest spawn point (if flagged for this level)
+	# Only spawn if player doesn't already have an active challenge
+	chaos_chest_spawn_point = null
+	if chaos_chest_spawned_this_cycle and GameState.active_chaos_challenge.is_empty() and room_spawn_points.size() > 0:
+		chaos_chest_spawn_point = room_spawn_points.pop_back()
+		print("[GameManager] Reserved chaos chest spawn point at: ", chaos_chest_spawn_point.global_position)
+	
 	chest_spawned = false
 
 	alive_enemies = 0
@@ -399,6 +412,10 @@ func _spawn_room_content() -> void:
 			current_room.add_child(crate)
 			
 			spawn_index += 1
+	
+	# --- SPAWN CHAOS CHEST (if scheduled) ---
+	if chaos_chest_spawn_point != null:
+		_spawn_chaos_chest()
 
 	if alive_enemies == 0:
 		_spawn_exit_door()
@@ -407,34 +424,56 @@ func _spawn_room_content() -> void:
 # --- SPAWN COUNT CALCULATION ---------------------------------------
 
 func _calculate_enemy_count_for_level(level: int) -> int:
-	"""Calculate how many enemies to spawn based on current level."""
-	# Early levels: 3-5 enemies
-	# Mid levels: 5-8 enemies
-	# Late levels: 8-12 enemies
+	"""Calculate how many enemies to spawn based on current level and spawn ratio."""
+	# Total spawn points available (rough estimate, actual may vary)
+	var total_spawns = 10  # Average spawn points per room
 	
-	var base_count = 3
-	var scaling = floor(level / 5.0)  # +1 enemy every 5 levels
+	# Calculate enemy/crate split ratio
+	# Level 1: 50% enemies
+	# Level 50+: 75% enemies
+	var enemy_ratio = _get_enemy_ratio_for_level(level)
 	
-	var count = base_count + scaling
-	count = clamp(count, 3, 12)  # Min 3, max 12
+	# Calculate enemy count based on ratio
+	var enemy_count = int(total_spawns * enemy_ratio)
 	
-	return count
+	# Clamp to reasonable values
+	enemy_count = clamp(enemy_count, 3, 12)
+	
+	return enemy_count
 
 
 func _calculate_crate_count_for_level(level: int) -> int:
-	"""Calculate how many crates to spawn based on current level."""
-	# Crates scale slower than enemies
-	# Early: 2-3 crates
-	# Mid: 3-4 crates
-	# Late: 4-5 crates
+	"""Calculate how many crates to spawn based on current level and spawn ratio."""
+	# Total spawn points available
+	var total_spawns = 10
 	
-	var base_count = 2
-	var scaling = floor(level / 10.0)  # +1 crate every 10 levels
+	# Calculate crate ratio (inverse of enemy ratio)
+	var enemy_ratio = _get_enemy_ratio_for_level(level)
+	var crate_ratio = 1.0 - enemy_ratio
 	
-	var count = base_count + scaling
-	count = clamp(count, 2, 5)  # Min 2, max 5
+	# Calculate crate count based on ratio
+	var crate_count = int(total_spawns * crate_ratio)
 	
-	return count
+	# Clamp to reasonable values
+	crate_count = clamp(crate_count, 2, 5)
+	
+	return crate_count
+
+
+func _get_enemy_ratio_for_level(level: int) -> float:
+	"""Get the enemy spawn ratio for a given level. Smoothly transitions from 50% to 75%."""
+	# Level 1: 50% enemies (0.5)
+	# Level 50+: 75% enemies (0.75)
+	
+	if level >= 50:
+		return 0.75
+	
+	# Linear interpolation from 0.5 to 0.75 over 50 levels
+	# ratio = 0.5 + (0.25 * progress)
+	var progress = float(level - 1) / 49.0  # 0.0 at level 1, 1.0 at level 50
+	var ratio = 0.5 + (0.25 * progress)
+	
+	return ratio
 
 
 # --- ENEMY WEIGHT SCALING / PROGRESSION -----------------------------
@@ -559,6 +598,10 @@ func _on_enemy_died(enemy: Node2D = null) -> void:
 		chest_spawned = true
 	
 	if alive_enemies == 0:
+		# ⭐ Progress chaos challenge if active
+		if not GameState.active_chaos_challenge.is_empty():
+			GameState.increment_chaos_challenge_progress()
+		
 		_spawn_exit_door()
 
 
@@ -717,6 +760,7 @@ func load_next_level() -> void:
 	# Load the new room WHILE screen is black
 	current_level += 1
 	_update_level_ui()
+	_check_chaos_chest_spawn()  # ⭐ Check for chaos chest spawn
 	_load_room()
 	
 	# Move player to spawn point BEFORE fade out
@@ -844,6 +888,77 @@ func _clear_room_transient_objects() -> void:
 	for n in nodes:
 		if is_instance_valid(n):
 			n.queue_free()
+
+
+# --- CHAOS CHEST SPAWN LOGIC ---------------------------------------
+
+func _check_chaos_chest_spawn() -> void:
+	"""Check if we should spawn a chaos chest this cycle (every 10 levels)."""
+	# Determine which 10-level cycle we're in (0 = levels 1-10, 1 = levels 11-20, etc.)
+	var new_cycle = int(float(current_level - 1) / 10.0)
+	
+	# If we've entered a new cycle, reset the flag
+	if new_cycle > current_level_cycle:
+		current_level_cycle = new_cycle
+		chaos_chest_spawned_this_cycle = false
+		print("[GameManager] Entered chaos chest cycle ", new_cycle + 1, " (levels ", new_cycle * 10 + 1, "-", new_cycle * 10 + 10, ")")
+	
+	# If chaos chest already spawned this cycle, skip
+	if chaos_chest_spawned_this_cycle:
+		return
+	
+	# Calculate spawn chance based on levels remaining in cycle
+	# This guarantees exactly one chaos chest per 10-level cycle
+	var cycle_progress = (current_level - 1) % 10  # 0-9
+	var levels_remaining_in_cycle = 10 - cycle_progress
+	var spawn_chance = 1.0 / float(levels_remaining_in_cycle)
+	
+	if randf() < spawn_chance:
+		chaos_chest_spawned_this_cycle = true
+		print("[GameManager] Chaos chest will spawn this level (level ", current_level, ")!")
+		# Flag is set; actual spawn happens in _spawn_room_content()
+
+
+func _spawn_chaos_chest() -> void:
+	"""Spawn the chaos chest at the reserved spawn point."""
+	if chaos_chest_spawn_point == null:
+		return
+	
+	if chaos_chest_scene == null:
+		push_warning("[GameManager] No chaos_chest_scene assigned!")
+		return
+	
+	var chaos_chest := chaos_chest_scene.instantiate()
+	chaos_chest.global_position = chaos_chest_spawn_point.global_position
+	
+	# Connect signal to handle chaos chest opening
+	if chaos_chest.has_signal("chaos_chest_opened"):
+		chaos_chest.chaos_chest_opened.connect(_on_chaos_chest_opened)
+	
+	current_room.add_child(chaos_chest)
+	
+	print("[GameManager] Chaos chest spawned at: ", chaos_chest_spawn_point.global_position)
+	
+	# Clear spawn point
+	chaos_chest_spawn_point = null
+
+
+func _on_chaos_chest_opened(chaos_upgrade: Dictionary) -> void:
+	"""Handle chaos chest interaction - show upgrade via shop UI"""
+	print("[GameManager] Chaos chest opened! Showing chaos upgrade via shop UI")
+	
+	if not shop_ui:
+		push_error("[GameManager] No shop_ui reference!")
+		return
+	
+	# Show the chaos upgrade using existing shop UI system
+	shop_ui.visible = true
+	if shop_ui.has_method("open_as_chest_with_loot"):
+		# Use the chest loot display method with only the chaos upgrade
+		shop_ui.open_as_chest_with_loot([chaos_upgrade])
+	else:
+		push_error("[GameManager] shop_ui doesn't have open_as_chest_with_loot method!")
+
 
 
 # --- THEMED ROOM CONFIGURATION ---

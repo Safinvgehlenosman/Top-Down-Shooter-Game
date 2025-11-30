@@ -76,7 +76,7 @@ func _ready() -> void:
 
 func _calculate_upgrade_price(upgrade: Dictionary) -> int:
 	"""Calculate price based on rarity with exponential scaling."""
-	var base_price = 50  # Base price for common upgrades
+	var base_price = 25  # Base price for common upgrades (halved from 50)
 	var rarity = upgrade.get("rarity", UpgradesDB.Rarity.COMMON)
 	
 	# Exponential multiplier based on rarity
@@ -741,10 +741,43 @@ func _setup_chest_cards_with_loot(loot: Array) -> void:
 	# Sort loot by rarity
 	var sorted_loot = _sort_offers_by_rarity(loot)
 	
+	var children := cards_container.get_children()
+	
+	# Special case: if only 1 item (like chaos chest), center it by making side cards invisible
+	if sorted_loot.size() == 1:
+		# Make all cards visible but transparent except the center one
+		for i in range(children.size()):
+			var card = children[i]
+			card.visible = true
+			
+			if i == 2:  # Center card - show the chaos upgrade
+				card.modulate = Color(1, 1, 1, 1)
+				card.mouse_filter = Control.MOUSE_FILTER_STOP
+				
+				var upgrade_data = sorted_loot[0].duplicate()
+				upgrade_data["price"] = 0
+				card.setup(upgrade_data)
+				
+				if not card.purchased.is_connected(_on_chest_card_purchased):
+					card.purchased.connect(_on_chest_card_purchased)
+				
+				# Make it bigger for emphasis
+				card.set_deferred("scale", Vector2(1.5, 1.5))
+			else:  # Side cards - make completely transparent and non-interactive
+				card.modulate = Color(1, 1, 1, 0)  # Completely transparent
+				card.mouse_filter = Control.MOUSE_FILTER_IGNORE  # Don't block mouse
+				card.set_deferred("scale", Vector2(1.0, 1.0))
+				
+				# Also hide all child nodes to ensure nothing shows
+				for child in card.get_children():
+					if child is CanvasItem:
+						child.visible = false
+		return
+	
+	# Normal multi-card logic
 	# Assign to positions: center (2), middle (1,3), outer (0,4)
 	var position_order = [2, 1, 3, 0, 4]
-	var children := cards_container.get_children()
-	var used_positions = []  # Track which positions we've used
+	var used_positions = []
 	
 	for i in range(position_order.size()):
 		if i >= sorted_loot.size():

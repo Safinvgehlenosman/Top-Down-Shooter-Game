@@ -1,0 +1,163 @@
+[gd_scene load_steps=18 format=3 uid="uid://oy8jq68naa7r"]
+
+[ext_resource type="Script" path="res://scripts/chaos_chest.gd" id="1_5qqfn"]
+[ext_resource type="Texture2D" uid="uid://bg4nmpnf348rn" path="res://assets/16x16 Assorted RPG Icons/chests.png" id="2_fxpxv"]
+[ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="3_dhx2m"]
+[ext_resource type="AudioStream" uid="uid://cybjsebdqabqu" path="res://assets/Audios/strange-feedback-104068.mp3" id="4_5qqfn"]
+[ext_resource type="AudioStream" uid="uid://bkbbtse858d2x" path="res://assets/Audios/crate-break-1-93926.mp3" id="5_fbo8n"]
+[ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="6_vmvvl"]
+[ext_resource type="Texture2D" uid="uid://jw8qn34osfya" path="res://assets/CoinParticles.png" id="7_inqxv"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_oii8l"]
+radius = 28.0
+
+[sub_resource type="Gradient" id="Gradient_3v2ag"]
+offsets = PackedFloat32Array(0.016129032, 0.8064516, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_yue2o"]
+gradient = SubResource("Gradient_3v2ag")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.517094, 0.52136755)
+fill_to = Vector2(0.76495725, 0.7777778)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gi6q4"]
+atlas = ExtResource("7_inqxv")
+region = Rect2(0, 0, 15, 15)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_47voh"]
+atlas = ExtResource("7_inqxv")
+region = Rect2(15, 0, 15, 15)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_owqwr"]
+atlas = ExtResource("7_inqxv")
+region = Rect2(30, 0, 15, 15)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_iwbng"]
+atlas = ExtResource("7_inqxv")
+region = Rect2(0, 15, 15, 15)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f1bw2"]
+atlas = ExtResource("7_inqxv")
+region = Rect2(15, 15, 15, 15)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_oc3qr"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gi6q4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_47voh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_owqwr")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_iwbng")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_f1bw2")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1noaq"]
+size = Vector2(12, 11.1428585)
+
+[node name="ChaosChest" type="Area2D"]
+collision_layer = 16
+collision_mask = 2
+script = ExtResource("1_5qqfn")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_fxpxv")
+region_enabled = true
+region_rect = Rect2(96, 81, 16, 14)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_oii8l")
+
+[node name="InteractPrompt" type="Label" parent="."]
+offset_left = -16.0
+offset_top = -24.0
+offset_right = 64.0
+offset_bottom = 11.0
+scale = Vector2(0.4, 0.4)
+theme_override_colors/font_color = Color(0.78039217, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.1882353)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_fonts/font = ExtResource("3_dhx2m")
+text = "PRESS
+\"E\""
+horizontal_alignment = 1
+metadata/_edit_use_anchors_ = true
+
+[node name="SFX_Spawn" type="AudioStreamPlayer2D" parent="."]
+position = Vector2(89, -18)
+stream = ExtResource("4_5qqfn")
+bus = &"SFX"
+
+[node name="SFX_Despawn" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("5_fbo8n")
+bus = &"SFX"
+
+[node name="PointLight2D" type="PointLight2D" parent="."]
+position = Vector2(1.1920929e-07, 0)
+scale = Vector2(0.82968754, 0.8)
+color = Color(1, 0, 0, 1)
+shadow_enabled = true
+texture = SubResource("GradientTexture2D_yue2o")
+texture_scale = 0.5
+
+[node name="Sprite2D2" type="Sprite2D" parent="."]
+modulate = Color(0, 0, 0, 0.11764706)
+z_index = -1
+position = Vector2(0, 6.9999995)
+scale = Vector2(1.6666666, 0.975)
+texture = ExtResource("6_vmvvl")
+region_enabled = true
+region_rect = Rect2(201.99591, 204.99461, 12.041901, 5.0242004)
+
+[node name="VFX_Glitter" type="AnimatedSprite2D" parent="."]
+modulate = Color(0.75686276, 0, 0.13333334, 1)
+z_index = -1
+position = Vector2(-7, 3.999999)
+scale = Vector2(0.8, 0.8)
+sprite_frames = SubResource("SpriteFrames_oc3qr")
+autoplay = "default"
+frame = 4
+frame_progress = 1.0
+
+[node name="VFX_Glitter2" type="AnimatedSprite2D" parent="."]
+modulate = Color(0.8392157, 0, 0, 1)
+z_index = -1
+position = Vector2(-1, -7)
+sprite_frames = SubResource("SpriteFrames_oc3qr")
+autoplay = "default"
+frame_progress = 0.6652822
+
+[node name="VFX_Glitter3" type="AnimatedSprite2D" parent="."]
+modulate = Color(0.39215687, 0, 0, 1)
+z_index = 1
+position = Vector2(7, 3)
+scale = Vector2(0.6, 0.6)
+sprite_frames = SubResource("SpriteFrames_oc3qr")
+autoplay = "default"
+frame_progress = 0.6652822
+
+[node name="Blocker" type="StaticBody2D" parent="."]
+position = Vector2(0, 9)
+collision_mask = 39
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Blocker"]
+position = Vector2(-2.3841858e-07, -8.428571)
+scale = Vector2(0.99999994, 0.99999994)
+shape = SubResource("RectangleShape2D_1noaq")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
