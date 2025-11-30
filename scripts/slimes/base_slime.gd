@@ -32,7 +32,7 @@ var contact_timer: float = 0.0
 # Pack hunting behaviors
 @export var enable_pack_hunting: bool = true
 @export var pack_detection_radius: float = 150.0
-@export var pack_speed_bonus: float = 1.10  # 10% speed boost when in pack (reduced from 15%)
+@export var pack_speed_bonus: float = 1.20  # 20% speed boost when in pack
 @export var min_pack_size: int = 2  # How many allies needed for pack bonus
 
 # Ambush detection
@@ -76,6 +76,7 @@ var lost_sight_timer: float = 0.0
 var stuck_timer: float = 0.0
 var last_position: Vector2 = Vector2.ZERO
 var unstuck_angle_offset: float = 0.0  # radians to offset approach when stuck
+var my_flanking_offset: float = 0.0  # Persistent random offset for unique flanking angles
 
 # Pack member cache (to avoid repeated tree searches)
 var pack_members_cache: Array = []
@@ -149,6 +150,9 @@ func _ready() -> void:
 	# Store base speeds before any multipliers
 	base_move_speed = speed
 	base_wander_speed = wander_speed
+	
+	# Random persistent flanking offset for unique pack behavior
+	my_flanking_offset = randf_range(-PI/6, PI/6)
 
 	# ❌ REMOVED - Smart AI makes them harder now, don't need raw stat buffs
 	# Old approach: Dumb AI + 1.2x speed/health = artificially harder
@@ -356,16 +360,32 @@ func _update_ai(delta: float) -> void:
 					if pack_status.in_pack:
 						effective_speed *= pack_speed_bonus
 					
-					# Normal chase with strafe
-					var forward: Vector2 = to_player.normalized()
-					var right: Vector2 = Vector2(-forward.y, forward.x)
-					var dir: Vector2 = (forward + right * strafe_amount).normalized()
-					
-					# Apply stuck offset if needed
-					if abs(unstuck_angle_offset) > 0.01:
-						dir = dir.rotated(unstuck_angle_offset)
-					
-					velocity = dir * effective_speed
+					# DIRECTIONAL FLANKING - Attack from spread angles, always advancing
+					if pack_status.pack_size >= min_pack_size_for_spread:
+						var slime_id = get_instance_id()
+						var angle_variant = (int(slime_id) % 5) - 2  # -2, -1, 0, 1, 2
+						
+						# Calculate approach angle with spread
+						var base_angle = to_player.angle()
+						var spread_angle = deg_to_rad(25.0)  # 25 degrees spread
+						var my_angle = base_angle + (angle_variant * spread_angle)
+						
+						# ALWAYS move toward player from this angle
+						var approach_dir = Vector2.from_angle(my_angle)
+						velocity = approach_dir * effective_speed
+						
+						# If very close, switch to direct pursuit
+						if to_player.length() < 40.0:
+							velocity = to_player.normalized() * effective_speed * 1.3  # 30% faster when close
+					else:
+						# Solo or small pack - direct chase
+						var forward: Vector2 = to_player.normalized()
+						
+						# Apply stuck offset if needed
+						if abs(unstuck_angle_offset) > 0.01:
+							forward = forward.rotated(unstuck_angle_offset)
+						
+						velocity = forward * effective_speed
 				
 				elif lost_sight_timer < deaggro_delay:
 					# Search last seen position
@@ -402,13 +422,25 @@ func _update_ai(delta: float) -> void:
 			var push_strength = (1.0 - dist_to_player / personal_space_distance)
 			velocity += push_away * base_move_speed * push_strength * 0.5
 	
-	# Raycast-based obstacle avoidance
-	var obstacle_avoid = _get_raycast_avoidance(velocity)
-	velocity += obstacle_avoid
+	# Raycast-based obstacle avoidance (reduced during flanking)
+	var obstacle_avoid: Vector2 = _get_raycast_avoidance(velocity)
+	var pack_status_avoid: Dictionary = _get_pack_status()
+	if pack_status_avoid.in_pack and pack_status_avoid.pack_size >= 3:
+		velocity += obstacle_avoid * 0.3  # Reduced during flanking
+	else:
+		velocity += obstacle_avoid
 	
 	# Separation force
 	var separation: Vector2 = Vector2.ZERO
 	var nearby_enemies: Array = pack_members_cache if pack_members_cache.size() > 0 else get_tree().get_nodes_in_group("enemy")
+	
+	# Get pack status for separation calculations
+	var pack_status_sep: Dictionary = _get_pack_status()
+	
+	# Wider personal space during pack flanking to prevent stacking
+	var effective_separation_radius: float = separation_radius
+	if pack_status_sep.in_pack and pack_status_sep.pack_size >= 3:
+		effective_separation_radius = separation_radius * 1.5  # 36 units instead of 24
 	
 	for other in nearby_enemies:
 		if other == self or not is_instance_valid(other):
@@ -421,11 +453,19 @@ func _update_ai(delta: float) -> void:
 		var diff: Vector2 = global_position - other_node.global_position
 		var dist: float = diff.length()
 		
-		if dist > 0.0 and dist < separation_radius:
-			separation += diff.normalized() * (1.0 - dist / separation_radius)
+		if dist > 0.0 and dist < effective_separation_radius:
+			separation += diff.normalized() * (1.0 - dist / effective_separation_radius)
 	
-	# Weaker separation during aggro so packs can swarm
-	var sep_strength: float = separation_strength * 0.5 if aggro else separation_strength
+	# Separation strength - stronger during flanking to maintain spread
+	var sep_strength: float
+	if pack_status_sep.in_pack and pack_status_sep.pack_size >= 3:
+		sep_strength = separation_strength * 0.6  # Strong enough to maintain spread
+	elif aggro:
+		sep_strength = separation_strength * 0.2  # Weak during aggro
+	else:
+		sep_strength = separation_strength  # Full strength when wandering
+	
+	# Apply separation force
 	velocity += separation * sep_strength * base_move_speed
 	
 	# Knockback (always applies)
