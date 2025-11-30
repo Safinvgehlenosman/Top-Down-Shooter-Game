@@ -947,6 +947,23 @@ func _spawn_chaos_chest_at_enemy_position(position: Vector2) -> void:
 	chaos_chest_spawn_point = null
 
 
+func _are_all_chaos_upgrades_purchased() -> bool:
+	"""Check if all chaos upgrades have been purchased by the player."""
+	# Get all chaos upgrades from the database
+	var all_upgrades = load("res://scripts/Upgrades_DB.gd").get_chaos_upgrades()
+	
+	if all_upgrades.is_empty():
+		return true  # No chaos upgrades exist, treat as "all purchased"
+	
+	# Check if player has purchased all chaos upgrades
+	for chaos_upgrade in all_upgrades:
+		var upgrade_id: String = chaos_upgrade.get("id", "")
+		if not GameState.has_upgrade(upgrade_id):
+			return false  # Found one that hasn't been purchased
+	
+	return true  # All chaos upgrades have been purchased
+
+
 func _on_chaos_chest_opened(chaos_upgrade: Dictionary) -> void:
 	"""Handle chaos chest interaction - show upgrade via shop UI"""
 	print("[GameManager] Chaos chest opened! Showing chaos upgrade via shop UI")
