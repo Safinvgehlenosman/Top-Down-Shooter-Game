@@ -309,23 +309,18 @@ func _spawn_room_content() -> void:
 	# reserve one spawn for the door
 	door_spawn_point = room_spawn_points.pop_back()
 	
-	# Reserve chest spawn point (75% chance per level)
-	chest_spawn_point = null
-	if randf() < chest_spawn_chance and room_spawn_points.size() > 0:
-		chest_spawn_point = room_spawn_points.pop_back()
-		print("[GameManager] Reserved chest spawn point at: ", chest_spawn_point.global_position)
+	# Determine if chest should spawn this level (75% chance)
+	var should_spawn_chest: bool = randf() < chest_spawn_chance
+	print("[GameManager] Chest spawn chance: ", should_spawn_chest)
 	
-	# Reserve chaos chest spawn point (if flagged for this level)
-	# Only spawn if player doesn't already have an active challenge
-	chaos_chest_spawn_point = null
-	if chaos_chest_spawned_this_cycle and GameState.active_chaos_challenge.is_empty() and room_spawn_points.size() > 0:
-		chaos_chest_spawn_point = room_spawn_points.pop_back()
-		print("[GameManager] Reserved chaos chest spawn point at: ", chaos_chest_spawn_point.global_position)
+	# Determine if chaos chest should spawn this level (if flagged)
+	var should_spawn_chaos_chest: bool = chaos_chest_spawned_this_cycle and GameState.active_chaos_challenge.is_empty()
+	if should_spawn_chaos_chest:
+		print("[GameManager] Chaos chest will spawn when a random enemy dies")
 	
 	chest_spawned = false
 
 	alive_enemies = 0
-	var has_chest_dropper: bool = false  # Track if we've assigned chest dropper
 
 	var themed_room := _is_themed_room(current_level)
 	var themed_slimes := _get_themed_room_slimes(current_level)
@@ -357,6 +352,8 @@ func _spawn_room_content() -> void:
 	var spawn_index = 0
 	
 	# --- SPAWN ENEMIES ---
+	var spawned_enemies: Array = []  # Track spawned enemies
+	
 	for i in range(enemy_count):
 		if spawn_index >= room_spawn_points.size():
 			break
@@ -387,18 +384,27 @@ func _spawn_room_content() -> void:
 			
 			current_room.add_child(enemy)
 			alive_enemies += 1
-			
-			# Mark one random enemy as chest dropper
-			if chest_spawn_point != null and not has_chest_dropper:
-				if randf() < (1.0 / max(1, alive_enemies)):
-					enemy.set_meta("drops_chest", true)
-					has_chest_dropper = true
-					print("[GameManager] Marked enemy as chest dropper at position: ", enemy.global_position)
+			spawned_enemies.append(enemy)  # Track this enemy
 			
 			if enemy.has_signal("died"):
 				enemy.died.connect(_on_enemy_died.bind(enemy))
 			
 			spawn_index += 1
+	
+	# --- MARK RANDOM ENEMIES AS CHEST DROPPERS ---
+	# After spawning all enemies, mark random ones to drop chests
+	
+	if should_spawn_chest and not spawned_enemies.is_empty():
+		spawned_enemies.shuffle()
+		var chest_dropper = spawned_enemies[0]
+		chest_dropper.set_meta("drops_chest", true)
+		print("[GameManager] Random enemy will drop chest when killed")
+	
+	if should_spawn_chaos_chest and not spawned_enemies.is_empty():
+		spawned_enemies.shuffle()
+		var chaos_dropper = spawned_enemies[0]
+		chaos_dropper.set_meta("drops_chaos_chest", true)
+		print("[GameManager] Random enemy will drop chaos chest when killed")
 	
 	# --- SPAWN CRATES ---
 	if not themed_room and crate_scene:
@@ -413,10 +419,6 @@ func _spawn_room_content() -> void:
 			
 			spawn_index += 1
 	
-	# --- SPAWN CHAOS CHEST (if scheduled) ---
-	if chaos_chest_spawn_point != null:
-		_spawn_chaos_chest()
-
 	if alive_enemies == 0:
 		_spawn_exit_door()
 
@@ -592,10 +594,15 @@ func _on_enemy_died(enemy: Node2D = null) -> void:
 	print("[GameManager] Enemy died. Remaining enemies: ", alive_enemies)
 	
 	# Check if this enemy should drop chest
-	if enemy != null and chest_spawn_point != null and enemy.has_meta("drops_chest") and not chest_spawned:
+	if enemy != null and enemy.has_meta("drops_chest") and not chest_spawned:
 		print("[GameManager] Chest dropper killed! Spawning chest...")
-		_spawn_chest_at_reserved_point()
+		_spawn_chest_at_enemy_position(enemy.global_position)
 		chest_spawned = true
+	
+	# ⭐ Check if this enemy should drop chaos chest
+	if enemy != null and enemy.has_meta("drops_chaos_chest"):
+		print("[GameManager] Chaos chest dropper killed! Spawning chaos chest...")
+		_spawn_chaos_chest_at_enemy_position(enemy.global_position)
 	
 	if alive_enemies == 0:
 		# ⭐ Progress chaos challenge if active
@@ -634,11 +641,8 @@ func _spawn_exit_door() -> void:
 		current_exit_door.open()
 
 
-func _spawn_chest_at_reserved_point() -> void:
-	"""Spawn a weighted random chest at the reserved chest spawn point. In themed rooms, always spawn gold chest."""
-	if chest_spawn_point == null:
-		return
-
+func _spawn_chest_at_enemy_position(position: Vector2) -> void:
+	"""Spawn a weighted random chest at the enemy's death position. In themed rooms, always spawn gold chest."""
 	var chest_scene: PackedScene = null
 	if _is_themed_room(current_level):
 		chest_scene = gold_chest_scene
@@ -666,11 +670,10 @@ func _spawn_chest_at_reserved_point() -> void:
 			return
 
 	var chest := chest_scene.instantiate()
-	chest.global_position = chest_spawn_point.global_position
+	chest.global_position = position
 	current_room.add_child(chest)
 
-	print("[GameManager] Spawned chest at reserved point")
-	chest_spawn_point = null  # Clear to prevent multiple spawns
+	print("[GameManager] Spawned chest at enemy death position: ", position)
 
 # CHEST SPAWNING LOGIC:
 # 
@@ -919,17 +922,14 @@ func _check_chaos_chest_spawn() -> void:
 		# Flag is set; actual spawn happens in _spawn_room_content()
 
 
-func _spawn_chaos_chest() -> void:
-	"""Spawn the chaos chest at the reserved spawn point."""
-	if chaos_chest_spawn_point == null:
-		return
-	
+func _spawn_chaos_chest_at_enemy_position(position: Vector2) -> void:
+	"""Spawn the chaos chest at the enemy's death position."""
 	if chaos_chest_scene == null:
 		push_warning("[GameManager] No chaos_chest_scene assigned!")
 		return
 	
 	var chaos_chest := chaos_chest_scene.instantiate()
-	chaos_chest.global_position = chaos_chest_spawn_point.global_position
+	chaos_chest.global_position = position
 	
 	# Connect signal to handle chaos chest opening
 	if chaos_chest.has_signal("chaos_chest_opened"):
@@ -937,7 +937,7 @@ func _spawn_chaos_chest() -> void:
 	
 	current_room.add_child(chaos_chest)
 	
-	print("[GameManager] Chaos chest spawned at: ", chaos_chest_spawn_point.global_position)
+	print("[GameManager] Chaos chest spawned at enemy position: ", position)
 	
 	# Clear spawn point
 	chaos_chest_spawn_point = null
