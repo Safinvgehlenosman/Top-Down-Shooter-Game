@@ -1,3 +1,9 @@
+# Extends base slime (base_slime.gd) which handles:
+# - Movement AI with raycasts
+# - Obstacle avoidance and flanking
+# - Player chasing and aggro
+# This script only adds purple slime shooting behavior
+
 extends "res://scripts/slimes/base_slime.gd"
 
 # --- Shooting settings ---
@@ -5,6 +11,8 @@ extends "res://scripts/slimes/base_slime.gd"
 @export var shoot_interval: float = 1.2
 @export var projectile_speed: float = 140.0
 @export var shoot_range: float = 220.0
+@export var enable_predictive_shooting: bool = true
+@export var shot_prediction_time: float = 0.3  # Seconds to predict ahead
 
 var shoot_timer: float = 0.0
 
@@ -45,17 +53,36 @@ func _shoot_at_player() -> void:
 	if not projectile_scene or player == null:
 		return
 
-	var proj = projectile_scene.instantiate()
-	var dir := (player.global_position - global_position).normalized()
+	var target_pos: Vector2 = player.global_position
+	
+	# PREDICTIVE SHOOTING - Lead the target!
+	if enable_predictive_shooting and "velocity" in player:
+		var player_velocity: Vector2 = player.velocity
+		
+		# Predict where player will be
+		var predicted_pos: Vector2 = player.global_position + (player_velocity * shot_prediction_time)
+		
+		# Check if predicted shot has clear line of sight
+		var space_state = get_world_2d().direct_space_state
+		var query = PhysicsRayQueryParameters2D.create(global_position, predicted_pos)
+		query.exclude = [self]
+		query.collision_mask = 1
+		
+		var result = space_state.intersect_ray(query)
+		
+		if result.is_empty() or result.get("collider") == player:
+			# Clear shot to predicted position!
+			target_pos = predicted_pos
+
+	var dir: Vector2 = (target_pos - global_position).normalized()
 	if dir == Vector2.ZERO:
 		return
 
 	# spawn slightly in front of the slime to avoid self-hit
+	var proj = projectile_scene.instantiate()
 	proj.global_position = global_position + dir * 6.0
 
-	# 🔥 Hard-assign common projectile fields
-	# All your enemy projectile scripts (enemyprojectile, fire, ice, poison)
-	# have these same variables, so we can just set them directly.
+	# Hard-assign common projectile fields
 	proj.direction = dir
 	proj.speed = projectile_speed
 	proj.target_group = "player"

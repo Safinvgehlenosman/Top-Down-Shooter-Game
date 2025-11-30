@@ -1,3 +1,9 @@
+# Extends base slime (base_slime.gd) which handles:
+# - Movement AI with raycasts
+# - Obstacle avoidance and flanking
+# - Player chasing and aggro
+# This script only adds poison slime burst shooting behavior
+
 extends "res://scripts/slimes/base_slime.gd"
 
 @export var projectile_scene: PackedScene
@@ -5,6 +11,8 @@ extends "res://scripts/slimes/base_slime.gd"
 @export var shoot_range: float = 220.0       # how far it can shoot
 @export var burst_count: int = 14            # pellets per volley
 @export var spread_degrees: float = 80.0     # width of the cloud
+@export var enable_predictive_shooting: bool = true
+@export var shot_prediction_time: float = 0.25  # Predict player position
 
 # random speed range per pellet (for messy cloud)
 @export var pellet_min_speed: float = 40.0
@@ -40,7 +48,13 @@ func _physics_process(delta: float) -> void:
 	if not _can_see_player():
 		return
 
-	_shoot_burst(to_player.normalized())
+	# Calculate predicted aim direction
+	var aim_target = player.global_position
+	if enable_predictive_shooting and "velocity" in player:
+		aim_target += player.velocity * shot_prediction_time
+	
+	var aim_dir = (aim_target - global_position).normalized()
+	_shoot_burst(aim_dir)
 	shoot_timer = shoot_interval
 
 

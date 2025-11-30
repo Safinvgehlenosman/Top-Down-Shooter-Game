@@ -24,6 +24,10 @@ var contact_timer: float = 0.0
 @export var raycast_length: float = 50.0
 @export var obstacle_avoidance_strength: float = 0.3
 @export var personal_space_distance: float = 20.0  # Min distance from player/walls
+@export var enable_flanking: bool = true
+@export var flank_speed_multiplier: float = 0.6  # Speed while flanking
+@export var sprint_when_losing_los: bool = true
+@export var sprint_multiplier: float = 1.3
 
 # How much we grow per level
 @export var health_growth_per_level: float = 0.05
@@ -296,6 +300,15 @@ func _update_ai(delta: float) -> void:
 	var to_player: Vector2 = player.global_position - global_position
 	var distance: float = to_player.length()
 	var can_see := _can_see_player()
+	var about_to_lose_los := false
+	
+	# Check if player is about to break LOS
+	if can_see and raycast_forward and raycast_forward.is_colliding():
+		var collider = raycast_forward.get_collider()
+		
+		if collider != player:
+			# Wall between us! Player about to break LOS!
+			about_to_lose_los = true
 
 	# aggro logic
 	if distance <= aggro_radius and can_see:
@@ -319,7 +332,13 @@ func _update_ai(delta: float) -> void:
 			var strafe: Vector2 = right * strafe_amount
 
 			var dir: Vector2 = (forward + strafe).normalized()
-			velocity = dir * speed
+			var current_speed = speed
+			
+			# SPRINT if about to lose sight!
+			if sprint_when_losing_los and about_to_lose_los:
+				current_speed *= sprint_multiplier
+			
+			velocity = dir * current_speed
 		elif lost_sight_timer < deaggro_delay:
 			var to_last_seen := last_seen_player_pos - global_position
 			if to_last_seen.length() > 4.0:
@@ -420,7 +439,7 @@ func _update_raycast_directions() -> void:
 
 
 func _get_obstacle_avoidance() -> Vector2:
-	"""Check raycasts and calculate avoidance vector."""
+	"""Check raycasts and calculate avoidance vector. Now includes flanking!"""
 	var avoidance = Vector2.ZERO
 	
 	# Forward raycast - highest priority
@@ -429,8 +448,34 @@ func _get_obstacle_avoidance() -> Vector2:
 		var to_collision = collision_point - global_position
 		var distance = to_collision.length()
 		
-		# Only avoid if really close
-		if distance < 30.0:
+		# FLANKING: If forward blocked, check sides and GO AROUND
+		if enable_flanking and distance < 30.0:
+			var can_flank_left = raycast_left and not raycast_left.is_colliding()
+			var can_flank_right = raycast_right and not raycast_right.is_colliding()
+			
+			if can_flank_left and can_flank_right:
+				# Both sides clear - pick randomly
+				if randf() > 0.5:
+					avoidance += velocity.normalized().rotated(-PI/2) * speed * flank_speed_multiplier
+				else:
+					avoidance += velocity.normalized().rotated(PI/2) * speed * flank_speed_multiplier
+			
+			elif can_flank_left:
+				# Only left is clear
+				avoidance += velocity.normalized().rotated(-PI/2) * speed * flank_speed_multiplier
+			
+			elif can_flank_right:
+				# Only right is clear
+				avoidance += velocity.normalized().rotated(PI/2) * speed * flank_speed_multiplier
+			
+			else:
+				# Can't flank - push away from obstacle (old behavior)
+				var away = -to_collision.normalized()
+				var strength = (1.0 - distance / 30.0) * obstacle_avoidance_strength
+				avoidance += away * strength * speed
+		
+		elif distance < 30.0:
+			# Flanking disabled - just avoid
 			var away = -to_collision.normalized()
 			var strength = (1.0 - distance / 30.0) * obstacle_avoidance_strength
 			avoidance += away * strength * speed
