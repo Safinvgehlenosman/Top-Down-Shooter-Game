@@ -94,14 +94,12 @@ func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):
 		is_collected = true
 
-		# Coin value scales with current level: level1=10, level2=11, etc.
-		var gm := get_tree().get_first_node_in_group("game_manager")
-		var level := 1
-		if gm:
-			level = int(gm.current_level)
-
-		var coin_value: int = int(10 + max(0, level - 1))
+		# Get coin value based on level (randomized ranges)
+		var coin_value: int = _get_coin_value_for_level()
 		GameState.add_coins(coin_value)
+		
+		# Spawn coin number popup
+		_spawn_coin_number(coin_value)
 
 		# disable interaction & hide while sound plays
 		if collision:
@@ -116,3 +114,71 @@ func _on_body_entered(body: Node2D) -> void:
 			await sfx_pickup.finished
 
 		queue_free()
+
+
+func _get_coin_value_for_level() -> int:
+	var gm := get_tree().get_first_node_in_group("game_manager")
+	var level := 1
+	if gm:
+		level = int(gm.current_level)
+	
+	var min_value: int
+	var max_value: int
+	
+	# Determine range based on level
+	if level <= 5:
+		min_value = 10
+		max_value = 15
+	elif level <= 10:
+		min_value = 16
+		max_value = 20
+	elif level <= 15:
+		min_value = 21
+		max_value = 25
+	elif level <= 20:
+		min_value = 26
+		max_value = 30
+	elif level <= 25:
+		min_value = 31
+		max_value = 35
+	else:
+		# Level 26+
+		min_value = 36
+		max_value = 40
+	
+	# Return random value in range
+	var value = randi_range(min_value, max_value)
+	
+	print("[CoinPickup] Level ", level, " - Coin value: ", value, " (range: ", min_value, "-", max_value, ")")
+	
+	return value
+
+
+func _spawn_coin_number(amount: int) -> void:
+	# Load coin number scene
+	var coin_number_scene = preload("res://scenes/ui/coins_number.tscn")
+	var coin_number = coin_number_scene.instantiate()
+	
+	# Position near pickup (slightly offset so visible)
+	coin_number.global_position = global_position + Vector2(randf_range(-20, 20), -30)
+	
+	# Set the amount text with color based on value
+	if coin_number.has_node("Label"):
+		var label = coin_number.get_node("Label")
+		label.text = "+" + str(amount) + " COINS"
+		
+		# Bigger numbers = brighter color and larger size
+		if amount >= 30:
+			label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.0))  # Bright gold
+			label.add_theme_font_size_override("font_size", 20)
+		elif amount >= 20:
+			label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.2))  # Normal gold
+			label.add_theme_font_size_override("font_size", 18)
+		else:
+			label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.4))  # Light yellow
+			label.add_theme_font_size_override("font_size", 16)
+	
+	# Add to scene root (not as child of coin, it's about to despawn!)
+	get_tree().root.add_child(coin_number)
+	
+	print("[CoinPickup] Spawned coin number: +", amount)

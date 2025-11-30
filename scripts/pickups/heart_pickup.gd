@@ -90,9 +90,15 @@ func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):
 		is_collected = true
 
+		# Get HP value based on level (randomized ranges)
+		var hp_value: int = _get_hp_value_for_level()
+		
 		# heal player: we use negative damage
 		if body.has_method("take_damage"):
-			body.take_damage(-10)
+			body.take_damage(-hp_value)
+		
+		# Spawn HP number popup
+		_spawn_hp_number(hp_value)
 
 		# immediately kill collisions + visuals + light
 		if collision:
@@ -108,3 +114,59 @@ func _on_body_entered(body: Node2D) -> void:
 			await sfx_pickup.finished
 
 		queue_free()
+
+
+func _get_hp_value_for_level() -> int:
+	var gm := get_tree().get_first_node_in_group("game_manager")
+	var level := 1
+	if gm:
+		level = int(gm.current_level)
+	
+	var min_value: int
+	var max_value: int
+	
+	# HP scales with level (hearts give more HP at high levels)
+	if level <= 5:
+		min_value = 10
+		max_value = 15
+	elif level <= 10:
+		min_value = 16
+		max_value = 20
+	elif level <= 15:
+		min_value = 21
+		max_value = 25
+	elif level <= 20:
+		min_value = 26
+		max_value = 30
+	elif level <= 25:
+		min_value = 31
+		max_value = 35
+	else:
+		# Level 26+
+		min_value = 36
+		max_value = 40
+	
+	# Return random value in range
+	var value = randi_range(min_value, max_value)
+	
+	print("[HPPickup] Level ", level, " - HP value: ", value, " (range: ", min_value, "-", max_value, ")")
+	
+	return value
+
+
+func _spawn_hp_number(amount: int) -> void:
+	# Load HP number scene
+	var hp_number_scene = preload("res://scenes/ui/hp_number.tscn")
+	var hp_number = hp_number_scene.instantiate()
+	
+	# Position near pickup (slightly offset so visible)
+	hp_number.global_position = global_position + Vector2(randf_range(-20, 20), -30)
+	
+	# Set the amount text
+	if hp_number.has_node("Label"):
+		hp_number.get_node("Label").text = "+" + str(amount) + "HP"
+	
+	# Add to scene root (not as child of heart, it's about to despawn!)
+	get_tree().root.add_child(hp_number)
+	
+	print("[HPPickup] Spawned HP number: +", amount, "HP")

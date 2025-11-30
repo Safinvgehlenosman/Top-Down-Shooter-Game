@@ -93,6 +93,9 @@ func _on_body_entered(body: Node2D) -> void:
 	if amount > 0 and GameState.max_ammo > 0:
 		GameState.set_ammo(min(GameState.ammo + amount, GameState.max_ammo))
 		print("[AmmoPickup] Ammo now:", GameState.ammo, "/", GameState.max_ammo)
+		
+		# Spawn ammo number popup
+		_spawn_ammo_number(amount)
 
 	# Disable visibility + collision
 	if collision:
@@ -107,3 +110,21 @@ func _on_body_entered(body: Node2D) -> void:
 		await sfx_pickup.finished
 
 	queue_free()
+
+
+func _spawn_ammo_number(amount: int) -> void:
+	# Load ammo number scene
+	var ammo_number_scene = preload("res://scenes/ui/ammo_number.tscn")
+	var ammo_number = ammo_number_scene.instantiate()
+	
+	# Position near pickup (slightly offset so visible)
+	ammo_number.global_position = global_position + Vector2(randf_range(-20, 20), -30)
+	
+	# Set the amount text
+	if ammo_number.has_node("Label"):
+		ammo_number.get_node("Label").text = "+" + str(amount) + " AMMO"
+	
+	# Add to scene root (not as child of ammo, it's about to despawn!)
+	get_tree().root.add_child(ammo_number)
+	
+	print("[AmmoPickup] Spawned ammo number: +", amount, " AMMO")
