@@ -418,6 +418,8 @@ func _cmd_coins(parts: Array) -> void:
 	
 	var amount = int(parts[1])
 	GameState.coins = amount
+	# Emit signal to update UI immediately
+	GameState.coins_changed.emit(amount)
 	print("[DEBUG] Set coins to", amount)
 
 

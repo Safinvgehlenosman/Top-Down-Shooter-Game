@@ -449,9 +449,27 @@ func _record_acquired_upgrade(upgrade_id: String) -> void:
 
 
 func get_upgrade_price(upgrade_id: String, base_price: int) -> int:
-	"""Calculate scaled price based on how many times this upgrade has been purchased."""
+	"""Calculate exponentially scaled price based on rarity and purchase count."""
 	var times_purchased: int = upgrade_purchase_counts.get(upgrade_id, 0)
-	var scaled_price: float = float(base_price) * (1.0 + 0.2 * float(times_purchased))
+	
+	# Get rarity from upgrade data
+	var upgrade_data = preload("res://scripts/Upgrades_DB.gd").get_by_id(upgrade_id)
+	var rarity = upgrade_data.get("rarity", 0)  # Default to COMMON (0)
+	
+	# Rarity-based exponential multipliers
+	var multiplier: float = 1.0
+	match rarity:
+		0:  # COMMON
+			multiplier = 1.2
+		1:  # UNCOMMON
+			multiplier = 1.4
+		2:  # RARE
+			multiplier = 1.6
+		3:  # EPIC
+			multiplier = 1.8
+	
+	# Exponential scaling: base_price * (multiplier ^ times_purchased)
+	var scaled_price: float = float(base_price) * pow(multiplier, float(times_purchased))
 	return int(scaled_price)
 
 

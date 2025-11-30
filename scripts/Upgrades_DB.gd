@@ -96,12 +96,16 @@ const ALL_UPGRADES: Array = [
 		"rarity": Rarity.UNCOMMON,
 		"icon": preload("res://assets/Separated/singlebullet.png"),
 	},
+	# ⭐ +1 PRIMARY SHOT - EPIC RARITY ONLY (very powerful upgrade)
 	{
 		"id": "primary_burst_plus_1",
 		"text": "+1 Primary Shot",
+		"description": "Fire one additional bullet",
 		"price": 300,
-		"rarity": Rarity.RARE,
+		"rarity": Rarity.EPIC,  # ⭐ Changed from RARE to EPIC
 		"icon": preload("res://assets/Separated/singlebullet.png"),
+		"stackable": true,  # Allow multiple purchases
+		"max_stacks": 3,  # Cap at +3 total shots
 	},
 
 	# -------------------------

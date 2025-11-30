@@ -169,8 +169,31 @@ func _update_button_state() -> void:
 			var stackable := bool(u.get("stackable", true))
 			if not stackable and GameState.has_upgrade(upgrade_id):
 				owned_block = true
+	
+	# Check if this is a weapon/ability unlock that should be blocked
+	var unlock_blocked := false
+	if upgrade_id.begins_with("unlock_"):
+		# Weapon unlocks - block if player already has ANY weapon
+		if upgrade_id in ["unlock_shotgun", "unlock_sniper", "unlock_turret", "unlock_flamethrower", "unlock_shuriken", "unlock_grenade"]:
+			if GameState.alt_weapon != GameState.AltWeaponType.NONE:
+				unlock_blocked = true
+		
+		# Ability unlocks - block if player already has ANY ability
+		elif upgrade_id in ["unlock_dash", "unlock_slowmo", "unlock_bubble", "unlock_invis"]:
+			if GameState.ability != GameState.AbilityType.NONE:
+				unlock_blocked = true
 
-	buy_button.disabled = not affordable or owned_block
+	buy_button.disabled = not affordable or owned_block or unlock_blocked
+	
+	# Visual feedback: dim the card if blocked by unlock
+	if unlock_blocked:
+		modulate = Color(0.5, 0.5, 0.5, 0.7)  # Gray out
+		if desc_label:
+			desc_label.text = text + "\n[Already have one]"
+	elif owned_block:
+		modulate = Color(0.6, 0.6, 0.6, 0.8)  # Slightly gray
+	else:
+		modulate = Color(1.0, 1.0, 1.0, 1.0)  # Full color
 
 
 func _on_buy_pressed() -> void:

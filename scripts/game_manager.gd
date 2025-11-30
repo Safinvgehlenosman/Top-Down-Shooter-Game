@@ -317,85 +317,124 @@ func _spawn_room_content() -> void:
 	var themed_room := _is_themed_room(current_level)
 	var themed_slimes := _get_themed_room_slimes(current_level)
 
-	for spawn in room_spawn_points:
-		var r := randf()
-
-		if themed_room:
-			# Only spawn themed slimes, no crates
-			if themed_slimes.size() > 0:
-				var enemy_scene := themed_slimes[randi() % themed_slimes.size()]
-				if enemy_scene:
-					var desired_pos := spawn.global_position
-					var safe_pos := _find_safe_spawn_position(desired_pos)
-					if not _is_spawn_valid(safe_pos):
-						continue
-					var enemy := enemy_scene.instantiate()
-					enemy.global_position = safe_pos
-					if enemy.has_method("apply_level"):
-						enemy.apply_level(current_level)
-					current_room.add_child(enemy)
-					alive_enemies += 1
-					if chest_spawn_point != null and not has_chest_dropper:
-						if randf() < (1.0 / max(1, alive_enemies)):
-							enemy.set_meta("drops_chest", true)
-							has_chest_dropper = true
-							print("[GameManager] Marked enemy as chest dropper at position: ", enemy.global_position)
-					if enemy.has_signal("died"):
-						enemy.died.connect(_on_enemy_died.bind(enemy))
-			continue
-			# No crates or nothing in themed rooms
-			continue
-
-		# --- ENEMY ---------------------------------------------------
-		if r < enemy_chance:
-			var enemy_scene := _pick_enemy_scene()
-			if enemy_scene:
-				# find a safe position near the spawn marker
-				var desired_pos := spawn.global_position
-				var safe_pos := _find_safe_spawn_position(desired_pos)
-
-				# if we STILL can't get a valid position, skip this spawn
-				if not _is_spawn_valid(safe_pos):
-					continue
-
-				var enemy := enemy_scene.instantiate()
-				enemy.global_position = safe_pos
-
-				# Find which index this enemy came from (for apply_level logic)
-				var _enemy_index := enemy_scenes.find(enemy_scene)
-
-				# scale stats by current level if the enemy supports it,
-				# (ghost can still ignore this in its own script if needed)
-				if enemy.has_method("apply_level"):
-					enemy.apply_level(current_level)
-
-				current_room.add_child(enemy)
-				alive_enemies += 1
-				
-				# Mark one random enemy as chest dropper (equal chance per enemy)
-				if chest_spawn_point != null and not has_chest_dropper:
-					# Use probability that increases with each enemy to ensure one gets marked
-					if randf() < (1.0 / max(1, alive_enemies)):
-						enemy.set_meta("drops_chest", true)
-						has_chest_dropper = true
-						print("[GameManager] Marked enemy as chest dropper at position: ", enemy.global_position)
-
-				if enemy.has_signal("died"):
-					enemy.died.connect(_on_enemy_died.bind(enemy))
-			continue
-
-		# --- CRATE ---------------------------------------------------
-		if r < enemy_chance + crate_chance and crate_scene and not themed_room:
+	# Calculate how many enemies and crates to spawn based on level
+	var enemy_count := 0
+	var crate_count := 0
+	
+	if themed_room:
+		# Themed rooms: spawn many enemies, no crates
+		enemy_count = _calculate_enemy_count_for_level(current_level)
+		crate_count = 0
+	else:
+		# Normal rooms: balanced mix of enemies and crates
+		enemy_count = _calculate_enemy_count_for_level(current_level)
+		crate_count = _calculate_crate_count_for_level(current_level)
+	
+	# Make sure we don't exceed available spawn points
+	var total_entities = enemy_count + crate_count
+	if total_entities > room_spawn_points.size():
+		# Prioritize enemies over crates
+		crate_count = max(0, room_spawn_points.size() - enemy_count)
+	
+	print("[GameManager] Level ", current_level, ": Spawning ", enemy_count, " enemies and ", crate_count, " crates")
+	
+	# Shuffle spawn points for randomness
+	room_spawn_points.shuffle()
+	
+	var spawn_index = 0
+	
+	# --- SPAWN ENEMIES ---
+	for i in range(enemy_count):
+		if spawn_index >= room_spawn_points.size():
+			break
+		
+		var spawn = room_spawn_points[spawn_index]
+		var enemy_scene: PackedScene = null
+		
+		if themed_room and themed_slimes.size() > 0:
+			# Pick themed enemy
+			enemy_scene = themed_slimes[randi() % themed_slimes.size()]
+		else:
+			# Pick normal enemy based on weights
+			enemy_scene = _pick_enemy_scene()
+		
+		if enemy_scene:
+			var desired_pos: Vector2 = spawn.global_position
+			var safe_pos := _find_safe_spawn_position(desired_pos)
+			
+			if not _is_spawn_valid(safe_pos):
+				spawn_index += 1
+				continue
+			
+			var enemy := enemy_scene.instantiate()
+			enemy.global_position = safe_pos
+			
+			if enemy.has_method("apply_level"):
+				enemy.apply_level(current_level)
+			
+			current_room.add_child(enemy)
+			alive_enemies += 1
+			
+			# Mark one random enemy as chest dropper
+			if chest_spawn_point != null and not has_chest_dropper:
+				if randf() < (1.0 / max(1, alive_enemies)):
+					enemy.set_meta("drops_chest", true)
+					has_chest_dropper = true
+					print("[GameManager] Marked enemy as chest dropper at position: ", enemy.global_position)
+			
+			if enemy.has_signal("died"):
+				enemy.died.connect(_on_enemy_died.bind(enemy))
+			
+			spawn_index += 1
+	
+	# --- SPAWN CRATES ---
+	if not themed_room and crate_scene:
+		for i in range(crate_count):
+			if spawn_index >= room_spawn_points.size():
+				break
+			
+			var spawn = room_spawn_points[spawn_index]
 			var crate := crate_scene.instantiate()
 			crate.global_position = spawn.global_position
 			current_room.add_child(crate)
-			continue
-
-		# --- NOTHING -------------------------------------------------
-		pass
+			
+			spawn_index += 1
 
 	if alive_enemies == 0:
 		_spawn_exit_door()
+
+
+# --- SPAWN COUNT CALCULATION ---------------------------------------
+
+func _calculate_enemy_count_for_level(level: int) -> int:
+	"""Calculate how many enemies to spawn based on current level."""
+	# Early levels: 3-5 enemies
+	# Mid levels: 5-8 enemies
+	# Late levels: 8-12 enemies
+	
+	var base_count = 3
+	var scaling = floor(level / 5.0)  # +1 enemy every 5 levels
+	
+	var count = base_count + scaling
+	count = clamp(count, 3, 12)  # Min 3, max 12
+	
+	return count
+
+
+func _calculate_crate_count_for_level(level: int) -> int:
+	"""Calculate how many crates to spawn based on current level."""
+	# Crates scale slower than enemies
+	# Early: 2-3 crates
+	# Mid: 3-4 crates
+	# Late: 4-5 crates
+	
+	var base_count = 2
+	var scaling = floor(level / 10.0)  # +1 crate every 10 levels
+	
+	var count = base_count + scaling
+	count = clamp(count, 2, 5)  # Min 2, max 5
+	
+	return count
 
 
 # --- ENEMY WEIGHT SCALING / PROGRESSION -----------------------------
@@ -831,7 +870,7 @@ func _is_themed_room(level: int) -> bool:
 func _get_themed_room_slimes(level: int) -> Array[PackedScene]:
 	if not _is_themed_room(level):
 		return []
-	var themed_room_index = int((level - first_themed_room_level) / themed_room_interval)
+	var themed_room_index = int(float(level - first_themed_room_level) / float(themed_room_interval))
 	match themed_room_index:
 		0:
 			return themed_room_1_slimes

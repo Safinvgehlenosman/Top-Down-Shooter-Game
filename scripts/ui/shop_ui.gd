@@ -70,6 +70,38 @@ func _ready() -> void:
 # CARD SETUP
 # -------------------------------------------------------------------
 
+# -------------------------------------------------------------------
+# PRICE CALCULATION
+# -------------------------------------------------------------------
+
+func _calculate_upgrade_price(upgrade: Dictionary) -> int:
+	"""Calculate price based on rarity with exponential scaling."""
+	var base_price = 50  # Base price for common upgrades
+	var rarity = upgrade.get("rarity", UpgradesDB.Rarity.COMMON)
+	
+	# Exponential multiplier based on rarity
+	var rarity_multiplier = 1.0
+	
+	match rarity:
+		UpgradesDB.Rarity.COMMON:
+			rarity_multiplier = 1.0  # Base price (1x)
+		
+		UpgradesDB.Rarity.UNCOMMON:
+			rarity_multiplier = 2.0  # 2x price
+		
+		UpgradesDB.Rarity.RARE:
+			rarity_multiplier = 4.0  # 4x price (2^2)
+		
+		UpgradesDB.Rarity.EPIC:
+			rarity_multiplier = 8.0  # 8x price (2^3)
+	
+	var final_price = int(base_price * rarity_multiplier)
+	
+	print("[Shop] Upgrade:", upgrade.get("text", "Unknown"), "Rarity:", rarity, "Price:", final_price)
+	
+	return final_price
+
+
 func _setup_cards() -> void:
 	# Disconnect old signals (both shop AND chest handlers)
 	for card in cards_container.get_children():
@@ -79,6 +111,14 @@ func _setup_cards() -> void:
 			card.purchased.disconnect(_on_chest_card_purchased)
 
 	var offers := _roll_shop_offers()
+	
+	# Apply calculated prices to all offers (duplicate to avoid read-only state)
+	for i in range(offers.size()):
+		var calculated_price = _calculate_upgrade_price(offers[i])
+		# Duplicate the dictionary to make it writable
+		var offer_copy = offers[i].duplicate()
+		offer_copy["price"] = calculated_price
+		offers[i] = offer_copy
 	
 	# Sort offers by rarity (highest rarity first)
 	offers = _sort_offers_by_rarity(offers)
@@ -373,7 +413,11 @@ func _on_card_purchased() -> void:
 			# Get the upgrade data again and refresh
 			var upgrade_data := preload("res://scripts/Upgrades_DB.gd").get_by_id(card.upgrade_id)
 			if not upgrade_data.is_empty():
-				card.setup(upgrade_data)
+				# Duplicate and apply calculated price
+				var upgrade_copy = upgrade_data.duplicate()
+				var calculated_price = _calculate_upgrade_price(upgrade_copy)
+				upgrade_copy["price"] = calculated_price
+				card.setup(upgrade_copy)
 	_update_card_button_states()
 
 func _on_continue_pressed() -> void:
