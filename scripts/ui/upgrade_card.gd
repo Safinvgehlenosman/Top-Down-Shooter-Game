@@ -19,6 +19,10 @@ var icon: Texture2D = null
 var text: String = ""
 var rarity: int = 0  # ← Store rarity
 
+# Tooltip for chaos cards
+var tooltip_label: Label = null
+var is_chaos_card: bool = false
+
 const NON_SCALING_PRICE_UPGRADES := {
 	"hp_refill": true,
 	"ammo_refill": true,
@@ -39,6 +43,12 @@ func _ready() -> void:
 
 	if buy_button and not buy_button.pressed.is_connected(_on_buy_pressed):
 		buy_button.pressed.connect(_on_buy_pressed)
+		# Connect tooltip to button hover
+		buy_button.mouse_entered.connect(_on_mouse_entered)
+		buy_button.mouse_exited.connect(_on_mouse_exited)
+	
+	# Set mouse filter to PASS so we receive mouse events even when hovering over children
+	mouse_filter = Control.MOUSE_FILTER_PASS
 	
 	# Create a Panel for rounded corners background
 	if color_rect and not background_panel:
@@ -90,6 +100,11 @@ func setup(data: Dictionary) -> void:
 
 	# Update text for scaling upgrades to show actual value
 	text = _get_dynamic_text()
+	
+	# Check if this is a chaos upgrade and create tooltip
+	if data.get("effect") == "chaos_challenge":
+		is_chaos_card = true
+		_create_tooltip(data)
 
 	_refresh()
 
@@ -218,3 +233,67 @@ func _on_buy_pressed() -> void:
 
 	emit_signal("purchased")
 	_refresh()
+
+
+func _create_tooltip(upgrade: Dictionary) -> void:
+	"""Create tooltip for chaos upgrades."""
+	# Create tooltip label
+	tooltip_label = Label.new()
+	tooltip_label.name = "TooltipLabel"
+	tooltip_label.z_index = 1000  # Above everything
+	
+	# Set tooltip text based on challenge
+	var challenge_id = upgrade.get("value", "")
+	
+	match challenge_id:
+		"half_hp_double_damage":
+			tooltip_label.text = "Survive 5 rooms with half HP.\nComplete to DOUBLE your damage!"
+	
+	# Style the tooltip
+	tooltip_label.add_theme_font_size_override("font_size", 14)
+	tooltip_label.add_theme_color_override("font_color", Color(1.0, 1.0, 0.8))
+	tooltip_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tooltip_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	tooltip_label.custom_minimum_size = Vector2(200, 0)
+	
+	# Add background
+	var style_box = StyleBoxFlat.new()
+	style_box.bg_color = Color(0.1, 0.1, 0.1, 0.95)
+	style_box.border_color = Color(0.8, 0.2, 0.2)  # Red border
+	style_box.border_width_left = 2
+	style_box.border_width_right = 2
+	style_box.border_width_top = 2
+	style_box.border_width_bottom = 2
+	style_box.corner_radius_top_left = 4
+	style_box.corner_radius_top_right = 4
+	style_box.corner_radius_bottom_left = 4
+	style_box.corner_radius_bottom_right = 4
+	style_box.content_margin_left = 8
+	style_box.content_margin_right = 8
+	style_box.content_margin_top = 8
+	style_box.content_margin_bottom = 8
+	
+	tooltip_label.add_theme_stylebox_override("normal", style_box)
+	
+	# Position tooltip (above card)
+	tooltip_label.position = Vector2(10, -70)
+	
+	# Start hidden
+	tooltip_label.visible = false
+	
+	# Add to card
+	add_child(tooltip_label)
+	
+	print("[UpgradeCard] Tooltip created for chaos card")
+
+
+func _on_mouse_entered() -> void:
+	"""Show tooltip when mouse enters."""
+	if is_chaos_card and tooltip_label:
+		tooltip_label.visible = true
+
+
+func _on_mouse_exited() -> void:
+	"""Hide tooltip when mouse exits."""
+	if is_chaos_card and tooltip_label:
+		tooltip_label.visible = false

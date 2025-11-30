@@ -1,6 +1,5 @@
-[gd_scene load_steps=5 format=3 uid="uid://bgwwcn2w6x7eh"]
+[gd_scene load_steps=4 format=3 uid="uid://bgwwcn2w6x7eh"]
 
-[ext_resource type="Script" uid="uid://cbm062ajvcnxi" path="res://scripts/ui/damage_number.gd" id="1_i8in2"]
 [ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="2_r03w8"]
 
 [sub_resource type="Gradient" id="Gradient_3v2ag"]
@@ -17,7 +16,6 @@ fill_to = Vector2(0.76495725, 0.7777778)
 
 [node name="CoinsNumber" type="Node2D"]
 scale = Vector2(0.1, 0.1)
-script = ExtResource("1_i8in2")
 
 [node name="Label" type="Label" parent="."]
 offset_right = 32.0
