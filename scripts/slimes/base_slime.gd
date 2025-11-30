@@ -42,9 +42,9 @@ var contact_timer: float = 0.0
 
 # Tactical retreat
 @export var enable_tactical_retreat: bool = true
-@export var retreat_hp_threshold: float = 0.25  # Retreat below 25% HP
+@export var retreat_hp_threshold: float = 0.5  # Retreat below 50% HP
 @export var retreat_if_alone: bool = true  # Only retreat if no allies nearby
-@export var retreat_speed_multiplier: float = 1.15  # Move faster when retreating (reduced from 20%)
+@export var retreat_speed_multiplier: float = 1.25  # Move 25% faster when retreating
 
 # Pack spreading (surround player)
 @export var enable_pack_spreading: bool = true
@@ -646,22 +646,30 @@ func _should_retreat() -> bool:
 	# Check if alone (if retreat_if_alone is true)
 	if retreat_if_alone:
 		var allies_nearby: int = 0
+		var space_state = get_world_2d().direct_space_state
 		
 		for enemy in get_tree().get_nodes_in_group("enemy"):
 			if enemy == self or not is_instance_valid(enemy):
 				continue
 			
 			var dist: float = global_position.distance_to(enemy.global_position)
-			if dist < 120.0:
-				allies_nearby += 1
+			if dist < 120.0:  # Reduced radius
+				# Check if we can actually see the ally (not blocked by walls)
+				var query = PhysicsRayQueryParameters2D.create(global_position, enemy.global_position)
+				query.exclude = [self]
+				query.collision_mask = 1  # Walls only
+				
+				var result = space_state.intersect_ray(query)
+				
+				# Only count ally if we can see them (no wall blocking)
+				if result.is_empty() or result.get("collider") == enemy:
+					allies_nearby += 1
 		
 		# Has allies nearby - don't retreat
 		if allies_nearby > 0:
 			return false
 	
 	return true
-
-
 func _get_flanking_position() -> Vector2:
 	"""Calculate position to surround player as part of pack."""
 	if not enable_pack_spreading or not player:
