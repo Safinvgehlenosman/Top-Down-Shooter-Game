@@ -41,8 +41,6 @@ var ALL_UPGRADES: Array = []
 func _ensure_loaded() -> void:
 	if ALL_UPGRADES.is_empty():
 		ALL_UPGRADES = _load_upgrades_from_csv("res://data/upgrades.csv")
-		print("[UpgradesDB] CSV loaded: ", ALL_UPGRADES.size(), " upgrades")
-		print("[UpgradesDB] ALL_UPGRADES size = ", ALL_UPGRADES.size())
 
 # Parse rarity string to enum value
 func _parse_rarity(rarity_str: String) -> int:
@@ -53,6 +51,21 @@ func _parse_rarity(rarity_str: String) -> int:
 		"epic": return Rarity.EPIC
 		"chaos": return Rarity.CHAOS
 		_: return Rarity.COMMON
+
+# Parse boolean string to bool
+func _parse_bool(bool_str: String) -> bool:
+	return bool_str.strip_edges().to_lower() == "true"
+
+# Parse float string to float
+func _parse_float(float_str: String) -> float:
+	var trimmed = float_str.strip_edges()
+	if trimmed.is_empty():
+		return 0.0
+	return float(trimmed)
+
+# Normalize category/pool strings
+func _normalize_string(input: String) -> String:
+	return input.strip_edges().to_lower()
 
 # Load upgrades from CSV file
 func _load_upgrades_from_csv(path: String) -> Array:
@@ -65,6 +78,7 @@ func _load_upgrades_from_csv(path: String) -> Array:
 	
 	# Read headers
 	var headers := file.get_csv_line()
+	var enabled_count := 0
 	
 	# Read each row
 	while not file.eof_reached():
@@ -83,23 +97,86 @@ func _load_upgrades_from_csv(path: String) -> Array:
 			var key := headers[i].strip_edges()
 			var value := row[i].strip_edges()
 			
-			# Parse specific fields
+			# Parse specific fields based on CSV schema
 			match key:
-				"id", "text", "effect":
-					upgrade[key] = value
+				"id":
+					upgrade["id"] = value
+				"text":
+					upgrade["text"] = value
 				"rarity":
-					upgrade[key] = _parse_rarity(value)
+					upgrade["rarity"] = _parse_rarity(value)
 				"price":
-					upgrade[key] = int(value)
+					upgrade["price"] = int(value) if value != "" else 0
+				"category":
+					upgrade["category"] = _normalize_string(value)
+				"pool":
+					upgrade["pool"] = _normalize_string(value)
 				"icon_path":
 					if value != "":
 						upgrade["icon"] = ResourceLoader.load(value)
+					else:
+						upgrade["icon"] = null
+				"effect":
+					upgrade["effect"] = value
+				"value":
+					upgrade["value"] = _parse_float(value)
+				"requires_weapon":
+					upgrade["requires_weapon"] = _normalize_string(value)
+				"requires_ability":
+					upgrade["requires_ability"] = _normalize_string(value)
+				"enabled":
+					upgrade["enabled"] = _parse_bool(value)
 		
-		if not upgrade.is_empty() and upgrade.has("id"):
-			print("[UpgradesDB] Loaded: ", upgrade.get("id"), " - Price: ", upgrade.get("price"))
-			upgrades.append(upgrade)
+		# Skip rows with empty id or text
+		if not upgrade.has("id") or upgrade["id"] == "":
+			continue
+		if not upgrade.has("text") or upgrade["text"] == "":
+			continue
+		
+		# Ensure all expected keys exist with defaults
+		if not upgrade.has("enabled"):
+			upgrade["enabled"] = true
+		if not upgrade.has("category"):
+			upgrade["category"] = ""
+		if not upgrade.has("pool"):
+			upgrade["pool"] = ""
+		if not upgrade.has("value"):
+			upgrade["value"] = 0.0
+		if not upgrade.has("requires_weapon"):
+			upgrade["requires_weapon"] = ""
+		if not upgrade.has("requires_ability"):
+			upgrade["requires_ability"] = ""
+		if not upgrade.has("effect"):
+			upgrade["effect"] = ""
+		
+		if upgrade["enabled"]:
+			enabled_count += 1
+		
+		# Debug print for each upgrade
+		var rarity_str := ""
+		match upgrade.get("rarity", 0):
+			Rarity.COMMON: rarity_str = "common"
+			Rarity.UNCOMMON: rarity_str = "uncommon"
+			Rarity.RARE: rarity_str = "rare"
+			Rarity.EPIC: rarity_str = "epic"
+			Rarity.CHAOS: rarity_str = "chaos"
+		
+		print("[UpgradesDB] Loaded upgrade: %s (rarity=%s, price=%d, pool=%s, category=%s, enabled=%s)" % [
+			upgrade["id"],
+			rarity_str,
+			upgrade["price"],
+			upgrade.get("pool", ""),
+			upgrade.get("category", ""),
+			str(upgrade["enabled"])
+		])
+		
+		upgrades.append(upgrade)
 	
 	file.close()
+	
+	# Summary print
+	print("[UpgradesDB] CSV loaded %d upgrades (enabled: %d)" % [upgrades.size(), enabled_count])
+	
 	return upgrades
 
 # -------------------------------------------------------------------
@@ -119,10 +196,15 @@ func get_non_chaos_upgrades() -> Array:
 	return filtered
 
 func get_chaos_upgrades() -> Array:
+	"""Returns enabled upgrades from the chaos pool."""
 	_ensure_loaded()
 	var chaos_upgrades := []
 	for upgrade in ALL_UPGRADES:
-		if upgrade.get("effect") == "chaos_challenge":
+		# Check if enabled
+		if not upgrade.get("enabled", true):
+			continue
+		# Prefer pool field, fallback to effect for backwards compatibility
+		if upgrade.get("pool", "") == "chaos" or upgrade.get("effect") == "chaos_challenge":
 			chaos_upgrades.append(upgrade)
 	return chaos_upgrades
 
@@ -140,6 +222,54 @@ func filter_by_rarity(rarity: int) -> Array:
 		if upgrade.get("rarity") == rarity:
 			filtered.append(upgrade)
 	return filtered
+
+func get_enabled() -> Array:
+	"""Returns all upgrades where enabled == true."""
+	_ensure_loaded()
+	var filtered := []
+	for upgrade in ALL_UPGRADES:
+		if upgrade.get("enabled", true):
+			filtered.append(upgrade)
+	return filtered
+
+func filter_by_pool(pool: String) -> Array:
+	"""Returns enabled upgrades whose pool matches the given pool string (case-insensitive)."""
+	_ensure_loaded()
+	var normalized_pool := _normalize_string(pool)
+	var filtered := []
+	for upgrade in ALL_UPGRADES:
+		if not upgrade.get("enabled", true):
+			continue
+		if upgrade.get("pool", "") == normalized_pool:
+			filtered.append(upgrade)
+	return filtered
+
+func filter_by_category(category: String) -> Array:
+	"""Returns enabled upgrades whose category matches the given category string (case-insensitive)."""
+	_ensure_loaded()
+	var normalized_category := _normalize_string(category)
+	var filtered := []
+	for upgrade in ALL_UPGRADES:
+		if not upgrade.get("enabled", true):
+			continue
+		if upgrade.get("category", "") == normalized_category:
+			filtered.append(upgrade)
+	return filtered
+
+func is_upgrade_available_for_loadout(upgrade: Dictionary, equipped_weapon: String, equipped_ability: String) -> bool:
+	"""Check if an upgrade is available based on enabled status and requirements."""
+	if not upgrade.get("enabled", true):
+		return false
+	
+	var requires_weapon: String = upgrade.get("requires_weapon", "")
+	if requires_weapon != "" and _normalize_string(requires_weapon) != _normalize_string(equipped_weapon):
+		return false
+	
+	var requires_ability: String = upgrade.get("requires_ability", "")
+	if requires_ability != "" and _normalize_string(requires_ability) != _normalize_string(equipped_ability):
+		return false
+	
+	return true
 
 # -------------------------------------------------------------------
 # UPGRADE APPLICATION LOGIC

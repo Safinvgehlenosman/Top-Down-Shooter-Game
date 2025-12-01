@@ -114,29 +114,8 @@ func _on_card_hovered(hovered_card: Control, is_hovered: bool) -> void:
 # -------------------------------------------------------------------
 
 func _calculate_upgrade_price(upgrade: Dictionary) -> int:
-	"""Calculate price based on rarity with exponential scaling."""
-	var base_price = 25  # Base price for common upgrades (halved from 50)
-	var rarity = upgrade.get("rarity", UpgradesDB.Rarity.COMMON)
-	
-	# Exponential multiplier based on rarity
-	var rarity_multiplier = 1.0
-	
-	match rarity:
-		UpgradesDB.Rarity.COMMON:
-			rarity_multiplier = 1.0  # Base price (1x)
-		
-		UpgradesDB.Rarity.UNCOMMON:
-			rarity_multiplier = 2.0  # 2x price
-		
-		UpgradesDB.Rarity.RARE:
-			rarity_multiplier = 4.0  # 4x price (2^2)
-		
-		UpgradesDB.Rarity.EPIC:
-			rarity_multiplier = 8.0  # 8x price (2^3)
-	
-	var final_price = int(base_price * rarity_multiplier)
-	
-	return final_price
+	"""Return price from upgrade data (loaded from CSV)."""
+	return upgrade.get("price", 50)  # Default to 50 if no price specified
 
 
 func _setup_cards() -> void:
@@ -206,7 +185,21 @@ func _roll_shop_offers() -> Array:
 		current_level = gm.current_level
 
 	var rarity_weights := _get_rarity_weights_for_level(current_level)
-	var all_upgrades: Array = UpgradesDB.get_all()
+	
+	# Get enabled shop upgrades only
+	var all_upgrades: Array = UpgradesDB.filter_by_pool("shop")
+	
+	# Filter by loadout requirements if possible
+	var equipped_weapon := _get_equipped_weapon_name()
+	var equipped_ability := _get_equipped_ability_name()
+	
+	var loadout_filtered := []
+	for upgrade in all_upgrades:
+		if UpgradesDB.is_upgrade_available_for_loadout(upgrade, equipped_weapon, equipped_ability):
+			loadout_filtered.append(upgrade)
+	
+	all_upgrades = loadout_filtered
+	print("[Shop] Found %d candidate upgrades in 'shop' pool" % all_upgrades.size())
 
 	var max_cards = min(5, cards_container.get_child_count())
 
@@ -233,6 +226,32 @@ func _roll_shop_offers() -> Array:
 		taken_bases[chosen_base] = true
 
 	return result
+
+func _get_equipped_weapon_name() -> String:
+	"""Convert GameState alt_weapon enum to lowercase string name."""
+	if not GameState:
+		return ""
+	
+	match GameState.alt_weapon:
+		GameState.AltWeaponType.SHOTGUN: return "shotgun"
+		GameState.AltWeaponType.SNIPER: return "sniper"
+		GameState.AltWeaponType.FLAMETHROWER: return "flamethrower"
+		GameState.AltWeaponType.GRENADE: return "grenade"
+		GameState.AltWeaponType.SHURIKEN: return "shuriken"
+		GameState.AltWeaponType.TURRET: return "turret"
+		_: return ""
+
+func _get_equipped_ability_name() -> String:
+	"""Convert GameState ability enum to lowercase string name."""
+	if not GameState:
+		return ""
+	
+	match GameState.ability:
+		GameState.AbilityType.DASH: return "dash"
+		GameState.AbilityType.SLOWMO: return "slowmo"
+		GameState.AbilityType.BUBBLE: return "bubble"
+		GameState.AbilityType.INVIS: return "invis"
+		_: return ""
 
 func _sort_offers_by_rarity(offers: Array) -> Array:
 	"""Sort offers by rarity (highest first), then by price (highest first) for same rarity."""
@@ -341,20 +360,35 @@ func _filter_upgrades(all_upgrades: Array, wanted_rarity: Variant, taken_ids: Ar
 	return res
 
 func _upgrade_meets_requirements(u: Dictionary) -> bool:
-	# Exact weapon requirement
-	if u.has("requires_alt_weapon") and u["requires_alt_weapon"] != GameState.alt_weapon:
-		return false
+	# Use new CSV schema fields if available
+	if u.has("requires_weapon") and u["requires_weapon"] != "":
+		var equipped_weapon := _get_equipped_weapon_name()
+		if u["requires_weapon"] != equipped_weapon:
+			return false
+	
+	if u.has("requires_ability") and u["requires_ability"] != "":
+		var equipped_ability := _get_equipped_ability_name()
+		if u["requires_ability"] != equipped_ability:
+			return false
+	
+	# Legacy: Exact weapon requirement (old schema with int values)
+	if u.has("requires_alt_weapon"):
+		var req_weapon = u["requires_alt_weapon"]
+		if typeof(req_weapon) == TYPE_INT and req_weapon != GameState.alt_weapon:
+			return false
 
-	# Needs any ammo-using weapon (NOT turret)
+	# Legacy: Needs any ammo-using weapon (NOT turret)
 	if u.get("requires_ammo_weapon", false):
 		if GameState.alt_weapon == ALT_WEAPON_NONE or GameState.alt_weapon == ALT_WEAPON_TURRET:
 			return false
 
-	# Ability must match
-	if u.has("requires_ability") and GameState.ability != u["requires_ability"]:
-		return false
+	# Legacy: Ability must match (old schema with int values)
+	if u.has("requires_ability"):
+		var req_ability = u["requires_ability"]
+		if typeof(req_ability) == TYPE_INT and GameState.ability != req_ability:
+			return false
 
-	# Any ability required
+	# Legacy: Any ability required
 	if u.get("requires_any_ability", false) and GameState.ability == ABILITY_NONE:
 		return false
 
