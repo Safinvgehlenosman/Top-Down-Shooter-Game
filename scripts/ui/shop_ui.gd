@@ -206,7 +206,7 @@ func _roll_shop_offers() -> Array:
 		current_level = gm.current_level
 
 	var rarity_weights := _get_rarity_weights_for_level(current_level)
-	var all_upgrades: Array = preload("res://scripts/Upgrades_DB.gd").get_all()
+	var all_upgrades: Array = UpgradesDB.get_all()
 
 	var max_cards = min(5, cards_container.get_child_count())
 
@@ -477,7 +477,7 @@ func _on_card_purchased() -> void:
 	for card in cards_container.get_children():
 		if card.visible and card.has_method("setup"):
 			# Get the upgrade data again and refresh
-			var upgrade_data := preload("res://scripts/Upgrades_DB.gd").get_by_id(card.upgrade_id)
+			var upgrade_data := UpgradesDB.get_by_id(card.upgrade_id)
 			if not upgrade_data.is_empty():
 				# Duplicate and apply calculated price
 				var upgrade_copy = upgrade_data.duplicate()
@@ -698,7 +698,7 @@ func _setup_chest_cards() -> void:
 			card.purchased.disconnect(_on_chest_card_purchased)
 	
 	var chest_weights := _get_chest_rarity_weights()
-	var all_upgrades: Array = preload("res://scripts/Upgrades_DB.gd").get_all()
+	var all_upgrades: Array = UpgradesDB.get_all()
 	var taken_ids: Array[String] = []
 	var taken_bases := {}
 	var offers: Array = []

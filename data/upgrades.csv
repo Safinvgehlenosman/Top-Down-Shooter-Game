@@ -1,0 +1,8 @@
+id,text,rarity,price,icon_path,effect
+max_hp_plus_1,+10 Max HP,common,150,res://assets/Separated/singleheart.png,
+hp_refill,Refill HP,common,50,res://assets/Separated/singleheart.png,
+primary_damage_plus_10,+10% Primary Damage,uncommon,200,res://assets/Separated/singlebullet.png,
+unlock_shotgun,Unlock Shotgun,uncommon,300,res://assets/bullets/shotgunbullet.png,
+unlock_dash,Unlock Dash (Space),uncommon,300,res://assets/Separated/ammo.png,
+chaos_half_hp_double_damage,Chaos Pact: Double Damage,chaos,0,res://assets/Separated/ammo.png,chaos_challenge
+chaos_no_primary_fire_triple_rate,Chaos Pact: Trigger Happy,chaos,0,res://assets/Separated/ammo.png,chaos_challenge

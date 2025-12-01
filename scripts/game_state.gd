@@ -480,7 +480,7 @@ func get_upgrade_price(upgrade_id: String, base_price: int) -> int:
 	var times_purchased: int = upgrade_purchase_counts.get(upgrade_id, 0)
 	
 	# Get rarity from upgrade data
-	var upgrade_data = preload("res://scripts/Upgrades_DB.gd").get_by_id(upgrade_id)
+	var upgrade_data = UpgradesDB.get_by_id(upgrade_id)
 	var rarity = upgrade_data.get("rarity", 0)  # Default to COMMON (0)
 	
 	# Rarity-based exponential multipliers
@@ -516,7 +516,7 @@ func apply_upgrade(upgrade_id: String) -> void:
 	print("[GameState] Applying upgrade:", upgrade_id)
 
 	# Prevent re-applying non-stackable upgrades
-	var u := preload("res://scripts/Upgrades_DB.gd").get_by_id(upgrade_id)
+	var u := UpgradesDB.get_by_id(upgrade_id)
 	if not u.is_empty():
 		var stackable := bool(u.get("stackable", true))
 		if not stackable and has_upgrade(upgrade_id):
@@ -1258,4 +1258,3 @@ func get_next_chaos_pact_id() -> String:
 	print("[GameState] Remaining in pool:", chaos_pact_pool.size())
 	
 	return pact_id
-

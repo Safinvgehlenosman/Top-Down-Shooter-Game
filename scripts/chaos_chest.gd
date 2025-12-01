@@ -102,7 +102,7 @@ func _get_chaos_upgrade() -> Dictionary:
 	
 	print("[ChaosChest] Looking for pact with value:", pact_id)
 	
-	var UpgradesDB = preload("res://scripts/Upgrades_DB.gd")
+	# UpgradesDB is already an autoload singleton
 	var all_upgrades = UpgradesDB.get_all()
 	
 	# Find the upgrade with this specific value

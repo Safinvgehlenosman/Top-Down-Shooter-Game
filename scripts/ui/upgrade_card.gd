@@ -252,7 +252,7 @@ func _update_button_state() -> void:
 	# If upgrade is non-stackable and already owned, disable buy button
 	var owned_block := false
 	if upgrade_id != "":
-		var u := preload("res://scripts/Upgrades_DB.gd").get_by_id(upgrade_id)
+		var u := UpgradesDB.get_by_id(upgrade_id)
 		if not u.is_empty():
 			var stackable := bool(u.get("stackable", true))
 			if not stackable and GameState.has_upgrade(upgrade_id):
@@ -297,7 +297,7 @@ func _on_buy_pressed() -> void:
 		GameState.record_upgrade_purchase(upgrade_id)
 
 	# Apply the upgrade via the DB
-	preload("res://scripts/Upgrades_DB.gd").apply_upgrade(upgrade_id)
+	UpgradesDB.apply_upgrade(upgrade_id)
 
 	# Play purchase sound effect
 	if sfx_collect:

@@ -972,7 +972,7 @@ func _spawn_chaos_chest_at_enemy_position(position: Vector2) -> void:
 func _are_all_chaos_upgrades_purchased() -> bool:
 	"""Check if all chaos upgrades have been purchased by the player."""
 	# Get all chaos upgrades from the database
-	var all_upgrades = load("res://scripts/Upgrades_DB.gd").get_chaos_upgrades()
+	var all_upgrades = UpgradesDB.get_chaos_upgrades()
 	
 	if all_upgrades.is_empty():
 		return true  # No chaos upgrades exist, treat as "all purchased"
