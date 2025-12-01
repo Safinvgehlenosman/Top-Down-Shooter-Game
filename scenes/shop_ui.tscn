@@ -1,13 +1,14 @@
-[gd_scene load_steps=9 format=3 uid="uid://dxcqijbcprgnd"]
+[gd_scene load_steps=10 format=3 uid="uid://dxcqijbcprgnd"]
 
 [ext_resource type="Script" uid="uid://bn0417mbctyd3" path="res://scripts/ui/shop_ui.gd" id="1_18xnp"]
 [ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="1_oixfk"]
-[ext_resource type="Texture2D" uid="uid://d1defhln5t7rq" path="res://assets/Separated/CoinsUI.png" id="2_18xnp"]
+[ext_resource type="Texture2D" uid="uid://calswj744fuku" path="res://assets/Affinity/ammo.png" id="3_t3xdf"]
+[ext_resource type="Texture2D" uid="uid://q2cw8tfoeiga" path="res://assets/Affinity/coins.png" id="4_0yw5g"]
 [ext_resource type="PackedScene" uid="uid://755tjml7mgfa" path="res://scenes/upgrade_card.tscn" id="4_crtus"]
-[ext_resource type="Texture2D" uid="uid://crcvb7pieh4iv" path="res://assets/HP Bar/hp_5.png" id="5_obwu6"]
-[ext_resource type="Texture2D" uid="uid://wvuudlu11n78" path="res://assets/Separated/progressbarfill2.png" id="6_t3xdf"]
-[ext_resource type="Texture2D" uid="uid://qnv2ml5qltqh" path="res://assets/Separated/StairsUI.png" id="7_0yw5g"]
-[ext_resource type="Texture2D" uid="uid://bfmuu7477yfan" path="res://assets/Separated/AmmoUI.png" id="8_s287r"]
+[ext_resource type="Texture2D" uid="uid://b6tygw5jlyjio" path="res://assets/Affinity/coins+level.png" id="5_s287r"]
+[ext_resource type="Texture2D" uid="uid://u1uumvdqn8dx" path="res://assets/Affinity/test.png" id="6_mrnm2"]
+[ext_resource type="Texture2D" uid="uid://bqa41ebeio3l3" path="res://assets/Affinity/abilitybar.png" id="7_y4j81"]
+[ext_resource type="Texture2D" uid="uid://cbw2m6t388jw0" path="res://assets/Affinity/hpbar.png" id="8_ijxsd"]
 
 [node name="ShopUI" type="CanvasLayer" groups=["shop"]]
 process_mode = 3
@@ -90,197 +91,87 @@ grow_vertical = 0
 theme_override_fonts/font = ExtResource("1_oixfk")
 text = "CONTINUE"
 
-[node name="CoinUI" type="TextureRect" parent="."]
-offset_left = 335.0
-offset_top = 544.0
-offset_right = 367.0
-offset_bottom = 554.0
-scale = Vector2(6, 6)
-mouse_filter = 2
-texture = ExtResource("2_18xnp")
+[node name="Ammo" type="TextureRect" parent="."]
+offset_top = 77.0
+offset_right = 700.0
+offset_bottom = 477.0
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("3_t3xdf")
 
-[node name="CoinLabel" type="Label" parent="CoinUI"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -15.000001
-offset_top = 1.9999999
-offset_right = 68.0
-offset_bottom = 52.0
-grow_horizontal = 2
-scale = Vector2(0.12, 0.12)
-size_flags_horizontal = 8
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 10
-theme_override_constants/shadow_outline_size = 10
+[node name="AmmoLabel" type="Label" parent="Ammo"]
+layout_mode = 0
+offset_left = 26.666666
+offset_top = 136.66666
+offset_right = 290.0
+offset_bottom = 323.33334
 theme_override_fonts/font = ExtResource("1_oixfk")
+theme_override_font_sizes/font_size = 48
 horizontal_alignment = 1
 vertical_alignment = 1
-clip_text = true
 
-[node name="HPBar" type="TextureRect" parent="." groups=["hp_ui"]]
-texture_filter = 1
-texture_repeat = 1
-offset_top = -6.0
-offset_right = 32.0
-offset_bottom = 4.0
-scale = Vector2(6, 6)
-texture = ExtResource("5_obwu6")
-stretch_mode = 2
+[node name="Coins" type="TextureRect" parent="."]
+offset_left = 1056.0
+offset_top = 75.0
+offset_right = 1756.0
+offset_bottom = 475.0
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("4_0yw5g")
 
-[node name="HPFill" type="TextureProgressBar" parent="HPBar"]
+[node name="CoinsLabel" type="Label" parent="Coins"]
+layout_mode = 0
+offset_left = 26.666666
+offset_top = 136.66666
+offset_right = 286.66666
+offset_bottom = 320.0
+theme_override_fonts/font = ExtResource("1_oixfk")
+theme_override_font_sizes/font_size = 48
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Level" type="TextureRect" parent="." groups=["level_label"]]
+offset_left = 1056.0
+offset_top = -15.0
+offset_right = 1756.0
+offset_bottom = 385.0
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("5_s287r")
+
+[node name="LevelLabel" type="Label" parent="Level" groups=["level_label"]]
+layout_mode = 0
+offset_left = 26.666666
+offset_top = 136.66666
+offset_right = 290.00015
+offset_bottom = 323.3333
+theme_override_fonts/font = ExtResource("1_oixfk")
+theme_override_font_sizes/font_size = 48
+text = "
+"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PlayerInfo" type="TextureRect" parent="."]
+offset_top = -14.0
+offset_right = 700.0
+offset_bottom = 386.0
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("6_mrnm2")
+
+[node name="AbilityProgressBar" type="TextureProgressBar" parent="PlayerInfo"]
+z_index = -1
+layout_mode = 0
+offset_top = 133.33333
+offset_right = 700.0
+offset_bottom = 533.3333
+value = 50.0
+texture_progress = ExtResource("7_y4j81")
+
+[node name="HPFill" type="TextureProgressBar" parent="PlayerInfo"]
+z_index = -1
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 1.166666
-offset_top = 3.1666667
-offset_right = -1.833334
-offset_bottom = -2.833333
 grow_horizontal = 2
 grow_vertical = 2
-max_value = 5.0
-value = 3.0
-texture_progress = ExtResource("6_t3xdf")
-tint_progress = Color(1, 0, 0.078431375, 1)
-
-[node name="HPLabel" type="Label" parent="HPBar"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -14.5
-offset_top = -2.0
-offset_right = 214.66667
-offset_bottom = 31.333
-grow_horizontal = 2
-grow_vertical = 2
-scale = Vector2(0.12, 0.12)
-size_flags_horizontal = 8
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 10
-theme_override_constants/shadow_outline_size = 10
-theme_override_fonts/font = ExtResource("1_oixfk")
-vertical_alignment = 1
-clip_text = true
-
-[node name="AbilityBar" type="TextureRect" parent="." groups=["hp_ui"]]
-texture_filter = 1
-texture_repeat = 1
-offset_top = 42.000004
-offset_right = 32.0
-offset_bottom = 52.000004
-scale = Vector2(6, 6)
-texture = ExtResource("5_obwu6")
-stretch_mode = 2
-
-[node name="AbilityFill" type="TextureProgressBar" parent="AbilityBar"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 0.833333
-offset_top = 3.166666
-offset_right = -2.166668
-offset_bottom = -2.833334
-grow_horizontal = 2
-grow_vertical = 2
-max_value = 5.0
-step = 0.01
-value = 3.0
-texture_progress = ExtResource("6_t3xdf")
-tint_progress = Color(1, 0.7882353, 0.21176471, 1)
-
-[node name="AbilityLabel" type="Label" parent="AbilityBar"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -14.5
-offset_top = -2.000001
-offset_right = 214.66667
-offset_bottom = 31.333336
-grow_horizontal = 2
-grow_vertical = 2
-scale = Vector2(0.12, 0.12)
-size_flags_horizontal = 8
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 10
-theme_override_constants/shadow_outline_size = 10
-theme_override_fonts/font = ExtResource("1_oixfk")
-vertical_alignment = 1
-clip_text = true
-
-[node name="LevelUI" type="TextureRect" parent="."]
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -120.0
-offset_top = -6.0
-offset_right = -88.0
-offset_bottom = 4.0
-grow_horizontal = 0
-scale = Vector2(6, 6)
-texture = ExtResource("7_0yw5g")
-
-[node name="LevelLabel" type="Label" parent="LevelUI" groups=["level_label"]]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -14.75
-offset_top = 2.125
-offset_right = 68.25
-offset_bottom = 52.125
-grow_horizontal = 2
-scale = Vector2(0.12, 0.12)
-size_flags_horizontal = 8
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 10
-theme_override_constants/shadow_outline_size = 10
-theme_override_fonts/font = ExtResource("1_oixfk")
-theme_override_font_sizes/font_size = 16
-horizontal_alignment = 1
-vertical_alignment = 1
-clip_text = true
-
-[node name="AmmoUI" type="TextureRect" parent="."]
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -1152.0
-offset_top = -54.0
-offset_right = -1120.0
-offset_bottom = -44.0
-grow_horizontal = 0
-grow_vertical = 0
-scale = Vector2(6, 6)
-texture = ExtResource("8_s287r")
-
-[node name="AmmoLabel" type="Label" parent="AmmoUI"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -15.0
-offset_top = 1.9999995
-offset_right = 101.66667
-offset_bottom = 52.0
-grow_horizontal = 2
-scale = Vector2(0.12, 0.12)
-size_flags_horizontal = 8
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 10
-theme_override_constants/shadow_outline_size = 10
-theme_override_fonts/font = ExtResource("1_oixfk")
-theme_override_font_sizes/font_size = 14
-horizontal_alignment = 1
-vertical_alignment = 1
-clip_text = true
+value = 50.0
+texture_progress = ExtResource("8_ijxsd")

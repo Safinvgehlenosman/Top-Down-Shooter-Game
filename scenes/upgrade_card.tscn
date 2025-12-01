@@ -1,12 +1,15 @@
-[gd_scene load_steps=7 format=3 uid="uid://755tjml7mgfa"]
+[gd_scene load_steps=11 format=3 uid="uid://755tjml7mgfa"]
 
 [ext_resource type="Script" uid="uid://ctoagax75h2sy" path="res://scripts/ui/upgrade_card.gd" id="1_0hv3p"]
 [ext_resource type="FontFile" uid="uid://4xsaqwwtj2c1" path="res://assets/Fonts/PixelOperator8.ttf" id="2_igsks"]
 [ext_resource type="Texture2D" uid="uid://55msc8hn2qb3" path="res://assets/Separated/singlecoin.png" id="3_33rkj"]
+[ext_resource type="Texture2D" uid="uid://mg1glsugrqrp" path="res://assets/Affinity/uncommoncard.png" id="3_feudy"]
+[ext_resource type="Texture2D" uid="uid://tyfnblp315lw" path="res://assets/Affinity/rarecard.png" id="4_dvncl"]
 [ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="4_sav2r"]
+[ext_resource type="Texture2D" uid="uid://dj0qh5r8eieo1" path="res://assets/Affinity/epiccard.png" id="5_acdrt"]
 [ext_resource type="AudioStream" uid="uid://s21q2vmi6db6" path="res://assets/Audios/CoinCollect.wav" id="5_igsks"]
-
-[sub_resource type="Theme" id="Theme_igsks"]
+[ext_resource type="Texture2D" uid="uid://crirjsw535c16" path="res://assets/Affinity/commoncard.png" id="6_33rkj"]
+[ext_resource type="Texture2D" uid="uid://1q6y2ncx4mi6" path="res://assets/Affinity/chaoscard.png" id="6_sa0xp"]
 
 [node name="UpgradeCard" type="Control"]
 process_mode = 3
@@ -16,11 +19,14 @@ offset_right = 40.0
 offset_bottom = 40.0
 mouse_filter = 1
 script = ExtResource("1_0hv3p")
+rarity_outline_textures = Array[Texture2D]([ExtResource("6_33rkj"), ExtResource("3_feudy"), ExtResource("4_dvncl"), ExtResource("5_acdrt"), ExtResource("6_sa0xp")])
 
 [node name="PriceArea" type="HBoxContainer" parent="."]
 layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+offset_left = 5.0
+offset_top = 6.0
+offset_right = 45.0
+offset_bottom = 46.0
 mouse_filter = 2
 
 [node name="TextureRect" type="TextureRect" parent="PriceArea"]
@@ -54,35 +60,35 @@ stretch_mode = 5
 
 [node name="Label" type="Label" parent="."]
 layout_mode = 0
-offset_left = 81.0
-offset_top = 49.0
-offset_right = 127.0
-offset_bottom = 72.0
-mouse_filter = 2
+offset_left = 15.0
+offset_top = 102.0
+offset_right = 206.0
+offset_bottom = 162.0
 theme_override_fonts/font = ExtResource("2_igsks")
-autowrap_mode = 2
+horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="Button" type="Button" parent="."]
 z_index = 10
 layout_mode = 0
-offset_top = 147.0
-offset_right = 235.0
-offset_bottom = 174.0
+offset_left = 1.0
+offset_top = 165.0
+offset_right = 223.0
+offset_bottom = 221.0
 theme_override_fonts/font = ExtResource("4_sav2r")
+theme_override_font_sizes/font_size = 32
 text = "BUY"
 
 [node name="SFX_Collect" type="AudioStreamPlayer" parent="Button"]
 stream = ExtResource("5_igsks")
 
-[node name="ColorRect" type="ColorRect" parent="."]
-process_mode = 3
-process_priority = -1
-process_physics_priority = -1
-physics_interpolation_mode = 0
-z_index = -4096
+[node name="Outline" type="TextureRect" parent="."]
+z_index = -1
 layout_mode = 0
-offset_right = 235.0
-offset_bottom = 174.0
+offset_left = -10.0
+offset_top = -14.0
+offset_right = 2429.9998
+offset_bottom = 2455.9998
+scale = Vector2(0.1, 0.1)
 mouse_filter = 2
-theme = SubResource("Theme_igsks")
-color = Color(0, 0, 0, 0.45490196)
+texture = ExtResource("6_33rkj")

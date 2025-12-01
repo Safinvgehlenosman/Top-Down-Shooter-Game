@@ -2,12 +2,20 @@ extends Control
 
 signal purchased
 
+# Rarity outline textures (set in inspector, indices match UpgradesDB.Rarity enum)
+# Index 0 = COMMON, 1 = UNCOMMON, 2 = RARE, 3 = EPIC, 4 = CHAOS
+@export var rarity_outline_textures: Array[Texture2D] = []
+
+# Current rarity for this card (set in inspector or via set_rarity)
+@export var rarity: UpgradesDB.Rarity = UpgradesDB.Rarity.COMMON
+
+@onready var outline: TextureRect = $Outline
 @onready var price_label: Label      = $PriceArea/TextureRect/PriceLabel
 @onready var coin_icon: TextureRect  = $PriceArea/TextureRect/CoinIcon
 @onready var icon_rect: TextureRect  = $Icon
 @onready var desc_label: Label       = $Label
 @onready var buy_button: Button      = $Button
-@onready var color_rect: ColorRect   = $ColorRect  # ← Background for rarity color
+@onready var color_rect: ColorRect   = get_node_or_null("ColorRect")  # Optional - may not exist
 
 var sfx_collect: AudioStreamPlayer = null
 var background_panel: Panel = null  # Panel for rounded corners
@@ -17,7 +25,6 @@ var base_price: int = 0
 var price: int = 0
 var icon: Texture2D = null
 var text: String = ""
-var rarity: int = 0  # ← Store rarity
 
 # Tooltip for chaos cards
 var tooltip_label: Label = null
@@ -78,6 +85,9 @@ func _ready() -> void:
 	# Use actual card size (235x174 based on ColorRect/Button)
 	pivot_offset = Vector2(235.0 / 2.0, 174.0 / 2.0)
 
+	# Update outline texture based on rarity
+	_update_outline_texture()
+
 	_refresh()
 
 
@@ -132,6 +142,9 @@ func setup(data: Dictionary) -> void:
 		_create_tooltip(data)
 
 	_refresh()
+	
+	# Update outline texture to match rarity
+	_update_outline_texture()
 
 
 func _get_dynamic_text() -> String:
@@ -322,3 +335,22 @@ func _on_mouse_exited() -> void:
 	"""Hide tooltip when mouse exits."""
 	if is_chaos_card and tooltip_label:
 		tooltip_label.visible = false
+
+
+func _update_outline_texture() -> void:
+	"""Update the outline texture based on current rarity."""
+	if not outline:
+		return
+	
+	# Guard against empty array or out-of-range index
+	var rarity_index := int(rarity)
+	if rarity_outline_textures.is_empty() or rarity_index < 0 or rarity_index >= rarity_outline_textures.size():
+		return
+	
+	outline.texture = rarity_outline_textures[rarity_index]
+
+
+func set_rarity(new_rarity: UpgradesDB.Rarity) -> void:
+	"""Update the rarity and immediately refresh the outline texture."""
+	rarity = new_rarity
+	_update_outline_texture()

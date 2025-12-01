@@ -36,34 +36,44 @@ func _get_base_upgrade_id(up: Dictionary) -> String:
 
 @onready var continue_button := $Panel/ContinueButton
 @onready var cards_container := $Panel/Cards
-@onready var coin_label: Label = $CoinUI/CoinLabel
+
 
 # Chest mode flag
 var is_chest_mode: bool = false
 var active_chest: Node2D = null  # Reference to the chest that opened this shop
 
-@onready var hp_fill: TextureProgressBar = $HPBar/HPFill
-@onready var hp_label: Label = $HPBar/HPLabel
-
-@onready var ammo_label: Label = $AmmoUI/AmmoLabel
-@onready var level_label: Label = $LevelUI/LevelLabel
-
-# ✅ FIXED: AbilityBar is at ROOT level, not under Panel!
-@onready var ability_bar_container: Control = $AbilityBar
-@onready var ability_bar: TextureProgressBar = $AbilityBar/AbilityFill
-@onready var ability_label: Label = $AbilityBar/AbilityLabel
+# New UI structure - use get_node_or_null for safety
+@onready var hp_progress_bar: TextureProgressBar = get_node_or_null("PlayerInfo/HPFill")
+@onready var ability_progress_bar: TextureProgressBar = get_node_or_null("PlayerInfo/AbilityProgressBar")
+@onready var ammo_label: Label = get_node_or_null("Ammo/AmmoLabel")
+@onready var coin_label: Label = get_node_or_null("Coins/CoinsLabel")
+@onready var level_label: Label = get_node_or_null("Level/LevelLabel")
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	
+	# Connect to GameState signals
+	var gs = GameState
+	gs.connect("coins_changed", Callable(self, "_on_coins_changed"))
+	gs.connect("health_changed", Callable(self, "_on_health_changed"))
+	gs.connect("ammo_changed", Callable(self, "_on_ammo_changed"))
+	
 	# Always start hidden
-	if ability_bar_container:
-		ability_bar_container.visible = false
+	if ability_progress_bar:
+		ability_progress_bar.visible = false
 
 	_setup_cards()
 	_refresh_from_state_full()
 
 	continue_button.pressed.connect(_on_continue_pressed)
+
+
+func _process(_delta: float) -> void:
+	# Update displays continuously
+	_update_hp_from_state()
+	_update_ammo_from_state()
+	_update_ability_bar()
+	_update_level_label()
 
 
 # -------------------------------------------------------------------
@@ -180,7 +190,7 @@ func _roll_shop_offers() -> Array:
 		var rarity := _roll_rarity(rarity_weights)
 		var candidates := _filter_upgrades(all_upgrades, rarity, taken_ids, taken_bases)
 		if candidates.is_empty():
-			candidates = _filter_upgrades(all_upgrades, -1, taken_ids, taken_bases)
+			candidates = _filter_upgrades(all_upgrades, null, taken_ids, taken_bases)
 		if candidates.is_empty():
 			break
 		candidates.shuffle()
@@ -251,7 +261,7 @@ func _get_rarity_weights_for_level(level: int) -> Dictionary:
 		UpgradesDB.Rarity.EPIC: epic / total,
 	}
 
-func _roll_rarity(weights: Dictionary = {}) -> int:
+func _roll_rarity(weights: Dictionary = {}) -> UpgradesDB.Rarity:
 	# Use provided weights or default to level-based weights
 	if weights.is_empty():
 		var gm := get_tree().get_first_node_in_group("game_manager")
@@ -266,11 +276,11 @@ func _roll_rarity(weights: Dictionary = {}) -> int:
 	for rarity in [UpgradesDB.Rarity.COMMON, UpgradesDB.Rarity.UNCOMMON, UpgradesDB.Rarity.RARE, UpgradesDB.Rarity.EPIC]:
 		acc += float(weights.get(rarity, 0.0))
 		if r <= acc:
-			return rarity
+			return rarity as UpgradesDB.Rarity
 
 	return UpgradesDB.Rarity.COMMON
 
-func _filter_upgrades(all_upgrades: Array, wanted_rarity: int, taken_ids: Array[String], taken_bases: Dictionary) -> Array:
+func _filter_upgrades(all_upgrades: Array, wanted_rarity: Variant, taken_ids: Array[String], taken_bases: Dictionary) -> Array:
 	var res: Array = []
 
 	for u in all_upgrades:
@@ -287,7 +297,7 @@ func _filter_upgrades(all_upgrades: Array, wanted_rarity: int, taken_ids: Array[
 			if id == "max_hp_plus_1" or id == "hp_refill":
 				continue
 
-		if wanted_rarity != -1 and u.get("rarity", UpgradesDB.Rarity.COMMON) != wanted_rarity:
+		if wanted_rarity != null and u.get("rarity", UpgradesDB.Rarity.COMMON) != wanted_rarity:
 			continue
 
 		if not _upgrade_meets_requirements(u):
@@ -339,14 +349,19 @@ func _refresh_from_state_full() -> void:
 	_update_card_button_states()
 
 func _update_coin_label() -> void:
+	if not coin_label:
+		return
 	coin_label.text = str(GameState.coins)
 
 func _update_hp_from_state() -> void:
-	hp_fill.max_value = GameState.max_health
-	hp_fill.value = GameState.health
-	hp_label.text = "%d/%d" % [GameState.health, GameState.max_health]
+	if not hp_progress_bar:
+		return
+	hp_progress_bar.max_value = GameState.max_health
+	hp_progress_bar.value = GameState.health
 
 func _update_ammo_from_state() -> void:
+	if not ammo_label:
+		return
 	# Display ammo only for ammo-using alt weapons; show "-/-" for NONE or TURRET
 	if GameState.alt_weapon == ALT_WEAPON_NONE or GameState.alt_weapon == ALT_WEAPON_TURRET:
 		ammo_label.text = "-/-"
@@ -354,6 +369,8 @@ func _update_ammo_from_state() -> void:
 		ammo_label.text = "%d/%d" % [GameState.ammo, GameState.max_ammo]
 
 func _update_level_label() -> void:
+	if not level_label:
+		return
 	var gm := get_tree().get_first_node_in_group("game_manager")
 	if gm and "current_level" in gm:
 		level_label.text = str(gm.current_level)
@@ -364,24 +381,24 @@ func _update_card_button_states() -> void:
 			card._update_button_state()
 
 func _update_ability_bar() -> void:
-	# Check if nodes exist
-	if not ability_bar_container or not ability_bar:
+	# Check if node exists
+	if not ability_progress_bar:
 		return
 	
 	# Hide if no ability unlocked
 	if GameState.ability == ABILITY_NONE:
-		ability_bar_container.visible = false
+		ability_progress_bar.visible = false
 		return
 	
 	var data = GameState.ABILITY_DATA.get(GameState.ability, {})
 	if data.is_empty():
-		ability_bar_container.visible = false
+		ability_progress_bar.visible = false
 		return
 	
 	# Get BASE cooldown
 	var base_cd: float = data.get("cooldown", 0.0)
 	if base_cd <= 0.0:
-		ability_bar_container.visible = false
+		ability_progress_bar.visible = false
 		return
 	
 	# Apply cooldown multiplier (from upgrades)
@@ -393,19 +410,13 @@ func _update_ability_bar() -> void:
 	var actual_max_cd: float = base_cd * multiplier
 	
 	# Show the bar (ability is unlocked)
-	ability_bar_container.visible = true
+	ability_progress_bar.visible = true
 	
 	# Bar fills as cooldown recovers
-	ability_bar.max_value = actual_max_cd
+	ability_progress_bar.max_value = actual_max_cd
 	var cd_left: float = GameState.ability_cooldown_left
 	var bar_value: float = actual_max_cd - cd_left
-	ability_bar.value = bar_value
-	
-	# Show time remaining
-	if ability_label:
-		var remaining = round(GameState.ability_cooldown_left * 10.0) / 10.0
-		var max_display = round(actual_max_cd * 10.0) / 10.0
-		ability_label.text = "%s / %s s" % [remaining, max_display]
+	ability_progress_bar.value = bar_value
 
 # -------------------------------------------------------------------
 # SIGNALS
@@ -592,8 +603,8 @@ func open_as_chest(chest: Node2D = null) -> void:
 	if level_ui:
 		level_ui.visible = false
 	
-	if ability_bar_container:
-		ability_bar_container.visible = false
+	if ability_progress_bar:
+		ability_progress_bar.visible = false
 	
 	var title_label = get_node_or_null("Panel/TitleLabel")
 	if title_label:
@@ -638,8 +649,8 @@ func open_as_chest_with_loot(loot: Array) -> void:
 	if level_ui:
 		level_ui.visible = false
 	
-	if ability_bar_container:
-		ability_bar_container.visible = false
+	if ability_progress_bar:
+		ability_progress_bar.visible = false
 	
 	var title_label = get_node_or_null("Panel/TitleLabel")
 	if title_label:
@@ -1002,3 +1013,17 @@ func _reset_all_cards() -> void:
 # Modify upgrade_card purchase signal:
 # - After purchase in chest mode, call _close_chest_mode()
 # - In normal mode, use existing logic
+
+
+# --------------------------------------------------------------------
+# SIGNAL HANDLERS (matching ui.gd)
+# --------------------------------------------------------------------
+
+func _on_coins_changed(_new_value: int) -> void:
+	_update_coin_label()
+
+func _on_health_changed(_new_value: int, _max_value: int) -> void:
+	_update_hp_from_state()
+
+func _on_ammo_changed(_new_value: int, _max_value: int) -> void:
+	_update_ammo_from_state()
