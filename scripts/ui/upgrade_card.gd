@@ -5,6 +5,7 @@ signal purchased
 # Rarity outline textures (set in inspector, indices match UpgradesDB.Rarity enum)
 # Index 0 = COMMON, 1 = UNCOMMON, 2 = RARE, 3 = EPIC, 4 = CHAOS
 @export var rarity_outline_textures: Array[Texture2D] = []
+@export var rarity_outline_materials: Array[Material] = []  # Optional shader materials per rarity
 
 # Current rarity for this card (set in inspector or via set_rarity)
 @export var rarity: UpgradesDB.Rarity = UpgradesDB.Rarity.COMMON
@@ -93,8 +94,8 @@ func _ready() -> void:
 	await get_tree().process_frame
 	visual_root.pivot_offset = visual_root.size * 0.5
 	
-	# Update outline texture based on rarity
-	_update_outline_texture()
+	# Update outline texture and material based on rarity
+	_apply_rarity_visuals()
 
 	_refresh()
 
@@ -176,8 +177,8 @@ func setup(data: Dictionary) -> void:
 
 	_refresh()
 	
-	# Update outline texture to match rarity
-	_update_outline_texture()
+	# Update outline texture and material to match rarity
+	_apply_rarity_visuals()
 
 
 func _get_dynamic_text() -> String:
@@ -374,20 +375,25 @@ func _on_mouse_exited() -> void:
 		tooltip_label.visible = false
 
 
-func _update_outline_texture() -> void:
-	"""Update the outline texture based on current rarity."""
+func _apply_rarity_visuals() -> void:
+	"""Apply both texture and material based on current rarity."""
 	if not outline:
 		return
 	
-	# Guard against empty array or out-of-range index
-	var rarity_index := int(rarity)
-	if rarity_outline_textures.is_empty() or rarity_index < 0 or rarity_index >= rarity_outline_textures.size():
-		return
+	var idx := int(rarity)
 	
-	outline.texture = rarity_outline_textures[rarity_index]
+	# Apply texture from array
+	if idx < rarity_outline_textures.size() and rarity_outline_textures[idx]:
+		outline.texture = rarity_outline_textures[idx]
+	
+	# Apply optional shader material per rarity
+	if idx < rarity_outline_materials.size() and rarity_outline_materials[idx]:
+		outline.material = rarity_outline_materials[idx]
+	else:
+		outline.material = null
 
 
 func set_rarity(new_rarity: UpgradesDB.Rarity) -> void:
-	"""Update the rarity and immediately refresh the outline texture."""
+	"""Update the rarity and immediately refresh visuals (texture + material)."""
 	rarity = new_rarity
-	_update_outline_texture()
+	_apply_rarity_visuals()
