@@ -6,6 +6,7 @@ extends CanvasLayer
 @onready var ammo_label: Label = get_node_or_null("Ammo/AmmoLabel")
 @onready var coin_label: Label = get_node_or_null("Coins/CoinsLabel")
 @onready var level_label: Label = get_node_or_null("Level/LevelLabel")
+@onready var chaos_pact_indicator: TextureRect = get_node_or_null("ChaosPact")
 
 # Use GameState enums directly
 const ABILITY_NONE = GameState.AbilityType.NONE
@@ -29,6 +30,10 @@ func _ready() -> void:
 	# hide ability bar by default
 	if ability_progress_bar:
 		ability_progress_bar.visible = false
+	
+	# hide chaos pact indicator by default
+	if chaos_pact_indicator:
+		chaos_pact_indicator.visible = false
 
 
 func _process(_delta: float) -> void:
@@ -41,6 +46,7 @@ func _process(_delta: float) -> void:
 	_update_ammo_from_state()
 	_update_ability_bar()
 	_update_level_label()
+	_update_chaos_pact_indicator()
 
 
 # --------------------------------------------------------------------
@@ -172,3 +178,18 @@ func _animate_coin_feedback() -> void:
 	
 	# Back to white
 	tween.tween_property(coin_label, "modulate", Color.WHITE, 0.2)
+
+
+func _update_chaos_pact_indicator() -> void:
+	"""Show/hide chaos pact indicator based on active challenge."""
+	if not chaos_pact_indicator:
+		return
+	
+	# Show if there's an active chaos challenge
+	var is_active = not GameState.active_chaos_challenge.is_empty()
+	var was_visible = chaos_pact_indicator.visible
+	chaos_pact_indicator.visible = is_active
+	
+	# Debug output when state changes
+	if is_active != was_visible:
+		print("[UI] Chaos pact indicator: ", "ACTIVE" if is_active else "INACTIVE", " - Challenge: '", GameState.active_chaos_challenge, "'")

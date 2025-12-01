@@ -53,6 +53,9 @@ func handle_primary_fire(is_pressed: bool, aim_dir: Vector2) -> void:
 	
 	# ⬅0 Check if primary fire is disabled by chaos challenge
 	if GameState.primary_fire_disabled:
+		# Debug: Only print occasionally to avoid spam
+		if Engine.get_process_frames() % 60 == 0:
+			print("[Gun] Primary fire blocked - primary_fire_disabled:", GameState.primary_fire_disabled)
 		return
 
 	if not GameState.debug_laser_mode and fire_timer > 0.0:

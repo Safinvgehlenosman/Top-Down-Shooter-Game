@@ -363,6 +363,10 @@ func start_new_run() -> void:
 	chaos_challenge_progress = 0
 	chaos_challenge_completed = false
 	original_max_health = 0
+	
+	# Reset chaos challenge flags
+	coin_pickups_disabled = false
+	primary_fire_disabled = false
 
 	alt_weapon       = AltWeaponType.NONE
 	ability          = AbilityType.NONE
@@ -1201,7 +1205,7 @@ func _complete_chaos_challenge() -> void:
 		"no_primary_fire_triple_rate":
 			# ⭐ RE-ENABLE primary fire FIRST!
 			primary_fire_disabled = false
-			print("[GameState] Primary fire RE-ENABLED!")
+			print("[GameState] ✅ PRIMARY FIRE RE-ENABLED! Flag set to: ", primary_fire_disabled)
 			# THEN increase fire rate (double it)
 			fire_rate_bonus_percent += 1.0  # 100% increase (double fire rate)
 			fire_rate = fire_rate_base * max(0.05, 1.0 - fire_rate_bonus_percent)
@@ -1215,8 +1219,12 @@ func _complete_chaos_challenge() -> void:
 	print("[GameState] - fire_rate:", fire_rate)
 	print("[GameState] ========================================")
 	
-	# Clear challenge
+	# Clear challenge and reset counters
 	active_chaos_challenge = ""
+	chaos_challenge_progress = 0
+	chaos_challenge_target = 0
+	
+	print("[GameState] Chaos challenge cleared and counters reset")
 
 
 # -------------------------------------------------------------------
