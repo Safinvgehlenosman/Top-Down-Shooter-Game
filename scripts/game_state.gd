@@ -250,6 +250,65 @@ var synergy_shuriken_slowmo_unlocked: bool = false
 var synergy_sniper_invis_unlocked: bool = false
 var synergy_turret_bubble_unlocked: bool = false
 
+# ⭐ CSV-based synergy flags (matches upgrades.csv effect names)
+var sniper_invis_synergy_unlocked: bool = false
+var shield_flamethrower_synergy_unlocked: bool = false
+var dash_grenades_synergy_unlocked: bool = false
+
+# ⭐ Additional stat fields for CSV-based upgrades
+# Primary weapon
+var primary_crit_chance: float = 0.0
+var primary_reload_speed_bonus: float = 0.0
+var primary_ammo_capacity_bonus: int = 0
+
+# Shotgun
+var shotgun_reload_speed_bonus: float = 0.0
+var shotgun_damage_reduction: float = 0.0
+
+# Sniper
+var sniper_crit_damage_bonus: float = 0.0
+var sniper_accuracy_bonus: float = 0.0
+
+# Flamethrower
+var flamethrower_fuel_efficiency_bonus: float = 0.0
+var flamethrower_tick_rate_bonus: float = 0.0
+
+# Grenades
+var grenades_cooldown_bonus: float = 0.0
+var grenades_status_chance: float = 0.0
+
+# Shuriken
+var shuriken_return_enabled: bool = false
+var shuriken_crit_chance: float = 0.0
+
+# Turret
+var turret_duration_bonus: float = 0.0
+var turret_hp_bonus: float = 0.0
+
+# Dash ability
+var dash_invuln_window_bonus: float = 0.0
+var dash_speed_bonus: float = 0.0
+var dash_charges: int = 1
+
+# Shield ability
+var shield_hp: float = 100.0
+var shield_duration: float = 3.0
+var shield_cooldown_mult: float = 1.0
+var shield_radius_bonus: float = 0.0
+var shield_reflect_chance: float = 0.0
+
+# Slowmo ability
+var slowmo_duration: float = 1.5
+var slowmo_cooldown_mult: float = 1.0
+var slowmo_time_scale: float = 0.3
+var slowmo_radius: float = 0.0
+var slowmo_ammo_efficiency: float = 0.0
+
+# Invisibility ability
+var invis_fade_speed_bonus: float = 0.0
+var invis_movement_speed_bonus: float = 0.0
+var invis_first_hit_bonus: float = 0.0
+
 # economy
 var coins: int = 0
 
@@ -515,61 +574,54 @@ func record_upgrade_purchase(upgrade_id: String) -> void:
 func apply_upgrade(upgrade_id: String) -> void:
 	print("[GameState] Applying upgrade:", upgrade_id)
 
-	# Prevent re-applying non-stackable upgrades
-	var u := UpgradesDB.get_by_id(upgrade_id)
-	if not u.is_empty():
-		var stackable := bool(u.get("stackable", true))
-		if not stackable and has_upgrade(upgrade_id):
-			push_warning("[GameState] Upgrade already owned and not stackable: %s" % upgrade_id)
-			return
+	# Load upgrade from CSV database
+	var upgrade := UpgradesDB.get_by_id(upgrade_id)
+	if upgrade.is_empty():
+		push_warning("[GameState] Unknown upgrade: %s" % upgrade_id)
+		return
 
-	match upgrade_id:
-		# GENERAL / CORE
-		"max_hp_plus_1":
-			# Scaled max HP increase: base 10, each repeat multiplies by 1.1
-			var purchases: int = int(upgrade_purchase_counts.get("max_hp_plus_1", 1))
-			var base_increase := 10.0
-			var scaled_increase := base_increase * pow(1.1, purchases - 1)
-			var inc_int := int(round(scaled_increase))
-			max_health += inc_int
-			# Heal by same amount (do not exceed new max)
-			set_health(min(max_health, health + inc_int))
-			print("  → Max HP increase applied:", inc_int, "(purchase #", purchases, ")")
-			print("  → Max HP now:", max_health)
+	# Prevent re-applying non-stackable upgrades
+	var stackable := bool(upgrade.get("stackable", true))
+	if not stackable and has_upgrade(upgrade_id):
+		push_warning("[GameState] Upgrade already owned and not stackable: %s" % upgrade_id)
+		return
+
+	# Extract effect and value from CSV data
+	var effect: String = str(upgrade.get("effect", "")).strip_edges()
+	var value: float = float(upgrade.get("value", 0.0))
+
+	# Apply the upgrade effect
+	match effect:
+		# ==============================
+		# CORE / GENERAL EFFECTS
+		# ==============================
+		"max_hp":
+			var inc := int(value)
+			max_health += inc
+			set_health(min(max_health, health + inc))
+			print("  → Max HP +%d, now: %d" % [inc, max_health])
 
 		"hp_refill":
 			set_health(max_health)
 			print("  → HP refilled to:", max_health)
 
-		"max_ammo_plus_1":
-			# Use weapon's pickup_amount as base increase (matches pickup value)
-			var base_ammo_inc := 1  # Fallback if no weapon equipped
-			
-			# Get pickup_amount from current alt weapon
-			if alt_weapon != AltWeaponType.NONE and ALT_WEAPON_DATA.has(alt_weapon):
-				var data = ALT_WEAPON_DATA[alt_weapon]
-				base_ammo_inc = data.get("pickup_amount", 1)
-			
-			var purchases_ammo: int = int(upgrade_purchase_counts.get("max_ammo_plus_1", 1))
-			var scaled_ammo_inc := int(pow(2, purchases_ammo - 1)) * base_ammo_inc
-			max_ammo += scaled_ammo_inc
-			set_ammo(min(max_ammo, ammo + scaled_ammo_inc))
-			print("  → Max Ammo increase applied:", scaled_ammo_inc, "(purchase #", purchases_ammo, ", base=", base_ammo_inc, ")")
-			print("  → Max Ammo now:", max_ammo)
+		"max_ammo":
+			var inc := int(value)
+			max_ammo += inc
+			set_ammo(min(max_ammo, ammo + inc))
+			print("  → Max Ammo +%d, now: %d" % [inc, max_ammo])
 
 		"ammo_refill":
 			set_ammo(max_ammo)
 			print("  → Ammo refilled to:", max_ammo)
 
-		"ability_cooldown_minus_10":
-			ability_cooldown_mult *= 0.9
-			var reduction_percent = int((1.0 - ability_cooldown_mult) * 100)
-			print("  → Ability cooldown multiplier:", ability_cooldown_mult)
-			print("  → Total reduction:", reduction_percent, "%")
+		"ability_cooldown":
+			ability_cooldown_mult *= (1.0 + value)
+			print("  → Ability cooldown mult: %.2f" % ability_cooldown_mult)
 
-		# PRIMARY
-
-		# UNLOCKS (shop buys should call these)
+		# ==============================
+		# WEAPON / ABILITY UNLOCKS
+		# ==============================
 		"unlock_shotgun":
 			set_alt_weapon(AltWeaponType.SHOTGUN)
 			print("  → Shotgun unlocked")
@@ -611,473 +663,327 @@ func apply_upgrade(upgrade_id: String) -> void:
 			set_ability(AbilityType.INVIS)
 			print("  → Invis ability unlocked")
 
-		"primary_damage_common":
-			primary_damage_bonus += 0.05
+		# ==============================
+		# PRIMARY WEAPON EFFECTS
+		# ==============================
+		"primary_damage":
+			primary_damage_bonus += value
 			primary_damage = primary_damage_base * (1.0 + primary_damage_bonus)
-			print("  → Primary damage bonus:", primary_damage_bonus)
+			print("  → Primary damage +%.1f%%, total: +%.1f%%" % [value * 100, primary_damage_bonus * 100])
 
-		"primary_damage_uncommon":
-			primary_damage_bonus += 0.10
-			primary_damage = primary_damage_base * (1.0 + primary_damage_bonus)
-			print("  → Primary damage bonus:", primary_damage_bonus)
-
-		"primary_damage_rare":
-			primary_damage_bonus += 0.15
-			primary_damage = primary_damage_base * (1.0 + primary_damage_bonus)
-			print("  → Primary damage bonus:", primary_damage_bonus)
-
-		"primary_fire_rate_uncommon":
-			fire_rate_bonus_percent += 0.05
+		"primary_fire_rate":
+			fire_rate_bonus_percent += value
 			fire_rate = fire_rate_base * max(0.05, 1.0 - fire_rate_bonus_percent)
-			print("  → Fire rate (cooldown) now:", fire_rate)
+			print("  → Fire rate +%.1f%%, cooldown: %.2fs" % [value * 100, fire_rate])
 
-		"primary_fire_rate_rare":
-			fire_rate_bonus_percent += 0.20
-			fire_rate = fire_rate_base * max(0.05, 1.0 - fire_rate_bonus_percent)
-			print("  → Fire rate (cooldown) now:", fire_rate)
+		"primary_reload_speed":
+			primary_reload_speed_bonus += value
+			print("  → Reload speed +%.1f%%" % [value * 100])
 
-		# MOVEMENT SPEED (additive % of base, never exponential)
-		"move_speed_uncommon":
-			move_speed_bonus_percent += 0.10  # +10% of BASE
-			move_speed = move_speed_base * (1.0 + move_speed_bonus_percent)
-			print("  → Move speed bonus:", move_speed_bonus_percent)
-			print("  → Move speed now:", move_speed)
+		"primary_ammo_capacity":
+			var inc := int(value)
+			primary_ammo_capacity_bonus += inc
+			print("  → Ammo capacity +%d" % inc)
 
-		"move_speed_rare":
-			move_speed_bonus_percent += 0.25  # +25% of BASE
-			move_speed = move_speed_base * (1.0 + move_speed_bonus_percent)
-			print("  → Move speed bonus:", move_speed_bonus_percent)
-			print("  → Move speed now:", move_speed)
+		"primary_crit_chance":
+			primary_crit_chance += value
+			print("  → Crit chance +%.1f%%" % [value * 100])
 
-		"primary_bullet_size_rare":
-			# Increase primary bullet visual size at spawn
-			primary_bullet_size_bonus_percent += 0.25
-			primary_bullet_size_multiplier = 1.0 * (1.0 + primary_bullet_size_bonus_percent)
-			print("  → Primary bullet size bonus:", primary_bullet_size_bonus_percent)
-			print("  → Primary bullet size multiplier now:", primary_bullet_size_multiplier)
+		# ==============================
+		# SHOTGUN EFFECTS
+		# ==============================
+		"shotgun_pellets":
+			var inc := int(value)
+			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN):
+				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["pellets"] += inc
+				print("  → Shotgun pellets +%d, now: %d" % [inc, ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["pellets"]])
 
-		"primary_bullet_size_epic":
-			# Larger increase for epic
-			primary_bullet_size_bonus_percent += 0.50
-			primary_bullet_size_multiplier = 1.0 * (1.0 + primary_bullet_size_bonus_percent)
-			print("  → Primary bullet size bonus:", primary_bullet_size_bonus_percent)
-			print("  → Primary bullet size multiplier now:", primary_bullet_size_multiplier)
-
-		# PRIMARY burst shot (existing id)
-		"primary_burst_plus_1":
-			primary_burst_count += 1
-			print("  → Primary burst count now:", primary_burst_count)
-
-		# ALT WEAPON TWEAKS (modify ALT_WEAPON_DATA where sensible)
-		"shotgun_pellets_common":
-			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN) and ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].has("pellets"):
-				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["pellets"] = int(ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("pellets", 0) + 1)
-			print("  → Shotgun pellets:", ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("pellets"))
-
-		"shotgun_pellets_uncommon":
-			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN) and ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].has("pellets"):
-				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["pellets"] = int(ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("pellets", 0) + 2)
-			print("  → Shotgun pellets:", ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("pellets"))
-
-		"shotgun_pellets_rare":
-			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN) and ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].has("pellets"):
-				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["pellets"] = int(ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("pellets", 0) + 3)
-			print("  → Shotgun pellets:", ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("pellets"))
-
-		"shotgun_spread_uncommon":
-			shotgun_spread_bonus_percent += -0.05  # -5% spread (tighter)
-			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN) and ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].has("spread_degrees"):
-				# Recalculate from base (18.0)
+		"shotgun_spread":
+			shotgun_spread_bonus_percent += value
+			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN):
 				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["spread_degrees"] = 18.0 * (1.0 + shotgun_spread_bonus_percent)
-			print("  → Shotgun spread bonus:", shotgun_spread_bonus_percent)
-			print("  → Shotgun spread now:", ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("spread_degrees"))
+				print("  → Shotgun spread %.1f%%, now: %.1f°" % [value * 100, ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["spread_degrees"]])
 
-		"shotgun_spread_rare":
-			shotgun_spread_bonus_percent += -0.10  # -10% spread (tighter)
-			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN) and ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].has("spread_degrees"):
-				# Recalculate from base (18.0)
-				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["spread_degrees"] = 18.0 * (1.0 + shotgun_spread_bonus_percent)
-			print("  → Shotgun spread bonus:", shotgun_spread_bonus_percent)
-			print("  → Shotgun spread now:", ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("spread_degrees"))
-
-		"shotgun_knockback_rare":
-			shotgun_knockback_bonus_percent += 0.10
-			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN) and ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].has("recoil"):
-				# Recalculate from base (140.0)
+		"shotgun_knockback":
+			shotgun_knockback_bonus_percent += value
+			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN):
 				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["recoil"] = 140.0 * (1.0 + shotgun_knockback_bonus_percent)
-			print("  → Shotgun knockback bonus:", shotgun_knockback_bonus_percent)
-			print("  → Shotgun recoil now:", ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("recoil"))
+				print("  → Shotgun knockback +%.1f%%, now: %.1f" % [value * 100, ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["recoil"]])
 
-		"shotgun_knockback_epic":
-			shotgun_knockback_bonus_percent += 0.20
-			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN) and ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].has("recoil"):
-				# Recalculate from base (140.0)
-				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["recoil"] = 140.0 * (1.0 + shotgun_knockback_bonus_percent)
-			print("  → Shotgun knockback bonus:", shotgun_knockback_bonus_percent)
-			print("  → Shotgun recoil now:", ALT_WEAPON_DATA[AltWeaponType.SHOTGUN].get("recoil"))
+		"shotgun_reload_speed":
+			shotgun_reload_speed_bonus += value
+			print("  → Shotgun reload speed +%.1f%%" % [value * 100])
 
-		# SNIPER
-		"sniper_damage_common":
-			sniper_damage_bonus_percent += 0.10
-			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER) and ALT_WEAPON_DATA[AltWeaponType.SNIPER].has("damage"):
-				# Recalculate from base (35.0)
-				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] = 35.0 * (1.0 + sniper_damage_bonus_percent)
-			print("  → Sniper damage bonus:", sniper_damage_bonus_percent)
-			print("  → Sniper damage now:", ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("damage"))
+		"shotgun_damage_reduction":
+			shotgun_damage_reduction += value
+			print("  → Shotgun self-damage reduction +%.1f%%" % [value * 100])
 
-		"sniper_damage_uncommon":
-			sniper_damage_bonus_percent += 0.20
-			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER) and ALT_WEAPON_DATA[AltWeaponType.SNIPER].has("damage"):
-				# Recalculate from base (35.0)
-				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] = 35.0 * (1.0 + sniper_damage_bonus_percent)
-			print("  → Sniper damage bonus:", sniper_damage_bonus_percent)
-			print("  → Sniper damage now:", ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("damage"))
-
-		"sniper_damage_rare":
-			sniper_damage_bonus_percent += 0.30
-			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER) and ALT_WEAPON_DATA[AltWeaponType.SNIPER].has("damage"):
-				# Recalculate from base (35.0)
-				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] = 35.0 * (1.0 + sniper_damage_bonus_percent)
-			print("  → Sniper damage bonus:", sniper_damage_bonus_percent)
-			print("  → Sniper damage now:", ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("damage"))
-
-		"sniper_pierce_uncommon":
+		# ==============================
+		# SNIPER EFFECTS
+		# ==============================
+		"sniper_damage":
+			sniper_damage_bonus_percent += value
 			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER):
-				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["bounces"] = int(ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("bounces", 0) + 1)
-			print("  → Sniper pierce now:", ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("bounces"))
+				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] = 35.0 * (1.0 + sniper_damage_bonus_percent + sniper_charge_bonus_percent)
+				print("  → Sniper damage +%.1f%%, now: %.1f" % [value * 100, ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"]])
 
-		"sniper_pierce_rare":
+		"sniper_pierce":
+			var inc := int(value)
 			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER):
-				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["bounces"] = int(ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("bounces", 0) + 2)
-			print("  → Sniper pierce now:", ALT_WEAPON_DATA[AltWeaponType.SNIPER].get("bounces"))
+				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["bounces"] += inc
+				print("  → Sniper pierce +%d, now: %d" % [inc, ALT_WEAPON_DATA[AltWeaponType.SNIPER]["bounces"]])
 
-		"sniper_charge_rare":
-			sniper_charge_bonus_percent += 0.15
-			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER) and ALT_WEAPON_DATA[AltWeaponType.SNIPER].has("damage"):
-				# Recalculate from base (35.0) including both damage AND charge bonuses
+		"sniper_charge_speed":
+			sniper_charge_bonus_percent += value
+			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER):
 				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] = 35.0 * (1.0 + sniper_damage_bonus_percent + sniper_charge_bonus_percent)
-			print("  → Sniper charge bonus:", sniper_charge_bonus_percent)
-			print("  → Sniper charge damage bonus applied (data-only)")
+				print("  → Sniper charge +%.1f%%, dmg: %.1f" % [value * 100, ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"]])
 
-		"sniper_charge_epic":
-			sniper_charge_bonus_percent += 0.30
-			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER) and ALT_WEAPON_DATA[AltWeaponType.SNIPER].has("damage"):
-				# Recalculate from base (35.0) including both damage AND charge bonuses
-				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] = 35.0 * (1.0 + sniper_damage_bonus_percent + sniper_charge_bonus_percent)
-			print("  → Sniper charge bonus:", sniper_charge_bonus_percent)
-			print("  → Sniper charge epic applied (data-only)")
+		"sniper_crit_damage":
+			sniper_crit_damage_bonus += value
+			print("  → Sniper crit damage +%.1f%%" % [value * 100])
 
-		# FLAMETHROWER
-		"flamethrower_lifetime_common":
-			flamethrower_lifetime_bonus_percent += 0.10
-			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER) and ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].has("flame_lifetime"):
-				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"] = 0.25 * (1.0 + flamethrower_lifetime_bonus_percent)
-			print("  → Flamethrower lifetime bonus:", flamethrower_lifetime_bonus_percent)
-			print("  → Flamethrower lifetime now:", ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].get("flame_lifetime"))
+		"sniper_accuracy":
+			sniper_accuracy_bonus += value
+			print("  → Sniper accuracy +%.1f%%" % [value * 100])
 
-		"flamethrower_lifetime_uncommon":
-			flamethrower_lifetime_bonus_percent += 0.20
-			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER) and ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].has("flame_lifetime"):
-				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"] = 0.25 * (1.0 + flamethrower_lifetime_bonus_percent)
-			print("  → Flamethrower lifetime bonus:", flamethrower_lifetime_bonus_percent)
-			print("  → Flamethrower lifetime now:", ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].get("flame_lifetime"))
+		# ==============================
+		# FLAMETHROWER EFFECTS
+		# ==============================
+		"flamethrower_burn_damage":
+			flamethrower_burn_bonus_percent += value
+			print("  → Flamethrower burn +%.1f%%" % [value * 100])
 
-		"flamethrower_lifetime_rare":
-			flamethrower_lifetime_bonus_percent += 0.30
-			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER) and ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].has("flame_lifetime"):
-				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"] = 0.25 * (1.0 + flamethrower_lifetime_bonus_percent)
-			print("  → Flamethrower lifetime bonus:", flamethrower_lifetime_bonus_percent)
-			print("  → Flamethrower lifetime now:", ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].get("flame_lifetime"))
-
-		"flamethrower_burn_uncommon":
-			print("  → Flamethrower burn damage increase (data-only)")
-
-		"flamethrower_burn_rare":
-			print("  → Flamethrower burn damage rare (data-only)")
-
-		"flamethrower_size_rare":
-			flamethrower_size_bonus_percent += 0.10
-			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER) and ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].has("damage"):
+		"flamethrower_cone_size":
+			flamethrower_size_bonus_percent += value
+			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER):
 				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["damage"] = 4.0 * (1.0 + flamethrower_size_bonus_percent)
-			print("  → Flamethrower size bonus:", flamethrower_size_bonus_percent)
-			print("  → Flamethrower size / damage proxy applied")
+				print("  → Flamethrower cone +%.1f%%" % [value * 100])
 
-		"flamethrower_size_epic":
-			flamethrower_size_bonus_percent += 0.20
-			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER) and ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER].has("damage"):
-				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["damage"] = 4.0 * (1.0 + flamethrower_size_bonus_percent)
-			print("  → Flamethrower size bonus:", flamethrower_size_bonus_percent)
-			print("  → Flamethrower size epic applied")
+		"flamethrower_duration":
+			flamethrower_lifetime_bonus_percent += value
+			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER):
+				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"] = 0.25 * (1.0 + flamethrower_lifetime_bonus_percent)
+				print("  → Flamethrower duration +%.1f%%, now: %.2fs" % [value * 100, ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"]])
 
-		# GRENADE
-		"grenade_radius_common":
-			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE) and ALT_WEAPON_DATA[AltWeaponType.GRENADE].has("explosion_radius"):
-				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["explosion_radius"] = float(ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("explosion_radius", 0.0) + 10.0)
-			print("  → Grenade radius now:", ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("explosion_radius"))
+		"flamethrower_fuel_efficiency":
+			flamethrower_fuel_efficiency_bonus += value
+			print("  → Flamethrower fuel efficiency +%.1f%%" % [value * 100])
 
-		"grenade_radius_uncommon":
-			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE) and ALT_WEAPON_DATA[AltWeaponType.GRENADE].has("explosion_radius"):
-				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["explosion_radius"] = float(ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("explosion_radius", 0.0) + 20.0)
-			print("  → Grenade radius now:", ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("explosion_radius"))
+		"flamethrower_tick_rate":
+			flamethrower_tick_rate_bonus += value
+			print("  → Flamethrower tick rate +%.1f%%" % [value * 100])
 
-		"grenade_radius_rare":
-			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE) and ALT_WEAPON_DATA[AltWeaponType.GRENADE].has("explosion_radius"):
-				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["explosion_radius"] = float(ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("explosion_radius", 0.0) + 30.0)
-			print("  → Grenade radius now:", ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("explosion_radius"))
+		# ==============================
+		# GRENADES EFFECTS
+		# ==============================
+		"grenades_radius":
+			var inc := value
+			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE):
+				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["explosion_radius"] += inc
+				print("  → Grenade radius +%.0f, now: %.0f" % [inc, ALT_WEAPON_DATA[AltWeaponType.GRENADE]["explosion_radius"]])
 
-		"grenade_fragments_uncommon":
-			# Behave like shotgun pellet upgrade: add +1 simultaneous grenade
-			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE) and ALT_WEAPON_DATA[AltWeaponType.GRENADE].has("pellets"):
-				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["pellets"] = int(ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("pellets", 1) + 1)
-			print("  → Grenade pellets now:", ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("pellets"))
-			# Fixed spread remains constant – no recompute
-
-		"grenade_fragments_rare":
-			# Behave like shotgun pellet upgrade: add +2 simultaneous grenades
-			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE) and ALT_WEAPON_DATA[AltWeaponType.GRENADE].has("pellets"):
-				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["pellets"] = int(ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("pellets", 1) + 2)
-			print("  → Grenade pellets now:", ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("pellets"))
-			# Fixed spread remains constant – no recompute
-
-		"grenade_damage_rare":
-			grenade_damage_bonus_percent += 0.10
-			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE) and ALT_WEAPON_DATA[AltWeaponType.GRENADE].has("damage"):
-				# Recalculate from base (40.0)
+		"grenades_damage":
+			grenade_damage_bonus_percent += value
+			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE):
 				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["damage"] = 40.0 * (1.0 + grenade_damage_bonus_percent)
-			print("  → Grenade damage bonus:", grenade_damage_bonus_percent)
-			print("  → Grenade damage:", ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("damage"))
+				print("  → Grenade damage +%.1f%%, now: %.1f" % [value * 100, ALT_WEAPON_DATA[AltWeaponType.GRENADE]["damage"]])
 
-		"grenade_damage_epic":
-			grenade_damage_bonus_percent += 0.20
-			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE) and ALT_WEAPON_DATA[AltWeaponType.GRENADE].has("damage"):
-				# Recalculate from base (40.0)
-				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["damage"] = 40.0 * (1.0 + grenade_damage_bonus_percent)
-			print("  → Grenade damage bonus:", grenade_damage_bonus_percent)
-			print("  → Grenade damage epic:", ALT_WEAPON_DATA[AltWeaponType.GRENADE].get("damage"))
+		"grenades_cooldown":
+			grenades_cooldown_bonus += value
+			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE):
+				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["cooldown"] *= (1.0 + value)
+				print("  → Grenade cooldown %.1f%%" % [value * 100])
 
-		# SHURIKEN
-		"shuriken_bounces_common":
+		"grenades_frag_count":
+			var inc := int(value)
+			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE):
+				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["pellets"] += inc
+				print("  → Grenade frags +%d, now: %d" % [inc, ALT_WEAPON_DATA[AltWeaponType.GRENADE]["pellets"]])
+
+		"grenades_status_chance":
+			grenades_status_chance += value
+			print("  → Grenade status chance +%.1f%%" % [value * 100])
+
+		# ==============================
+		# SHURIKEN EFFECTS
+		# ==============================
+		"shuriken_bounce_count":
+			var inc := int(value)
 			if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN):
-				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bounces"] = int(ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("bounces", 0) + 1)
-			print("  → Shuriken bounces:", ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("bounces"))
+				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bounces"] += inc
+				print("  → Shuriken bounces +%d, now: %d" % [inc, ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bounces"]])
 
-		"shuriken_bounces_uncommon":
+		"shuriken_speed":
+			shuriken_speed_bonus_percent += value
 			if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN):
-				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bounces"] = int(ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("bounces", 0) + 2)
-			print("  → Shuriken bounces:", ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("bounces"))
-
-		"shuriken_bounces_rare":
-			if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN):
-				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bounces"] = int(ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("bounces", 0) + 3)
-			print("  → Shuriken bounces:", ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("bounces"))
-
-		"shuriken_speed_uncommon":
-			shuriken_speed_bonus_percent += 0.10
-			if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN) and ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].has("bullet_speed"):
-				# Recalculate from base (950.0)
 				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bullet_speed"] = 950.0 * (1.0 + shuriken_speed_bonus_percent)
-			print("  → Shuriken speed bonus:", shuriken_speed_bonus_percent)
-			print("  → Shuriken speed:", ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("bullet_speed"))
+				print("  → Shuriken speed +%.1f%%, now: %.0f" % [value * 100, ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bullet_speed"]])
 
-		"shuriken_speed_rare":
-			shuriken_speed_bonus_percent += 0.20
-			if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN) and ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].has("bullet_speed"):
-				# Recalculate from base (950.0)
-				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bullet_speed"] = 950.0 * (1.0 + shuriken_speed_bonus_percent)
-			print("  → Shuriken speed bonus:", shuriken_speed_bonus_percent)
-			print("  → Shuriken speed:", ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("bullet_speed"))
-
-		"shuriken_ricochet_rare":
-			shuriken_ricochet_bonus_percent += 0.10
-			if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN) and ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].has("damage"):
-				# Recalculate from base (12.0)
+		"shuriken_pierce":
+			shuriken_ricochet_bonus_percent += value
+			if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN):
 				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["damage"] = 12.0 * (1.0 + shuriken_ricochet_bonus_percent)
-			print("  → Shuriken ricochet bonus:", shuriken_ricochet_bonus_percent)
-			print("  → Shuriken ricochet damage:", ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("damage"))
+				print("  → Shuriken pierce +%.1f%%" % [value * 100])
 
-		"shuriken_ricochet_epic":
-			shuriken_ricochet_bonus_percent += 0.20
-			if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN) and ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].has("damage"):
-				# Recalculate from base (12.0)
-				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["damage"] = 12.0 * (1.0 + shuriken_ricochet_bonus_percent)
-			print("  → Shuriken ricochet bonus:", shuriken_ricochet_bonus_percent)
-			print("  → Shuriken ricochet damage epic:", ALT_WEAPON_DATA[AltWeaponType.SHURIKEN].get("damage"))
+		"shuriken_return":
+			shuriken_return_enabled = true
+			print("  → Shuriken return enabled")
 
-		# TURRET
-		"turret_fire_rate_common":
-			turret_fire_rate_bonus_percent += 0.05  # +5% faster (reduces cooldown)
-			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET) and ALT_WEAPON_DATA[AltWeaponType.TURRET].has("fire_rate"):
-				# Recalculate from base (0.4) - lower is faster
+		"shuriken_crit_chance":
+			shuriken_crit_chance += value
+			print("  → Shuriken crit chance +%.1f%%" % [value * 100])
+
+		# ==============================
+		# TURRET EFFECTS
+		# ==============================
+		"turret_fire_rate":
+			turret_fire_rate_bonus_percent += value
+			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET):
 				ALT_WEAPON_DATA[AltWeaponType.TURRET]["fire_rate"] = 0.4 * (1.0 - turret_fire_rate_bonus_percent)
-			print("  → Turret fire rate bonus:", turret_fire_rate_bonus_percent)
-			print("  → Turret fire rate:", ALT_WEAPON_DATA[AltWeaponType.TURRET].get("fire_rate"))
+				print("  → Turret fire rate +%.1f%%, cooldown: %.2fs" % [value * 100, ALT_WEAPON_DATA[AltWeaponType.TURRET]["fire_rate"]])
 
-		"turret_fire_rate_uncommon":
-			turret_fire_rate_bonus_percent += 0.10  # +10% faster
-			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET) and ALT_WEAPON_DATA[AltWeaponType.TURRET].has("fire_rate"):
-				# Recalculate from base (0.4) - lower is faster
-				ALT_WEAPON_DATA[AltWeaponType.TURRET]["fire_rate"] = 0.4 * (1.0 - turret_fire_rate_bonus_percent)
-			print("  → Turret fire rate bonus:", turret_fire_rate_bonus_percent)
-			print("  → Turret fire rate:", ALT_WEAPON_DATA[AltWeaponType.TURRET].get("fire_rate"))
-
-		"turret_fire_rate_rare":
-			turret_fire_rate_bonus_percent += 0.15  # +15% faster
-			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET) and ALT_WEAPON_DATA[AltWeaponType.TURRET].has("fire_rate"):
-				# Recalculate from base (0.4) - lower is faster
-				ALT_WEAPON_DATA[AltWeaponType.TURRET]["fire_rate"] = 0.4 * (1.0 - turret_fire_rate_bonus_percent)
-			print("  → Turret fire rate bonus:", turret_fire_rate_bonus_percent)
-			print("  → Turret fire rate:", ALT_WEAPON_DATA[AltWeaponType.TURRET].get("fire_rate"))
-
-		"turret_range_uncommon":
-			turret_range_bonus_percent += 0.05
-			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET) and ALT_WEAPON_DATA[AltWeaponType.TURRET].has("range"):
-				# Recalculate from base (220.0)
+		"turret_range":
+			turret_range_bonus_percent += value
+			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET):
 				ALT_WEAPON_DATA[AltWeaponType.TURRET]["range"] = 220.0 * (1.0 + turret_range_bonus_percent)
-			print("  → Turret range bonus:", turret_range_bonus_percent)
-			print("  → Turret range:", ALT_WEAPON_DATA[AltWeaponType.TURRET].get("range"))
+				print("  → Turret range +%.1f%%, now: %.0f" % [value * 100, ALT_WEAPON_DATA[AltWeaponType.TURRET]["range"]])
 
-		"turret_range_rare":
-			turret_range_bonus_percent += 0.10
-			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET) and ALT_WEAPON_DATA[AltWeaponType.TURRET].has("range"):
-				# Recalculate from base (220.0)
-				ALT_WEAPON_DATA[AltWeaponType.TURRET]["range"] = 220.0 * (1.0 + turret_range_bonus_percent)
-			print("  → Turret range bonus:", turret_range_bonus_percent)
-			print("  → Turret range:", ALT_WEAPON_DATA[AltWeaponType.TURRET].get("range"))
+		"turret_duration":
+			turret_duration_bonus += value
+			print("  → Turret duration +%.1fs" % value)
 
-		"turret_bullet_speed_rare":
-			turret_bullet_speed_bonus_percent += 0.10
-			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET) and ALT_WEAPON_DATA[AltWeaponType.TURRET].has("bullet_speed"):
-				# Recalculate from base (900.0)
+		"turret_hp":
+			turret_hp_bonus += value
+			print("  → Turret HP +%.0f" % value)
+
+		"turret_bullet_speed":
+			turret_bullet_speed_bonus_percent += value
+			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET):
 				ALT_WEAPON_DATA[AltWeaponType.TURRET]["bullet_speed"] = 900.0 * (1.0 + turret_bullet_speed_bonus_percent)
-			print("  → Turret bullet speed bonus:", turret_bullet_speed_bonus_percent)
-			print("  → Turret bullet speed:", ALT_WEAPON_DATA[AltWeaponType.TURRET].get("bullet_speed"))
+				print("  → Turret bullet speed +%.1f%%, now: %.0f" % [value * 100, ALT_WEAPON_DATA[AltWeaponType.TURRET]["bullet_speed"]])
 
-		"turret_bullet_speed_epic":
-			turret_bullet_speed_bonus_percent += 0.20
-			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET) and ALT_WEAPON_DATA[AltWeaponType.TURRET].has("bullet_speed"):
-				# Recalculate from base (900.0)
-				ALT_WEAPON_DATA[AltWeaponType.TURRET]["bullet_speed"] = 900.0 * (1.0 + turret_bullet_speed_bonus_percent)
-			print("  → Turret bullet speed bonus:", turret_bullet_speed_bonus_percent)
-			print("  → Turret bullet speed epic:", ALT_WEAPON_DATA[AltWeaponType.TURRET].get("bullet_speed"))
+		# ==============================
+		# DASH ABILITY EFFECTS
+		# ==============================
+		"dash_distance":
+			dash_distance_bonus_percent += value
+			print("  → Dash distance +%.1f%%" % [value * 100])
 
-		# ABILITIES
-		"dash_distance_common":
-			dash_distance_bonus_percent += 0.10
-			print("  → Dash distance bonus:", dash_distance_bonus_percent)
+		"dash_cooldown":
+			ability_cooldown_mult *= (1.0 + value)
+			print("  → Dash cooldown %.1f%%" % [value * 100])
 
-		"dash_distance_uncommon":
-			dash_distance_bonus_percent += 0.20
-			print("  → Dash distance bonus:", dash_distance_bonus_percent)
+		"dash_invuln_window":
+			dash_invuln_window_bonus += value
+			print("  → Dash invuln window +%.2fs" % value)
 
-		"dash_distance_rare":
-			dash_distance_bonus_percent += 0.30
-			print("  → Dash distance bonus:", dash_distance_bonus_percent)
+		"dash_speed":
+			dash_speed_bonus += value
+			print("  → Dash speed +%.1f%%" % [value * 100])
 
-		"dash_distance_epic":
-			dash_distance_bonus_percent += 0.50
-			print("  → Dash distance bonus:", dash_distance_bonus_percent)
+		"dash_charges":
+			dash_charges += int(value)
+			print("  → Dash charges now: %d" % dash_charges)
 
-		"bubble_duration_common":
-			bubble_duration_bonus_percent += 0.05
-			print("  → Bubble duration multiplier now:", bubble_duration_bonus_percent)
+		# ==============================
+		# SHIELD ABILITY EFFECTS
+		# ==============================
+		"shield_hp":
+			shield_hp += value
+			print("  → Shield HP now: %.0f" % shield_hp)
 
-		"bubble_duration_uncommon":
-			bubble_duration_bonus_percent += 0.10
-			print("  → Bubble duration multiplier now:", bubble_duration_bonus_percent)
+		"shield_duration":
+			shield_duration += value
+			print("  → Shield duration now: %.1fs" % shield_duration)
 
-		"bubble_duration_rare":
-			bubble_duration_bonus_percent += 0.20
-			print("  → Bubble duration multiplier now:", bubble_duration_bonus_percent)
+		"shield_cooldown":
+			shield_cooldown_mult *= (1.0 + value)
+			print("  → Shield cooldown %.1f%%" % [value * 100])
 
-		"bubble_duration_epic":
-			bubble_duration_bonus_percent += 0.30
-			print("  → Bubble duration multiplier now:", bubble_duration_bonus_percent)
+		"shield_radius":
+			shield_radius_bonus += value
+			print("  → Shield radius +%.1f%%" % [value * 100])
 
-		"bubble_duration_plus_0_5":
-			bubble_duration_bonus_seconds += 0.5
-			print("  → Bubble duration flat bonus now:", bubble_duration_bonus_seconds)
+		"shield_reflect_chance":
+			shield_reflect_chance += value
+			print("  → Shield reflect chance +%.1f%%" % [value * 100])
 
-		"bubble_duration_plus_1":
-			bubble_duration_bonus_seconds += 1.0
-			print("  → Bubble duration flat bonus now:", bubble_duration_bonus_seconds)
+		# ==============================
+		# SLOWMO ABILITY EFFECTS
+		# ==============================
+		"slowmo_duration":
+			slowmo_duration += value
+			print("  → Slowmo duration now: %.1fs" % slowmo_duration)
 
-		"bubble_duration_plus_2":
-			bubble_duration_bonus_seconds += 2.0
-			print("  → Bubble duration flat bonus now:", bubble_duration_bonus_seconds)
+		"slowmo_cooldown":
+			slowmo_cooldown_mult *= (1.0 + value)
+			print("  → Slowmo cooldown %.1f%%" % [value * 100])
 
-		"slowmo_time_common":
-			slowmo_time_bonus_seconds += 0.1
-			print("  → Slowmo time bonus sec:", slowmo_time_bonus_seconds)
+		"slowmo_time_scale":
+			slowmo_time_scale *= (1.0 + value)
+			print("  → Slowmo time scale now: %.2f" % slowmo_time_scale)
 
-		"slowmo_time_uncommon":
-			slowmo_time_bonus_seconds += 0.2
-			print("  → Slowmo time bonus sec:", slowmo_time_bonus_seconds)
+		"slowmo_radius":
+			slowmo_radius += value
+			print("  → Slowmo radius now: %.0f" % slowmo_radius)
 
-		"slowmo_time_rare":
-			slowmo_time_bonus_seconds += 0.4
-			print("  → Slowmo time bonus sec:", slowmo_time_bonus_seconds)
+		"slowmo_ammo_efficiency":
+			slowmo_ammo_efficiency += value
+			print("  → Slowmo ammo efficiency +%.1f%%" % [value * 100])
 
-		"slowmo_time_epic":
-			slowmo_time_bonus_seconds += 1.0
-			print("  → Slowmo time bonus sec:", slowmo_time_bonus_seconds)
+		# ==============================
+		# INVISIBILITY ABILITY EFFECTS
+		# ==============================
+		"invis_duration":
+			invis_duration_bonus_percent += value
+			print("  → Invis duration +%.1f%%" % [value * 100])
 
-		"invis_duration_common":
-			invis_duration_bonus_percent += 0.05
-			print("  → Invisibility duration bonus:", invis_duration_bonus_percent)
+		"invis_cooldown":
+			ability_cooldown_mult *= (1.0 + value)
+			print("  → Invis cooldown %.1f%%" % [value * 100])
 
-		"invis_duration_uncommon":
-			invis_duration_bonus_percent += 0.10
-			print("  → Invisibility duration bonus:", invis_duration_bonus_percent)
+		"invis_fade_speed":
+			invis_fade_speed_bonus += value
+			print("  → Invis fade speed +%.1f%%" % [value * 100])
 
-		"invis_duration_rare":
-			invis_duration_bonus_percent += 0.20
-			print("  → Invisibility duration bonus:", invis_duration_bonus_percent)
+		"invis_movement_speed":
+			invis_movement_speed_bonus += value
+			print("  → Invis movement speed +%.1f%%" % [value * 100])
 
-		"invis_duration_epic":
-			invis_duration_bonus_percent += 0.30
-			print("  → Invisibility duration bonus:", invis_duration_bonus_percent)
+		"invis_first_hit_bonus":
+			invis_first_hit_bonus += value
+			print("  → Invis first hit bonus +%.1f%%" % [value * 100])
 
-		# SYNERGIES (data-only flags)
-		"synergy_flamethrower_bubble_burning_shield":
-			synergy_flamethrower_bubble_unlocked = true
-			# TODO: Implement burning shield behavior in gameplay code
-
-		"synergy_grenade_dash_explosive_trail":
-			synergy_grenade_dash_unlocked = true
-			# TODO: Implement explosive dash trail in gameplay code
-
-		"synergy_shuriken_slowmo_infinite_bounces":
-			synergy_shuriken_slowmo_unlocked = true
-			# TODO: Implement infinite bounces during slowmo in gameplay code
-
-		"synergy_sniper_invis_assassins_shot":
+		# ==============================
+		# SYNERGIES
+		# ==============================
+		"sniper_invis_synergy":
+			sniper_invis_synergy_unlocked = true
 			synergy_sniper_invis_unlocked = true
-			# TODO: Implement assassins shot on invisibility break
+			print("  → Sniper + Invis synergy unlocked!")
 
-		"synergy_turret_bubble_shielded_turret":
-			synergy_turret_bubble_unlocked = true
-			# TODO: Implement shielded turret while bubble is active
+		"shield_flamethrower_synergy":
+			shield_flamethrower_synergy_unlocked = true
+			synergy_flamethrower_bubble_unlocked = true
+			print("  → Shield + Flamethrower synergy unlocked!")
 
+		"dash_grenades_synergy":
+			dash_grenades_synergy_unlocked = true
+			synergy_grenade_dash_unlocked = true
+			print("  → Dash + Grenades synergy unlocked!")
+
+		# ==============================
 		# CHAOS CHALLENGES
-		"chaos_half_hp_double_damage":
-			print("  → Starting chaos challenge: half_hp_double_damage")
-			start_chaos_challenge("half_hp_double_damage")
-		
-		# ⭐ NEW CHAOS CHALLENGES
-		"chaos_half_speed_double_speed":
-			print("  → Starting chaos challenge: half_speed_double_speed")
-			start_chaos_challenge("half_speed_double_speed")
-		
-		"chaos_no_shop_1000_coins":
-			print("  → Starting chaos challenge: no_shop_1000_coins")
-			start_chaos_challenge("no_shop_1000_coins")
-		
-		"chaos_no_primary_fire_triple_rate":
-			print("  → Starting chaos challenge: no_primary_fire_triple_rate")
-			start_chaos_challenge("no_primary_fire_triple_rate")
+		# ==============================
+		"chaos_challenge":
+			# Extract the actual challenge ID from the upgrade_id
+			var challenge_id := upgrade_id.replace("chaos_", "")
+			print("  → Starting chaos challenge:", challenge_id)
+			start_chaos_challenge(challenge_id)
 
 		_:
-			push_warning("[GameState] No handler for upgrade_id: %s" % upgrade_id)
+			push_warning("[GameState] Unhandled upgrade effect: '%s' (id: %s)" % [effect, upgrade_id])
 
 	# After changing numbers, broadcast signals so UI and systems can refresh
 	# Record acquisition (used to prevent re-offering non-stackables)
