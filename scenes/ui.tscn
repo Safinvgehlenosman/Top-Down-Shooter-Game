@@ -229,7 +229,6 @@ text = "PAUSED"
 horizontal_alignment = 1
 
 [node name="VHSLayer" parent="." instance=ExtResource("11_vdcm2")]
-visible = false
 
 [connection signal="pressed" from="DeathScreen/Content/RestartButton" to="DeathScreen" method="_on_restart_button_pressed"]
 [connection signal="pressed" from="DeathScreen/Content/QuitButton" to="DeathScreen" method="_on_quit_button_pressed"]

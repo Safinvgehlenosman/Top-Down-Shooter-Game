@@ -9,15 +9,20 @@ signal purchased
 # Current rarity for this card (set in inspector or via set_rarity)
 @export var rarity: UpgradesDB.Rarity = UpgradesDB.Rarity.COMMON
 
-@onready var outline: TextureRect = $Outline
-@onready var price_label: Label      = $PriceArea/TextureRect/PriceLabel
-@onready var coin_icon: TextureRect  = $PriceArea/TextureRect/CoinIcon
-@onready var icon_rect: TextureRect  = $Icon
-@onready var desc_label: Label       = $Label
-@onready var buy_button: Button      = $Button
-@onready var color_rect: ColorRect   = get_node_or_null("ColorRect")  # Optional - may not exist
+# Visual root for scaling/animations (set in scene)
+@onready var visual_root: Control = $VisualRoot
 
-var sfx_collect: AudioStreamPlayer = null
+# UI references (all inside VisualRoot)
+@onready var outline: TextureRect = $VisualRoot/Outline
+@onready var price_label: Label = $VisualRoot/PriceArea/TextureRect/PriceLabel
+@onready var coin_icon: TextureRect = $VisualRoot/PriceArea/TextureRect/CoinIcon
+@onready var icon_rect: TextureRect = $VisualRoot/Icon
+@onready var desc_label: Label = $VisualRoot/Label
+@onready var buy_button: Button = $VisualRoot/Button
+
+# SFX stays on root
+@onready var sfx_collect: AudioStreamPlayer = $SFX_Collect
+
 var background_panel: Panel = null  # Panel for rounded corners
 
 var upgrade_id: String = ""
@@ -45,8 +50,8 @@ const RARITY_COLORS := {
 }
 
 func _ready() -> void:
-	if has_node("SFX_Collect"):
-		sfx_collect = $SFX_Collect
+	# Get optional ColorRect from VisualRoot
+	var color_rect = visual_root.get_node_or_null("ColorRect")
 
 	if buy_button and not buy_button.pressed.is_connected(_on_buy_pressed):
 		buy_button.pressed.connect(_on_buy_pressed)
@@ -74,21 +79,49 @@ func _ready() -> void:
 		style.corner_radius_bottom_right = 10
 		background_panel.add_theme_stylebox_override("panel", style)
 		
-		# Add panel before ColorRect (lower z-index)
-		add_child(background_panel)
-		move_child(background_panel, 0)
+		# Add panel to visual_root before ColorRect (lower z-index)
+		visual_root.add_child(background_panel)
+		visual_root.move_child(background_panel, 0)
 		
 		# Hide the ColorRect since we're using Panel now
 		color_rect.visible = false
 	
-	# Set pivot to center for proper rotation/scaling
-	# Use actual card size (235x174 based on ColorRect/Button)
-	pivot_offset = Vector2(235.0 / 2.0, 174.0 / 2.0)
-
+	# IMPORTANT: Keep root card scale at Vector2.ONE always
+	scale = Vector2.ONE
+	
+	# Wait one frame then set pivot to center of VisualRoot
+	await get_tree().process_frame
+	visual_root.pivot_offset = visual_root.size * 0.5
+	
 	# Update outline texture based on rarity
 	_update_outline_texture()
 
 	_refresh()
+
+
+func set_slot_scale(mult: float) -> void:
+	"""Set the visual scale of the card without affecting layout."""
+	if visual_root:
+		visual_root.scale = Vector2.ONE * mult
+
+
+func set_hovered(is_hovered: bool) -> void:
+	"""Scale the visual root on hover without affecting card layout."""
+	if not visual_root:
+		return
+	
+	# Kill existing tween
+	var existing_tween = get_meta("hover_tween", null)
+	if existing_tween and existing_tween is Tween:
+		existing_tween.kill()
+	
+	var tween = create_tween()
+	set_meta("hover_tween", tween)
+	
+	if is_hovered:
+		tween.tween_property(visual_root, "scale", Vector2(1.05, 1.05), 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	else:
+		tween.tween_property(visual_root, "scale", Vector2.ONE, 0.15).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 
 func setup(data: Dictionary) -> void:
@@ -265,9 +298,13 @@ func _on_buy_pressed() -> void:
 	# Apply the upgrade via the DB
 	preload("res://scripts/Upgrades_DB.gd").apply_upgrade(upgrade_id)
 
-	# Little feedback
+	# Play purchase sound effect
 	if sfx_collect:
+		print("Playing SFX_Collect - Stream: ", sfx_collect.stream, " Playing: ", sfx_collect.playing)
 		sfx_collect.play()
+		print("After play() - Playing: ", sfx_collect.playing)
+	else:
+		print("ERROR: sfx_collect is null!")
 
 	# ⭐ NOTE: Do NOT touch scale here - shop_ui manages card scales for layout
 	# Only emit signal and refresh this card's state
@@ -321,8 +358,8 @@ func _create_tooltip(upgrade: Dictionary) -> void:
 	# Start hidden
 	tooltip_label.visible = false
 	
-	# Add to card (as child, so it moves with card)
-	add_child(tooltip_label)
+	# Add to VisualRoot so it scales with the card
+	visual_root.add_child(tooltip_label)
 
 
 func _on_mouse_entered() -> void:

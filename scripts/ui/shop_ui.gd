@@ -66,6 +66,12 @@ func _ready() -> void:
 	_refresh_from_state_full()
 
 	continue_button.pressed.connect(_on_continue_pressed)
+	
+	# Initialize all cards to non-hovered state
+	await get_tree().process_frame
+	for card in cards_container.get_children():
+		if card.has_method("set_hovered"):
+			card.set_hovered(false)
 
 
 func _process(_delta: float) -> void:
@@ -79,6 +85,29 @@ func _process(_delta: float) -> void:
 # -------------------------------------------------------------------
 # CARD SETUP
 # -------------------------------------------------------------------
+
+func _setup_card_hover_events(card: Control) -> void:
+	"""Connect hover events to card for scaling effect."""
+	if not card.has_method("set_hovered"):
+		return
+	
+	# Connect mouse entered/exited
+	card.mouse_entered.connect(func(): _on_card_hovered(card, true))
+	card.mouse_exited.connect(func(): _on_card_hovered(card, false))
+
+
+func _on_card_hovered(hovered_card: Control, is_hovered: bool) -> void:
+	"""Handle card hover - scale the hovered card, reset others."""
+	if is_hovered:
+		# Set this card as hovered, others as not
+		for card in cards_container.get_children():
+			if card.has_method("set_hovered"):
+				card.set_hovered(card == hovered_card)
+	else:
+		# Reset just this card
+		if hovered_card.has_method("set_hovered"):
+			hovered_card.set_hovered(false)
+
 
 # -------------------------------------------------------------------
 # PRICE CALCULATION
@@ -156,15 +185,10 @@ func _setup_cards() -> void:
 		if not card.purchased.is_connected(_on_card_purchased):
 			card.purchased.connect(_on_card_purchased)
 		
-		used_positions.append(position)
+		# Connect hover events
+		_setup_card_hover_events(card)
 		
-		# Set base scale based on position - DEFERRED to ensure it happens after _ready()
-		if position == 2:  # Center card
-			card.set_deferred("scale", Vector2(1.2, 1.2))
-		elif position == 1 or position == 3:  # Middle cards
-			card.set_deferred("scale", Vector2(1.0, 1.0))
-		else:  # Outer cards (0, 4)
-			card.set_deferred("scale", Vector2(0.9, 0.9))
+		used_positions.append(position)
 	
 	# Hide unused cards
 	for i in range(children.size()):
@@ -353,6 +377,24 @@ func _update_coin_label() -> void:
 		return
 	coin_label.text = str(GameState.coins)
 
+
+func flash_coin_label_red() -> void:
+	"""Flash the coin label red when buying items."""
+	if not coin_label:
+		return
+	
+	# Kill any existing tween
+	var existing_tween = coin_label.get_meta("flash_tween", null)
+	if existing_tween and existing_tween is Tween:
+		existing_tween.kill()
+	
+	var tween := create_tween()
+	coin_label.set_meta("flash_tween", tween)
+	
+	# Flash red then back to white
+	tween.tween_property(coin_label, "modulate", Color(1.0, 0.2, 0.2), 0.1)
+	tween.tween_property(coin_label, "modulate", Color.WHITE, 0.2)
+
 func _update_hp_from_state() -> void:
 	if not hp_progress_bar:
 		return
@@ -427,6 +469,9 @@ func _on_card_purchased() -> void:
 	if is_chest_mode:
 		return
 	
+	# Flash coin label red when spending money
+	flash_coin_label_red()
+	
 	_refresh_from_state_full()
 	# Refresh all cards to update prices and dynamic text
 	for card in cards_container.get_children():
@@ -459,39 +504,29 @@ func refresh_from_state() -> void:
 # -------------------------------------------------------------------
 
 func _animate_cards_in() -> void:
-	"""Animate cards in with sequential wiggle effect - each card completes before next starts."""
+	"""Quick fade in animation: center -> middle -> outer."""
 	var cards := cards_container.get_children()
 	
-	# FIRST: Store base scales BEFORE modifying anything (these were set in _setup_cards)
-	var base_scales = {}
-	for i in range(cards.size()):
-		if cards[i].visible:
-			base_scales[i] = cards[i].scale  # Store the scale: 1.2 for center, 1.0 for middle, 0.9 for outer
-	
-	# THEN: Start all cards invisible and tiny for animation
+	# Start all cards invisible
 	for card in cards:
 		if not card.visible:
 			continue
 		
-		# ⭐ SET PIVOT TO CENTER so rotation happens from center
-		# Card size is 235x174 (based on upgrade_card.tscn)
-		card.pivot_offset = Vector2(117.5, 87.0)  # Half of 235x174
-		
-		card.modulate.a = 0.0
-		card.scale = Vector2(0.0, 0.0)  # This overwrites the base scale, but we saved it above
-		card.rotation = 0.0
+		var visual_root = card.get_node_or_null("VisualRoot")
+		if not visual_root:
+			continue
+			
+		visual_root.modulate.a = 0.0
 	
 	# Animate cards from center outward: 2 -> (1,3) -> (0,4)
-	# Define animation order and delays
 	var animation_groups = [
-		{"indices": [2], "delay": 0.0},      # Card 2 (center) - starts immediately
-		{"indices": [1, 3], "delay": 0.7},   # Cards 1 & 3 - start after card 2 finishes
-		{"indices": [0, 4], "delay": 1.4}    # Cards 0 & 4 - start after cards 1 & 3 finish
+		{"indices": [2], "delay": 0.0},      # Card 2 (center)
+		{"indices": [1, 3], "delay": 0.1},   # Cards 1 & 3
+		{"indices": [0, 4], "delay": 0.2}    # Cards 0 & 4
 	]
 	
 	for group in animation_groups:
 		for card_index in group["indices"]:
-			# Skip if index is out of range or card is invisible
 			if card_index >= cards.size():
 				continue
 			
@@ -499,33 +534,12 @@ func _animate_cards_in() -> void:
 			if not card.visible:
 				continue
 			
-			var delay = group["delay"]
+			var visual_root = card.get_node_or_null("VisualRoot")
+			if not visual_root:
+				continue
 			
-			# Get the card's base scale from our stored values
-			var base_scale = base_scales.get(card_index, Vector2(1.0, 1.0))
-			var overshoot_scale = base_scale * 1.15  # 15% bigger than base for overshoot
-			
-			# Phase 1: Fade in and scale to overshoot
 			var tween := create_tween()
-			tween.set_parallel(true)
-			
-			# Fade in
-			tween.tween_property(card, "modulate:a", 1.0, 0.3).set_delay(delay)
-			
-			# Scale up to overshoot (1.2x base scale)
-			tween.tween_property(card, "scale", overshoot_scale, 0.3).set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-			
-			# Phase 2: Wiggle (rotate left and right) - REDUCED ANGLES
-			tween.set_parallel(false)  # Sequential from here
-			tween.tween_property(card, "rotation", deg_to_rad(4), 0.08)
-			tween.tween_property(card, "rotation", deg_to_rad(-4), 0.08)
-			tween.tween_property(card, "rotation", deg_to_rad(2), 0.08)
-			tween.tween_property(card, "rotation", deg_to_rad(-2), 0.08)
-			tween.tween_property(card, "rotation", 0.0, 0.08)
-			
-			# Phase 3: Scale back to base scale (settle) - happens during wiggle
-			tween.set_parallel(true)
-			tween.tween_property(card, "scale", base_scale, 0.25).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			tween.tween_property(visual_root, "modulate:a", 1.0, 0.3).set_delay(group["delay"])
 
 
 # -------------------------------------------------------------------
@@ -743,14 +757,6 @@ func _setup_chest_cards() -> void:
 			card.purchased.connect(_on_chest_card_purchased)
 		
 		used_positions.append(position)
-		
-		# Set base scale based on position - DEFERRED
-		if position == 2:  # Center card
-			card.set_deferred("scale", Vector2(1.2, 1.2))
-		elif position == 1 or position == 3:  # Middle cards
-			card.set_deferred("scale", Vector2(1.0, 1.0))
-		else:  # Outer cards (0, 4)
-			card.set_deferred("scale", Vector2(0.9, 0.9))
 	
 	# Hide unused cards
 	for i in range(children.size()):
@@ -766,7 +772,7 @@ func _setup_chest_cards_with_loot(loot: Array) -> void:
 		card.modulate = Color(1, 1, 1, 1)
 		card.visible = true
 		card.mouse_filter = Control.MOUSE_FILTER_STOP
-		card.scale = Vector2(1.0, 1.0)  # ⭐ Reset scale too
+		# Root card scale stays at ONE - VisualRoot handles scaling
 		# ⭐ Also restore child visibility (was hidden for single-card mode)
 		for child in card.get_children():
 			# Restore all except: TooltipLabel (temporary), ColorRect (hidden by design)
@@ -802,13 +808,9 @@ func _setup_chest_cards_with_loot(loot: Array) -> void:
 				
 				if not card.purchased.is_connected(_on_chest_card_purchased):
 					card.purchased.connect(_on_chest_card_purchased)
-				
-				# Make it bigger for emphasis
-				card.set_deferred("scale", Vector2(1.5, 1.5))
 			else:  # Side cards - make completely transparent and non-interactive
 				card.modulate = Color(1, 1, 1, 0)  # Completely transparent
 				card.mouse_filter = Control.MOUSE_FILTER_IGNORE  # Don't block mouse
-				card.set_deferred("scale", Vector2(1.0, 1.0))
 				
 				# Also hide all child nodes to ensure nothing shows
 				for child in card.get_children():
@@ -842,14 +844,6 @@ func _setup_chest_cards_with_loot(loot: Array) -> void:
 			card.purchased.connect(_on_chest_card_purchased)
 		
 		used_positions.append(position)
-		
-		# Set base scale based on position - DEFERRED
-		if position == 2:  # Center card
-			card.set_deferred("scale", Vector2(1.2, 1.2))
-		elif position == 1 or position == 3:  # Middle cards
-			card.set_deferred("scale", Vector2(1.0, 1.0))
-		else:  # Outer cards (0, 4)
-			card.set_deferred("scale", Vector2(0.9, 0.9))
 	
 	# Hide unused cards
 	for i in range(children.size()):
@@ -948,7 +942,7 @@ func _reset_all_cards() -> void:
 		card.visible = true
 		card.modulate = Color(1, 1, 1, 1)
 		card.mouse_filter = Control.MOUSE_FILTER_STOP
-		card.scale = Vector2(1.0, 1.0)
+		# Root card scale stays at ONE - VisualRoot handles scaling
 		
 		# Remove any tooltips
 		var tooltip = card.get_node_or_null("TooltipLabel")

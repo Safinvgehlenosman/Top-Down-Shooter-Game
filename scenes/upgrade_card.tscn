@@ -21,7 +21,12 @@ mouse_filter = 1
 script = ExtResource("1_0hv3p")
 rarity_outline_textures = Array[Texture2D]([ExtResource("6_33rkj"), ExtResource("3_feudy"), ExtResource("4_dvncl"), ExtResource("5_acdrt"), ExtResource("6_sa0xp")])
 
-[node name="PriceArea" type="HBoxContainer" parent="."]
+[node name="VisualRoot" type="Control" parent="."]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="PriceArea" type="HBoxContainer" parent="VisualRoot"]
 layout_mode = 0
 offset_left = 5.0
 offset_top = 6.0
@@ -29,10 +34,10 @@ offset_right = 45.0
 offset_bottom = 46.0
 mouse_filter = 2
 
-[node name="TextureRect" type="TextureRect" parent="PriceArea"]
+[node name="TextureRect" type="TextureRect" parent="VisualRoot/PriceArea"]
 layout_mode = 2
 
-[node name="PriceLabel" type="Label" parent="PriceArea/TextureRect"]
+[node name="PriceLabel" type="Label" parent="VisualRoot/PriceArea/TextureRect"]
 layout_mode = 0
 offset_left = 38.0
 offset_top = 12.0
@@ -40,7 +45,7 @@ offset_right = 56.0
 offset_bottom = 28.0
 theme_override_fonts/font = ExtResource("2_igsks")
 
-[node name="CoinIcon" type="TextureRect" parent="PriceArea/TextureRect"]
+[node name="CoinIcon" type="TextureRect" parent="VisualRoot/PriceArea/TextureRect"]
 layout_mode = 0
 offset_left = 4.0
 offset_right = 44.0
@@ -48,7 +53,7 @@ offset_bottom = 40.0
 texture = ExtResource("3_33rkj")
 expand_mode = 2
 
-[node name="Icon" type="TextureRect" parent="."]
+[node name="Icon" type="TextureRect" parent="VisualRoot"]
 layout_mode = 0
 offset_left = 20.0
 offset_top = 50.0
@@ -58,7 +63,7 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Label" type="Label" parent="."]
+[node name="Label" type="Label" parent="VisualRoot"]
 layout_mode = 0
 offset_left = 15.0
 offset_top = 102.0
@@ -68,7 +73,7 @@ theme_override_fonts/font = ExtResource("2_igsks")
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="Button" type="Button" parent="."]
+[node name="Button" type="Button" parent="VisualRoot"]
 z_index = 10
 layout_mode = 0
 offset_left = 1.0
@@ -76,13 +81,14 @@ offset_top = 165.0
 offset_right = 223.0
 offset_bottom = 221.0
 theme_override_fonts/font = ExtResource("4_sav2r")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 24
 text = "BUY"
 
-[node name="SFX_Collect" type="AudioStreamPlayer" parent="Button"]
+[node name="SFX_Collect" type="AudioStreamPlayer" parent="VisualRoot/Button"]
 stream = ExtResource("5_igsks")
+bus = &"SFX"
 
-[node name="Outline" type="TextureRect" parent="."]
+[node name="Outline" type="TextureRect" parent="VisualRoot"]
 z_index = -1
 layout_mode = 0
 offset_left = -10.0
