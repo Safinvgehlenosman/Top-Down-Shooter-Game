@@ -68,7 +68,6 @@ func _ready() -> void:
 	var gs = GameState
 	gs.connect("coins_changed", Callable(self, "_on_coins_changed"))
 	gs.connect("health_changed", Callable(self, "_on_health_changed"))
-	gs.connect("ammo_changed", Callable(self, "_on_ammo_changed"))
 	
 	# Always start hidden
 	if ability_progress_bar:
@@ -89,7 +88,6 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	# Update displays continuously
 	_update_hp_from_state()
-	_update_ammo_from_state()
 	_update_ability_bar()
 	_update_level_label()
 
@@ -479,7 +477,6 @@ func _upgrade_meets_requirements(u: Dictionary) -> bool:
 func _refresh_from_state_full() -> void:
 	_update_coin_label()
 	_update_hp_from_state()
-	_update_ammo_from_state()
 	_update_level_label()
 	_update_ability_bar()
 	_update_card_button_states()
@@ -517,14 +514,7 @@ func _update_hp_from_state() -> void:
 	if hp_label:
 		hp_label.text = "%d/%d" % [GameState.health, GameState.max_health]
 
-func _update_ammo_from_state() -> void:
-	if not ammo_label:
-		return
-	# Display ammo only for ammo-using alt weapons; show "-/-" for NONE or TURRET
-	if GameState.alt_weapon == ALT_WEAPON_NONE or GameState.alt_weapon == ALT_WEAPON_TURRET:
-		ammo_label.text = "-/-"
-	else:
-		ammo_label.text = "%d/%d" % [GameState.ammo, GameState.max_ammo]
+# REMOVED: _update_ammo_from_state() - fuel system handles this
 
 func _update_level_label() -> void:
 	if not level_label:
@@ -1144,6 +1134,3 @@ func _on_coins_changed(_new_value: int) -> void:
 
 func _on_health_changed(_new_value: int, _max_value: int) -> void:
 	_update_hp_from_state()
-
-func _on_ammo_changed(_new_value: int, _max_value: int) -> void:
-	_update_ammo_from_state()

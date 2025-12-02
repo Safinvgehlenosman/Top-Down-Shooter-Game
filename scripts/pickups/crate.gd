@@ -1,7 +1,6 @@
 extends Area2D
 
 @export var CoinScene: PackedScene
-@export var AmmoScene: PackedScene
 @export var HeartScene: PackedScene  # optional
 
 @export var hit_flash_time: float = 0.1
@@ -57,64 +56,37 @@ func _update_hit_feedback(delta: float) -> void:
 func _spawn_loot() -> void:
 	# Dynamic pickup spawn based on player needs
 	var hp_percent := 1.0
-	var ammo_percent := 1.0
 	
 	# Calculate HP percentage
 	if GameState.max_health > 0:
 		hp_percent = float(GameState.health) / float(GameState.max_health)
 	
-	# Calculate ammo percentage (only if player has ammo weapon)
-	if GameState.max_ammo > 0:
-		ammo_percent = float(GameState.ammo) / float(GameState.max_ammo)
-	
 	# ⭐ Check if chaos challenge is active (no HP upgrades allowed)
 	var chaos_active := not GameState.active_chaos_challenge.is_empty()
 	
-	# ⭐ Check if weapon uses ammo (NONE and TURRET don't use ammo)
-	var weapon_uses_ammo: bool = GameState.alt_weapon != GameState.AltWeaponType.NONE and GameState.alt_weapon != GameState.AltWeaponType.TURRET
-	
-	# Determine heart spawn chance based on player needs
-	var heart_chance := 0.5  # default 50/50
-	
-	if hp_percent < 0.5 and ammo_percent >= 0.25:
-		# Low HP, sufficient ammo → prioritize hearts
-		heart_chance = 0.75
-	elif ammo_percent < 0.25 and hp_percent >= 0.5:
-		# Low ammo, sufficient HP → prioritize ammo
-		heart_chance = 0.25
-	# else: both low or both high → keep 50/50
-	
-	var roll := randf()
-	
-	if roll < heart_chance:
-		# Heart pickup (or coin if chaos is active)
-		if chaos_active:
-			# ⭐ During chaos challenge, spawn coins instead of hearts
-			if CoinScene:
-				var coin := CoinScene.instantiate()
-				coin.global_position = global_position
-				get_tree().current_scene.add_child(coin)
-		elif HeartScene:
-			var heart := HeartScene.instantiate()
-			heart.global_position = global_position
-			get_tree().current_scene.add_child(heart)
-		elif CoinScene:
-			# Fallback to coin if no heart scene
+	# During chaos challenge or always spawn coins
+	# Ammo is no longer relevant since all weapons use rechargeable fuel
+	if chaos_active:
+		# Spawn coins during chaos challenge
+		if CoinScene:
 			var coin := CoinScene.instantiate()
 			coin.global_position = global_position
 			get_tree().current_scene.add_child(coin)
 	else:
-		# Ammo pickup (or coin if weapon doesn't use ammo)
-		if not weapon_uses_ammo:
-			# ⭐ Weapon doesn't use ammo, spawn coins instead
-			if CoinScene:
-				var coin := CoinScene.instantiate()
-				coin.global_position = global_position
-				get_tree().current_scene.add_child(coin)
-		elif AmmoScene:
-			var ammo := AmmoScene.instantiate()
-			ammo.global_position = global_position
-			get_tree().current_scene.add_child(ammo)
+		# Normal loot: 75% chance heart if low HP, otherwise coins
+		var heart_chance := 0.5
+		if hp_percent < 0.5:
+			heart_chance = 0.75
+		
+		var roll := randf()
+		if roll < heart_chance and HeartScene:
+			var heart := HeartScene.instantiate()
+			heart.global_position = global_position
+			get_tree().current_scene.add_child(heart)
+		elif CoinScene:
+			var coin := CoinScene.instantiate()
+			coin.global_position = global_position
+			get_tree().current_scene.add_child(coin)
 
 
 

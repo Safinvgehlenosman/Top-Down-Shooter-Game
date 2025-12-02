@@ -343,12 +343,8 @@ func _cmd_weapon(parts: Array) -> void:
 		_:
 			print("[DEBUG] Unknown weapon:", weapon_name)
 
-	# Optional: parts[2] = ammo override (e.g., "weapon shotgun 10")
-	if parts.size() >= 3 and parts[2].is_valid_int():
-		var amt := int(parts[2])
-		# Clamp to current weapon's max_ammo after set_alt_weapon applied
-		GameState.set_ammo(clamp(amt, 0, GameState.max_ammo))
-		print("[DEBUG] Ammo set to", GameState.ammo, "/", GameState.max_ammo)
+	# Note: Ammo system has been replaced with rechargeable fuel bars
+	# No manual ammo override needed - fuel auto-regenerates per weapon
 
 
 func _cmd_ability(parts: Array) -> void:

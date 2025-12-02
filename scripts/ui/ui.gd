@@ -5,10 +5,15 @@ extends CanvasLayer
 @onready var hp_label: Label = get_node_or_null("PlayerInfo/HP")
 @onready var ability_progress_bar: TextureProgressBar = get_node_or_null("PlayerInfo/AbilityProgressBar")
 @onready var ability_label: Label = get_node_or_null("PlayerInfo/ABILITY")
+@onready var ammo_container: Control = get_node_or_null("Ammo")
+@onready var ammo_bar: TextureProgressBar = get_node_or_null("Ammo/Ammo")
 @onready var ammo_label: Label = get_node_or_null("Ammo/AmmoLabel")
 @onready var coin_label: Label = get_node_or_null("Coins/CoinsLabel")
 @onready var level_label: Label = get_node_or_null("Level/LevelLabel")
 @onready var chaos_pact_indicator: TextureRect = get_node_or_null("ChaosPact")
+
+# Fuel bar configuration (assign in inspector)
+@export var weapon_fuel_progress_texture: Array[Texture2D] = []
 
 # Use GameState enums directly
 const ABILITY_NONE = GameState.AbilityType.NONE
@@ -16,15 +21,18 @@ const ALT_WEAPON_NONE = GameState.AltWeaponType.NONE
 const ALT_WEAPON_TURRET = GameState.AltWeaponType.TURRET
 
 var coin_animation_cooldown: float = 0.0
+var is_in_hub: bool = true  # Start as true, game_manager will set to false when entering run
 
 
 func _ready() -> void:
+	# Add to 'ui' group so gun.gd can find us
+	add_to_group("ui")
+	
 	var gs = GameState
 
 	# connect UI to gamestate
 	gs.connect("coins_changed",  Callable(self, "_on_coins_changed"))
 	gs.connect("health_changed", Callable(self, "_on_health_changed"))
-	gs.connect("ammo_changed",   Callable(self, "_on_ammo_changed"))
 
 	# initial sync
 	_refresh_from_state_full()
@@ -36,6 +44,24 @@ func _ready() -> void:
 	# hide chaos pact indicator by default
 	if chaos_pact_indicator:
 		chaos_pact_indicator.visible = false
+	
+	# ALWAYS start with fuel bar hidden - only show when weapon equipped in-run
+	if ammo_container:
+		ammo_container.visible = false
+		print("[UI] Fuel bar initially hidden")
+	
+	# Connect to alt weapon changes
+	GameState.alt_weapon_changed.connect(_on_alt_weapon_changed)
+
+
+func _on_alt_weapon_changed(new_weapon: int) -> void:
+	"""Handle alt weapon change to show/hide fuel bar."""
+	# Always hide if NONE or TURRET
+	if new_weapon == ALT_WEAPON_NONE or new_weapon == ALT_WEAPON_TURRET:
+		if ammo_container:
+			ammo_container.visible = false
+			print("[UI] Hiding fuel bar - weapon is NONE or TURRET")
+	# Otherwise gun.gd will call show_alt_weapon_fuel() if weapon uses fuel
 
 
 func _process(_delta: float) -> void:
@@ -45,7 +71,6 @@ func _process(_delta: float) -> void:
 	
 	# Update displays
 	_update_hp_from_state()
-	_update_ammo_from_state()
 	_update_ability_bar()
 	_update_level_label()
 	_update_chaos_pact_indicator()
@@ -58,7 +83,6 @@ func _process(_delta: float) -> void:
 func _refresh_from_state_full() -> void:
 	_update_coin_label()
 	_update_hp_from_state()
-	_update_ammo_from_state()
 	_update_level_label()
 	_update_ability_bar()
 
@@ -80,14 +104,69 @@ func _update_hp_from_state() -> void:
 		hp_label.text = "%d/%d" % [GameState.health, GameState.max_health]
 
 
-func _update_ammo_from_state() -> void:
-	if not ammo_label:
+# --------------------------------------------------------------------
+# FUEL BAR SYSTEM (replaces ammo)
+# --------------------------------------------------------------------
+
+func show_alt_weapon_fuel(weapon_id: String, max_fuel: float, current_fuel: float, shots_per_bar: int, is_continuous: bool) -> void:
+	"""Configure and show fuel bar when alt weapon is equipped."""
+	if not ammo_container or not ammo_bar:
 		return
-	# Display ammo only for ammo-using alt weapons; show "-/-" for NONE or TURRET
-	if GameState.alt_weapon == ALT_WEAPON_NONE or GameState.alt_weapon == ALT_WEAPON_TURRET:
-		ammo_label.text = "-/-"
+	
+	# ONLY show if NOT in hub
+	if is_in_hub:
+		print("[UI] NOT showing fuel bar - in hub mode")
+		ammo_container.visible = false
+		return
+	
+	print("[UI] Showing fuel bar for weapon: ", weapon_id)
+	# Show container
+	ammo_container.visible = true
+	
+	# Texture
+	var idx := _get_weapon_fuel_texture_index(weapon_id)
+	if idx >= 0 and idx < weapon_fuel_progress_texture.size():
+		ammo_bar.texture_progress = weapon_fuel_progress_texture[idx]
+	
+	# Range and step
+	ammo_bar.min_value = 0.0
+	ammo_bar.max_value = max_fuel
+	if is_continuous:
+		ammo_bar.step = max_fuel / 100.0
 	else:
-		ammo_label.text = "%d/%d" % [GameState.ammo, GameState.max_ammo]
+		ammo_bar.step = max_fuel / max(shots_per_bar, 1)
+	
+	# Value
+	ammo_bar.value = clamp(current_fuel, 0.0, max_fuel)
+
+
+func update_alt_weapon_fuel(current_fuel: float) -> void:
+	"""Update fuel bar value every frame."""
+	if ammo_bar:
+		ammo_bar.value = clamp(current_fuel, ammo_bar.min_value, ammo_bar.max_value)
+
+
+func hide_alt_weapon_fuel() -> void:
+	"""Hide fuel bar when no alt weapon or turret equipped."""
+	if ammo_container:
+		ammo_container.visible = false
+
+
+func _get_weapon_fuel_texture_index(weapon_id: String) -> int:
+	"""Map weapon ID to texture array index."""
+	match weapon_id:
+		"shotgun":
+			return 0
+		"sniper":
+			return 1
+		"grenade":
+			return 2
+		"shuriken":
+			return 3
+		"flamethrower":
+			return 4
+		_:
+			return -1
 
 
 func _update_level_label() -> void:
@@ -171,10 +250,6 @@ func _on_health_changed(_new_value: int, _max_value: int) -> void:
 	_update_hp_from_state()
 
 
-func _on_ammo_changed(_new_value: int, _max_value: int) -> void:
-	_update_ammo_from_state()
-
-
 # --------------------------------------------------------------------
 # COIN COLLECTION FEEDBACK
 # --------------------------------------------------------------------
@@ -219,12 +294,18 @@ func _update_chaos_pact_indicator() -> void:
 # HUB MODE (Hide in-run UI when in hub)
 # --------------------------------------------------------------------
 
-func set_in_hub(is_in_hub: bool) -> void:
+func set_in_hub(is_in_hub_mode: bool) -> void:
 	"""Toggle hub mode - hides/shows in-run UI elements."""
-	# Hide in-run UI when in hub, show them during runs
-	var show_ui = not is_in_hub
+	is_in_hub = is_in_hub_mode
+	print("[UI] set_in_hub called: ", is_in_hub_mode)
 	
-	# Use get_node_or_null to avoid errors if nodes don't exist
+	# FORCE hide ammo container when entering hub
+	if is_in_hub_mode and ammo_container:
+		ammo_container.visible = false
+		print("[UI] FORCE hiding fuel bar in hub")
+	
+	# Hide in-run UI when in hub, show them during runs
+	var show_ui = not is_in_hub_mode
 	var hp_bar = get_node_or_null("PlayerInfo/HPFill")
 	if hp_bar:
 		hp_bar.visible = show_ui
@@ -237,7 +318,7 @@ func set_in_hub(is_in_hub: bool) -> void:
 	if ability_bar:
 		ability_bar.visible = show_ui and GameState.ability != ABILITY_NONE
 	
-	var ammo_ui = get_node_or_null("Ammo")
+	var ammo_ui = get_node_or_null("UI/Ammo")
 	if ammo_ui:
 		ammo_ui.visible = show_ui
 	
@@ -252,4 +333,4 @@ func set_in_hub(is_in_hub: bool) -> void:
 	# Keep chaos pact indicator visible if active (even in hub)
 	# It's already handled by _update_chaos_pact_indicator()
 	
-	print("[UI] Hub mode: ", "ENABLED" if is_in_hub else "DISABLED", " - In-run UI: ", "HIDDEN" if is_in_hub else "VISIBLE")
+	print("[UI] Hub mode: ", "ENABLED" if is_in_hub_mode else "DISABLED", " - In-run UI: ", "HIDDEN" if is_in_hub_mode else "VISIBLE")

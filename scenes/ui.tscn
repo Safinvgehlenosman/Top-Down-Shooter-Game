@@ -1,14 +1,19 @@
-[gd_scene load_steps=16 format=3 uid="uid://c7fcp73v6wu5d"]
+[gd_scene load_steps=21 format=3 uid="uid://c7fcp73v6wu5d"]
 
 [ext_resource type="Script" uid="uid://b7yr6kx17nvlm" path="res://scripts/ui/ui.gd" id="1_qsv74"]
 [ext_resource type="Script" uid="uid://bun2ukfdgaq3m" path="res://scripts/ui/screen_flash.gd" id="2_7dvkv"]
-[ext_resource type="Texture2D" uid="uid://calswj744fuku" path="res://assets/Affinity/ammo.png" id="2_vdcm2"]
+[ext_resource type="Texture2D" uid="uid://dxp0o1xyupvqh" path="res://assets/Affinity/ammobar.png" id="2_h1mc3"]
+[ext_resource type="Texture2D" uid="uid://bfi4lk6ilg41a" path="res://assets/Affinity/shotgunfill.png" id="2_rlppe"]
 [ext_resource type="Texture2D" uid="uid://b6tygw5jlyjio" path="res://assets/Affinity/coins+level.png" id="3_6rmj2"]
 [ext_resource type="Texture2D" uid="uid://q2cw8tfoeiga" path="res://assets/Affinity/coins.png" id="3_qsv74"]
 [ext_resource type="Script" uid="uid://dpqjf535o4wfs" path="res://scripts/ui/screen_flash_heal.gd" id="3_vdcm2"]
 [ext_resource type="Texture2D" uid="uid://u1uumvdqn8dx" path="res://assets/Affinity/test.png" id="3_vsj0x"]
+[ext_resource type="Texture2D" uid="uid://nputenyh3khx" path="res://assets/Affinity/sniperfill.png" id="3_ycmcx"]
 [ext_resource type="Script" uid="uid://c5rit853wljdq" path="res://scripts/ui/death_screen.gd" id="4_6rmj2"]
+[ext_resource type="Texture2D" uid="uid://b5iqec88lyf8l" path="res://assets/Affinity/grenadefill.png" id="4_kupmu"]
+[ext_resource type="Texture2D" uid="uid://biasaqaxs7per" path="res://assets/Affinity/shurikenfill.png" id="5_catpy"]
 [ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="5_vsj0x"]
+[ext_resource type="Texture2D" uid="uid://bef7qfnkoqorm" path="res://assets/Affinity/flamethrowerfill.png" id="6_41akx"]
 [ext_resource type="FontFile" uid="uid://4xsaqwwtj2c1" path="res://assets/Fonts/PixelOperator8.ttf" id="6_qsv74"]
 [ext_resource type="Script" uid="uid://c2yqcdrh4ns2s" path="res://scripts/ui/pause_screen.gd" id="7_h1mc3"]
 [ext_resource type="Texture2D" uid="uid://bqa41ebeio3l3" path="res://assets/Affinity/abilitybar.png" id="7_qsv74"]
@@ -16,26 +21,40 @@
 [ext_resource type="PackedScene" uid="uid://bngmwso5qhlyx" path="res://scenes/vhs_layer.tscn" id="11_vdcm2"]
 [ext_resource type="Texture2D" uid="uid://bmabpmaugk40l" path="res://assets/Affinity/chaospact.png" id="15_h1mc3"]
 
-[node name="UI" type="CanvasLayer"]
+[node name="UI" type="CanvasLayer" groups=["ui"]]
 script = ExtResource("1_qsv74")
+weapon_fuel_progress_texture = Array[Texture2D]([ExtResource("2_rlppe"), ExtResource("3_ycmcx"), ExtResource("4_kupmu"), ExtResource("5_catpy"), ExtResource("6_41akx")])
 
 [node name="Ammo" type="TextureRect" parent="."]
-offset_top = 77.0
+offset_top = 579.0
 offset_right = 700.0
-offset_bottom = 477.0
+offset_bottom = 979.0
 scale = Vector2(0.3, 0.3)
-texture = ExtResource("2_vdcm2")
+texture = ExtResource("2_h1mc3")
 
 [node name="AmmoLabel" type="Label" parent="Ammo"]
 layout_mode = 0
-offset_left = 26.666666
-offset_top = 136.66666
-offset_right = 290.0
-offset_bottom = 323.33334
+offset_left = 33.333332
+offset_top = 140.0
+offset_right = 650.0
+offset_bottom = 190.0
 theme_override_fonts/font = ExtResource("5_vsj0x")
-theme_override_font_sizes/font_size = 48
+theme_override_font_sizes/font_size = 32
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="Ammo" type="TextureProgressBar" parent="Ammo"]
+z_index = -1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -150.0
+offset_bottom = -150.0
+grow_horizontal = 2
+grow_vertical = 2
+value = 50.0
+texture_progress = ExtResource("3_ycmcx")
 
 [node name="Coins" type="TextureRect" parent="."]
 offset_left = 1056.0

@@ -12,7 +12,6 @@ extends Node
 
 signal health_changed(current_health: int, max_health: int)
 signal coins_changed(coins: int)
-signal ammo_changed(ammo: int, max_ammo: int)
 signal alt_weapon_changed(new_alt_weapon: int)
 signal player_invisible_changed(is_invisible: bool)
 
@@ -53,8 +52,6 @@ var ALT_WEAPON_DATA := {
 		"cooldown": 0.7,
 		"bounces": 0,
 		"explosion_radius": 0.0,
-		"max_ammo": 6,           # 🔥 NEW: starting/max ammo
-		"pickup_amount": 2,      # 🔥 NEW: ammo per pickup
 	},
 
 	AltWeaponType.SNIPER: {
@@ -69,8 +66,6 @@ var ALT_WEAPON_DATA := {
 		"cooldown": 1.2,
 		"bounces": 0,
 		"explosion_radius": 0.0,
-		"max_ammo": 4,           # 🔥 NEW
-		"pickup_amount": 1,      # 🔥 NEW
 	},
 
 	AltWeaponType.FLAMETHROWER: {
@@ -86,8 +81,6 @@ var ALT_WEAPON_DATA := {
 		"flame_lifetime": 0.25,
 		"bounces": 0,
 		"explosion_radius": 0.0,
-		"max_ammo": 100,         # 🔥 NEW
-		"pickup_amount": 20,     # 🔥 NEW
 	},
 
 	AltWeaponType.GRENADE: {
@@ -102,8 +95,6 @@ var ALT_WEAPON_DATA := {
 		"cooldown": 2.2,
 		"bounces": 0,
 		"explosion_radius": 96.0,
-		"max_ammo": 3,           # 🔥 NEW
-		"pickup_amount": 1,      # 🔥 NEW
 	},
 
 	AltWeaponType.SHURIKEN: {
@@ -118,8 +109,6 @@ var ALT_WEAPON_DATA := {
 		"cooldown": 0.45,
 		"bounces": 3,
 		"explosion_radius": 0.0,
-		"max_ammo": 8,           # 🔥 NEW
-		"pickup_amount": 3,      # 🔥 NEW
 	},
 
 	AltWeaponType.TURRET: {
@@ -182,9 +171,6 @@ func set_ability(new_ability: int) -> void:
 
 var max_health: int = 0
 var health: int = 0
-
-var max_ammo: int = 0
-var ammo: int = 0
 
 # --- RUNTIME STATS (MODIFIED BY UPGRADES) --------------------------
 var fire_rate: float = 0.0
@@ -385,9 +371,6 @@ func start_new_run() -> void:
 	max_health = GameConfig.player_max_health
 	set_health(max_health)  # Use setter to emit signal
 
-	max_ammo   = GameConfig.player_max_ammo
-	set_ammo(max_ammo)  # Use setter to emit signal
-
 	# Reset fire stats
 	fire_rate_base = GameConfig.player_fire_rate
 	fire_rate = GameConfig.player_fire_rate
@@ -469,9 +452,6 @@ func start_new_run() -> void:
 	ability_active_left = 0.0
 	ability_bubble_duration_bonus = 0.0
 
-	# Note: keep `max_ammo` initialized from GameConfig here.
-	# The HUD decides whether to show values based on `alt_weapon`.
-
 	debug_laser_mode     = false
 	debug_infinite_ammo  = false
 	debug_god_mode       = false
@@ -489,17 +469,6 @@ func set_health(value: int) -> void:
 
 func change_health(delta: int) -> void:
 	set_health(health + delta)
-
-# -------------------------------------------------------------------
-# AMMO
-# -------------------------------------------------------------------
-
-func set_ammo(value: int) -> void:
-	ammo = clamp(value, 0, max_ammo)
-	ammo_changed.emit(ammo, max_ammo)
-
-func add_ammo(delta: int) -> void:
-	set_ammo(ammo + delta)
 
 # -------------------------------------------------------------------
 # COINS
@@ -527,15 +496,6 @@ func set_alt_weapon(new_alt: int) -> void:
 	if new_alt == alt_weapon:
 		return
 	alt_weapon = new_alt
-	# If this alt weapon defines a max ammo, update run-time ammo pool.
-	# For NONE or TURRET we want the ammo UI to show "-/-", so set to 0.
-	if new_alt == AltWeaponType.NONE or new_alt == AltWeaponType.TURRET:
-		max_ammo = 0
-		set_ammo(0)
-	elif ALT_WEAPON_DATA.has(alt_weapon) and ALT_WEAPON_DATA[alt_weapon].has("max_ammo"):
-		var m := int(ALT_WEAPON_DATA[alt_weapon].get("max_ammo", GameConfig.player_max_ammo))
-		max_ammo = m
-		set_ammo(m)
 	alt_weapon_changed.emit(alt_weapon)
 
 # -------------------------------------------------------------------
@@ -554,7 +514,6 @@ func set_player_invisible(is_invisible: bool) -> void:
 
 func _emit_all_signals() -> void:
 	health_changed.emit(health, max_health)
-	ammo_changed.emit(ammo, max_ammo)
 	coins_changed.emit(coins)
 	alt_weapon_changed.emit(alt_weapon)
 	player_invisible_changed.emit(player_invisible)
@@ -710,16 +669,6 @@ func apply_upgrade(upgrade_id: String) -> void:
 		"hp_refill":
 			set_health(max_health)
 			print("  → HP refilled to:", max_health)
-
-		"max_ammo":
-			var inc := int(value)
-			max_ammo += inc
-			set_ammo(min(max_ammo, ammo + inc))
-			print("  → Max Ammo +%d, now: %d" % [inc, max_ammo])
-
-		"ammo_refill":
-			set_ammo(max_ammo)
-			print("  → Ammo refilled to:", max_ammo)
 
 		"ability_cooldown":
 			ability_cooldown_mult *= (1.0 + value)
