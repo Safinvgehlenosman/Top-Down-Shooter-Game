@@ -172,6 +172,8 @@ func _get_weapon_fuel_texture_index(weapon_id: String) -> int:
 func _update_level_label() -> void:
 	if not level_label:
 		return
+	if not is_inside_tree():
+		return
 	var gm := get_tree().get_first_node_in_group("game_manager")
 	if gm and "current_level" in gm:
 		level_label.text = str(gm.current_level)

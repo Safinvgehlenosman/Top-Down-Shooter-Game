@@ -663,8 +663,19 @@ func apply_upgrade(upgrade_id: String) -> void:
 		"max_hp":
 			var inc := int(value)
 			max_health += inc
-			set_health(min(max_health, health + inc))
-			print("  → Max HP +%d, now: %d" % [inc, max_health])
+			health += inc  # Also increase current health
+			emit_signal("health_changed", health, max_health)
+			
+			# Force update player's HealthComponent
+			var player := get_tree().get_first_node_in_group("player")
+			if player and player.has_node("Health"):
+				var health_component = player.get_node("Health")
+				if health_component:
+					health_component.max_health = max_health
+					health_component.health = health
+					print("  → HealthComponent synced: %d/%d" % [health, max_health])
+			
+			print("  → Max HP +%d, now: %d/%d" % [inc, health, max_health])
 
 		"hp_refill":
 			set_health(max_health)
@@ -734,16 +745,19 @@ func apply_upgrade(upgrade_id: String) -> void:
 		# PRIMARY WEAPON EFFECTS
 		# ==============================
 		"primary_damage":
-			primary_damage_bonus += value
-			primary_damage = primary_damage_base * (1.0 + primary_damage_bonus)
-			print("  → Primary damage +%.1f%%, total: +%.1f%%" % [value * 100, primary_damage_bonus * 100])
+			# LINEAR SCALING: Add damage directly, not multiply
+			var damage_increase = value * primary_damage_base  # Convert percentage to flat value
+			primary_damage += damage_increase
+			print("  → Primary damage +%.1f (base: %.1f, total now: %.1f)" % [damage_increase, primary_damage_base, primary_damage])
 
 		"primary_fire_rate":
+			# LINEAR SCALING: Each upgrade reduces cooldown by a fixed absolute amount
+			# Instead of percentages that compound, we track how many tiers purchased
 			fire_rate_bonus_percent += value
-			# Linear cooldown reduction: each upgrade reduces by the same absolute amount
-			fire_rate = fire_rate_base - (fire_rate_base * fire_rate_bonus_percent)
-			fire_rate = max(0.05, fire_rate)  # Cap at minimum cooldown
-			print("  → Fire rate +%.1f%%, cooldown: %.2fs" % [value * 100, fire_rate])
+			# Calculate total absolute reduction: each 0.05 (5%) tier = 0.025s reduction
+			var absolute_reduction = fire_rate_bonus_percent * 0.5  # Each 5% = 0.025s
+			fire_rate = max(0.05, fire_rate_base - absolute_reduction)
+			print("  → Fire rate tier added, cooldown now: %.3fs (reduction: %.3fs)" % [fire_rate, absolute_reduction])
 
 		"primary_reload_speed":
 			primary_reload_speed_bonus += value
@@ -768,10 +782,11 @@ func apply_upgrade(upgrade_id: String) -> void:
 				print("  → Shotgun pellets +%d, now: %d" % [inc, ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["pellets"]])
 
 		"shotgun_spread":
-			shotgun_spread_bonus_percent += value
+			# LINEAR SCALING: Reduce spread by flat amount
+			var spread_reduction = value * 18.0  # Convert percentage to degrees
 			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN):
-				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["spread_degrees"] = 18.0 * (1.0 + shotgun_spread_bonus_percent)
-				print("  → Shotgun spread %.1f%%, now: %.1f°" % [value * 100, ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["spread_degrees"]])
+				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["spread_degrees"] += spread_reduction
+				print("  → Shotgun spread %.1f degrees, now: %.1f°" % [spread_reduction, ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["spread_degrees"]])
 
 		"shotgun_knockback":
 			shotgun_knockback_bonus_percent += value
@@ -791,10 +806,11 @@ func apply_upgrade(upgrade_id: String) -> void:
 		# SNIPER EFFECTS
 		# ==============================
 		"sniper_damage":
-			sniper_damage_bonus_percent += value
+			# LINEAR SCALING: Add damage directly
+			var damage_increase = value * 35.0
 			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER):
-				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] = 35.0 * (1.0 + sniper_damage_bonus_percent + sniper_charge_bonus_percent)
-				print("  → Sniper damage +%.1f%%, now: %.1f" % [value * 100, ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"]])
+				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] += damage_increase
+				print("  → Sniper damage +%.1f, now: %.1f" % [damage_increase, ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"]])
 
 		"sniper_pierce":
 			var inc := int(value)
@@ -853,16 +869,19 @@ func apply_upgrade(upgrade_id: String) -> void:
 				print("  → Grenade radius +%.0f, now: %.0f" % [inc, ALT_WEAPON_DATA[AltWeaponType.GRENADE]["explosion_radius"]])
 
 		"grenades_damage":
-			grenade_damage_bonus_percent += value
+			# LINEAR SCALING: Add damage directly
+			var damage_increase = value * 40.0
 			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE):
-				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["damage"] = 40.0 * (1.0 + grenade_damage_bonus_percent)
-				print("  → Grenade damage +%.1f%%, now: %.1f" % [value * 100, ALT_WEAPON_DATA[AltWeaponType.GRENADE]["damage"]])
+				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["damage"] += damage_increase
+				print("  → Grenade damage +%.1f, now: %.1f" % [damage_increase, ALT_WEAPON_DATA[AltWeaponType.GRENADE]["damage"]])
 
 		"grenades_cooldown":
-			grenades_cooldown_bonus += value
+			# LINEAR SCALING: Reduce cooldown by flat amount (value is negative)
+			var cooldown_reduction = value * 2.2  # Base cooldown is 2.2s
 			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE):
-				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["cooldown"] *= (1.0 + value)
-				print("  → Grenade cooldown %.1f%%" % [value * 100])
+				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["cooldown"] += cooldown_reduction
+				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["cooldown"] = max(0.5, ALT_WEAPON_DATA[AltWeaponType.GRENADE]["cooldown"])
+				print("  → Grenade cooldown %.2fs, now: %.2fs" % [cooldown_reduction, ALT_WEAPON_DATA[AltWeaponType.GRENADE]["cooldown"]])
 
 		"grenades_frag_count":
 			var inc := int(value)

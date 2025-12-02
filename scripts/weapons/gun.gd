@@ -102,6 +102,8 @@ func _initialize_fuel_for_weapon() -> void:
 
 func _hide_fuel_ui() -> void:
 	"""Helper to hide fuel UI (called deferred)."""
+	if not is_inside_tree():
+		return
 	var ui = get_tree().get_first_node_in_group("ui")
 	if ui and ui.has_method("hide_alt_weapon_fuel"):
 		ui.hide_alt_weapon_fuel()
@@ -109,6 +111,8 @@ func _hide_fuel_ui() -> void:
 
 func _notify_ui_fuel_changed() -> void:
 	"""Tell UI to update fuel bar."""
+	if not is_inside_tree():
+		return
 	var ui = get_tree().get_first_node_in_group("ui")
 	if ui and ui.has_method("show_alt_weapon_fuel"):
 		var is_continuous := (fuel_mode == "continuous")

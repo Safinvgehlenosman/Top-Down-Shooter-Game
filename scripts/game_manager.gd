@@ -22,6 +22,13 @@ extends Node
 @export_group("Enemy Spawn Padding")
 @export var spawn_padding_radius: float = 12.0
 @export var spawn_padding_attempts: int = 6   # currently unused but kept for tuning
+@export var min_spawn_distance_from_player: float = 120.0  # Distance from player (with fallback)
+@export var spawn_check_radius: float = 6.0  # Radius for wall collision check
+
+@export_group("Staggered Spawning")
+@export var spawn_duration_initial: float = 5.0  # Time to spawn initial room enemies
+@export var spawn_duration_wave_min: float = 5.0  # Minimum wave spawn duration
+@export var spawn_duration_wave_max: float = 10.0  # Maximum wave spawn duration
 
 
 # --- ENEMY SPAWN TABLE ----------------------------------------------
@@ -73,6 +80,7 @@ var wave_spawned: bool = false
 var initial_enemies_defeated: bool = false
 var waves_remaining: int = 0  # How many waves left to spawn
 var current_wave_number: int = 0  # Which wave we're on
+var waves_enemy_budget: int = 0  # Enemy budget reserved for waves
 
 # Chest spawning
 var chest_spawn_point: Node2D = null
@@ -216,8 +224,10 @@ func load_shop_room() -> void:
 	# Move player to shop spawn
 	_move_player_to_room_spawn()
 	
-	# Spawn exit door immediately (no enemies to kill)
+	# Spawn exit door immediately and unlock it (no enemies to kill in shop)
 	_spawn_exit_door()
+	await get_tree().process_frame  # Wait for door to be added to scene
+	_unlock_exit_door()
 
 
 func load_hub_room() -> void:
@@ -284,8 +294,10 @@ func load_hub_room() -> void:
 	if player and player.has_method("set_weapon_enabled"):
 		player.set_weapon_enabled(false)
 	
-	# Spawn exit door immediately (no enemies to kill)
+	# Spawn exit door immediately and unlock it (no enemies to kill in hub)
 	_spawn_exit_door()
+	await get_tree().process_frame  # Wait for door to be added to scene
+	_unlock_exit_door()
 	
 	# Tell UI to hide in-run elements
 	if game_ui and game_ui.has_method("set_in_hub"):
@@ -459,53 +471,318 @@ func _pick_enemy_scene() -> PackedScene:
 
 # Physics-based check: is this position free of colliders?
 func _is_spawn_valid(pos: Vector2) -> bool:
-	var space_state: PhysicsDirectSpaceState2D = get_viewport().world_2d.direct_space_state
-
-	var params := PhysicsPointQueryParameters2D.new()
-	params.position = pos
-	params.collide_with_areas = false  # Don't check areas (spawn points might be Area2D)
+	"""Very forgiving collision check - only blocks walls/obstacles on layer 1."""
+	var space_state := get_viewport().world_2d.direct_space_state
+	
+	var shape := CircleShape2D.new()
+	shape.radius = spawn_check_radius
+	
+	var params := PhysicsShapeQueryParameters2D.new()
+	params.shape = shape
+	params.transform = Transform2D(0.0, pos)
 	params.collide_with_bodies = true
-	params.collision_mask = 1  # Only check layer 1 (walls/environment)
-
-	# 8 is just "max results" – we only care if it's empty or not
-	var results := space_state.intersect_point(params, 8)
+	params.collide_with_areas = true
 	
-	# Debug: print what's blocking if any
-	if not results.is_empty():
-		for result in results:
-			print("[SPAWN VALID] Collision detected with: ", result.collider.name if result.collider else "unknown")
+	# IMPORTANT: Only check layer 1 (World - walls/obstacles)
+	# This prevents blocking on floors, player, enemies, etc.
+	params.collision_mask = 1 << 0  # Layer 1 only (bit shift: 1 << 0 = layer 1)
 	
+	var results := space_state.intersect_shape(params, 8)
 	return results.is_empty()
 
 
-# Try to nudge the spawn away from walls using a few offsets.
-# Returns either a safe position near base_pos, or base_pos as fallback.
 func _find_safe_spawn_position(base_pos: Vector2) -> Vector2:
-	# if original is already fine, keep it
+	"""Slightly nudge position away from walls using small offsets."""
 	if _is_spawn_valid(base_pos):
 		return base_pos
-
-	var r := spawn_padding_radius
-
+	
 	var offsets := [
-		Vector2(0, 0),
-		Vector2(r, 0),
-		Vector2(-r, 0),
-		Vector2(0, r),
-		Vector2(0, -r),
-		Vector2(r, r),
-		Vector2(-r, r),
-		Vector2(r, -r),
-		Vector2(-r, -r),
+		Vector2(8, 0), Vector2(-8, 0),
+		Vector2(0, 8), Vector2(0, -8),
+		Vector2(8, 8), Vector2(-8, 8),
+		Vector2(8, -8), Vector2(-8, -8),
 	]
-
+	
 	for off in offsets:
-		var p: Vector2 = base_pos + off
-		if _is_spawn_valid(p):
-			return p
-
+		var candidate: Vector2 = base_pos + off
+		if _is_spawn_valid(candidate):
+			return candidate
+	
+	# If nothing nearby is valid, return base_pos anyway
+	# Caller can run _is_spawn_valid again and skip if needed
 	return base_pos
 
+
+func _get_valid_spawn_positions(spawn_points: Array[Node2D]) -> Array[Vector2]:
+	"""Filter spawn points with fallback - never returns empty in tight rooms."""
+	var collision_valid: Array[Vector2] = []
+	var player := get_tree().get_first_node_in_group("player")
+	
+	# First pass: only collision-based validity
+	for sp in spawn_points:
+		var pos := sp.global_position
+		pos = _find_safe_spawn_position(pos)
+		if _is_spawn_valid(pos):
+			collision_valid.append(pos)
+	
+	# If literally nothing passes the collision test, fall back to raw spawn positions
+	if collision_valid.is_empty():
+		for sp in spawn_points:
+			collision_valid.append(sp.global_position)
+		return collision_valid
+	
+	# Second pass: apply distance-from-player, but with fallback
+	if not player:
+		return collision_valid
+	
+	var far_enough: Array[Vector2] = []
+	for pos in collision_valid:
+		var dist := pos.distance_to(player.global_position)
+		if dist >= 80.0:  # Reduced from 120 to 80 for better spawn distribution
+			far_enough.append(pos)
+	
+	# If distance filter kills everything, fall back to collision-only
+	if far_enough.is_empty():
+		return collision_valid
+	
+	return far_enough
+
+
+
+# --- STAGGERED ENEMY SPAWNING --------------------------------------
+
+func _spawn_enemies_over_time(enemy_list: Array, spawn_points: Array[Node2D], duration: float, is_initial_spawn: bool = false) -> void:
+	"""Spawn enemies gradually over time with proper distribution."""
+	if enemy_list.is_empty():
+		return
+	
+	print("---- DEBUG SPAWNPOINTS ----")
+	print("[SPAWN] Total spawn_points provided:", spawn_points.size())
+	for sp in spawn_points:
+		print("  SP:", sp.name, "pos:", sp.global_position)
+	
+	var spawned_enemies: Array = []
+	var candidate_positions := _get_valid_spawn_positions(spawn_points)
+	
+	print("[SPAWN] VALID COUNT:", candidate_positions.size())
+	for c in candidate_positions:
+		print("  VALID:", c)
+	
+	if candidate_positions.is_empty():
+		print("[SPAWN] No valid positions found, aborting staggered spawn")
+		return
+	
+	# FOR INITIAL SPAWN: Cap enemy count to valid positions (no stacking)
+	# FOR WAVES: Allow expansion to reuse positions (they spawn over time)
+	var wanted := enemy_list.size()
+	if is_initial_spawn:
+		# Initial spawn: NEVER duplicate positions, cap to available spots
+		if wanted > candidate_positions.size():
+			print("[SPAWN] Initial spawn capped: wanted %d, only %d valid positions available" % [wanted, candidate_positions.size()])
+			wanted = candidate_positions.size()
+			# Trim enemy list to match available positions
+			enemy_list = enemy_list.slice(0, wanted)
+	else:
+		# Waves: Expand list if needed (enemies spawn over time so less stacking)
+		if candidate_positions.size() < wanted:
+			print("[SPAWN] Expanding spawn positions: have %d, need %d" % [candidate_positions.size(), wanted])
+			var expanded: Array[Vector2] = []
+			while expanded.size() < wanted:
+				for pos in candidate_positions:
+					expanded.append(pos)
+					if expanded.size() >= wanted:
+						break
+			candidate_positions = expanded
+			print("[SPAWN] Expanded to:", candidate_positions.size(), "positions")
+	
+	# Shuffle positions to spread enemies around
+	candidate_positions.shuffle()
+	
+	var interval := duration / float(enemy_list.size())
+	var pos_idx := 0
+	var spawn_count := 0
+	
+	for enemy_scene in enemy_list:
+		# Cycle through shuffled positions, wrapping around if more enemies than positions
+		var pos := candidate_positions[pos_idx]
+		pos_idx = (pos_idx + 1) % candidate_positions.size()
+		
+		# Apply safety nudge and validate
+		pos = _find_safe_spawn_position(pos)
+		if _is_spawn_valid(pos):
+			var enemy: Node2D = enemy_scene.instantiate()
+			enemy.global_position = pos
+			
+			if enemy.has_method("apply_level"):
+				enemy.apply_level(current_level)
+			
+			current_room.add_child(enemy)
+			alive_enemies += 1
+			spawned_enemies.append(enemy)
+			
+			if enemy.has_signal("died"):
+				enemy.died.connect(_on_enemy_died.bind(enemy))
+			
+			spawn_count += 1
+			print("[SPAWN] Enemy spawned at: ", pos)
+		
+		# Wait before spawning next enemy (skip wait after last one)
+		if spawn_count < enemy_list.size():
+			await get_tree().create_timer(interval).timeout
+	
+	print("[SPAWN] Staggered spawn complete: %d enemies over %.1fs" % [spawned_enemies.size(), duration])
+	
+	# --- ALPHA VARIANT SPAWNING ---
+	if not has_spawned_alpha_this_level and not spawned_enemies.is_empty():
+		for enemy in spawned_enemies:
+			if not is_instance_valid(enemy) or not enemy.has_method("make_alpha"):
+				continue
+			if randf() < 0.05:
+				if enemy.has_method("make_alpha"):
+					enemy.make_alpha()
+					has_spawned_alpha_this_level = true
+					break
+	
+	# --- MARK CHEST DROPPERS ---
+	var should_spawn_chaos := chaos_chest_spawned_this_cycle and GameState.active_chaos_challenge.is_empty()
+	var should_spawn_normal := randf() < chest_spawn_chance
+	
+	if should_spawn_chaos and not spawned_enemies.is_empty():
+		spawned_enemies.shuffle()
+		if is_instance_valid(spawned_enemies[0]):
+			spawned_enemies[0].set_meta("drops_chaos_chest", true)
+	
+	if should_spawn_normal and not spawned_enemies.is_empty():
+		spawned_enemies.shuffle()
+		var chest_dropper = spawned_enemies[0]
+		if is_instance_valid(chest_dropper):
+			if chest_dropper.has_meta("drops_chaos_chest"):
+				if spawned_enemies.size() > 1:
+					chest_dropper = spawned_enemies[1]
+				else:
+					chest_dropper = null
+			if chest_dropper and is_instance_valid(chest_dropper):
+				chest_dropper.set_meta("drops_chest", true)
+
+
+
+# --- SIMPLE INITIAL ENEMY SPAWNING ---------------------------------
+
+func _spawn_enemy_at(pos: Vector2, enemy_scene: PackedScene = null) -> Node2D:
+	"""Spawn a single enemy at the given position."""
+	if enemy_scene == null:
+		enemy_scene = _pick_enemy_scene()
+	
+	if enemy_scene == null:
+		return null
+	
+	var enemy: Node2D = enemy_scene.instantiate()
+	enemy.global_position = pos
+	
+	if enemy.has_method("apply_level"):
+		enemy.apply_level(current_level)
+	
+	current_room.add_child(enemy)
+	alive_enemies += 1
+	
+	if enemy.has_signal("died"):
+		enemy.died.connect(_on_enemy_died.bind(enemy))
+	
+	return enemy
+
+
+func _spawn_initial_enemies(level: int, spawn_points: Array[Node2D], themed_room: bool, themed_slimes: Array) -> void:
+	"""Simple initial spawn: one enemy per spawn point max, no validation."""
+	# Skip if in hub
+	if in_hub:
+		return
+	
+	# 1) Decide total room budget
+	var total_budget := _calculate_enemy_count_for_level(level, spawn_points.size())
+	
+	# 2) Initial enemies: 35% of total, capped 1-8
+	var initial_budget: int = clamp(int(round(total_budget * 0.35)), 1, 8)
+	
+	# 3) Clamp by spawn point count: 1 enemy per spawn point max
+	var max_initial_by_positions := spawn_points.size()
+	var initial_enemy_count: int = min(initial_budget, max_initial_by_positions)
+	
+	# 4) If no spawn points, bail
+	if initial_enemy_count <= 0:
+		return
+	
+	# 5) Shuffle spawn points for distribution
+	var shuffled := spawn_points.duplicate()
+	shuffled.shuffle()
+	
+	# Store waves budget
+	waves_enemy_budget = max(total_budget - initial_enemy_count, 0)
+	
+	print("[SPAWN] Initial: %d enemies | Total budget: %d | Waves: %d | Level: %d" % [initial_enemy_count, total_budget, waves_enemy_budget, level])
+	
+	# 6) Spawn one enemy per spawn point, no validation
+	var spawned_enemies: Array = []
+	for i in range(initial_enemy_count):
+		var sp: Node2D = shuffled[i]
+		var enemy_scene: PackedScene = null
+		
+		if themed_room and themed_slimes.size() > 0:
+			enemy_scene = themed_slimes[randi() % themed_slimes.size()]
+		else:
+			enemy_scene = _pick_enemy_scene()
+		
+		var enemy := _spawn_enemy_at(sp.global_position, enemy_scene)
+		if enemy:
+			spawned_enemies.append(enemy)
+	
+	# Handle alpha variant
+	if not has_spawned_alpha_this_level and not spawned_enemies.is_empty():
+		for enemy in spawned_enemies:
+			if not is_instance_valid(enemy) or not enemy.has_method("make_alpha"):
+				continue
+			if randf() < 0.05:
+				enemy.make_alpha()
+				has_spawned_alpha_this_level = true
+				break
+	
+	# Handle chest droppers
+	var should_spawn_chaos := chaos_chest_spawned_this_cycle and GameState.active_chaos_challenge.is_empty()
+	var should_spawn_normal := randf() < chest_spawn_chance
+	
+	if should_spawn_chaos and not spawned_enemies.is_empty():
+		spawned_enemies.shuffle()
+		if is_instance_valid(spawned_enemies[0]):
+			spawned_enemies[0].set_meta("drops_chaos_chest", true)
+	
+	if should_spawn_normal and not spawned_enemies.is_empty():
+		spawned_enemies.shuffle()
+		var chest_dropper = spawned_enemies[0]
+		if is_instance_valid(chest_dropper):
+			if chest_dropper.has_meta("drops_chaos_chest"):
+				if spawned_enemies.size() > 1:
+					chest_dropper = spawned_enemies[1]
+				else:
+					chest_dropper = null
+			if chest_dropper and is_instance_valid(chest_dropper):
+				chest_dropper.set_meta("drops_chest", true)
+
+
+func _ensure_minimum_one_enemy(spawn_points: Array[Node2D]) -> void:
+	"""Failsafe: ensure non-hub rooms always have at least 1 enemy."""
+	if in_hub or in_shop:
+		return
+	
+	# Check if we have any enemies alive
+	if alive_enemies <= 0:
+		var pos: Vector2
+		if spawn_points.size() > 0:
+			pos = spawn_points[0].global_position
+		else:
+			# Fallback to room center or origin
+			pos = Vector2(512, 384)  # Approximate room center
+		
+		_spawn_enemy_at(pos)
+		print("[SPAWN FAILSAFE] Room had 0 enemies, spawned 1 basic enemy")
 
 
 # --- SPAWNING ROOM CONTENT ------------------------------------------
@@ -530,136 +807,36 @@ func _spawn_room_content() -> void:
 	door_spawn_point = room_spawn_points.pop_back()
 	print("[SPAWN] Reserved door spawn, %d spawn points remaining for entities" % room_spawn_points.size())
 	
-	# Determine if chest should spawn this level (75% chance)
-	var should_spawn_chest: bool = randf() < chest_spawn_chance
-	
-	# Determine if chaos chest should spawn this level (if flagged)
-	# ⭐ Don't spawn if all chaos upgrades have been purchased
-	var all_chaos_purchased := _are_all_chaos_upgrades_purchased()
-	var should_spawn_chaos_chest: bool = chaos_chest_spawned_this_cycle and GameState.active_chaos_challenge.is_empty() and not all_chaos_purchased
-	
 	chest_spawned = false
-
 	alive_enemies = 0
 
 	var themed_room := _is_themed_room(current_level)
 	var themed_slimes := _get_themed_room_slimes(current_level)
 
-	# Calculate how many enemies and crates to spawn based on level
-	var enemy_count := 0
+	# Calculate crate count
 	var crate_count := 0
+	if not themed_room:
+		crate_count = _calculate_crate_count_for_level(current_level, room_spawn_points.size())
 	
-	# Get actual available spawn points (minus door spawn)
-	var available_spawns = room_spawn_points.size()
-	
-	if themed_room:
-		# Themed rooms: spawn many enemies, no crates
-		enemy_count = _calculate_enemy_count_for_level(current_level, available_spawns)
-		crate_count = 0
-	else:
-		# Normal rooms: balanced mix of enemies and crates
-		enemy_count = _calculate_enemy_count_for_level(current_level, available_spawns)
-		crate_count = _calculate_crate_count_for_level(current_level, available_spawns)
-	
-	# Make sure we don't exceed available spawn points
-	var total_entities = enemy_count + crate_count
-	if total_entities > room_spawn_points.size():
-		# Prioritize enemies over crates
-		crate_count = max(0, room_spawn_points.size() - enemy_count)
-	
-	# Shuffle spawn points for randomness
-	room_spawn_points.shuffle()
-	
-	var spawn_index = 0
-	
-	# --- SPAWN ENEMIES ---
-	var spawned_enemies: Array = []  # Track spawned enemies
-	
-	for i in range(enemy_count):
-		if spawn_index >= room_spawn_points.size():
-			break
+	# --- SPAWN CRATES FIRST (IMMEDIATELY) ---
+	if not themed_room and crate_scene and crate_count > 0:
+		var crate_positions: Array[Vector2] = []
+		for sp in room_spawn_points:
+			crate_positions.append(sp.global_position)
 		
-		var spawn = room_spawn_points[spawn_index]
-		var enemy_scene: PackedScene = null
+		crate_positions.shuffle()
+		var crates_spawned := 0
 		
-		if themed_room and themed_slimes.size() > 0:
-			# Pick themed enemy
-			enemy_scene = themed_slimes[randi() % themed_slimes.size()]
-		else:
-			# Pick normal enemy based on weights
-			enemy_scene = _pick_enemy_scene()
-		
-		if enemy_scene:
-			var desired_pos: Vector2 = spawn.global_position
-			var safe_pos := _find_safe_spawn_position(desired_pos)
-			
-			# Just use the position - _find_safe_spawn_position already tried to find a safe spot
-			# If it couldn't, spawning anyway is better than skipping
-			var enemy := enemy_scene.instantiate()
-			enemy.global_position = safe_pos
-			
-			if enemy.has_method("apply_level"):
-				enemy.apply_level(current_level)
-			
-			current_room.add_child(enemy)
-			alive_enemies += 1
-			spawned_enemies.append(enemy)  # Track this enemy
-			
-			if enemy.has_signal("died"):
-				enemy.died.connect(_on_enemy_died.bind(enemy))
-			
-			spawn_index += 1
-	
-	# --- ALPHA VARIANT SPAWNING ---
-	# After all enemies are spawned, try to make one an alpha (5% fixed chance, max one per level)
-	if not has_spawned_alpha_this_level and not spawned_enemies.is_empty():
-		for enemy in spawned_enemies:
-			# Check if this enemy is a slime (has make_alpha method)
-			if not enemy.has_method("make_alpha"):
-				continue
-			
-			# Roll 5% chance (FIXED, not level-scaled)
-			if randf() < 0.05:
-				if enemy.has_method("make_alpha"):
-					enemy.make_alpha()
-					has_spawned_alpha_this_level = true
-					break  # Only one alpha per level
-	
-	# --- MARK RANDOM ENEMIES AS CHEST DROPPERS ---
-	# After spawning all enemies, mark random ones to drop chests
-	
-	# ⭐ FIX: Chaos chest should spawn first to avoid overlapping with normal chest
-	if should_spawn_chaos_chest and not spawned_enemies.is_empty():
-		spawned_enemies.shuffle()
-		var chaos_dropper = spawned_enemies[0]
-		chaos_dropper.set_meta("drops_chaos_chest", true)
-	
-	if should_spawn_chest and not spawned_enemies.is_empty():
-		spawned_enemies.shuffle()
-		var chest_dropper = spawned_enemies[0]
-		# ⭐ Ensure chaos chest and normal chest don't spawn from same enemy
-		if chest_dropper.has_meta("drops_chaos_chest"):
-			if spawned_enemies.size() > 1:
-				chest_dropper = spawned_enemies[1]
-			else:
-				# Only one enemy - skip normal chest
-				chest_dropper = null
-		
-		if chest_dropper:
-			chest_dropper.set_meta("drops_chest", true)
-	
-	# --- SPAWN CRATES ---
-	if not themed_room and crate_scene:
-		for i in range(crate_count):
-			if spawn_index >= room_spawn_points.size():
-				break
-			
-			var spawn = room_spawn_points[spawn_index]
+		for i in range(min(crate_count, crate_positions.size())):
 			var crate := crate_scene.instantiate()
-			crate.global_position = spawn.global_position
+			crate.global_position = crate_positions[i]
 			current_room.add_child(crate)
-			
-			spawn_index += 1
+			crates_spawned += 1
+		
+		print("[SPAWN] Crates: %d" % crates_spawned)
+	
+	# --- SPAWN INITIAL ENEMIES (SIMPLE, NO VALIDATION) ---
+	_spawn_initial_enemies(current_level, room_spawn_points, themed_room, themed_slimes)
 	
 	# Schedule multiple waves based on level
 	if current_level >= 1 and not room_spawn_points.is_empty():
@@ -668,8 +845,16 @@ func _spawn_room_content() -> void:
 		if waves_remaining > 0:
 			print("[WAVE SYSTEM] Level %d: %d waves will spawn" % [current_level, waves_remaining])
 	
-	if alive_enemies == 0:
-		_spawn_exit_door()
+	# FAILSAFE: Ensure non-hub rooms always have at least 1 enemy
+	_ensure_minimum_one_enemy(room_spawn_points)
+	
+	# Always spawn the door immediately
+	_spawn_exit_door()
+	
+	# In hub/shop, unlock immediately (always visible)
+	# In combat rooms, unlock only when enemies are defeated
+	if in_hub or in_shop or alive_enemies == 0:
+		_unlock_exit_door()
 
 
 # --- SPAWN COUNT CALCULATION ---------------------------------------
@@ -875,12 +1060,14 @@ func _on_enemy_died(enemy: Node2D = null) -> void:
 			_schedule_wave(1.5, wave_size)
 			return
 		
-		# ⭐ Progress chaos challenge if active
+		# ⭐ ALL WAVES COMPLETE - ROOM CLEARED
 		print("[GameManager] All enemies dead. Active chaos challenge: '", GameState.active_chaos_challenge, "'")
 		if not GameState.active_chaos_challenge.is_empty():
 			GameState.increment_chaos_challenge_progress()
 		
-		_spawn_exit_door()
+		# CRITICAL: Ensure door exists before unlocking
+		_ensure_exit_door_exists()
+		_unlock_exit_door()
 
 
 func _spawn_exit_door() -> void:
@@ -920,14 +1107,37 @@ func _spawn_exit_door() -> void:
 	
 	print("[EXIT DOOR] Door spawned successfully at: ", current_exit_door.global_position)
 
-	# Call open() deferred to ensure it happens after _ready() sets visible = false
+
+func _ensure_exit_door_exists() -> void:
+	"""CRITICAL FALLBACK: Ensure exit door exists after room clear. Prevents softlocks."""
+	# If door already exists and is in tree, we're good
+	if current_exit_door != null and is_instance_valid(current_exit_door) and current_exit_door.is_inside_tree():
+		print("[EXIT DOOR] Door already exists and is valid")
+		return
+	
+	# Door missing or invalid - force spawn it
+	print("[EXIT DOOR] ⚠️ FALLBACK: Door missing after room clear, force spawning!")
+	current_exit_door = null  # Clear invalid reference
+	_spawn_exit_door()
+
+
+func _unlock_exit_door() -> void:
+	"""Unlock and open the exit door after all enemies are defeated."""
+	if current_exit_door == null:
+		print("[EXIT DOOR] Cannot unlock - door not spawned yet")
+		return
+	
+	# Wait one frame to ensure door's _ready() has run
+	await get_tree().process_frame
+	
+	# Call open() to make door visible and interactable
 	if current_exit_door.has_method("open"):
 		# Don't play sound in hub or shop
 		if in_hub or in_shop:
-			current_exit_door.call_deferred("open", false)
+			current_exit_door.open(false)
 		else:
-			current_exit_door.call_deferred("open")
-		print("[EXIT DOOR] Door open() called (deferred)")
+			current_exit_door.open()
+		print("[EXIT DOOR] Door unlocked and opened")
 
 
 func _spawn_chest_at_enemy_position(position: Vector2) -> void:
@@ -1247,27 +1457,18 @@ func _check_chaos_chest_spawn() -> void:
 	# ⚠️ DISABLED: Chaos chests temporarily disabled for testing
 	return
 	
-	# Determine which 10-level cycle we're in (0 = levels 1-10, 1 = levels 11-20, etc.)
-	var new_cycle = int(float(current_level - 1) / 10.0)
-	
-	# If we've entered a new cycle, reset the flag
-	if new_cycle > current_level_cycle:
-		current_level_cycle = new_cycle
-		chaos_chest_spawned_this_cycle = false
-	
-	# If chaos chest already spawned this cycle, skip
-	if chaos_chest_spawned_this_cycle:
-		return
-	
-	# Calculate spawn chance based on levels remaining in cycle
-	# This guarantees exactly one chaos chest per 10-level cycle
-	var cycle_progress = (current_level - 1) % 10  # 0-9
-	var levels_remaining_in_cycle = 10 - cycle_progress
-	var spawn_chance = 1.0 / float(levels_remaining_in_cycle)
-	
-	if randf() < spawn_chance:
-		chaos_chest_spawned_this_cycle = true
-		# Flag is set; actual spawn happens in _spawn_room_content()
+	## Unreachable code below - kept for reference when re-enabling
+	#var new_cycle = int(float(current_level - 1) / 10.0)
+	#if new_cycle > current_level_cycle:
+	#	current_level_cycle = new_cycle
+	#	chaos_chest_spawned_this_cycle = false
+	#if chaos_chest_spawned_this_cycle:
+	#	return
+	#var cycle_progress = (current_level - 1) % 10
+	#var levels_remaining_in_cycle = 10 - cycle_progress
+	#var spawn_chance = 1.0 / float(levels_remaining_in_cycle)
+	#if randf() < spawn_chance:
+	#	chaos_chest_spawned_this_cycle = true
 
 
 func _spawn_chaos_chest_at_enemy_position(position: Vector2) -> void:
@@ -1325,26 +1526,27 @@ func _on_chaos_chest_opened(chaos_upgrade: Dictionary) -> void:
 # --- WAVE SYSTEM ---------------------------------------------------
 
 func get_wave_enemy_count() -> int:
-	"""Calculate wave size based on current level with size scaling."""
+	"""Calculate wave size based on current level with aggressive scaling."""
 	if current_level < 1:
 		return 0
 	
-	# Base wave size
+	# Base wave size (30% larger than before)
 	var base_size: int
 	
 	if current_level <= 5:
-		# Level 1-5: baseline (3-6 enemies)
-		base_size = randi_range(3, 6)
+		# Level 1-5: baseline +30% (4-8 enemies, was 3-6)
+		base_size = randi_range(4, 8)
 	elif current_level <= 10:
-		# Level 6-10: +50% more (5-9 enemies)
-		base_size = randi_range(5, 9)
+		# Level 6-10: baseline × 1.75 (5-11 enemies)
+		base_size = randi_range(5, 11)
 	elif current_level <= 20:
-		# Level 11-20: +100% more (6-12 enemies)
-		base_size = randi_range(6, 12)
+		# Level 11-20: baseline × 2.25 (7-14 enemies)
+		base_size = randi_range(7, 14)
 	else:
-		# Level 20+: +200% more (9-18 enemies)
-		base_size = randi_range(9, 18)
+		# Level 20+: baseline × 3.0 (12-24 enemies)
+		base_size = randi_range(12, 24)
 	
+	print("[WAVE SIZE] Level %d wave size: %d enemies" % [current_level, base_size])
 	return base_size
 
 
@@ -1392,48 +1594,37 @@ func _spawn_wave(count: int) -> void:
 		print("[WAVE] No spawn points available for wave!")
 		return
 	
+	print("[WAVE] Preparing wave of %d enemies!" % count)
+	
+	# Get available spawn points (exclude door spawn point)
+	var available_spawns = room_spawn_points.duplicate()
+	if door_spawn_point != null and door_spawn_point in available_spawns:
+		available_spawns.erase(door_spawn_point)
+	
+	# Prepare enemy list
 	var themed_room := _is_themed_room(current_level)
 	var themed_slimes := _get_themed_room_slimes(current_level)
+	var enemy_list: Array = []
 	
-	print("[WAVE] Spawning wave of %d enemies!" % count)
-	
-	# Shuffle spawn points for randomness
-	room_spawn_points.shuffle()
-	
-	var spawned_count = 0
 	for i in range(count):
-		# Use available spawn points (cycle if needed)
-		if room_spawn_points.is_empty():
-			break
-		
-		var spawn = room_spawn_points[i % room_spawn_points.size()]
 		var enemy_scene: PackedScene = null
 		
 		if themed_room and themed_slimes.size() > 0:
-			# Pick themed enemy
 			enemy_scene = themed_slimes[randi() % themed_slimes.size()]
 		else:
-			# Pick normal enemy based on weights
 			enemy_scene = _pick_enemy_scene()
 		
 		if enemy_scene:
-			var desired_pos: Vector2 = spawn.global_position
-			var safe_pos := _find_safe_spawn_position(desired_pos)
-			
-			var enemy := enemy_scene.instantiate()
-			enemy.global_position = safe_pos
-			
-			if enemy.has_method("apply_level"):
-				enemy.apply_level(current_level)
-			
-			current_room.add_child(enemy)
-			alive_enemies += 1
-			spawned_count += 1
-			
-			if enemy.has_signal("died"):
-				enemy.died.connect(_on_enemy_died.bind(enemy))
+			enemy_list.append(enemy_scene)
 	
-	print("[WAVE] Wave complete! Spawned %d/%d enemies" % [spawned_count, count])
+	enemy_list.shuffle()
+	
+	# Pick random duration for this wave
+	var wave_duration := randf_range(spawn_duration_wave_min, spawn_duration_wave_max)
+	
+	# Start staggered wave spawning
+	if not enemy_list.is_empty():
+		_spawn_enemies_over_time(enemy_list, available_spawns, wave_duration, false)  # false = not initial, allow expansion
 
 
 # --- THEMED ROOM CONFIGURATION ---

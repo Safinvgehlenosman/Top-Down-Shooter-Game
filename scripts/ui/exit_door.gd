@@ -63,6 +63,18 @@ func open(play_sound: bool = true) -> void:
 	
 	if sfx_spawn and play_sound:
 		sfx_spawn.play()
+	
+	# Check if player is already in the area when door opens
+	await get_tree().process_frame  # Wait one frame for physics to update
+	for body in get_overlapping_bodies():
+		if body.is_in_group("player"):
+			player_in_range = true
+			if animated_sprite:
+				animated_sprite.play("open")
+			if interact_prompt:
+				interact_prompt.visible = true
+				hover_time = 0.0
+			break
 
 
 func _on_body_entered(body: Node2D) -> void:

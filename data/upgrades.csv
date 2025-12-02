@@ -9,8 +9,8 @@ dash_unlock,Unlock Dash,common,250,generic,shop,,none,,,none,TRUE,,dash
 slowmo_unlock,Unlock Slowmo,common,400,generic,shop,,none,,,none,TRUE,,slowmo
 bubble_unlock,Unlock Shield,common,300,generic,shop,,none,,,none,TRUE,,bubble
 invis_unlock,Unlock Invisibility,common,350,generic,shop,,none,,,none,TRUE,,invis
-max_hp_plus_1,+10 Max HP,common,150,generic,shop,res://assets/Separated/singleheart.png,,,,,TRUE,,
-hp_refill,Refill HP,common,50,generic,shop,res://assets/Separated/singleheart.png,,,,,TRUE,,
+max_hp_plus_1,+10 Max HP,common,150,generic,shop,res://assets/Separated/singleheart.png,max_hp,10,,,TRUE,,
+hp_refill,Refill HP,common,50,generic,shop,res://assets/Separated/singleheart.png,hp_refill,1,,,TRUE,,
 chaos_half_hp_double_damage,Chaos Pact: Double Damage,chaos,0,chaos,chaos,res://assets/Separated/ammo.png,chaos_challenge,,,,TRUE,,
 chaos_no_primary_fire_triple_rate,Chaos Pact: Trigger Happy,chaos,0,chaos,chaos,res://assets/Separated/ammo.png,chaos_challenge,,,,TRUE,,
 primary_damage_t1,Primary Damage +5%,common,50,primary,shop,res://assets/icons/primary_damage.png,primary_damage,0.06,,,TRUE,,

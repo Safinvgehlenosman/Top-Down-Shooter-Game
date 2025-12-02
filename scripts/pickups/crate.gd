@@ -64,37 +64,22 @@ func _spawn_loot() -> void:
 	# ⭐ Check if chaos challenge is active (no HP upgrades allowed)
 	var chaos_active := not GameState.active_chaos_challenge.is_empty()
 	
-	# During chaos challenge or always spawn coins
-	# Ammo is no longer relevant since all weapons use rechargeable fuel
+	# During chaos challenge always spawn coins
 	if chaos_active:
-		# Spawn coins during chaos challenge
 		if CoinScene:
 			var coin := CoinScene.instantiate()
 			coin.global_position = global_position
 			get_tree().current_scene.add_child(coin)
-	else:
-		# Don't spawn hearts if player is at full HP
-		if hp_percent >= 1.0:
-			# Always spawn coins when at full HP
-			if CoinScene:
-				var coin := CoinScene.instantiate()
-				coin.global_position = global_position
-				get_tree().current_scene.add_child(coin)
-		else:
-			# Normal loot: 75% chance heart if low HP, otherwise coins
-			var heart_chance := 0.5
-			if hp_percent < 0.5:
-				heart_chance = 0.75
-			
-			var roll := randf()
-			if roll < heart_chance and HeartScene:
-				var heart := HeartScene.instantiate()
-				heart.global_position = global_position
-				get_tree().current_scene.add_child(heart)
-			elif CoinScene:
-				var coin := CoinScene.instantiate()
-				coin.global_position = global_position
-				get_tree().current_scene.add_child(coin)
+	# If HP is below max, always drop hearts
+	elif hp_percent < 1.0 and HeartScene:
+		var heart := HeartScene.instantiate()
+		heart.global_position = global_position
+		get_tree().current_scene.add_child(heart)
+	# Otherwise drop coins
+	elif CoinScene:
+		var coin := CoinScene.instantiate()
+		coin.global_position = global_position
+		get_tree().current_scene.add_child(coin)
 
 
 
