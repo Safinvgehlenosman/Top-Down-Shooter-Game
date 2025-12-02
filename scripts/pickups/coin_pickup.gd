@@ -131,26 +131,26 @@ func _get_coin_value_for_level() -> int:
 	var min_value: int
 	var max_value: int
 	
-	# Determine range based on level
+	# Doubled coin value ranges (x2 from original)
 	if level <= 5:
-		min_value = 10
-		max_value = 15
+		min_value = 20  # was 10
+		max_value = 30  # was 15
 	elif level <= 10:
-		min_value = 16
-		max_value = 20
+		min_value = 32  # was 16
+		max_value = 40  # was 20
 	elif level <= 15:
-		min_value = 21
-		max_value = 25
+		min_value = 42  # was 21
+		max_value = 50  # was 25
 	elif level <= 20:
-		min_value = 26
-		max_value = 30
+		min_value = 52  # was 26
+		max_value = 60  # was 30
 	elif level <= 25:
-		min_value = 31
-		max_value = 35
+		min_value = 62  # was 31
+		max_value = 70  # was 35
 	else:
 		# Level 26+
-		min_value = 36
-		max_value = 40
+		min_value = 72  # was 36
+		max_value = 80  # was 40
 	
 	# Return random value in range
 	var value = randi_range(min_value, max_value)

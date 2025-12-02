@@ -124,8 +124,10 @@ func _on_card_hovered(hovered_card: Control, is_hovered: bool) -> void:
 # -------------------------------------------------------------------
 
 func _calculate_upgrade_price(upgrade: Dictionary) -> int:
-	"""Return price from upgrade data (loaded from CSV)."""
-	return upgrade.get("price", 50)  # Default to 50 if no price specified
+	"""Return price from upgrade data (loaded from CSV), reduced by 15%."""
+	var base_price = upgrade.get("price", 50)  # Default to 50 if no price specified
+	# Apply 15% discount to all base prices
+	return int(base_price * 0.85)
 
 
 func _setup_cards() -> void:
@@ -290,17 +292,39 @@ func _sort_offers_by_rarity(offers: Array) -> Array:
 
 
 func _get_rarity_weights_for_level(level: int) -> Dictionary:
-	var common := 60.0
-	var uncommon := 30.0
-	var rare := 9.0
-	var epic := 1.0
-
-	var tiers = max(0, int((level - 1) / 5.0))
-	for i in range(tiers):
-		common = max(20.0, common - 5.0)
-		uncommon += 3.0
-		rare += 1.0
-		epic += 1.0
+	# New rarity curve: shifts rarities earlier
+	# Level 1: 50/35/12/3
+	# Level 5: 45/38/14/3
+	# Level 10: 40/40/16/4
+	# Level 20: 30/45/18/7
+	# Level 30+: 25/48/18/9
+	
+	var common := 50.0
+	var uncommon := 35.0
+	var rare := 12.0
+	var epic := 3.0
+	
+	if level >= 30:
+		common = 25.0
+		uncommon = 48.0
+		rare = 18.0
+		epic = 9.0
+	elif level >= 20:
+		common = 30.0
+		uncommon = 45.0
+		rare = 18.0
+		epic = 7.0
+	elif level >= 10:
+		common = 40.0
+		uncommon = 40.0
+		rare = 16.0
+		epic = 4.0
+	elif level >= 5:
+		common = 45.0
+		uncommon = 38.0
+		rare = 14.0
+		epic = 3.0
+	# else: use initial values (level 1-4)
 
 	# Only add synergy to pool if:
 	# 1. Player has unlocked ANY weapon AND ANY ability

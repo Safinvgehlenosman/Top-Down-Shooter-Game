@@ -67,10 +67,12 @@ var in_shop: bool = false
 var in_hub: bool = false
 var run_started: bool = false
 
-# Wave system
+# Wave system - supports multiple waves
 var wave_scheduled: bool = false
 var wave_spawned: bool = false
 var initial_enemies_defeated: bool = false
+var waves_remaining: int = 0  # How many waves left to spawn
+var current_wave_number: int = 0  # Which wave we're on
 
 # Chest spawning
 var chest_spawn_point: Node2D = null
@@ -108,12 +110,12 @@ var last_room_index: int = -1
 
 @export_group("Enemy Unlock Levels")
 @export var level_unlock_green: int  = 1   # basic melee
-@export var level_unlock_fast: int   = 4   # darkgreen chaser
-@export var level_unlock_purple: int = 7   # shooter
-@export var level_unlock_poison: int = 10  # DoT cloud
-@export var level_unlock_ice: int    = 13  # slow / tanky
-@export var level_unlock_fire: int   = 10  # fire melee (mid-game)
-@export var level_unlock_ghost: int  = 16  # late-game special
+@export var level_unlock_fast: int   = 3   # darkgreen chaser (was 4)
+@export var level_unlock_purple: int = 5   # shooter (was 7)
+@export var level_unlock_poison: int = 7   # DoT cloud (was 10)
+@export var level_unlock_ice: int    = 9   # slow / tanky (was 13)
+@export var level_unlock_fire: int   = 7   # fire melee (was 10)
+@export var level_unlock_ghost: int  = 10  # late-game special (was 16)
 
 @export_group("Enemy Base Weights")
 # These are "relative" weights; the per-level logic multiplies/combines them.
@@ -249,6 +251,8 @@ func load_hub_room() -> void:
 	wave_scheduled = false
 	wave_spawned = false
 	initial_enemies_defeated = false
+	waves_remaining = 0
+	current_wave_number = 0
 	
 	# Reset chest variables
 	chest_spawn_point = null
@@ -350,6 +354,8 @@ func _load_room_internal() -> void:
 	wave_scheduled = false
 	wave_spawned = false
 	initial_enemies_defeated = false
+	waves_remaining = 0
+	current_wave_number = 0
 	
 	# Reset chest variables
 	chest_spawn_point = null
@@ -655,11 +661,12 @@ func _spawn_room_content() -> void:
 			
 			spawn_index += 1
 	
-	# Schedule wave if level is high enough and we have spawn points
-	if current_level >= 5 and not room_spawn_points.is_empty():
-		var wave_count = get_wave_enemy_count()
-		if wave_count > 0:
-			_schedule_wave(1.5, wave_count)  # 1.5 second delay after initial enemies die
+	# Schedule multiple waves based on level
+	if current_level >= 1 and not room_spawn_points.is_empty():
+		waves_remaining = get_wave_count()
+		current_wave_number = 0
+		if waves_remaining > 0:
+			print("[WAVE SYSTEM] Level %d: %d waves will spawn" % [current_level, waves_remaining])
 	
 	if alive_enemies == 0:
 		_spawn_exit_door()
@@ -673,12 +680,11 @@ func _calculate_enemy_count_for_level(level: int, available_spawns: int) -> int:
 	var total_spawns = available_spawns
 	
 	# Calculate enemy/crate split ratio
-	# Level 1: 70% enemies
-	# Level 50+: 95% enemies
 	var enemy_ratio = _get_enemy_ratio_for_level(level)
 	
-	# Calculate enemy count based on ratio
-	var enemy_count = int(total_spawns * enemy_ratio)
+	# Calculate enemy count based on ratio, then increase by +25%
+	var base_enemy_count = int(total_spawns * enemy_ratio)
+	var enemy_count = int(base_enemy_count * 1.25)
 	
 	# Clamp to reasonable values (min 3, max based on available spawns)
 	enemy_count = clamp(enemy_count, 3, available_spawns)
@@ -705,19 +711,32 @@ func _calculate_crate_count_for_level(level: int, available_spawns: int) -> int:
 
 
 func _get_enemy_ratio_for_level(level: int) -> float:
-	"""Get the enemy spawn ratio for a given level. Smoothly transitions from 50% to 70%."""
-	# Level 1: 50% enemies (0.5)
-	# Level 50+: 70% enemies (0.7)
+	"""Get the enemy spawn ratio for a given level. Aggressively transitions from 50% to 90%."""
+	# New curve:
+	# Level 1: 50% enemies
+	# Level 5: 60% enemies  
+	# Level 10: 75% enemies
+	# Level 20+: 90% enemies (hard cap)
 	
-	if level >= 50:
-		return 0.7
+	if level >= 20:
+		return 0.9
 	
-	# Linear interpolation from 0.5 to 0.7 over 50 levels
-	# ratio = 0.5 + (0.2 * progress)
-	var progress = float(level - 1) / 49.0  # 0.0 at level 1, 1.0 at level 50
-	var ratio = 0.5 + (0.2 * progress)
+	if level <= 1:
+		return 0.5
 	
-	return ratio
+	# Piecewise linear interpolation
+	if level <= 5:
+		# 1→5: 50% → 60%
+		var progress = float(level - 1) / 4.0
+		return 0.5 + (progress * 0.1)
+	elif level <= 10:
+		# 5→10: 60% → 75%
+		var progress = float(level - 5) / 5.0
+		return 0.6 + (progress * 0.15)
+	else:
+		# 10→20: 75% → 90%
+		var progress = float(level - 10) / 10.0
+		return 0.75 + (progress * 0.15)
 
 
 # --- ENEMY WEIGHT SCALING / PROGRESSION -----------------------------
@@ -843,10 +862,17 @@ func _on_enemy_died(enemy: Node2D = null) -> void:
 		_spawn_chaos_chest_at_enemy_position(enemy.global_position)
 	
 	if alive_enemies == 0:
-		# ⭐ Check if this was the initial wave of enemies
-		if not initial_enemies_defeated and wave_scheduled and not wave_spawned:
+		# Check if we have more waves to spawn
+		if waves_remaining > 0:
+			current_wave_number += 1
+			waves_remaining -= 1
 			initial_enemies_defeated = true
-			# Don't spawn door yet - wave is coming
+			
+			var wave_size = get_wave_enemy_count()
+			print("[WAVE SYSTEM] Wave %d/%d starting with %d enemies" % [current_wave_number, get_wave_count(), wave_size])
+			
+			# Schedule next wave with delay
+			_schedule_wave(1.5, wave_size)
 			return
 		
 		# ⭐ Progress chaos challenge if active
@@ -1296,21 +1322,42 @@ func _on_chaos_chest_opened(chaos_upgrade: Dictionary) -> void:
 # --- WAVE SYSTEM ---------------------------------------------------
 
 func get_wave_enemy_count() -> int:
-	"""Calculate wave size based on current level. Increases every 5 levels."""
-	if current_level < 5:
-		return 0  # No waves before level 5
+	"""Calculate wave size based on current level with size scaling."""
+	if current_level < 1:
+		return 0
 	
-	var wave_tier = int(float(current_level - 5) / 5.0)
+	# Base wave size
+	var base_size: int
 	
-	match wave_tier:
-		0:  # Levels 5-9
-			return randi_range(3, 6)
-		1:  # Levels 10-14
-			return randi_range(6, 9)
-		2:  # Levels 15-19
-			return randi_range(9, 12)
-		_:  # Levels 20+
-			return randi_range(12, 15)
+	if current_level <= 5:
+		# Level 1-5: baseline (3-6 enemies)
+		base_size = randi_range(3, 6)
+	elif current_level <= 10:
+		# Level 6-10: +50% more (5-9 enemies)
+		base_size = randi_range(5, 9)
+	elif current_level <= 20:
+		# Level 11-20: +100% more (6-12 enemies)
+		base_size = randi_range(6, 12)
+	else:
+		# Level 20+: +200% more (9-18 enemies)
+		base_size = randi_range(9, 18)
+	
+	return base_size
+
+
+func get_wave_count() -> int:
+	"""Calculate how many waves should spawn based on current level."""
+	if current_level < 1:
+		return 0
+	elif current_level <= 4:
+		# Level 1-4: 1 wave
+		return 1
+	elif current_level <= 9:
+		# Level 5-9: 2 waves minimum
+		return 2
+	else:
+		# Level 10+: 3 waves
+		return 3
 
 
 func _schedule_wave(delay: float, count: int) -> void:

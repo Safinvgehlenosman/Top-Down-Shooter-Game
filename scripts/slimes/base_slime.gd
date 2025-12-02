@@ -52,8 +52,8 @@ var contact_timer: float = 0.0
 @export var min_pack_size_for_spread: int = 3  # Need 3+ for spreading
 
 # How much we grow per level
-@export var health_growth_per_level: float = 0.05
-@export var damage_growth_per_level: float = 0.05
+@export var health_growth_per_level: float = 0.04
+@export var damage_growth_per_level: float = 0.06
 
 # Alpha variant system
 @export var alpha_material: Material  # Shader material for alpha slimes
@@ -188,7 +188,7 @@ func is_alpha_variant() -> bool:
 
 
 func _get_retreat_threshold() -> float:
-	"""Get retreat HP threshold scaled by level. At level 30+, slimes don't retreat."""
+	"""Get retreat HP threshold scaled by level. At level 20+, slimes don't retreat."""
 	# Alpha variants never retreat
 	if is_alpha:
 		return 0.0
@@ -197,13 +197,16 @@ func _get_retreat_threshold() -> float:
 	if is_fast_slime:
 		return 0.0
 	
-	# Scale from 0.5 at level 1 to 0.0 at level 30
-	# Formula: 0.5 * (1 - (level - 1) / 29)
-	if current_level >= 30:
+	# Faster drop: 50% at level 1, 30% at level 10, 0% at level 20+
+	if current_level >= 20:
 		return 0.0
 	
-	var progress = float(current_level - 1) / 29.0  # 0.0 at level 1, 1.0 at level 30
-	return retreat_hp_threshold * (1.0 - progress)
+	if current_level <= 1:
+		return 0.5
+	
+	# Linear interpolation from 0.5 to 0.0 over levels 1-20
+	var progress = float(current_level - 1) / 19.0  # 0.0 at level 1, 1.0 at level 20
+	return 0.5 * (1.0 - progress)
 
 
 func _ready() -> void:
@@ -269,11 +272,13 @@ func apply_level(level: int) -> void:
 
 	if level_offset > 0:
 		if health_growth_per_level != 0.0:
-			var hp_mult = 1.0 + health_growth_per_level * level_offset
+			# Power formula: HP *= 1.04^(level-1)
+			var hp_mult = pow(1.0 + health_growth_per_level, float(level_offset))
 			final_max_hp = int(round(max_health * hp_mult))
 
 		if damage_growth_per_level != 0.0:
-			var dmg_mult = 1.0 + damage_growth_per_level * level_offset
+			# Power formula: damage *= 1.06^(level-1)
+			var dmg_mult = pow(1.0 + damage_growth_per_level, float(level_offset))
 			contact_damage = int(round(contact_damage * dmg_mult))
 
 	max_health = final_max_hp
@@ -1044,16 +1049,17 @@ func force_deaggro() -> void:
 
 
 func _apply_speed_scaling() -> void:
-	"""Scale movement speed from 1.0x to 1.5x linearly over 100 levels."""
+	"""Scale movement speed from 1.0x to 1.8x over 40 levels, capped at 1.8x."""
 	var game_manager = get_tree().get_first_node_in_group("game_manager")
 	if not game_manager:
 		return
 
 	var level = game_manager.current_level if "current_level" in game_manager else 1
 
-	# Linear scaling: 1.0 + (level - 1) / 100.0, capped at 1.5x
-	# More moderate scaling - smart AI provides difficulty, not raw speed
-	var speed_multiplier = 1.0 + min((level - 1) / 100.0, 0.5)
+	# Target: 1.0x at level 1 → 1.8x at level 40, capped at 1.8x for levels 40+
+	# Formula: 1.0 + min((level - 1) / 39.0, 1.0) * 0.8
+	var progress = min((level - 1) / 39.0, 1.0)  # 0.0 at level 1, 1.0 at level 40+
+	var speed_multiplier = 1.0 + (progress * 0.8)  # Adds up to 0.8 = 1.8x total
 
 	# Apply to movement speed
 	if base_move_speed > 0.0:
