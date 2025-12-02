@@ -283,45 +283,60 @@ func is_upgrade_available_for_loadout(upgrade: Dictionary, equipped_weapon: Stri
 	# For synergies, check if player has the required weapon/ability UNLOCKED (not just equipped)
 	var requires_weapon: String = upgrade.get("requires_weapon", "")
 	if requires_weapon != "":
-		# Check if this is a synergy - if so, check unlocked weapons instead of equipped
-		if upgrade.get("rarity", Rarity.COMMON) == Rarity.SYNERGY:
-			var unlocked_weapons = GameState.get_unlocked_weapons()
-			var has_required_weapon = false
-			for weapon_type in unlocked_weapons:
-				var weapon_name = _get_weapon_name_from_type(weapon_type)
-				if _normalize_string(requires_weapon) == _normalize_string(weapon_name):
-					has_required_weapon = true
-					break
-			if not has_required_weapon:
+		# "none" means this upgrade only appears when NO weapon is equipped
+		if requires_weapon == "none":
+			if equipped_weapon != "":
 				return false
 		else:
-			# Non-synergy: check equipped weapon
-			if _normalize_string(requires_weapon) != _normalize_string(equipped_weapon):
-				return false
+			# Check if this is a synergy - if so, check unlocked weapons instead of equipped
+			if upgrade.get("rarity", Rarity.COMMON) == Rarity.SYNERGY:
+				var unlocked_weapons = GameState.get_unlocked_weapons()
+				var has_required_weapon = false
+				for weapon_type in unlocked_weapons:
+					var weapon_name = _get_weapon_name_from_type(weapon_type)
+					if _normalize_string(requires_weapon) == _normalize_string(weapon_name):
+						has_required_weapon = true
+						break
+				if not has_required_weapon:
+					return false
+			else:
+				# Non-synergy: check equipped weapon
+				if _normalize_string(requires_weapon) != _normalize_string(equipped_weapon):
+					return false
 	
 	var requires_ability: String = upgrade.get("requires_ability", "")
 	if requires_ability != "":
-		# Check if this is a synergy - if so, check unlocked abilities instead of equipped
-		if upgrade.get("rarity", Rarity.COMMON) == Rarity.SYNERGY:
-			var unlocked_abilities = GameState.get_unlocked_abilities()
-			var has_required_ability = false
-			for ability_type in unlocked_abilities:
-				var ability_name = _get_ability_name_from_type(ability_type)
-				var normalized_required = _normalize_string(requires_ability)
-				var normalized_ability = _normalize_string(ability_name)
-				
-				# Handle "shield" alias for "bubble"
-				if normalized_required == "shield":
-					normalized_required = "bubble"
-				
-				if normalized_required == normalized_ability:
-					has_required_ability = true
-					break
-			if not has_required_ability:
+		# Handle 'shield' as alias for 'bubble'
+		if requires_ability == "shield":
+			requires_ability = "bubble"
+		
+		# "none" means this upgrade only appears when NO ability is equipped
+		if requires_ability == "none":
+			if equipped_ability != "":
 				return false
 		else:
-			# Non-synergy: check equipped ability
-			if _normalize_string(requires_ability) != _normalize_string(equipped_ability):
+			# Check if this is a synergy - if so, check unlocked abilities instead of equipped
+			if upgrade.get("rarity", Rarity.COMMON) == Rarity.SYNERGY:
+				var unlocked_abilities = GameState.get_unlocked_abilities()
+				var has_required_ability = false
+				for ability_type in unlocked_abilities:
+					var ability_name = _get_ability_name_from_type(ability_type)
+					var normalized_required = _normalize_string(requires_ability)
+					var normalized_ability = _normalize_string(ability_name)
+					
+					# Handle "shield" alias for "bubble"
+					if normalized_required == "shield":
+						normalized_required = "bubble"
+					
+					if normalized_required == normalized_ability:
+						has_required_ability = true
+						break
+				if not has_required_ability:
+					return false
+			else:
+				# Non-synergy: check equipped ability
+				if _normalize_string(requires_ability) != _normalize_string(equipped_ability):
+					return false
 				return false
 	
 	return true

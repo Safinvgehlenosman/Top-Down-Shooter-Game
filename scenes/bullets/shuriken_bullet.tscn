@@ -36,6 +36,7 @@ shape = SubResource("CircleShape2D_y25gk")
 visible = false
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
+visible = false
 color = Color(0.93333334, 0.90588236, 0.90588236, 1)
 energy = 1.2
 shadow_enabled = true

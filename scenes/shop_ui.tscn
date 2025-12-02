@@ -212,4 +212,26 @@ grow_vertical = 2
 value = 50.0
 texture_progress = ExtResource("8_ijxsd")
 
+[node name="HP" type="Label" parent="PlayerInfo"]
+layout_mode = 0
+offset_left = 33.333332
+offset_top = 140.0
+offset_right = 650.0
+offset_bottom = 190.0
+theme_override_fonts/font = ExtResource("1_oixfk")
+theme_override_font_sizes/font_size = 32
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ABILITY" type="Label" parent="PlayerInfo"]
+layout_mode = 0
+offset_left = 33.333332
+offset_top = 273.3333
+offset_right = 650.0
+offset_bottom = 323.3333
+theme_override_fonts/font = ExtResource("1_oixfk")
+theme_override_font_sizes/font_size = 32
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="VHSLayer" parent="." instance=ExtResource("10_0yw5g")]

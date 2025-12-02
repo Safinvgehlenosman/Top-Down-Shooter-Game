@@ -2,7 +2,9 @@ extends CanvasLayer
 
 # New UI structure - updated node paths
 @onready var hp_progress_bar: TextureProgressBar = get_node_or_null("PlayerInfo/HPFill")
+@onready var hp_label: Label = get_node_or_null("PlayerInfo/HP")
 @onready var ability_progress_bar: TextureProgressBar = get_node_or_null("PlayerInfo/AbilityProgressBar")
+@onready var ability_label: Label = get_node_or_null("PlayerInfo/ABILITY")
 @onready var ammo_label: Label = get_node_or_null("Ammo/AmmoLabel")
 @onready var coin_label: Label = get_node_or_null("Coins/CoinsLabel")
 @onready var level_label: Label = get_node_or_null("Level/LevelLabel")
@@ -72,6 +74,10 @@ func _update_hp_from_state() -> void:
 		return
 	hp_progress_bar.max_value = GameState.max_health
 	hp_progress_bar.value = GameState.health
+	
+	# Update HP label with current/max format
+	if hp_label:
+		hp_label.text = "%d/%d" % [GameState.health, GameState.max_health]
 
 
 func _update_ammo_from_state() -> void:
@@ -100,17 +106,23 @@ func _update_ability_bar() -> void:
 	# Hide if no ability unlocked
 	if GameState.ability == ABILITY_NONE:
 		ability_progress_bar.visible = false
+		if ability_label:
+			ability_label.visible = false
 		return
 	
 	var data = GameState.ABILITY_DATA.get(GameState.ability, {})
 	if data.is_empty():
 		ability_progress_bar.visible = false
+		if ability_label:
+			ability_label.visible = false
 		return
 	
 	# Get BASE cooldown
 	var base_cd: float = data.get("cooldown", 0.0)
 	if base_cd <= 0.0:
 		ability_progress_bar.visible = false
+		if ability_label:
+			ability_label.visible = false
 		return
 	
 	# Apply cooldown multiplier (from upgrades)
@@ -129,6 +141,14 @@ func _update_ability_bar() -> void:
 	var cd_left: float = GameState.ability_cooldown_left
 	var bar_value: float = actual_max_cd - cd_left
 	ability_progress_bar.value = bar_value
+	
+	# Update ability cooldown label
+	if ability_label:
+		ability_label.visible = true
+		if cd_left > 0.0:
+			ability_label.text = "%.1f/%.1f" % [cd_left, actual_max_cd]
+		else:
+			ability_label.text = "READY"
 
 
 # --------------------------------------------------------------------

@@ -25,11 +25,21 @@ func _get_base_upgrade_id(up: Dictionary) -> String:
 	var id: String = up.get("id", "")
 	if up.has("line_id"):
 		return String(up.get("line_id"))
+	
+	# Special case: weapon/ability unlocks should each be unique (don't group them)
+	if id.ends_with("_unlock"):
+		return id
+	
 	var parts := id.split("_")
 	if parts.size() > 1:
 		var last := parts[-1].to_lower()
-		if last in ["common", "uncommon", "rare", "epic"]:
+		# Remove tier suffix (t1, t2, t3, t4)
+		if last.begins_with("t") and last.substr(1).is_valid_int():
 			parts.remove_at(parts.size() - 1)
+		# Remove old rarity suffix (common, uncommon, rare, epic)
+		elif last in ["common", "uncommon", "rare", "epic"]:
+			parts.remove_at(parts.size() - 1)
+		# Remove numeric suffix
 		elif parts[-1].is_valid_int():
 			parts.remove_at(parts.size() - 1)
 	return "_".join(parts)
@@ -44,7 +54,9 @@ var active_chest: Node2D = null  # Reference to the chest that opened this shop
 
 # New UI structure - use get_node_or_null for safety
 @onready var hp_progress_bar: TextureProgressBar = get_node_or_null("PlayerInfo/HPFill")
+@onready var hp_label: Label = get_node_or_null("PlayerInfo/HP")
 @onready var ability_progress_bar: TextureProgressBar = get_node_or_null("PlayerInfo/AbilityProgressBar")
+@onready var ability_label: Label = get_node_or_null("PlayerInfo/ABILITY")
 @onready var ammo_label: Label = get_node_or_null("Ammo/AmmoLabel")
 @onready var coin_label: Label = get_node_or_null("Coins/CoinsLabel")
 @onready var level_label: Label = get_node_or_null("Level/LevelLabel")
@@ -211,15 +223,9 @@ func _roll_shop_offers() -> Array:
 		if candidates.is_empty():
 			break
 		candidates.shuffle()
-		# Pick first whose base not used (defensive)
-		var chosen: Dictionary = {}
-		for c in candidates:
-			var base := _get_base_upgrade_id(c)
-			if not taken_bases.has(base):
-				chosen = c
-				break
-		if chosen == null:
-			chosen = candidates[0]
+		
+		# Pick first candidate (already filtered by _filter_upgrades to exclude taken bases)
+		var chosen: Dictionary = candidates[0]
 		result.append(chosen)
 		taken_ids.append(chosen["id"])
 		var chosen_base := _get_base_upgrade_id(chosen)
@@ -405,13 +411,21 @@ func _upgrade_meets_requirements(u: Dictionary) -> bool:
 	# Use new CSV schema fields if available
 	if u.has("requires_weapon") and u["requires_weapon"] != "":
 		var equipped_weapon := _get_equipped_weapon_name()
-		if u["requires_weapon"] != equipped_weapon:
-			if u.get("rarity", 0) == UpgradesDB.Rarity.SYNERGY:
-				print("[SYNERGY DEBUG] %s requires weapon '%s' but equipped is '%s' - FAILED" % [u.get("id", ""), u["requires_weapon"], equipped_weapon])
-			return false
+		var required_weapon: String = u["requires_weapon"]
+		
+		# "none" means this upgrade only appears when NO weapon is equipped
+		if required_weapon == "none":
+			if equipped_weapon != "":
+				return false
 		else:
-			if u.get("rarity", 0) == UpgradesDB.Rarity.SYNERGY:
-				print("[SYNERGY DEBUG] %s weapon requirement '%s' PASSED" % [u.get("id", ""), u["requires_weapon"]])
+			# Specific weapon required
+			if required_weapon != equipped_weapon:
+				if u.get("rarity", 0) == UpgradesDB.Rarity.SYNERGY:
+					print("[SYNERGY DEBUG] %s requires weapon '%s' but equipped is '%s' - FAILED" % [u.get("id", ""), required_weapon, equipped_weapon])
+				return false
+			else:
+				if u.get("rarity", 0) == UpgradesDB.Rarity.SYNERGY:
+					print("[SYNERGY DEBUG] %s weapon requirement '%s' PASSED" % [u.get("id", ""), required_weapon])
 	
 	if u.has("requires_ability") and u["requires_ability"] != "":
 		var equipped_ability := _get_equipped_ability_name()
@@ -421,13 +435,19 @@ func _upgrade_meets_requirements(u: Dictionary) -> bool:
 		if required_ability == "shield":
 			required_ability = "bubble"
 		
-		if required_ability != equipped_ability:
-			if u.get("rarity", 0) == UpgradesDB.Rarity.SYNERGY:
-				print("[SYNERGY DEBUG] %s requires ability '%s' (original: '%s') but equipped is '%s' - FAILED" % [u.get("id", ""), required_ability, u["requires_ability"], equipped_ability])
-			return false
+		# "none" means this upgrade only appears when NO ability is equipped
+		if required_ability == "none":
+			if equipped_ability != "":
+				return false
 		else:
-			if u.get("rarity", 0) == UpgradesDB.Rarity.SYNERGY:
-				print("[SYNERGY DEBUG] %s ability requirement '%s' PASSED" % [u.get("id", ""), required_ability])
+			# Specific ability required
+			if required_ability != equipped_ability:
+				if u.get("rarity", 0) == UpgradesDB.Rarity.SYNERGY:
+					print("[SYNERGY DEBUG] %s requires ability '%s' (original: '%s') but equipped is '%s' - FAILED" % [u.get("id", ""), required_ability, u["requires_ability"], equipped_ability])
+				return false
+			else:
+				if u.get("rarity", 0) == UpgradesDB.Rarity.SYNERGY:
+					print("[SYNERGY DEBUG] %s ability requirement '%s' PASSED" % [u.get("id", ""), required_ability])
 	
 	# Legacy: Exact weapon requirement (old schema with int values)
 	if u.has("requires_alt_weapon"):
@@ -492,6 +512,10 @@ func _update_hp_from_state() -> void:
 		return
 	hp_progress_bar.max_value = GameState.max_health
 	hp_progress_bar.value = GameState.health
+	
+	# Update HP label with current/max format
+	if hp_label:
+		hp_label.text = "%d/%d" % [GameState.health, GameState.max_health]
 
 func _update_ammo_from_state() -> void:
 	if not ammo_label:
@@ -522,17 +546,23 @@ func _update_ability_bar() -> void:
 	# Hide if no ability unlocked
 	if GameState.ability == ABILITY_NONE:
 		ability_progress_bar.visible = false
+		if ability_label:
+			ability_label.visible = false
 		return
 	
 	var data = GameState.ABILITY_DATA.get(GameState.ability, {})
 	if data.is_empty():
 		ability_progress_bar.visible = false
+		if ability_label:
+			ability_label.visible = false
 		return
 	
 	# Get BASE cooldown
 	var base_cd: float = data.get("cooldown", 0.0)
 	if base_cd <= 0.0:
 		ability_progress_bar.visible = false
+		if ability_label:
+			ability_label.visible = false
 		return
 	
 	# Apply cooldown multiplier (from upgrades)
@@ -551,6 +581,14 @@ func _update_ability_bar() -> void:
 	var cd_left: float = GameState.ability_cooldown_left
 	var bar_value: float = actual_max_cd - cd_left
 	ability_progress_bar.value = bar_value
+	
+	# Update ability cooldown label
+	if ability_label:
+		ability_label.visible = true
+		if cd_left > 0.0:
+			ability_label.text = "%.1f/%.1f" % [cd_left, actual_max_cd]
+		else:
+			ability_label.text = "READY"
 
 # -------------------------------------------------------------------
 # SIGNALS
@@ -645,19 +683,19 @@ func open_as_shop() -> void:
 	active_chest = null
 	
 	# Make sure all UI elements are visible
-	var coin_ui = get_node_or_null("CoinUI")
+	var coin_ui = get_node_or_null("Coins")
 	if coin_ui:
 		coin_ui.visible = true
 	
-	var hp_bar = get_node_or_null("HPBar")
-	if hp_bar:
-		hp_bar.visible = true
+	var hp_ui = get_node_or_null("PlayerInfo")
+	if hp_ui:
+		hp_ui.visible = true
 	
-	var ammo_ui = get_node_or_null("AmmoUI")
+	var ammo_ui = get_node_or_null("Ammo")
 	if ammo_ui:
 		ammo_ui.visible = true
 	
-	var level_ui = get_node_or_null("LevelUI")
+	var level_ui = get_node_or_null("Level")
 	if level_ui:
 		level_ui.visible = true
 	
@@ -739,19 +777,19 @@ func open_as_chest_with_loot(loot: Array) -> void:
 	visible = true
 	
 	# Hide UI elements
-	var coin_ui = get_node_or_null("CoinUI")
+	var coin_ui = get_node_or_null("Coins")
 	if coin_ui:
 		coin_ui.visible = false
 	
-	var hp_bar = get_node_or_null("HPBar")
-	if hp_bar:
-		hp_bar.visible = false
+	var hp_ui = get_node_or_null("PlayerInfo")
+	if hp_ui:
+		hp_ui.visible = false
 	
-	var ammo_ui = get_node_or_null("AmmoUI")
+	var ammo_ui = get_node_or_null("Ammo")
 	if ammo_ui:
 		ammo_ui.visible = false
 	
-	var level_ui = get_node_or_null("LevelUI")
+	var level_ui = get_node_or_null("Level")
 	if level_ui:
 		level_ui.visible = false
 	
@@ -807,14 +845,9 @@ func _setup_chest_cards() -> void:
 			break
 		
 		candidates.shuffle()
-		var chosen: Dictionary = {}
-		for c in candidates:
-			var base := _get_base_upgrade_id(c)
-			if not taken_bases.has(base):
-				chosen = c
-				break
-		if chosen == null:
-			chosen = candidates[0]
+		
+		# Pick first candidate (already filtered by _filter_upgrades to exclude taken bases)
+		var chosen: Dictionary = candidates[0]
 		offers.append(chosen)
 		taken_ids.append(chosen["id"])
 		var base_chosen := _get_base_upgrade_id(chosen)
@@ -1007,19 +1040,19 @@ func _close_chest_mode() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 	
 	# Show UI elements again
-	var coin_ui = get_node_or_null("CoinUI")
+	var coin_ui = get_node_or_null("Coins")
 	if coin_ui:
 		coin_ui.visible = true
 	
-	var hp_bar = get_node_or_null("HPBar")
-	if hp_bar:
-		hp_bar.visible = true
+	var hp_ui = get_node_or_null("PlayerInfo")
+	if hp_ui:
+		hp_ui.visible = true
 	
-	var ammo_ui = get_node_or_null("AmmoUI")
+	var ammo_ui = get_node_or_null("Ammo")
 	if ammo_ui:
 		ammo_ui.visible = true
 	
-	var level_ui = get_node_or_null("LevelUI")
+	var level_ui = get_node_or_null("Level")
 	if level_ui:
 		level_ui.visible = true
 	

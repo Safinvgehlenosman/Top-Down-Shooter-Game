@@ -92,6 +92,10 @@ var is_retreating: bool = false
 var retreat_cooldown: float = 0.0
 var retreat_cooldown_time: float = 2.0  # Must wait 2 seconds before stopping retreat
 
+# Level-based retreat scaling
+var current_level: int = 1  # Set by apply_level()
+var is_fast_slime: bool = false  # Override in darkgreen_slime.gd
+
 @onready var sfx_land: AudioStreamPlayer2D = $SFX_Land
 @onready var sfx_hurt: AudioStreamPlayer2D = $SFX_Hurt
 @onready var sfx_death: AudioStreamPlayer2D = $SFX_Death
@@ -183,6 +187,25 @@ func is_alpha_variant() -> bool:
 	return is_alpha
 
 
+func _get_retreat_threshold() -> float:
+	"""Get retreat HP threshold scaled by level. At level 30+, slimes don't retreat."""
+	# Alpha variants never retreat
+	if is_alpha:
+		return 0.0
+	
+	# Fast slimes (darkgreen) never retreat
+	if is_fast_slime:
+		return 0.0
+	
+	# Scale from 0.5 at level 1 to 0.0 at level 30
+	# Formula: 0.5 * (1 - (level - 1) / 29)
+	if current_level >= 30:
+		return 0.0
+	
+	var progress = float(current_level - 1) / 29.0  # 0.0 at level 1, 1.0 at level 30
+	return retreat_hp_threshold * (1.0 - progress)
+
+
 func _ready() -> void:
 	player = get_tree().get_first_node_in_group("player") as Node2D
 	last_position = global_position  # Initialize stuck detection
@@ -240,6 +263,7 @@ func _ready() -> void:
 
 
 func apply_level(level: int) -> void:
+	current_level = level  # Store for retreat threshold calculation
 	var level_offset = max(level - 1, 0)
 	var final_max_hp := max_health
 
@@ -370,7 +394,8 @@ func _update_ai(delta: float) -> void:
 			# Cooldown expired, check if we can stop retreating
 			var hp_percent: float = float(health_component.health) / float(health_component.max_health)
 			# Use higher threshold to stop retreating (hysteresis)
-			if hp_percent > retreat_hp_threshold + 0.15 or not should_retreat_now:
+			var scaled_threshold = _get_retreat_threshold()
+			if hp_percent > scaled_threshold + 0.15 or not should_retreat_now:
 				is_retreating = false
 		
 		if is_retreating:
@@ -702,8 +727,11 @@ func _should_retreat() -> bool:
 	
 	var hp_percent: float = float(health_component.health) / float(health_component.max_health)
 	
-	# Not low enough HP to retreat
-	if hp_percent > retreat_hp_threshold:
+	# Get level-scaled retreat threshold
+	var scaled_threshold = _get_retreat_threshold()
+	
+	# Not low enough HP to retreat (or threshold is 0 - never retreat)
+	if hp_percent > scaled_threshold or scaled_threshold <= 0.0:
 		return false
 	
 	# Check if alone (if retreat_if_alone is true)
