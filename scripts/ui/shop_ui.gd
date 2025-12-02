@@ -253,6 +253,16 @@ func _get_equipped_ability_name() -> String:
 		GameState.AbilityType.INVIS: return "invis"
 		_: return ""
 
+func _player_has_any_synergy_upgrade() -> bool:
+	"""Check if player has purchased any synergy rarity upgrade."""
+	var all_upgrades := UpgradesDB.get_all()
+	for upgrade in all_upgrades:
+		if upgrade.get("rarity") == UpgradesDB.Rarity.SYNERGY:
+			var upgrade_id: String = upgrade.get("id", "")
+			if upgrade_id != "" and GameState.has_upgrade(upgrade_id):
+				return true
+	return false
+
 func _sort_offers_by_rarity(offers: Array) -> Array:
 	"""Sort offers by rarity (highest first), then by price (highest first) for same rarity."""
 	var sorted = offers.duplicate()
@@ -288,13 +298,28 @@ func _get_rarity_weights_for_level(level: int) -> Dictionary:
 		rare += 1.0
 		epic += 1.0
 
-	var total := common + uncommon + rare + epic
+	# Only add synergy to pool if:
+	# 1. Player has both a weapon AND an ability
+	# 2. Player hasn't already purchased a synergy upgrade
+	var has_weapon := GameState.alt_weapon != GameState.AltWeaponType.NONE
+	var has_ability := GameState.ability != GameState.AbilityType.NONE
+	var has_synergy_upgrade := _player_has_any_synergy_upgrade()
+	var can_access_synergy := has_weapon and has_ability and not has_synergy_upgrade
+	
+	var base_total := common + uncommon + rare + epic
+	var synergy := 0.0
+	if can_access_synergy:
+		# Synergy gets 25% chance, other rarities share the remaining 75%
+		synergy = base_total / 3.0  # 25% synergy means base_total is 75%, so synergy = 75/3 = 25%
+	
+	var total := base_total + synergy
 	if total <= 0.0:
 		return {
 			UpgradesDB.Rarity.COMMON: 1.0,
 			UpgradesDB.Rarity.UNCOMMON: 0.0,
 			UpgradesDB.Rarity.RARE: 0.0,
 			UpgradesDB.Rarity.EPIC: 0.0,
+			UpgradesDB.Rarity.SYNERGY: 0.0,
 		}
 
 	return {
@@ -302,6 +327,7 @@ func _get_rarity_weights_for_level(level: int) -> Dictionary:
 		UpgradesDB.Rarity.UNCOMMON: uncommon / total,
 		UpgradesDB.Rarity.RARE: rare / total,
 		UpgradesDB.Rarity.EPIC: epic / total,
+		UpgradesDB.Rarity.SYNERGY: synergy / total,
 	}
 
 func _roll_rarity(weights: Dictionary = {}) -> UpgradesDB.Rarity:
@@ -316,7 +342,7 @@ func _roll_rarity(weights: Dictionary = {}) -> UpgradesDB.Rarity:
 	var r := randf()
 	var acc := 0.0
 
-	for rarity in [UpgradesDB.Rarity.COMMON, UpgradesDB.Rarity.UNCOMMON, UpgradesDB.Rarity.RARE, UpgradesDB.Rarity.EPIC]:
+	for rarity in [UpgradesDB.Rarity.COMMON, UpgradesDB.Rarity.UNCOMMON, UpgradesDB.Rarity.RARE, UpgradesDB.Rarity.EPIC, UpgradesDB.Rarity.SYNERGY]:
 		acc += float(weights.get(rarity, 0.0))
 		if r <= acc:
 			return rarity as UpgradesDB.Rarity
@@ -892,6 +918,7 @@ func _get_chest_rarity_weights() -> Dictionary:
 		UpgradesDB.Rarity.UNCOMMON: 0.6,
 		UpgradesDB.Rarity.RARE: 0.3,
 		UpgradesDB.Rarity.EPIC: 0.1,
+		UpgradesDB.Rarity.SYNERGY: 0.05,
 	}
 
 

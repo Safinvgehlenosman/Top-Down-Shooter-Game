@@ -255,6 +255,10 @@ var sniper_invis_synergy_unlocked: bool = false
 var shield_flamethrower_synergy_unlocked: bool = false
 var dash_grenades_synergy_unlocked: bool = false
 
+# ⭐ Synergy effect data
+var dash_grenade_synergy_grenades: int = 0
+var has_dash_grenade_synergy: bool = false
+
 # ⭐ Additional stat fields for CSV-based upgrades
 # Primary weapon
 var primary_crit_chance: float = 0.0
@@ -424,6 +428,10 @@ func start_new_run() -> void:
 	synergy_shuriken_slowmo_unlocked = false
 	synergy_sniper_invis_unlocked = false
 	synergy_turret_bubble_unlocked = false
+
+	# reset synergy effects
+	dash_grenade_synergy_grenades = 0
+	has_dash_grenade_synergy = false
 
 	coins            = 0
 	player_invisible = false
@@ -767,7 +775,9 @@ func apply_upgrade(upgrade_id: String) -> void:
 
 		"primary_fire_rate":
 			fire_rate_bonus_percent += value
-			fire_rate = fire_rate_base * max(0.05, 1.0 - fire_rate_bonus_percent)
+			# Linear cooldown reduction: each upgrade reduces by the same absolute amount
+			fire_rate = fire_rate_base - (fire_rate_base * fire_rate_bonus_percent)
+			fire_rate = max(0.05, fire_rate)  # Cap at minimum cooldown
 			print("  → Fire rate +%.1f%%, cooldown: %.2fs" % [value * 100, fire_rate])
 
 		"primary_reload_speed":
@@ -1066,6 +1076,12 @@ func apply_upgrade(upgrade_id: String) -> void:
 			dash_grenades_synergy_unlocked = true
 			synergy_grenade_dash_unlocked = true
 			print("  → Dash + Grenades synergy unlocked!")
+
+		"dash_grenade_synergy":
+			var grenade_count := int(value)
+			dash_grenade_synergy_grenades = grenade_count
+			has_dash_grenade_synergy = (grenade_count > 0)
+			print("  → Dash + Grenade synergy: %d grenades per dash" % grenade_count)
 
 		# ==============================
 		# CHAOS CHALLENGES

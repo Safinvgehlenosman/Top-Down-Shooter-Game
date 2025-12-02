@@ -12,7 +12,8 @@ enum Rarity {
 	UNCOMMON,
 	RARE,
 	EPIC,
-	CHAOS  # ⭐ Special chaos rarity for challenge upgrades
+	CHAOS,   # ⭐ Special chaos rarity for challenge upgrades
+	SYNERGY  # ⭐ Special synergy rarity for combination upgrades
 }
 
 # ✅ THESE MUST MATCH GameState.AltWeaponType ENUM EXACTLY
@@ -50,6 +51,7 @@ func _parse_rarity(rarity_str: String) -> int:
 		"rare": return Rarity.RARE
 		"epic": return Rarity.EPIC
 		"chaos": return Rarity.CHAOS
+		"synergy": return Rarity.SYNERGY
 		_: return Rarity.COMMON
 
 # Parse boolean string to bool
@@ -168,6 +170,7 @@ func _load_upgrades_from_csv(path: String) -> Array:
 			Rarity.RARE: rarity_str = "rare"
 			Rarity.EPIC: rarity_str = "epic"
 			Rarity.CHAOS: rarity_str = "chaos"
+			Rarity.SYNERGY: rarity_str = "synergy"
 		
 		print("[UpgradesDB] Loaded upgrade: %s (rarity=%s, price=%d, pool=%s, category=%s, enabled=%s)" % [
 			upgrade["id"],

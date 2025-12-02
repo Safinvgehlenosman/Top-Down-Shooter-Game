@@ -287,30 +287,22 @@ func _filter_by_rarity(rarity: int) -> Array:
 
 ## Check if player meets upgrade requirements
 func _meets_requirements(upgrade: Dictionary) -> bool:
-	# Weapon requirements
-	if upgrade.has("requires_alt_weapon"):
-		var required = upgrade.get("requires_alt_weapon")
-		var current: int = GameState.alt_weapon
+	# Weapon requirements (CSV stores as lowercase string like "shotgun")
+	var requires_weapon: String = upgrade.get("requires_weapon", "").strip_edges().to_lower()
+	if requires_weapon != "":
+		var current_weapon: int = GameState.alt_weapon
+		var current_weapon_name := _get_weapon_name(current_weapon)
 		
-		# If requires NONE, player must not have any alt weapon
-		if required == UpgradesDB.ALT_WEAPON_NONE:
-			if current != UpgradesDB.ALT_WEAPON_NONE:
-				return false
-		# If requires specific weapon, player must have it
-		elif current != required:
+		if requires_weapon != current_weapon_name:
 			return false
 	
-	# Ability requirements
-	if upgrade.has("requires_ability"):
-		var required = upgrade.get("requires_ability")
-		var current: int = GameState.ability
+	# Ability requirements (CSV stores as lowercase string like "dash")
+	var requires_ability: String = upgrade.get("requires_ability", "").strip_edges().to_lower()
+	if requires_ability != "":
+		var current_ability: int = GameState.ability
+		var current_ability_name := _get_ability_name(current_ability)
 		
-		# If requires NONE, player must not have any ability
-		if required == UpgradesDB.ABILITY_NONE:
-			if current != UpgradesDB.ABILITY_NONE:
-				return false
-		# If requires specific ability, player must have it
-		elif current != required:
+		if requires_ability != current_ability_name:
 			return false
 	
 	# Ammo weapon requirement
@@ -324,6 +316,26 @@ func _meets_requirements(upgrade: Dictionary) -> bool:
 			return false
 	
 	return true
+
+func _get_weapon_name(weapon_type: int) -> String:
+	"""Convert weapon enum to lowercase string name."""
+	match weapon_type:
+		GameState.AltWeaponType.SHOTGUN: return "shotgun"
+		GameState.AltWeaponType.SNIPER: return "sniper"
+		GameState.AltWeaponType.FLAMETHROWER: return "flamethrower"
+		GameState.AltWeaponType.GRENADE: return "grenade"
+		GameState.AltWeaponType.SHURIKEN: return "shuriken"
+		GameState.AltWeaponType.TURRET: return "turret"
+		_: return ""
+
+func _get_ability_name(ability_type: int) -> String:
+	"""Convert ability enum to lowercase string name."""
+	match ability_type:
+		GameState.AbilityType.DASH: return "dash"
+		GameState.AbilityType.SLOWMO: return "slowmo"
+		GameState.AbilityType.BUBBLE: return "bubble"
+		GameState.AbilityType.INVIS: return "invis"
+		_: return ""
 
 
 ## Check if player has an ammo-consuming weapon

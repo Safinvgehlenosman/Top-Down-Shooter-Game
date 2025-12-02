@@ -4,6 +4,7 @@ extends Node
 
 const DashGhostScene := preload("res://scenes/dash_ghost.tscn")
 const ShieldBubbleScene := preload("res://scenes/abilities/shield_bubble.tscn")
+const GrenadeBulletScene := preload("res://scenes/bullets/grenade_bullet.tscn")
 
 @onready var player: CharacterBody2D = get_parent() as CharacterBody2D
 @onready var animated_sprite: AnimatedSprite2D = player.get_node_or_null("AnimatedSprite2D")
@@ -226,6 +227,45 @@ func _start_dash(data: Dictionary) -> void:
 
 	is_dashing = true
 	dash_ghost_timer = 0.0
+
+	# ⭐ DASH + GRENADE SYNERGY: Spawn grenades when dashing
+	if GameState.has_dash_grenade_synergy:
+		_spawn_dash_grenades()
+
+
+func _spawn_dash_grenades() -> void:
+	"""Spawn grenades in a line along the dash direction (synergy effect)."""
+	if GrenadeBulletScene == null:
+		return
+	
+	var grenade_count: int = GameState.dash_grenade_synergy_grenades
+	if grenade_count <= 0:
+		return
+	
+	# Get grenade data from GameState
+	var grenade_data: Dictionary = GameState.ALT_WEAPON_DATA.get(GameState.AltWeaponType.GRENADE, {})
+	var bullet_speed: float = grenade_data.get("bullet_speed", 500.0)
+	var damage: float = grenade_data.get("damage", 40.0)
+	var explosion_radius: float = grenade_data.get("explosion_radius", 80.0)
+	
+	# Spawn grenades in a line along the dash direction
+	var spacing: float = 40.0  # Distance between grenades
+	var start_offset: float = -((grenade_count - 1) * spacing) / 2.0  # Center the line
+	
+	for i in range(grenade_count):
+		var offset := start_offset + (i * spacing)
+		var spawn_pos := player.global_position + (dash_dir * offset)
+		
+		var grenade = GrenadeBulletScene.instantiate()
+		grenade.global_position = spawn_pos
+		grenade.direction = dash_dir
+		grenade.speed = bullet_speed * 0.5  # Same multiplier as gun uses
+		grenade.damage = damage
+		
+		if "explosion_radius" in grenade:
+			grenade.explosion_radius = explosion_radius
+		
+		get_tree().current_scene.add_child(grenade)
 
 
 func _spawn_dash_ghost() -> void:
