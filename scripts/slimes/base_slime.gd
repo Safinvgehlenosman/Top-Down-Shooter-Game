@@ -952,12 +952,7 @@ func _die_after_sound() -> void:
 
 
 func _spawn_loot() -> void:
-	if HeartScene and randf() < heart_drop_chance:
-		var heart := HeartScene.instantiate()
-		heart.global_position = global_position
-		get_tree().current_scene.add_child(heart)
-		return
-
+	# Enemies always drop coins
 	if CoinScene:
 		var coin := CoinScene.instantiate()
 		coin.global_position = global_position

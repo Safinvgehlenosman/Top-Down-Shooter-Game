@@ -1244,6 +1244,9 @@ func _clear_room_transient_objects() -> void:
 
 func _check_chaos_chest_spawn() -> void:
 	"""Check if we should spawn a chaos chest this cycle (every 10 levels)."""
+	# ⚠️ DISABLED: Chaos chests temporarily disabled for testing
+	return
+	
 	# Determine which 10-level cycle we're in (0 = levels 1-10, 1 = levels 11-20, etc.)
 	var new_cycle = int(float(current_level - 1) / 10.0)
 	
