@@ -15,6 +15,7 @@ extends Node
 @export var crate_scene: PackedScene
 
 @export var exit_door_scene: PackedScene
+@export var shop_room_scene: PackedScene  # Shop room (e.g. room_shop.tscn)
 @export var room_scenes: Array[PackedScene] = []
 
 @export_group("Enemy Spawn Padding")
@@ -57,6 +58,14 @@ var alive_enemies: int = 0
 var door_spawn_point: Node2D = null
 var current_exit_door: Node2D = null
 var room_spawn_points: Array[Node2D] = []
+
+# Shop room tracking
+var in_shop: bool = false
+
+# Wave system
+var wave_scheduled: bool = false
+var wave_spawned: bool = false
+var initial_enemies_defeated: bool = false
 
 # Chest spawning
 var chest_spawn_point: Node2D = null
@@ -132,24 +141,72 @@ func _ready() -> void:
 
 	current_level = 1
 	_update_level_ui()
-	_load_room()
+	load_combat_room()
 
 
-# --- LEVEL UI -------------------------------------------------------
+# --- ROOM LOADING HELPERS -------------------------------------------
 
-func _update_level_ui() -> void:
-	var label := get_tree().get_first_node_in_group("level_label") as Label
-	if label:
-		label.text = "%d" % current_level
-		if _is_themed_room(current_level):
-			label.modulate = Color(1, 0.2, 0.2) # Red
-		else:
-			label.modulate = Color(1, 1, 1) # White
+func load_combat_room() -> void:
+	"""Load a random combat room with enemies and crates."""
+	in_shop = false
+	_load_room_internal()
 
 
-# --- ROOM / LEVEL LOADING -------------------------------------------
+func load_shop_room() -> void:
+	"""Load the shop room (no enemies, just a chest to interact with)."""
+	if shop_room_scene == null:
+		push_warning("No shop_room_scene assigned on GameManager")
+		return
+	
+	in_shop = true
+	
+	# Clear room transient objects
+	_clear_room_transient_objects()
+	for bullet in get_tree().get_nodes_in_group("player_bullet"):
+		bullet.queue_free()
+	
+	# Clear previous room if there was one
+	if current_room and current_room.is_inside_tree():
+		current_room.queue_free()
+	
+	current_room = null
+	current_exit_door = null
+	alive_enemies = 0
+	door_spawn_point = null
+	room_spawn_points.clear()
+	
+	# Reset wave variables
+	wave_scheduled = false
+	wave_spawned = false
+	initial_enemies_defeated = false
+	
+	# Reset chest variables
+	chest_spawn_point = null
+	chest_spawned = false
+	
+	# Reset alpha slime tracking
+	has_spawned_alpha_this_level = false
+	
+	# Instance shop room
+	current_room = shop_room_scene.instantiate()
+	room_container.add_child(current_room)
+	
+	# Get spawn points from shop room
+	if current_room.has_method("get_spawn_points"):
+		room_spawn_points = current_room.get_spawn_points()
+		if not room_spawn_points.is_empty():
+			# Reserve one spawn point for the exit door
+			door_spawn_point = room_spawn_points.pop_back()
+	
+	# Move player to shop spawn
+	_move_player_to_room_spawn()
+	
+	# Spawn exit door immediately (no enemies to kill)
+	_spawn_exit_door()
 
-func _load_room() -> void:
+
+func _load_room_internal() -> void:
+	"""Internal room loading logic (used by load_combat_room)."""
 	_clear_room_transient_objects()
 	for bullet in get_tree().get_nodes_in_group("player_bullet"):
 		bullet.queue_free()
@@ -162,6 +219,11 @@ func _load_room() -> void:
 	alive_enemies = 0
 	door_spawn_point = null
 	room_spawn_points.clear()
+	
+	# Reset wave variables
+	wave_scheduled = false
+	wave_spawned = false
+	initial_enemies_defeated = false
 	
 	# Reset chest variables
 	chest_spawn_point = null
@@ -183,6 +245,18 @@ func _load_room() -> void:
 
 	_spawn_room_content()
 	_move_player_to_room_spawn()
+
+
+# --- LEVEL UI -------------------------------------------------------
+
+func _update_level_ui() -> void:
+	var label := get_tree().get_first_node_in_group("level_label") as Label
+	if label:
+		label.text = "%d" % current_level
+		if _is_themed_room(current_level):
+			label.modulate = Color(1, 0.2, 0.2) # Red
+		else:
+			label.modulate = Color(1, 1, 1) # White
 
 
 func _move_player_to_room_spawn() -> void:
@@ -448,6 +522,12 @@ func _spawn_room_content() -> void:
 			
 			spawn_index += 1
 	
+	# Schedule wave if level is high enough and we have spawn points
+	if current_level >= 5 and not room_spawn_points.is_empty():
+		var wave_count = get_wave_enemy_count()
+		if wave_count > 0:
+			_schedule_wave(1.5, wave_count)  # 1.5 second delay after initial enemies die
+	
 	if alive_enemies == 0:
 		_spawn_exit_door()
 
@@ -630,6 +710,12 @@ func _on_enemy_died(enemy: Node2D = null) -> void:
 		_spawn_chaos_chest_at_enemy_position(enemy.global_position)
 	
 	if alive_enemies == 0:
+		# ⭐ Check if this was the initial wave of enemies
+		if not initial_enemies_defeated and wave_scheduled and not wave_spawned:
+			initial_enemies_defeated = true
+			# Don't spawn door yet - wave is coming
+			return
+		
 		# ⭐ Progress chaos challenge if active
 		print("[GameManager] All enemies dead. Active chaos challenge: '", GameState.active_chaos_challenge, "'")
 		if not GameState.active_chaos_challenge.is_empty():
@@ -751,12 +837,58 @@ func on_player_reached_exit() -> void:
 	if is_in_death_sequence:
 		return
 
-	_open_shop()
+	if in_shop:
+		# Leaving the shop: go to a new combat room and increase the level
+		current_level += 1
+		_update_level_ui()
+		_check_chaos_chest_spawn()  # ⭐ Check for chaos chest spawn
+		
+		# Load combat room with fade transition
+		FadeTransition.set_black()
+		get_tree().paused = false
+		
+		load_combat_room()
+		
+		# Grant spawn invincibility
+		var player := get_tree().get_first_node_in_group("player")
+		if player and player.has_method("grant_spawn_invincibility"):
+			player.grant_spawn_invincibility(2.0)
+		
+		# Refresh HP UI
+		var hp_ui := get_tree().get_first_node_in_group("hp_ui")
+		if hp_ui and hp_ui.has_method("refresh_from_state"):
+			hp_ui.refresh_from_state()
+		
+		if game_ui:
+			game_ui.visible = true
+		
+		await get_tree().create_timer(0.2).timeout
+		FadeTransition.fade_out()
+		await FadeTransition.fade_out_finished
+	else:
+		# Leaving a combat room: go to the shop room (STAY on the same level)
+		FadeTransition.set_black()
+		get_tree().paused = false
+		
+		load_shop_room()
+		
+		# Move player and refresh UI
+		var player := get_tree().get_first_node_in_group("player")
+		if player and player.has_method("grant_spawn_invincibility"):
+			player.grant_spawn_invincibility(1.0)
+		
+		if game_ui:
+			game_ui.visible = true
+		
+		await get_tree().create_timer(0.2).timeout
+		FadeTransition.fade_out()
+		await FadeTransition.fade_out_finished
 
 
-# --- SHOP / LEVEL PROGRESSION --------------------------------------
+# --- SHOP UI (called from shop room chest) -------------------------
 
 func _open_shop() -> void:
+	"""Opens the shop UI. Called by the chest in the shop room."""
 	get_tree().paused = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
@@ -775,9 +907,15 @@ func _open_shop() -> void:
 			shop_ui.refresh_from_state()
 
 	if game_ui:
-		game_ui.visible = false        # hide HUD while in shop
+			game_ui.visible = false        # hide HUD while in shop
 
 
+func open_shop_from_chest() -> void:
+	"""Public method for chest to call to open shop UI."""
+	_open_shop()
+
+
+# --- LEVEL PROGRESSION ---------------------------------------------
 func load_next_level() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 
@@ -790,18 +928,8 @@ func load_next_level() -> void:
 	# UNPAUSE FIRST so we can do work
 	get_tree().paused = false
 	
-	# Load the new room WHILE screen is black
-	current_level += 1
-	_update_level_ui()
-	_check_chaos_chest_spawn()  # ⭐ Check for chaos chest spawn
-	_load_room()
-	
-	# Move player to spawn point BEFORE fade out
-	var player := get_tree().get_first_node_in_group("player")
-	if player:
-		# Give spawn invincibility (longer duration to cover fade + enemy spawn)
-		if player.has_method("grant_spawn_invincibility"):
-			player.grant_spawn_invincibility(2.0)  # 2 seconds of safety
+	# Note: Level increment handled by on_player_reached_exit when leaving shop
+	# This method is now primarily for closing shop UI and continuing
 	
 	# Refresh HP UI
 	var hp_ui := get_tree().get_first_node_in_group("hp_ui")
@@ -814,7 +942,7 @@ func load_next_level() -> void:
 	# Small delay to ensure everything is positioned
 	await get_tree().create_timer(0.2).timeout
 	
-	# NOW start fade out from black (player is already in new position)
+	# NOW start fade out from black (player is already in position)
 	FadeTransition.fade_out()
 	
 	# Wait for fade to finish
@@ -831,7 +959,7 @@ func restart_run() -> void:
 	# go back to level 1 (or start screen if you prefer)
 	current_level = 1
 	_update_level_ui()
-	_load_room()
+	load_combat_room()
 
 
 func debug_set_level(level: int) -> void:
@@ -840,7 +968,7 @@ func debug_set_level(level: int) -> void:
 
 	current_level = level
 	_update_level_ui()
-	_load_room()
+	load_combat_room()
 
 	# Same optional spawn invincibility as load_next_level
 	var player := get_tree().get_first_node_in_group("player")
@@ -1000,6 +1128,99 @@ func _on_chaos_chest_opened(chaos_upgrade: Dictionary) -> void:
 	else:
 		push_error("[GameManager] shop_ui doesn't have open_as_chest_with_loot method!")
 
+
+
+# --- WAVE SYSTEM ---------------------------------------------------
+
+func get_wave_enemy_count() -> int:
+	"""Calculate wave size based on current level. Increases every 5 levels."""
+	if current_level < 5:
+		return 0  # No waves before level 5
+	
+	var wave_tier = int(float(current_level - 5) / 5.0)
+	
+	match wave_tier:
+		0:  # Levels 5-9
+			return randi_range(3, 6)
+		1:  # Levels 10-14
+			return randi_range(6, 9)
+		2:  # Levels 15-19
+			return randi_range(9, 12)
+		_:  # Levels 20+
+			return randi_range(12, 15)
+
+
+func _schedule_wave(delay: float, count: int) -> void:
+	"""Schedule a wave to spawn after a delay."""
+	if wave_scheduled:
+		return  # Already scheduled
+	
+	wave_scheduled = true
+	wave_spawned = false
+	
+	print("[WAVE] Scheduled wave of %d enemies in %.1f seconds" % [count, delay])
+	
+	# Wait for delay, then spawn the wave
+	await get_tree().create_timer(delay).timeout
+	
+	# Only spawn if initial enemies are actually defeated
+	if initial_enemies_defeated:
+		_spawn_wave(count)
+
+
+func _spawn_wave(count: int) -> void:
+	"""Spawn a wave of enemies using existing spawn points and logic."""
+	if wave_spawned:
+		return  # Already spawned
+	
+	wave_spawned = true
+	
+	if room_spawn_points.is_empty():
+		print("[WAVE] No spawn points available for wave!")
+		return
+	
+	var themed_room := _is_themed_room(current_level)
+	var themed_slimes := _get_themed_room_slimes(current_level)
+	
+	print("[WAVE] Spawning wave of %d enemies!" % count)
+	
+	# Shuffle spawn points for randomness
+	room_spawn_points.shuffle()
+	
+	var spawned_count = 0
+	for i in range(count):
+		# Use available spawn points (cycle if needed)
+		if room_spawn_points.is_empty():
+			break
+		
+		var spawn = room_spawn_points[i % room_spawn_points.size()]
+		var enemy_scene: PackedScene = null
+		
+		if themed_room and themed_slimes.size() > 0:
+			# Pick themed enemy
+			enemy_scene = themed_slimes[randi() % themed_slimes.size()]
+		else:
+			# Pick normal enemy based on weights
+			enemy_scene = _pick_enemy_scene()
+		
+		if enemy_scene:
+			var desired_pos: Vector2 = spawn.global_position
+			var safe_pos := _find_safe_spawn_position(desired_pos)
+			
+			var enemy := enemy_scene.instantiate()
+			enemy.global_position = safe_pos
+			
+			if enemy.has_method("apply_level"):
+				enemy.apply_level(current_level)
+			
+			current_room.add_child(enemy)
+			alive_enemies += 1
+			spawned_count += 1
+			
+			if enemy.has_signal("died"):
+				enemy.died.connect(_on_enemy_died.bind(enemy))
+	
+	print("[WAVE] Wave complete! Spawned %d/%d enemies" % [spawned_count, count])
 
 
 # --- THEMED ROOM CONFIGURATION ---

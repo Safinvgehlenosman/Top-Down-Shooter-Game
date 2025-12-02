@@ -113,7 +113,7 @@ func _enter_shop() -> void:
 	# Wait for fade to finish
 	await FadeTransition.fade_in_finished
 	
-	# Now open shop over black screen
+	# Trigger room transition via GameManager
 	var gm := get_tree().get_first_node_in_group("game_manager")
 	if gm and gm.has_method("on_player_reached_exit"):
 		gm.on_player_reached_exit()

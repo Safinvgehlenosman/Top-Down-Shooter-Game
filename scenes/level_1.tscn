@@ -1,4 +1,4 @@
-[gd_scene load_steps=34 format=3 uid="uid://s7do308xihbw"]
+[gd_scene load_steps=35 format=3 uid="uid://s7do308xihbw"]
 
 [ext_resource type="Script" uid="uid://brvgav35e1cb5" path="res://scripts/main.gd" id="1_mbb35"]
 [ext_resource type="PackedScene" uid="uid://cwdo73t7wn5pp" path="res://scenes/player.tscn" id="2_iw4em"]
@@ -21,6 +21,7 @@
 [ext_resource type="PackedScene" uid="uid://c7fcp73v6wu5d" path="res://scenes/ui.tscn" id="13_so66j"]
 [ext_resource type="PackedScene" uid="uid://d3oi7m6c8ysa6" path="res://scenes/slimes/darkgreen_slime.tscn" id="13_x2xxo"]
 [ext_resource type="PackedScene" uid="uid://ck1bcwuy021a5" path="res://scenes/rooms/room_05.tscn" id="14_d5akn"]
+[ext_resource type="PackedScene" uid="uid://bklmc5x41aw7q" path="res://scenes/rooms/room_shop.tscn" id="14_hjqri"]
 [ext_resource type="PackedScene" uid="uid://ogva686f63up" path="res://scenes/rooms/room_06.tscn" id="15_x2fux"]
 [ext_resource type="PackedScene" uid="uid://qeylggg2h2ax" path="res://scenes/slimes/ghost_slime.tscn" id="15_x2xxo"]
 [ext_resource type="PackedScene" uid="uid://dep4c2jqgspkw" path="res://scenes/rooms/room_07.tscn" id="16_s7g0b"]
@@ -76,6 +77,7 @@ normal_chest_scene = ExtResource("10_k8ld0")
 gold_chest_scene = ExtResource("12_hnsmf")
 chaos_chest_scene = ExtResource("13_hnsmf")
 ui_root_path = NodePath("../UI")
+shop_room_scene = ExtResource("14_hjqri")
 room_scenes = Array[PackedScene]([ExtResource("11_go7sj"), ExtResource("9_go7sj"), ExtResource("10_7gny6"), ExtResource("11_1s4pk"), ExtResource("14_d5akn"), ExtResource("15_x2fux"), ExtResource("16_s7g0b"), ExtResource("17_mmfjm"), ExtResource("22_nossa")])
 enemy_scenes = Array[PackedScene]([ExtResource("11_7nomh"), ExtResource("13_x2xxo"), ExtResource("21_wbtxt"), ExtResource("19_tr1x6"), ExtResource("18_tr1x6"), ExtResource("12_1s4pk"), ExtResource("15_x2xxo")])
 enemy_weights = Array[float]([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
