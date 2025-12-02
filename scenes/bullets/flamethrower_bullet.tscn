@@ -1,7 +1,8 @@
-[gd_scene load_steps=7 format=3 uid="uid://cf0ewh3ejcssr"]
+[gd_scene load_steps=8 format=3 uid="uid://cf0ewh3ejcssr"]
 
 [ext_resource type="Script" uid="uid://d21encnqnilhs" path="res://scripts/bullets/flamethrower_bullet.gd" id="1_56pdm"]
 [ext_resource type="Texture2D" uid="uid://d0ak604xcqjcp" path="res://assets/bullets/flamethrowerbullet.png" id="2_56pdm"]
+[ext_resource type="Material" uid="uid://faki40nq0w16" path="res://scenes/bullets/bullet.tres" id="3_8grii"]
 [ext_resource type="Texture2D" uid="uid://ntkmut61o7gw" path="res://assets/Separated/Bullets.png" id="3_88qxg"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_y25gk"]
@@ -27,6 +28,7 @@ script = ExtResource("1_56pdm")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture_filter = 1
+material = ExtResource("3_8grii")
 texture = ExtResource("2_56pdm")
 region_rect = Rect2(104, 104, 16, 16)
 
@@ -38,6 +40,7 @@ visible = false
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
 visible = false
+material = ExtResource("3_8grii")
 color = Color(1, 0.17254902, 0, 1)
 energy = 1.2
 shadow_enabled = true

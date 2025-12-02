@@ -1,4 +1,4 @@
-[gd_scene load_steps=36 format=3 uid="uid://s7do308xihbw"]
+[gd_scene load_steps=37 format=3 uid="uid://s7do308xihbw"]
 
 [ext_resource type="Script" uid="uid://brvgav35e1cb5" path="res://scripts/main.gd" id="1_mbb35"]
 [ext_resource type="PackedScene" uid="uid://cwdo73t7wn5pp" path="res://scenes/player.tscn" id="2_iw4em"]
@@ -37,6 +37,16 @@
 
 [sub_resource type="Resource" id="Resource_2os1m"]
 script = ExtResource("25_lkded")
+
+[sub_resource type="Environment" id="Environment_hg84p"]
+glow_enabled = true
+glow_levels/1 = 2.0
+glow_levels/2 = 2.0
+glow_levels/3 = 2.0
+glow_levels/4 = 2.0
+glow_intensity = 1.5
+glow_blend_mode = 0
+glow_hdr_threshold = 0.35
 
 [node name="Level1" type="Node2D"]
 script = ExtResource("1_mbb35")
@@ -107,3 +117,6 @@ tween_resource = SubResource("Resource_2os1m")
 follow_damping = true
 follow_damping_value = Vector2(0.1, 0.18)
 metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_hg84p")

@@ -1,8 +1,9 @@
-[gd_scene load_steps=7 format=3 uid="uid://c06q8m62vgg1i"]
+[gd_scene load_steps=8 format=3 uid="uid://c06q8m62vgg1i"]
 
 [ext_resource type="Script" uid="uid://c8wyjykgvkmi0" path="res://scripts/bullets/sniper_bullet.gd" id="1_21kos"]
 [ext_resource type="Texture2D" uid="uid://cynxbw0irkdpk" path="res://assets/bullets/sniperbullet.png" id="2_21kos"]
 [ext_resource type="Texture2D" uid="uid://ntkmut61o7gw" path="res://assets/Separated/Bullets.png" id="3_a0wqd"]
+[ext_resource type="Material" uid="uid://faki40nq0w16" path="res://scenes/bullets/bullet.tres" id="3_icn0v"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_y25gk"]
 radius = 2.0
@@ -29,6 +30,7 @@ damage = 3
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture_filter = 1
+material = ExtResource("3_icn0v")
 texture = ExtResource("2_21kos")
 region_rect = Rect2(104, 104, 16, 16)
 
@@ -40,6 +42,7 @@ visible = false
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
 visible = false
+material = ExtResource("3_icn0v")
 color = Color(0.21568628, 0.8784314, 0.5647059, 1)
 energy = 1.2
 shadow_enabled = true

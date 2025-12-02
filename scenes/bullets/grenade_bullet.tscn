@@ -1,9 +1,10 @@
-[gd_scene load_steps=9 format=3 uid="uid://b43ghi054wak8"]
+[gd_scene load_steps=10 format=3 uid="uid://b43ghi054wak8"]
 
 [ext_resource type="Script" uid="uid://cwxhd5ykurmbe" path="res://scripts/bullets/grenade_bullet.gd" id="1_tulee"]
 [ext_resource type="PackedScene" uid="uid://ba46snpchigar" path="res://scenes/explosion_vfx.tscn" id="2_3imy3"]
 [ext_resource type="Texture2D" uid="uid://h8xo4hckf7th" path="res://assets/bullets/grenade.png" id="2_tulee"]
 [ext_resource type="Texture2D" uid="uid://ntkmut61o7gw" path="res://assets/Separated/Bullets.png" id="3_3imy3"]
+[ext_resource type="Material" uid="uid://faki40nq0w16" path="res://scenes/bullets/bullet.tres" id="4_ipw4c"]
 [ext_resource type="AudioStream" uid="uid://unlth4rqb8r0" path="res://assets/Audios/explosion-312361.wav" id="4_w4p55"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_y25gk"]
@@ -29,6 +30,7 @@ explosion_fx_scene = ExtResource("2_3imy3")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture_filter = 1
+material = ExtResource("4_ipw4c")
 texture = ExtResource("2_tulee")
 region_rect = Rect2(104, 104, 16, 16)
 
@@ -40,6 +42,7 @@ visible = false
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
 visible = false
+material = ExtResource("4_ipw4c")
 color = Color(0, 0.45490196, 0.039215688, 1)
 energy = 4.0
 shadow_enabled = true

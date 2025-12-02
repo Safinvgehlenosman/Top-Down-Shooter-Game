@@ -1,8 +1,9 @@
-[gd_scene load_steps=7 format=3 uid="uid://bjvhgvpowmf6s"]
+[gd_scene load_steps=8 format=3 uid="uid://bjvhgvpowmf6s"]
 
 [ext_resource type="Script" uid="uid://72p2dyl7q13x" path="res://scripts/bullets/shuriken_bullet.gd" id="1_tid68"]
 [ext_resource type="Texture2D" uid="uid://dgsiwinlvdbfx" path="res://assets/bullets/shuriken.png" id="2_tid68"]
 [ext_resource type="Texture2D" uid="uid://ntkmut61o7gw" path="res://assets/Separated/Bullets.png" id="3_d7uyd"]
+[ext_resource type="Material" uid="uid://faki40nq0w16" path="res://scenes/bullets/bullet.tres" id="3_el5ql"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_y25gk"]
 radius = 2.0
@@ -26,6 +27,7 @@ script = ExtResource("1_tid68")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture_filter = 1
+material = ExtResource("3_el5ql")
 texture = ExtResource("2_tid68")
 region_rect = Rect2(104, 104, 16, 16)
 
@@ -37,6 +39,7 @@ visible = false
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
 visible = false
+material = ExtResource("3_el5ql")
 color = Color(0.93333334, 0.90588236, 0.90588236, 1)
 energy = 1.2
 shadow_enabled = true

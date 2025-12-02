@@ -1,7 +1,8 @@
-[gd_scene load_steps=7 format=3 uid="uid://m8wveywln7l3"]
+[gd_scene load_steps=8 format=3 uid="uid://m8wveywln7l3"]
 
 [ext_resource type="Script" uid="uid://da6hru04vo2sn" path="res://scripts/bullets/shotgun_bullet.gd" id="1_dxlgm"]
 [ext_resource type="Texture2D" uid="uid://bksrw6rtxkhb5" path="res://assets/bullets/shotgunbullet.png" id="2_dxlgm"]
+[ext_resource type="Material" uid="uid://faki40nq0w16" path="res://scenes/bullets/bullet.tres" id="2_ir686"]
 [ext_resource type="Texture2D" uid="uid://ntkmut61o7gw" path="res://assets/Separated/Bullets.png" id="3_pw2ds"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_y25gk"]
@@ -28,6 +29,7 @@ speed = 200.0
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture_filter = 1
+material = ExtResource("2_ir686")
 texture = ExtResource("2_dxlgm")
 region_rect = Rect2(104, 104, 16, 16)
 
@@ -38,6 +40,7 @@ shape = SubResource("CircleShape2D_y25gk")
 visible = false
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
+visible = false
 color = Color(0.8151441, 0.8151441, 0, 1)
 energy = 1.2
 shadow_enabled = true

@@ -1,8 +1,8 @@
 [gd_scene load_steps=7 format=3 uid="uid://d0ieh5hwjov6m"]
 
 [ext_resource type="Script" uid="uid://dltsi8y84w5tv" path="res://scripts/bullets/base_bullet.gd" id="1_lj7gv"]
+[ext_resource type="Material" uid="uid://faki40nq0w16" path="res://scenes/bullets/bullet.tres" id="2_lj7gv"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="2_tocqt"]
-[ext_resource type="Texture2D" uid="uid://ntkmut61o7gw" path="res://assets/Separated/Bullets.png" id="3_0s0cy"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_y25gk"]
 radius = 2.0
@@ -28,6 +28,7 @@ damage = 10
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture_filter = 1
+material = ExtResource("2_lj7gv")
 texture = ExtResource("2_tocqt")
 region_enabled = true
 region_rect = Rect2(104, 104, 16, 16)
@@ -45,17 +46,6 @@ energy = 1.2
 shadow_enabled = true
 texture = SubResource("GradientTexture2D_l5glv")
 texture_scale = 0.7
-
-[node name="Trail" type="CPUParticles2D" parent="."]
-visible = false
-amount = 40
-texture = ExtResource("3_0s0cy")
-lifetime = 0.18000000000000002
-explosiveness = 0.13
-spread = 15.0
-gravity = Vector2(0, 0)
-scale_amount_min = 0.4
-color = Color(1, 0.40784314, 0.4627451, 1)
 
 [connection signal="body_entered" from="." to="." method="_on_body_entered"]
 [connection signal="screen_exited" from="VisibleOnScreenNotifier2D" to="." method="_on_visible_on_screen_notifier_2d_screen_exited"]
