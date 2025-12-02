@@ -193,3 +193,43 @@ func _update_chaos_pact_indicator() -> void:
 	# Debug output when state changes
 	if is_active != was_visible:
 		print("[UI] Chaos pact indicator: ", "ACTIVE" if is_active else "INACTIVE", " - Challenge: '", GameState.active_chaos_challenge, "'")
+
+
+# --------------------------------------------------------------------
+# HUB MODE (Hide in-run UI when in hub)
+# --------------------------------------------------------------------
+
+func set_in_hub(is_in_hub: bool) -> void:
+	"""Toggle hub mode - hides/shows in-run UI elements."""
+	# Hide in-run UI when in hub, show them during runs
+	var show_ui = not is_in_hub
+	
+	# Use get_node_or_null to avoid errors if nodes don't exist
+	var hp_bar = get_node_or_null("PlayerInfo/HPFill")
+	if hp_bar:
+		hp_bar.visible = show_ui
+	
+	var hp_container = get_node_or_null("PlayerInfo")
+	if hp_container:
+		hp_container.visible = show_ui
+	
+	var ability_bar = get_node_or_null("PlayerInfo/AbilityProgressBar")
+	if ability_bar:
+		ability_bar.visible = show_ui and GameState.ability != ABILITY_NONE
+	
+	var ammo_ui = get_node_or_null("Ammo")
+	if ammo_ui:
+		ammo_ui.visible = show_ui
+	
+	var coin_ui = get_node_or_null("Coins")
+	if coin_ui:
+		coin_ui.visible = show_ui
+	
+	var level_ui = get_node_or_null("Level")
+	if level_ui:
+		level_ui.visible = show_ui
+	
+	# Keep chaos pact indicator visible if active (even in hub)
+	# It's already handled by _update_chaos_pact_indicator()
+	
+	print("[UI] Hub mode: ", "ENABLED" if is_in_hub else "DISABLED", " - In-run UI: ", "HIDDEN" if is_in_hub else "VISIBLE")

@@ -51,14 +51,14 @@ func _process(delta: float) -> void:
 		interact_prompt.position.y = base_prompt_pos.y + offset_y
 
 
-func open() -> void:
+func open(play_sound: bool = true) -> void:
 	door_open = true
 	visible = true
 	
 	if animated_sprite:
 		animated_sprite.play("default")
 	
-	if sfx_spawn:
+	if sfx_spawn and play_sound:
 		sfx_spawn.play()
 
 

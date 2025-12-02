@@ -16,6 +16,7 @@ extends Node
 
 @export var exit_door_scene: PackedScene
 @export var shop_room_scene: PackedScene  # Shop room (e.g. room_shop.tscn)
+@export var hub_room_scene: PackedScene  # Hub room (e.g. hub.tscn)
 @export var room_scenes: Array[PackedScene] = []
 
 @export_group("Enemy Spawn Padding")
@@ -61,6 +62,10 @@ var room_spawn_points: Array[Node2D] = []
 
 # Shop room tracking
 var in_shop: bool = false
+
+# Hub room tracking
+var in_hub: bool = false
+var run_started: bool = false
 
 # Wave system
 var wave_scheduled: bool = false
@@ -141,7 +146,7 @@ func _ready() -> void:
 
 	current_level = 1
 	_update_level_ui()
-	load_combat_room()
+	load_hub_room()
 
 
 # --- ROOM LOADING HELPERS -------------------------------------------
@@ -149,6 +154,7 @@ func _ready() -> void:
 func load_combat_room() -> void:
 	"""Load a random combat room with enemies and crates."""
 	in_shop = false
+	in_hub = false
 	_load_room_internal()
 
 
@@ -159,6 +165,7 @@ func load_shop_room() -> void:
 		return
 	
 	in_shop = true
+	in_hub = false
 	
 	# Clear room transient objects
 	_clear_room_transient_objects()
@@ -203,6 +210,119 @@ func load_shop_room() -> void:
 	
 	# Spawn exit door immediately (no enemies to kill)
 	_spawn_exit_door()
+
+
+func load_hub_room() -> void:
+	"""Load the hub room (safe area before starting a run)."""
+	if hub_room_scene == null:
+		push_warning("No hub_room_scene assigned on GameManager")
+		# Fallback to combat room if hub is missing
+		load_combat_room()
+		return
+	
+	in_hub = true
+	in_shop = false
+	run_started = false
+	
+	# Clear room transient objects
+	_clear_room_transient_objects()
+	for bullet in get_tree().get_nodes_in_group("player_bullet"):
+		bullet.queue_free()
+	
+	# Clear previous room if there was one
+	if current_room and current_room.is_inside_tree():
+		current_room.queue_free()
+	
+	current_room = null
+	current_exit_door = null
+	alive_enemies = 0
+	door_spawn_point = null
+	room_spawn_points.clear()
+	
+	# Reset wave variables
+	wave_scheduled = false
+	wave_spawned = false
+	initial_enemies_defeated = false
+	
+	# Reset chest variables
+	chest_spawn_point = null
+	chest_spawned = false
+	
+	# Reset alpha slime tracking
+	has_spawned_alpha_this_level = false
+	
+	# Instance hub room
+	current_room = hub_room_scene.instantiate()
+	room_container.add_child(current_room)
+	
+	# Get spawn points from hub room
+	if current_room.has_method("get_spawn_points"):
+		room_spawn_points = current_room.get_spawn_points()
+		print("[HUB] Found %d spawn points" % room_spawn_points.size())
+		if not room_spawn_points.is_empty():
+			# Reserve one spawn point for the exit door
+			door_spawn_point = room_spawn_points.pop_back()
+			print("[HUB] Reserved spawn point for exit door at: ", door_spawn_point.global_position)
+	else:
+		print("[HUB] ERROR: Room doesn't have get_spawn_points method!")
+	
+	# Move player to hub spawn
+	_move_player_to_room_spawn()
+	
+	# Disable player weapon in hub
+	var player := get_tree().get_first_node_in_group("player")
+	if player and player.has_method("set_weapon_enabled"):
+		player.set_weapon_enabled(false)
+	
+	# Spawn exit door immediately (no enemies to kill)
+	_spawn_exit_door()
+	
+	# Tell UI to hide in-run elements
+	if game_ui and game_ui.has_method("set_in_hub"):
+		game_ui.set_in_hub(true)
+
+
+func start_run_from_hub() -> void:
+	"""Start the run from the hub (loads first combat room)."""
+	if run_started:
+		return
+	
+	run_started = true
+	in_hub = false
+	
+	# Reset to level 1
+	current_level = 1
+	_update_level_ui()
+	
+	# Load first combat room with fade transition
+	FadeTransition.set_black()
+	get_tree().paused = false
+	
+	load_combat_room()
+	
+	# Enable player weapon when leaving hub + grant spawn invincibility
+	var player := get_tree().get_first_node_in_group("player")
+	if player:
+		if player.has_method("set_weapon_enabled"):
+			player.set_weapon_enabled(true)
+		if player.has_method("grant_spawn_invincibility"):
+			player.grant_spawn_invincibility(2.0)
+	
+	# Refresh HP UI
+	var hp_ui := get_tree().get_first_node_in_group("hp_ui")
+	if hp_ui and hp_ui.has_method("refresh_from_state"):
+		hp_ui.refresh_from_state()
+	
+	# Tell UI to show in-run elements
+	if game_ui and game_ui.has_method("set_in_hub"):
+		game_ui.set_in_hub(false)
+	
+	if game_ui:
+		game_ui.visible = true
+	
+	await get_tree().create_timer(0.2).timeout
+	FadeTransition.fade_out()
+	await FadeTransition.fade_out_finished
 
 
 func _load_room_internal() -> void:
@@ -725,32 +845,55 @@ func _on_enemy_died(enemy: Node2D = null) -> void:
 
 
 func _spawn_exit_door() -> void:
+	print("[EXIT DOOR] Attempting to spawn exit door...")
+	
 	if current_exit_door != null:
+		print("[EXIT DOOR] Door already spawned, skipping")
 		return # already spawned
 
 	if exit_door_scene == null:
-		push_warning("No exit_door_scene assigned")
+		push_warning("[EXIT DOOR] No exit_door_scene assigned!")
 		return
+	
+	print("[EXIT DOOR] Exit door scene found: ", exit_door_scene)
 
 	# Failsafe: if door_spawn_point is somehow null, pick one now.
 	if door_spawn_point == null:
+		print("[EXIT DOOR] door_spawn_point is null, trying to find one...")
 		var candidates: Array[Node2D] = room_spawn_points
 		if candidates.is_empty() and current_room and current_room.has_method("get_spawn_points"):
 			candidates = current_room.get_spawn_points()
 
 		if candidates.is_empty():
-			push_warning("Tried to spawn door but room has no spawn points at all")
+			push_warning("[EXIT DOOR] Tried to spawn door but room has no spawn points at all")
 			return
 
 		candidates.shuffle()
 		door_spawn_point = candidates[0]
+		print("[EXIT DOOR] Found spawn point: ", door_spawn_point.global_position)
+	else:
+		print("[EXIT DOOR] Using reserved spawn point: ", door_spawn_point.global_position)
 
 	current_exit_door = exit_door_scene.instantiate()
 	current_exit_door.global_position = door_spawn_point.global_position
+	
+	# Ensure door renders above tilemap in hub (hub tiles have z_index up to 101)
+	if in_hub:
+		current_exit_door.z_index = 200
+	
 	current_room.add_child(current_exit_door)
+	
+	print("[EXIT DOOR] Door spawned successfully at: ", current_exit_door.global_position)
+	print("[EXIT DOOR] Door z_index: ", current_exit_door.z_index)
 
+	# Call open() deferred to ensure it happens after _ready() sets visible = false
 	if current_exit_door.has_method("open"):
-		current_exit_door.open()
+		# Don't play sound in hub
+		if in_hub:
+			current_exit_door.call_deferred("open", false)
+		else:
+			current_exit_door.call_deferred("open")
+		print("[EXIT DOOR] Door open() called (deferred)")
 
 
 func _spawn_chest_at_enemy_position(position: Vector2) -> void:
@@ -837,7 +980,10 @@ func on_player_reached_exit() -> void:
 	if is_in_death_sequence:
 		return
 
-	if in_shop:
+	if in_hub:
+		# Using the door in the hub starts the run
+		start_run_from_hub()
+	elif in_shop:
 		# Leaving the shop: go to a new combat room and increase the level
 		current_level += 1
 		_update_level_ui()
@@ -956,10 +1102,10 @@ func restart_run() -> void:
 	# reset run data
 	GameState.start_new_run()
 
-	# go back to level 1 (or start screen if you prefer)
+	# go back to hub
 	current_level = 1
 	_update_level_ui()
-	load_combat_room()
+	load_hub_room()
 
 
 func debug_set_level(level: int) -> void:

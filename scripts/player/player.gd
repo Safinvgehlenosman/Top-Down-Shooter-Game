@@ -36,6 +36,7 @@ var knockback_timer: float = 0.0
 var invincible_timer: float = 0.0
 
 var is_dead: bool = false
+var weapon_enabled: bool = true  # Disabled in hub
 
 # --- AIM / INPUT MODE ------------------------------------------------
 
@@ -140,11 +141,11 @@ func _physics_process(delta: float) -> void:
 	var is_shooting := Input.is_action_pressed("shoot")
 	var is_alt_fire := Input.is_action_pressed("alt_fire")
 
-	# Disable shooting while invisible (EXCEPT shuriken synergy)
-	if not GameState.player_invisible:
+	# Disable shooting in hub or while invisible (EXCEPT shuriken synergy)
+	if weapon_enabled and not GameState.player_invisible:
 		gun.handle_primary_fire(is_shooting, aim_dir)
 		gun.handle_alt_fire(is_alt_fire, aim_cursor_pos)
-	else:
+	elif weapon_enabled and GameState.player_invisible:
 		# ⭐ SYNERGY 1: Allow shuriken shooting while invisible
 		if GameState.has_invis_shuriken_synergy and GameState.alt_weapon == GameState.AltWeaponType.SHURIKEN:
 			gun.handle_alt_fire(is_alt_fire, aim_cursor_pos)
@@ -380,4 +381,27 @@ func sync_from_gamestate() -> void:
 			if not data.is_empty() and turret.has_method("configure"):
 				turret.configure(data)
 		else:
+			turret.visible = false
+
+
+# --------------------------------------------------------------------
+# HUB MODE - Disable/Enable Weapon
+# --------------------------------------------------------------------
+
+func set_weapon_enabled(enabled: bool) -> void:
+	"""Enable or disable the player's weapon (used in hub)."""
+	weapon_enabled = enabled
+	if gun:
+		gun.process_mode = Node.PROCESS_MODE_INHERIT if enabled else Node.PROCESS_MODE_DISABLED
+		gun.visible = enabled
+	
+	# Also hide/show crosshair
+	var crosshair := get_tree().get_first_node_in_group("crosshair")
+	if crosshair:
+		crosshair.visible = enabled
+	
+	# Hide turret in hub
+	if has_node("Turret"):
+		var turret = $Turret
+		if not enabled:
 			turret.visible = false
