@@ -126,6 +126,10 @@ func _load_upgrades_from_csv(path: String) -> Array:
 					upgrade["requires_ability"] = _normalize_string(value)
 				"enabled":
 					upgrade["enabled"] = _parse_bool(value)
+				"unlock_weapon":
+					upgrade["unlock_weapon"] = value
+				"unlock_ability":
+					upgrade["unlock_ability"] = value
 		
 		# Skip rows with empty id or text
 		if not upgrade.has("id") or upgrade["id"] == "":
@@ -148,6 +152,10 @@ func _load_upgrades_from_csv(path: String) -> Array:
 			upgrade["requires_ability"] = ""
 		if not upgrade.has("effect"):
 			upgrade["effect"] = ""
+		if not upgrade.has("unlock_weapon"):
+			upgrade["unlock_weapon"] = ""
+		if not upgrade.has("unlock_ability"):
+			upgrade["unlock_ability"] = ""
 		
 		if upgrade["enabled"]:
 			enabled_count += 1

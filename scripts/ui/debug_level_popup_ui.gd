@@ -307,28 +307,34 @@ func _cmd_weapon(parts: Array) -> void:
 	
 	match weapon_name:
 		"shotgun":
+			GameState.unlocked_shotgun = true
 			GameState.set_alt_weapon(GameState.AltWeaponType.SHOTGUN)
-			print("[DEBUG] Equipped shotgun")
+			print("[DEBUG] Unlocked and equipped shotgun")
 		
 		"sniper":
+			GameState.unlocked_sniper = true
 			GameState.set_alt_weapon(GameState.AltWeaponType.SNIPER)
-			print("[DEBUG] Equipped sniper")
+			print("[DEBUG] Unlocked and equipped sniper")
 		
 		"flamethrower", "flame":
+			GameState.unlocked_flamethrower = true
 			GameState.set_alt_weapon(GameState.AltWeaponType.FLAMETHROWER)
-			print("[DEBUG] Equipped flamethrower")
+			print("[DEBUG] Unlocked and equipped flamethrower")
 		
 		"grenade":
+			GameState.unlocked_grenade = true
 			GameState.set_alt_weapon(GameState.AltWeaponType.GRENADE)
-			print("[DEBUG] Equipped grenade")
+			print("[DEBUG] Unlocked and equipped grenade")
 		
 		"shuriken":
+			GameState.unlocked_shuriken = true
 			GameState.set_alt_weapon(GameState.AltWeaponType.SHURIKEN)
-			print("[DEBUG] Equipped shuriken")
+			print("[DEBUG] Unlocked and equipped shuriken")
 		
 		"turret":
+			GameState.unlocked_turret = true
 			GameState.set_alt_weapon(GameState.AltWeaponType.TURRET)
-			print("[DEBUG] Equipped turret")
+			print("[DEBUG] Unlocked and equipped turret")
 		
 		"none":
 			GameState.set_alt_weapon(GameState.AltWeaponType.NONE)
@@ -355,23 +361,27 @@ func _cmd_ability(parts: Array) -> void:
 	
 	match ability_name:
 		"dash":
-			GameState.ability = UpgradesDB.ABILITY_DASH
-			print("[DEBUG] Equipped dash ability")
+			GameState.unlocked_dash = true
+			GameState.set_ability(GameState.AbilityType.DASH)
+			print("[DEBUG] Unlocked and equipped dash ability")
 		
 		"slow", "slowmo", "bullet_time", "time":
-			GameState.ability = UpgradesDB.ABILITY_SLOWMO
-			print("[DEBUG] Equipped bullet time ability")
+			GameState.unlocked_slowmo = true
+			GameState.set_ability(GameState.AbilityType.SLOWMO)
+			print("[DEBUG] Unlocked and equipped bullet time ability")
 		
 		"bubble", "shield":
-			GameState.ability = UpgradesDB.ABILITY_BUBBLE
-			print("[DEBUG] Equipped shield bubble ability")
+			GameState.unlocked_bubble = true
+			GameState.set_ability(GameState.AbilityType.BUBBLE)
+			print("[DEBUG] Unlocked and equipped shield bubble ability")
 		
 		"invis", "invisibility":
-			GameState.ability = UpgradesDB.ABILITY_INVIS
-			print("[DEBUG] Equipped invisibility ability")
+			GameState.unlocked_invis = true
+			GameState.set_ability(GameState.AbilityType.INVIS)
+			print("[DEBUG] Unlocked and equipped invisibility ability")
 		
 		"none":
-			GameState.ability = UpgradesDB.ABILITY_NONE
+			GameState.set_ability(GameState.AbilityType.NONE)
 			print("[DEBUG] Removed ability")
 		
 		_:
@@ -450,8 +460,8 @@ func _cmd_health(parts: Array) -> void:
 
 func _cmd_clear() -> void:
 	# Reset to starting state
-	GameState.alt_weapon = UpgradesDB.ALT_WEAPON_NONE
-	GameState.ability = UpgradesDB.ABILITY_NONE
+	GameState.set_alt_weapon(GameState.AltWeaponType.NONE)
+	GameState.set_ability(GameState.AbilityType.NONE)
 	GameState.alt_weapon_ammo = 0
 	GameState.max_alt_weapon_ammo = 0
 	

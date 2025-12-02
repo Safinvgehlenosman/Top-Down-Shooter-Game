@@ -337,6 +337,18 @@ var coin_pickups_disabled: bool = false  # Coin pickups disabled flag
 var chaos_pact_pool: Array = []  # Available chaos pacts
 var chaos_pact_history: Array = []  # Already seen this cycle
 
+# ⭐ Unlock flags for weapons and abilities
+# These determine which weapons/abilities can be equipped via shop or loadout
+var unlocked_shotgun: bool = false
+var unlocked_sniper: bool = false
+var unlocked_flamethrower: bool = false
+var unlocked_grenade: bool = false
+var unlocked_shuriken: bool = false
+var unlocked_turret: bool = false
+var unlocked_dash: bool = false
+var unlocked_slowmo: bool = false
+var unlocked_bubble: bool = false
+var unlocked_invis: bool = false
 
 # flags
 var player_invisible: bool = false
@@ -590,6 +602,76 @@ func apply_upgrade(upgrade_id: String) -> void:
 	var effect: String = str(upgrade.get("effect", "")).strip_edges()
 	var value: float = float(upgrade.get("value", 0.0))
 
+	# ==============================
+	# PROCESS UNLOCK_WEAPON
+	# ==============================
+	var unlock_weapon_str: String = str(upgrade.get("unlock_weapon", "")).strip_edges()
+	if unlock_weapon_str != "":
+		var weapon_tokens := unlock_weapon_str.split(",")
+		for token in weapon_tokens:
+			var weapon_id := token.strip_edges().to_lower()
+			if weapon_id == "":
+				continue
+			
+			match weapon_id:
+				"shotgun":
+					unlocked_shotgun = true
+					set_alt_weapon(AltWeaponType.SHOTGUN)
+					print("  → Unlocked and equipped weapon: shotgun")
+				"sniper":
+					unlocked_sniper = true
+					set_alt_weapon(AltWeaponType.SNIPER)
+					print("  → Unlocked and equipped weapon: sniper")
+				"flamethrower":
+					unlocked_flamethrower = true
+					set_alt_weapon(AltWeaponType.FLAMETHROWER)
+					print("  → Unlocked and equipped weapon: flamethrower")
+				"grenade":
+					unlocked_grenade = true
+					set_alt_weapon(AltWeaponType.GRENADE)
+					print("  → Unlocked and equipped weapon: grenade")
+				"shuriken":
+					unlocked_shuriken = true
+					set_alt_weapon(AltWeaponType.SHURIKEN)
+					print("  → Unlocked and equipped weapon: shuriken")
+				"turret":
+					unlocked_turret = true
+					set_alt_weapon(AltWeaponType.TURRET)
+					print("  → Unlocked and equipped weapon: turret")
+				_:
+					push_warning("[GameState] Unknown weapon unlock: %s" % weapon_id)
+
+	# ==============================
+	# PROCESS UNLOCK_ABILITY
+	# ==============================
+	var unlock_ability_str: String = str(upgrade.get("unlock_ability", "")).strip_edges()
+	if unlock_ability_str != "":
+		var ability_tokens := unlock_ability_str.split(",")
+		for token in ability_tokens:
+			var ability_id := token.strip_edges().to_lower()
+			if ability_id == "":
+				continue
+			
+			match ability_id:
+				"dash":
+					unlocked_dash = true
+					set_ability(AbilityType.DASH)
+					print("  → Unlocked and equipped ability: dash")
+				"slowmo":
+					unlocked_slowmo = true
+					set_ability(AbilityType.SLOWMO)
+					print("  → Unlocked and equipped ability: slowmo")
+				"bubble":
+					unlocked_bubble = true
+					set_ability(AbilityType.BUBBLE)
+					print("  → Unlocked and equipped ability: bubble")
+				"invis":
+					unlocked_invis = true
+					set_ability(AbilityType.INVIS)
+					print("  → Unlocked and equipped ability: invis")
+				_:
+					push_warning("[GameState] Unknown ability unlock: %s" % ability_id)
+
 	# Apply the upgrade effect
 	match effect:
 		# ==============================
@@ -620,48 +702,60 @@ func apply_upgrade(upgrade_id: String) -> void:
 			print("  → Ability cooldown mult: %.2f" % ability_cooldown_mult)
 
 		# ==============================
-		# WEAPON / ABILITY UNLOCKS
+		# WEAPON / ABILITY UNLOCKS (LEGACY EFFECT-BASED)
 		# ==============================
+		# These are the old hardcoded unlock effects
+		# They set the unlock flag AND auto-equip for backwards compatibility
 		"unlock_shotgun":
+			unlocked_shotgun = true
 			set_alt_weapon(AltWeaponType.SHOTGUN)
-			print("  → Shotgun unlocked")
+			print("  → Shotgun unlocked and equipped")
 
 		"unlock_sniper":
+			unlocked_sniper = true
 			set_alt_weapon(AltWeaponType.SNIPER)
-			print("  → Sniper unlocked")
+			print("  → Sniper unlocked and equipped")
 
 		"unlock_turret":
+			unlocked_turret = true
 			set_alt_weapon(AltWeaponType.TURRET)
-			print("  → Turret unlocked")
+			print("  → Turret unlocked and equipped")
 
 		"unlock_flamethrower":
+			unlocked_flamethrower = true
 			set_alt_weapon(AltWeaponType.FLAMETHROWER)
-			print("  → Flamethrower unlocked")
+			print("  → Flamethrower unlocked and equipped")
 
 		"unlock_shuriken":
+			unlocked_shuriken = true
 			set_alt_weapon(AltWeaponType.SHURIKEN)
-			print("  → Shuriken unlocked")
+			print("  → Shuriken unlocked and equipped")
 
 		"unlock_grenade":
+			unlocked_grenade = true
 			set_alt_weapon(AltWeaponType.GRENADE)
-			print("  → Grenade unlocked")
+			print("  → Grenade unlocked and equipped")
 
 		# Ability unlocks
 		"unlock_dash":
+			unlocked_dash = true
 			set_ability(AbilityType.DASH)
-			print("  → Dash ability unlocked")
+			print("  → Dash ability unlocked and equipped")
 
 		"unlock_slowmo":
+			unlocked_slowmo = true
 			set_ability(AbilityType.SLOWMO)
-			print("  → Slowmo ability unlocked")
+			print("  → Slowmo ability unlocked and equipped")
 
 		"unlock_bubble":
+			unlocked_bubble = true
 			set_ability(AbilityType.BUBBLE)
-			print("  → Bubble ability unlocked")
+			print("  → Bubble ability unlocked and equipped")
 
 		"unlock_invis":
+			unlocked_invis = true
 			set_ability(AbilityType.INVIS)
-			print("  → Invis ability unlocked")
+			print("  → Invis ability unlocked and equipped")
 
 		# ==============================
 		# PRIMARY WEAPON EFFECTS
@@ -991,6 +1085,52 @@ func apply_upgrade(upgrade_id: String) -> void:
 
 	_emit_all_signals()
 
+
+# -------------------------------------------------------------------
+# UNLOCK SYSTEM HELPERS
+# -------------------------------------------------------------------
+
+func is_weapon_unlocked(weapon_type: int) -> bool:
+	"""Check if a weapon type is unlocked."""
+	match weapon_type:
+		AltWeaponType.SHOTGUN: return unlocked_shotgun
+		AltWeaponType.SNIPER: return unlocked_sniper
+		AltWeaponType.FLAMETHROWER: return unlocked_flamethrower
+		AltWeaponType.GRENADE: return unlocked_grenade
+		AltWeaponType.SHURIKEN: return unlocked_shuriken
+		AltWeaponType.TURRET: return unlocked_turret
+		AltWeaponType.NONE: return true  # NONE is always available
+		_: return false
+
+func is_ability_unlocked(ability_type: int) -> bool:
+	"""Check if an ability type is unlocked."""
+	match ability_type:
+		AbilityType.DASH: return unlocked_dash
+		AbilityType.SLOWMO: return unlocked_slowmo
+		AbilityType.BUBBLE: return unlocked_bubble
+		AbilityType.INVIS: return unlocked_invis
+		AbilityType.NONE: return true  # NONE is always available
+		_: return false
+
+func get_unlocked_weapons() -> Array:
+	"""Returns an array of weapon type enums that are currently unlocked."""
+	var unlocked := []
+	if unlocked_shotgun: unlocked.append(AltWeaponType.SHOTGUN)
+	if unlocked_sniper: unlocked.append(AltWeaponType.SNIPER)
+	if unlocked_flamethrower: unlocked.append(AltWeaponType.FLAMETHROWER)
+	if unlocked_grenade: unlocked.append(AltWeaponType.GRENADE)
+	if unlocked_shuriken: unlocked.append(AltWeaponType.SHURIKEN)
+	if unlocked_turret: unlocked.append(AltWeaponType.TURRET)
+	return unlocked
+
+func get_unlocked_abilities() -> Array:
+	"""Returns an array of ability type enums that are currently unlocked."""
+	var unlocked := []
+	if unlocked_dash: unlocked.append(AbilityType.DASH)
+	if unlocked_slowmo: unlocked.append(AbilityType.SLOWMO)
+	if unlocked_bubble: unlocked.append(AbilityType.BUBBLE)
+	if unlocked_invis: unlocked.append(AbilityType.INVIS)
+	return unlocked
 
 # -------------------------------------------------------------------
 # CHAOS CHALLENGE SYSTEM (Hades-style challenges)
