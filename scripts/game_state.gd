@@ -109,7 +109,7 @@ var ALT_WEAPON_DATA := {
 	AltWeaponType.SHURIKEN: {
 		"id": "shuriken",
 		"bullet_scene": BulletScene_SHURIKEN,
-		"bullet_speed": 950.0,
+		"bullet_speed": 240.0,
 		"pellets": 1,
 		"spread_degrees": 0.0,
 		"damage": 12.0,
@@ -125,7 +125,7 @@ var ALT_WEAPON_DATA := {
 	AltWeaponType.TURRET: {
 	"id": "turret",
 	"bullet_scene": BulletScene_TURRET,  # ← ADD THIS (or use turret-specific bullet)
-	"bullet_speed": 900.0,                # ← ADD THIS
+	"bullet_speed": 225.0,                # ← ADD THIS (reduced by 75%)
 	"damage": 7.0,
 	"fire_rate": 0.4,
 	"range": 220.0,

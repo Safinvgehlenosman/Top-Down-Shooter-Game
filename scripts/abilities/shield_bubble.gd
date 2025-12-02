@@ -5,6 +5,8 @@ extends Area2D
 @export var push_strength: float = 500.0
 
 var lifetime: float = 0.0
+var shuriken_spawn_timer: float = 0.0
+var shuriken_spawn_interval: float = 0.5  # Fire shuriken every 0.5 seconds
 
 @onready var shape: CollisionShape2D = $CollisionShape2D
 @onready var sprite: Sprite2D = $Sprite2D
@@ -30,9 +32,10 @@ func _ready() -> void:
 		if has_node("PointLight2D2"):
 			$PointLight2D2.color = Color(1.0, 0.5, 0.0)  # Lighter orange
 
-	# ⭐ SYNERGY 6: Spawn shuriken nova
+	# ⭐ SYNERGY 6: Spawn shuriken nova on creation (for initial burst)
 	if GameState.has_shuriken_bubble_nova_synergy:
 		_spawn_shuriken_nova()
+		shuriken_spawn_timer = 0.0
 
 
 func setup(p_duration: float) -> void:
@@ -82,6 +85,13 @@ func _physics_process(delta: float) -> void:
 	# ⭐ SYNERGY 3: Fire shield - apply burn damage to touching enemies
 	if GameState.has_fireshield_synergy:
 		_apply_fire_shield_damage(bodies)
+	
+	# ⭐ SYNERGY 6: Continuously fire shuriken while bubble is active
+	if GameState.has_shuriken_bubble_nova_synergy:
+		shuriken_spawn_timer += delta
+		if shuriken_spawn_timer >= shuriken_spawn_interval:
+			shuriken_spawn_timer = 0.0
+			_spawn_shuriken_nova()
 
 
 func _apply_fire_shield_damage(bodies: Array) -> void:
@@ -110,9 +120,9 @@ func _spawn_shuriken_nova() -> void:
 	if bullet_scene == null:
 		return
 	
-	var bullet_speed: float = shuriken_data.get("bullet_speed", 400.0)
+	var bullet_speed: float = shuriken_data.get("bullet_speed", 240.0)
 	var damage: float = shuriken_data.get("damage", 15.0)
-	var num_projectiles: int = 12  # 360° / 12 = 30° between each shuriken
+	var num_projectiles: int = 8  # Reduced from 12 to 8 for continuous fire
 	
 	for i in range(num_projectiles):
 		var angle := (float(i) / num_projectiles) * TAU  # Full circle

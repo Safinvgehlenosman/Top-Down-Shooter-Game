@@ -159,6 +159,14 @@ func _load_upgrades_from_csv(path: String) -> Array:
 		if not upgrade.has("unlock_ability"):
 			upgrade["unlock_ability"] = ""
 		
+		# ⭐ SYNERGIES are NOT stackable - remove from pool after purchase
+		if upgrade.get("rarity", 0) == Rarity.SYNERGY:
+			upgrade["stackable"] = false
+		else:
+			# Default: most upgrades are stackable
+			if not upgrade.has("stackable"):
+				upgrade["stackable"] = true
+		
 		if upgrade["enabled"]:
 			enabled_count += 1
 		

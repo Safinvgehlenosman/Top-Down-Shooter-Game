@@ -13,6 +13,11 @@ var damage: int = 1
 
 var fire_timer: float = 0.0
 
+# Synergy: Spiral firing during slowmo
+var spiral_rotation: float = 0.0
+var spiral_fire_timer: float = 0.0
+var spiral_fire_interval: float = 0.05  # Very fast firing (20 bullets per second)
+
 
 func _ready() -> void:
 	add_to_group("turret")
@@ -45,6 +50,11 @@ func _process(delta: float) -> void:
 	if bullet_scene == null:
 		return
 
+	# ⭐ SYNERGY 4: Spiral firing during slowmo
+	if GameState.has_turret_slowmo_sprinkler_synergy and GameState.ability_active_left > 0.0:
+		_do_spiral_fire(delta)
+		return  # Skip normal targeting when doing spiral
+
 	fire_timer -= delta
 
 	var target := _find_target()
@@ -59,6 +69,33 @@ func _process(delta: float) -> void:
 	if fire_timer <= 0.0:
 		_fire_at(target)
 		fire_timer = fire_interval
+
+
+func _do_spiral_fire(delta: float) -> void:
+	"""⭐ SYNERGY 4: Continuously fire in a rotating spiral pattern during slowmo."""
+	spiral_fire_timer -= delta
+	
+	if spiral_fire_timer <= 0.0:
+		# Fire a bullet in the current rotation direction
+		var dir := Vector2.RIGHT.rotated(spiral_rotation)
+		
+		var bullet = bullet_scene.instantiate()
+		bullet.global_position = muzzle.global_position
+		bullet.direction = dir
+		bullet.speed = bullet_speed
+		bullet.damage = damage
+		
+		get_tree().current_scene.add_child(bullet)
+		
+		# Rotate turret head to match firing direction
+		head.rotation = spiral_rotation + deg_to_rad(180)
+		
+		# Increment rotation for spiral effect (360° per second = fast spiral)
+		spiral_rotation += deg_to_rad(360.0 * spiral_fire_interval)  # Rotates 18° per shot
+		if spiral_rotation >= TAU:
+			spiral_rotation -= TAU
+		
+		spiral_fire_timer = spiral_fire_interval
 
 
 func _find_target() -> Node2D:
