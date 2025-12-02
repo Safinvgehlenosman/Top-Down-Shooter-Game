@@ -14,6 +14,7 @@ func get_spawn_points() -> Array[Node2D]:
 	if root == null:
 		return result
 
+	# Create a fresh array each time to avoid external modifications
 	for child in root.get_children():
 		if child is Node2D:
 			result.append(child)

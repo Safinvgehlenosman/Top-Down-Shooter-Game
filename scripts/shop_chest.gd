@@ -24,13 +24,15 @@ func _ready() -> void:
 		interact_prompt.visible = false
 		base_prompt_pos = interact_prompt.position
 	
-	# Play spawn sound
-	if sfx_spawn:
-		sfx_spawn.play()
+	# Don't play spawn sound in shop (chest is always there)
+	# if sfx_spawn:
+	# 	sfx_spawn.play()
 	
 	# Connect signals
-	body_entered.connect(_on_body_entered)
-	body_exited.connect(_on_body_exited)
+	if not body_entered.is_connected(_on_body_entered):
+		body_entered.connect(_on_body_entered)
+	if not body_exited.is_connected(_on_body_exited):
+		body_exited.connect(_on_body_exited)
 
 
 func _process(delta: float) -> void:

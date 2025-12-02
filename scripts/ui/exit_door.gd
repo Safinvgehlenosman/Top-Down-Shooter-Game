@@ -31,11 +31,14 @@ func _ready() -> void:
 	
 	if animated_sprite:
 		animated_sprite.play("default")
-		animated_sprite.animation_finished.connect(_on_animation_finished)
+		if not animated_sprite.animation_finished.is_connected(_on_animation_finished):
+			animated_sprite.animation_finished.connect(_on_animation_finished)
 	
 	# Connect signals
-	body_entered.connect(_on_body_entered)
-	body_exited.connect(_on_body_exited)
+	if not body_entered.is_connected(_on_body_entered):
+		body_entered.connect(_on_body_entered)
+	if not body_exited.is_connected(_on_body_exited):
+		body_exited.connect(_on_body_exited)
 
 
 func _process(delta: float) -> void:

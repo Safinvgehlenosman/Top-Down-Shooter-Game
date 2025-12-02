@@ -1,4 +1,4 @@
-[gd_scene load_steps=26 format=3 uid="uid://b4fgncv3abcol"]
+[gd_scene load_steps=27 format=3 uid="uid://b4fgncv3abcol"]
 
 [ext_resource type="Script" uid="uid://d1rbg528xkxj6" path="res://scripts/ui/exit_door.gd" id="1_lxrmt"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="1_syxuu"]
@@ -157,6 +157,9 @@ fill = 1
 fill_from = Vector2(0.517094, 0.52136755)
 fill_to = Vector2(0.76495725, 0.7777778)
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_6m21m"]
+size = Vector2(9, 11)
+
 [node name="ExitDoor" type="Area2D" groups=["exit_door"]]
 position = Vector2(0, -6)
 collision_mask = 2
@@ -202,5 +205,14 @@ theme_override_fonts/font = ExtResource("4_6m21m")
 text = "PRESS
 \"E\""
 horizontal_alignment = 1
+
+[node name="Blocker" type="StaticBody2D" parent="."]
+position = Vector2(-1, 9)
+collision_mask = 39
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Blocker"]
+position = Vector2(1.5, -8.5)
+scale = Vector2(0.99999994, 0.99999994)
+shape = SubResource("RectangleShape2D_6m21m")
 
 [connection signal="body_entered" from="." to="." method="_on_body_entered"]

@@ -167,6 +167,9 @@ func load_shop_room() -> void:
 	in_shop = true
 	in_hub = false
 	
+	# Fade out global music and fade in shop music
+	_crossfade_to_shop_music()
+	
 	# Clear room transient objects
 	_clear_room_transient_objects()
 	for bullet in get_tree().get_nodes_in_group("player_bullet"):
@@ -197,6 +200,9 @@ func load_shop_room() -> void:
 	# Instance shop room
 	current_room = shop_room_scene.instantiate()
 	room_container.add_child(current_room)
+	
+	# Fade music to shop track
+	_crossfade_to_shop_music()
 	
 	# Get spawn points from shop room
 	if current_room.has_method("get_spawn_points"):
@@ -451,11 +457,18 @@ func _is_spawn_valid(pos: Vector2) -> bool:
 
 	var params := PhysicsPointQueryParameters2D.new()
 	params.position = pos
-	params.collide_with_areas = true
+	params.collide_with_areas = false  # Don't check areas (spawn points might be Area2D)
 	params.collide_with_bodies = true
+	params.collision_mask = 1  # Only check layer 1 (walls/environment)
 
 	# 8 is just "max results" – we only care if it's empty or not
 	var results := space_state.intersect_point(params, 8)
+	
+	# Debug: print what's blocking if any
+	if not results.is_empty():
+		for result in results:
+			print("[SPAWN VALID] Collision detected with: ", result.collider.name if result.collider else "unknown")
+	
 	return results.is_empty()
 
 
@@ -504,10 +517,12 @@ func _spawn_room_content() -> void:
 		push_warning("Room '%s' has no spawn points" % current_room.name)
 		return
 
+	print("[SPAWN] Room has %d total spawn points before reserving door spawn" % room_spawn_points.size())
 	room_spawn_points.shuffle()
 
 	# reserve one spawn for the door
 	door_spawn_point = room_spawn_points.pop_back()
+	print("[SPAWN] Reserved door spawn, %d spawn points remaining for entities" % room_spawn_points.size())
 	
 	# Determine if chest should spawn this level (75% chance)
 	var should_spawn_chest: bool = randf() < chest_spawn_chance
@@ -572,10 +587,8 @@ func _spawn_room_content() -> void:
 			var desired_pos: Vector2 = spawn.global_position
 			var safe_pos := _find_safe_spawn_position(desired_pos)
 			
-			if not _is_spawn_valid(safe_pos):
-				spawn_index += 1
-				continue
-			
+			# Just use the position - _find_safe_spawn_position already tried to find a safe spot
+			# If it couldn't, spawning anyway is better than skipping
 			var enemy := enemy_scene.instantiate()
 			enemy.global_position = safe_pos
 			
@@ -692,17 +705,17 @@ func _calculate_crate_count_for_level(level: int, available_spawns: int) -> int:
 
 
 func _get_enemy_ratio_for_level(level: int) -> float:
-	"""Get the enemy spawn ratio for a given level. Smoothly transitions from 70% to 95%."""
-	# Level 1: 70% enemies (0.7)
-	# Level 50+: 95% enemies (0.95)
+	"""Get the enemy spawn ratio for a given level. Smoothly transitions from 50% to 70%."""
+	# Level 1: 50% enemies (0.5)
+	# Level 50+: 70% enemies (0.7)
 	
 	if level >= 50:
-		return 0.95
+		return 0.7
 	
-	# Linear interpolation from 0.7 to 0.95 over 50 levels
-	# ratio = 0.7 + (0.25 * progress)
+	# Linear interpolation from 0.5 to 0.7 over 50 levels
+	# ratio = 0.5 + (0.2 * progress)
 	var progress = float(level - 1) / 49.0  # 0.0 at level 1, 1.0 at level 50
-	var ratio = 0.7 + (0.25 * progress)
+	var ratio = 0.5 + (0.2 * progress)
 	
 	return ratio
 
@@ -877,19 +890,14 @@ func _spawn_exit_door() -> void:
 	current_exit_door = exit_door_scene.instantiate()
 	current_exit_door.global_position = door_spawn_point.global_position
 	
-	# Ensure door renders above tilemap in hub (hub tiles have z_index up to 101)
-	if in_hub:
-		current_exit_door.z_index = 200
-	
 	current_room.add_child(current_exit_door)
 	
 	print("[EXIT DOOR] Door spawned successfully at: ", current_exit_door.global_position)
-	print("[EXIT DOOR] Door z_index: ", current_exit_door.z_index)
 
 	# Call open() deferred to ensure it happens after _ready() sets visible = false
 	if current_exit_door.has_method("open"):
-		# Don't play sound in hub
-		if in_hub:
+		# Don't play sound in hub or shop
+		if in_hub or in_shop:
 			current_exit_door.call_deferred("open", false)
 		else:
 			current_exit_door.call_deferred("open")
@@ -985,6 +993,9 @@ func on_player_reached_exit() -> void:
 		start_run_from_hub()
 	elif in_shop:
 		# Leaving the shop: go to a new combat room and increase the level
+		# Fade music back to global
+		_crossfade_to_global_music()
+		
 		current_level += 1
 		_update_level_ui()
 		_check_chaos_chest_spawn()  # ⭐ Check for chaos chest spawn
@@ -1068,8 +1079,10 @@ func load_next_level() -> void:
 	if shop_ui:
 		shop_ui.visible = false
 
-	# Make sure fade is at full black
-	FadeTransition.set_black()
+	# Skip fade transition if in shop room (chest interaction, not level transition)
+	if not in_shop:
+		# Make sure fade is at full black
+		FadeTransition.set_black()
 	
 	# UNPAUSE FIRST so we can do work
 	get_tree().paused = false
@@ -1084,6 +1097,10 @@ func load_next_level() -> void:
 
 	if game_ui:
 		game_ui.visible = true
+	
+	# Skip fade if in shop (just close UI, player is already in shop room)
+	if in_shop:
+		return
 	
 	# Small delay to ensure everything is positioned
 	await get_tree().create_timer(0.2).timeout
@@ -1407,3 +1424,61 @@ func _get_themed_room_slimes(level: int) -> Array[PackedScene]:
 			return themed_room_5_slimes
 		_:
 			return themed_room_5_slimes if themed_room_5_slimes.size() > 0 else []
+
+
+# --- MUSIC CROSSFADE ------------------------------------------------
+
+func _crossfade_to_shop_music() -> void:
+	"""Fade out global music and fade in shop music."""
+	var global_music = GlobalAudioStreamPlayer
+	var shop_music = current_room.get_node_or_null("AudioStreamPlayer") if current_room else null
+	
+	if not shop_music:
+		print("[MUSIC] No shop music found in room")
+		return
+	
+	# Stop shop music if it's already playing (prevent double-play)
+	if shop_music.playing:
+		shop_music.stop()
+	
+	# Set shop music to ALWAYS process (ignore pause)
+	shop_music.process_mode = Node.PROCESS_MODE_ALWAYS
+	
+	var fade_duration = 1.0  # Reduced from 1.5 to 1.0 second
+	
+	# Fade out global music first
+	var global_tween = create_tween()
+	global_tween.tween_property(global_music, "volume_db", -80, fade_duration)
+	global_tween.tween_callback(func(): global_music.stream_paused = true)
+	
+	# Wait for fade out to finish, then start shop music at full volume
+	await global_tween.finished
+	shop_music.volume_db = 0
+	shop_music.play()
+
+
+func _crossfade_to_global_music() -> void:
+	"""Fade out shop music and fade in global music."""
+	var global_music = GlobalAudioStreamPlayer
+	var shop_music = current_room.get_node_or_null("AudioStreamPlayer") if current_room else null
+	
+	# Resume global music if paused
+	if global_music.stream_paused:
+		global_music.stream_paused = false
+	
+	var fade_duration = 1.5
+	
+	# Fade in global music
+	var global_tween = create_tween()
+	global_tween.tween_property(global_music, "volume_db", 0, fade_duration)
+	
+	# Fade out shop music if it exists and is valid
+	if shop_music and is_instance_valid(shop_music) and shop_music.playing:
+		var shop_tween = create_tween()
+		shop_tween.tween_property(shop_music, "volume_db", -80, fade_duration)
+		# Store reference before callback to avoid freed object access
+		var music_ref = shop_music
+		shop_tween.tween_callback(func(): 
+			if is_instance_valid(music_ref):
+				music_ref.stop()
+		)
