@@ -14,9 +14,20 @@ var damage: int = 1
 var fire_timer: float = 0.0
 
 
+func _ready() -> void:
+	add_to_group("turret")
+
+
 # Called from Player.sync_from_gamestate()
 func configure(data: Dictionary) -> void:
-	fire_interval = data.get("fire_interval", fire_interval)
+	print("[TURRET DEBUG] configure() called with data: %s" % data)
+	
+	# Map "fire_rate" (from ALT_WEAPON_DATA) to "fire_interval" (turret's variable)
+	if data.has("fire_rate"):
+		fire_interval = data["fire_rate"]
+	else:
+		fire_interval = data.get("fire_interval", fire_interval)
+	
 	turret_range = data.get("range", turret_range)
 
 	# get degrees from data, convert once to radians
@@ -26,6 +37,8 @@ func configure(data: Dictionary) -> void:
 	bullet_scene = data.get("bullet_scene", bullet_scene)
 	bullet_speed = data.get("bullet_speed", bullet_speed)
 	damage       = data.get("damage", damage)
+	
+	print("[TURRET DEBUG] Configured - bullet_scene: %s, speed: %f, dmg: %d, interval: %f, range: %f" % [bullet_scene, bullet_speed, damage, fire_interval, turret_range])
 
 
 func _process(delta: float) -> void:
@@ -88,6 +101,10 @@ func _find_target() -> Node2D:
 
 
 func _fire_at(target: Node2D) -> void:
+	if bullet_scene == null:
+		print("[TURRET ERROR] Cannot fire - bullet_scene is null!")
+		return
+	
 	var dir := (target.global_position - muzzle.global_position).normalized()
 
 	# add inaccuracy
@@ -106,4 +123,31 @@ func _fire_at(target: Node2D) -> void:
 	if sfx_shoot:
 		sfx_shoot.pitch_scale = randf_range(1.1, 1.3)  # Slightly higher, mechanical
 		sfx_shoot.volume_db = -6.0  # Quieter (fires often)
+		sfx_shoot.play()
+
+
+
+func do_sprinkler_burst() -> void:
+	"""SYNERGY 4: Fire 360° burst of bullets (turret + slowmo synergy)."""
+	if bullet_scene == null:
+		return
+	
+	var num_bullets: int = 16  # 360° / 16 = 22.5° between bullets
+	
+	for i in range(num_bullets):
+		var angle := (float(i) / num_bullets) * TAU  # Full circle
+		var dir := Vector2.RIGHT.rotated(angle)
+		
+		var bullet = bullet_scene.instantiate()
+		bullet.global_position = muzzle.global_position
+		bullet.direction = dir
+		bullet.speed = bullet_speed
+		bullet.damage = damage
+		
+		get_tree().current_scene.add_child(bullet)
+	
+	# Play shoot sound
+	if sfx_shoot:
+		sfx_shoot.pitch_scale = 1.0  # Normal pitch for burst
+		sfx_shoot.volume_db = -3.0  # Louder for special attack
 		sfx_shoot.play()

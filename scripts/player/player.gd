@@ -83,6 +83,9 @@ func _ready() -> void:
 	# --- AbilityComponent wiring (optional sync) ---
 	if ability_component and ability_component.has_method("sync_from_gamestate"):
 		ability_component.sync_from_gamestate()
+	
+	# --- Listen for alt weapon changes ---
+	GameState.alt_weapon_changed.connect(func(_new_weapon): sync_from_gamestate())
 
 	var design_max_health: int = GameConfig.player_max_health
 	var _design_max_ammo: int   = GameConfig.player_max_ammo
@@ -137,10 +140,14 @@ func _physics_process(delta: float) -> void:
 	var is_shooting := Input.is_action_pressed("shoot")
 	var is_alt_fire := Input.is_action_pressed("alt_fire")
 
-	# Disable shooting while invisible
+	# Disable shooting while invisible (EXCEPT shuriken synergy)
 	if not GameState.player_invisible:
 		gun.handle_primary_fire(is_shooting, aim_dir)
 		gun.handle_alt_fire(is_alt_fire, aim_cursor_pos)
+	else:
+		# ⭐ SYNERGY 1: Allow shuriken shooting while invisible
+		if GameState.has_invis_shuriken_synergy and GameState.alt_weapon == GameState.AltWeaponType.SHURIKEN:
+			gun.handle_alt_fire(is_alt_fire, aim_cursor_pos)
 
 
 func _on_gun_recoil_requested(dir: Vector2, strength: float) -> void:

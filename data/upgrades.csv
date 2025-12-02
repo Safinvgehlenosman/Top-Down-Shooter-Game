@@ -1,16 +1,16 @@
 ﻿id,text,rarity,price,category,pool,icon_path,effect,value,requires_weapon,requires_ability,enabled,unlock_weapon,unlock_ability
+shotgun_unlock,Unlock Shotgun,common,300,generic,shop,,none,,none,,TRUE,shotgun,
+sniper_unlock,Unlock Sniper,common,350,generic,shop,,none,,none,,TRUE,sniper,
+flamethrower_unlock,Unlock Flamethrower,common,300,generic,shop,,none,,none,,TRUE,flamethrower,
+grenade_unlock,Unlock Grenades,common,400,generic,shop,,none,,none,,TRUE,grenade,
+shuriken_unlock,Unlock Shuriken,common,300,generic,shop,,none,,none,,TRUE,shuriken,
+turret_unlock,Unlock Turret,common,350,generic,shop,,none,,none,,TRUE,turret,
+dash_unlock,Unlock Dash,common,250,generic,shop,,none,,,none,TRUE,,dash
+slowmo_unlock,Unlock Slowmo,common,400,generic,shop,,none,,,none,TRUE,,slowmo
+bubble_unlock,Unlock Shield,common,300,generic,shop,,none,,,none,TRUE,,bubble
+invis_unlock,Unlock Invisibility,common,350,generic,shop,,none,,,none,TRUE,,invis
 max_hp_plus_1,+10 Max HP,common,150,generic,shop,res://assets/Separated/singleheart.png,,,,,TRUE,,
 hp_refill,Refill HP,common,50,generic,shop,res://assets/Separated/singleheart.png,,,,,TRUE,,
- unlock_shotgun,Unlock Shotgun,uncommon,300,generic,shop,,,,none,,TRUE,shotgun,
-unlock_sniper,Unlock Sniper,uncommon,300,generic,shop,,,,none,,TRUE,sniper,
-unlock_turret,Unlock Turret,uncommon,300,generic,shop,,,,none,,TRUE,turret,
-unlock_flamethrower,Unlock Flamethrower,uncommon,300,generic,shop,,,,none,,TRUE,flamethrower,
-unlock_grenades,Unlock Grenades,uncommon,300,generic,shop,,,,none,,TRUE,grenades,
-unlock_shuriken,Unlock Shuriken,uncommon,300,generic,shop,,,,none,,TRUE,shuriken,
-unlock_dash,Unlock Dash (SPACE),uncommon,300,generic,shop,,,,,none,TRUE,,dash
-unlock_bubble,Unlock Shield (SPACE),uncommon,300,generic,shop,,,,,none,TRUE,,bubble
-unlock_invis,Unlock Invisibility (SPACE),uncommon,300,generic,shop,,,,,none,TRUE,,invis
-unlock_slowmo,Unlock Bullet-Time (SPACE),uncommon,300,generic,shop,,,,,none,TRUE,,slowmo
 chaos_half_hp_double_damage,Chaos Pact: Double Damage,chaos,0,chaos,chaos,res://assets/Separated/ammo.png,chaos_challenge,,,,TRUE,,
 chaos_no_primary_fire_triple_rate,Chaos Pact: Trigger Happy,chaos,0,chaos,chaos,res://assets/Separated/ammo.png,chaos_challenge,,,,TRUE,,
 primary_damage_t1,Primary Damage +5%,common,50,primary,shop,res://assets/icons/primary_damage.png,primary_damage,0.05,,,TRUE,,
@@ -152,7 +152,11 @@ invis_movement_speed_t4,Invis Movement Speed +45%,epic,315,invis,shop,res://asse
 invis_first_hit_bonus_t1,Invis First Hit +25%,common,55,invis,shop,res://assets/icons/invis_first_hit.png,invis_first_hit_bonus,0.25,,invis,TRUE,,
 invis_first_hit_bonus_t2,Invis First Hit +50%,uncommon,130,invis,shop,res://assets/icons/invis_first_hit.png,invis_first_hit_bonus,0.50,,invis,TRUE,,
 invis_first_hit_bonus_t3,Invis First Hit +75%,rare,220,invis,shop,res://assets/icons/invis_first_hit.png,invis_first_hit_bonus,0.75,,invis,TRUE,,
-invis_first_hit_bonus_t4,Invis First Hit +100%,synergy,"1,000",synergy,shop,res://assets/icons/invis_first_hit.png,invis_first_hit_bonus,1.00,,invis,TRUE,,
-sniper_invis_synergy,Ghost Rounds,synergy,"1,000",synergy,shop,res://assets/icons/sniper_invis_synergy.png,sniper_invis_synergy,1.00,sniper,invis,TRUE,,
-shield_flamethrower_synergy,Fire Shield,synergy,"1,000",synergy,shop,res://assets/icons/shield_flamethrower_synergy.png,shield_flamethrower_synergy,1.00,flamethrower,shield,TRUE,,
-dash_grenades_synergy,Shrapnel Dash,synergy,"1,000",synergy,shop,res://assets/icons/dash_grenades_synergy.png,dash_grenade_synergy,5.00,grenade,dash,TRUE,,
+invis_first_hit_bonus_t4,Invis First Hit +100%,epic,350,invis,shop,res://assets/icons/invis_first_hit.png,invis_first_hit_bonus,1.00,,invis,TRUE,,
+sniper_invis_synergy,Ghost Rounds,synergy,450,synergy,shop,res://assets/icons/sniper_invis_synergy.png,sniper_invis_synergy,1.00,sniper,invis,TRUE,,
+shield_flamethrower_synergy,Fire Shield,synergy,450,synergy,shop,res://assets/icons/shield_flamethrower_synergy.png,shield_flamethrower_synergy,1.00,flamethrower,shield,TRUE,,
+dash_grenades_synergy,Shrapnel Dash,synergy,450,synergy,shop,res://assets/icons/dash_grenades_synergy.png,dash_grenades_synergy,1.00,grenade,dash,TRUE,,
+invis_shuriken_synergy,Shadow Ninja (Invis + Shuriken),synergy,"1,000",synergy,shop,,invis_shuriken_synergy,1.00,shuriken,invis,TRUE,,
+turret_slowmo_synergy,Time Sprinkler (Turret + Slowmo),synergy,"1,000",synergy,shop,,turret_slowmo_sprinkler_synergy,1.00,turret,slowmo,TRUE,,
+shotgun_dash_synergy,Recoil Dash (Shotgun + Dash),synergy,"1,000",synergy,shop,,shotgun_dash_autofire_synergy,1.00,shotgun,dash,TRUE,,
+shuriken_shield_synergy,Blade Shield (Shuriken + Shield),synergy,1000,synergy,shop,,shuriken_shield_nova_synergy,1,shuriken,shield,TRUE,,

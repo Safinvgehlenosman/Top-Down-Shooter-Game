@@ -310,12 +310,20 @@ func _start_slowmo(data: Dictionary) -> void:
 	for enemy in enemies:
 		if enemy.has_method("set_time_scale"):
 			enemy.set_time_scale(factor)
+	
+	# ⭐ SYNERGY 4: Fire turret 360° burst when slowmo activates
+	if GameState.has_turret_slowmo_sprinkler_synergy:
+		_fire_turret_sprinkler_burst()
 
 
 func _end_ability() -> void:
 	if is_dashing:
 		is_dashing = false
 		dash_speed = 0.0
+		
+		# ⭐ SYNERGY 5: Auto-fire shotgun on dash end (moved after is_dashing reset)
+		if GameState.has_shotgun_dash_autofire_synergy and GameState.alt_weapon == GameState.AltWeaponType.SHOTGUN:
+			_auto_fire_shotgun_on_dash_end()
 
 	if slowmo_running:
 		slowmo_running = false
@@ -335,6 +343,67 @@ func _end_ability() -> void:
 			gun.modulate = original_gun_modulate
 
 	GameState.ability_active_left = 0.0
+
+
+# ==============================
+# SYNERGY HELPER FUNCTIONS
+# ==============================
+
+func _auto_fire_shotgun_on_dash_end() -> void:
+	"""SYNERGY 5: Auto-fire shotgun in dash direction when dash ends."""
+	print("[SYNERGY DEBUG] Shotgun+Dash auto-fire triggered!")
+	
+	if not is_instance_valid(gun):
+		print("[SYNERGY DEBUG] Gun not valid")
+		return
+	
+	var shotgun_data: Dictionary = GameState.ALT_WEAPON_DATA.get(GameState.AltWeaponType.SHOTGUN, {})
+	if shotgun_data.is_empty():
+		print("[SYNERGY DEBUG] Shotgun data empty")
+		return
+	
+	# Fire shotgun manually using stored dash direction
+	var bullet_scene: PackedScene = shotgun_data.get("bullet_scene")
+	if bullet_scene == null:
+		print("[SYNERGY DEBUG] Bullet scene null")
+		return
+	
+	var pellets: int = shotgun_data.get("pellets", 8)
+	var spread_deg: float = shotgun_data.get("spread_degrees", 30.0)
+	var spread_rad: float = deg_to_rad(spread_deg)
+	var bullet_speed: float = shotgun_data.get("bullet_speed", 500.0)
+	var damage: float = shotgun_data.get("damage", 20.0)
+	
+	var muzzle_pos := player.global_position + dash_dir * 16.0  # Offset from player
+	
+	print("[SYNERGY DEBUG] Firing %d pellets in direction %s" % [pellets, dash_dir])
+	
+	for i in range(pellets):
+		var angle := randf_range(-spread_rad, spread_rad)
+		var dir := dash_dir.rotated(angle)
+		
+		var bullet = bullet_scene.instantiate()
+		bullet.global_position = muzzle_pos
+		bullet.direction = dir
+		bullet.speed = bullet_speed
+		bullet.damage = roundi(damage)
+		
+		get_tree().current_scene.add_child(bullet)
+
+
+func _fire_turret_sprinkler_burst() -> void:
+	"""SYNERGY 4: Fire 360° burst from turret when slowmo activates."""
+	print("[SYNERGY DEBUG] Turret+Slowmo sprinkler burst triggered!")
+	
+	# Find the player's active turret
+	var turrets = get_tree().get_nodes_in_group("turret")
+	if turrets.is_empty():
+		print("[SYNERGY DEBUG] No turrets found in 'turret' group")
+		return
+	
+	for turret in turrets:
+		if turret.has_method("do_sprinkler_burst"):
+			turret.do_sprinkler_burst()
 
 
 func get_dash_velocity() -> Vector2:

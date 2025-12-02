@@ -259,6 +259,14 @@ var dash_grenades_synergy_unlocked: bool = false
 var dash_grenade_synergy_grenades: int = 0
 var has_dash_grenade_synergy: bool = false
 
+# ⭐ NEW SYNERGY UPGRADES
+var has_invis_shuriken_synergy: bool = false
+var has_sniper_wallpierce_synergy: bool = false
+var has_fireshield_synergy: bool = false
+var has_turret_slowmo_sprinkler_synergy: bool = false
+var has_shotgun_dash_autofire_synergy: bool = false
+var has_shuriken_bubble_nova_synergy: bool = false
+
 # ⭐ Additional stat fields for CSV-based upgrades
 # Primary weapon
 var primary_crit_chance: float = 0.0
@@ -308,7 +316,7 @@ var slowmo_time_scale: float = 0.3
 var slowmo_radius: float = 0.0
 var slowmo_ammo_efficiency: float = 0.0
 
-# Invisibility ability
+# Invis ability
 var invis_fade_speed_bonus: float = 0.0
 var invis_movement_speed_bonus: float = 0.0
 var invis_first_hit_bonus: float = 0.0
@@ -433,6 +441,14 @@ func start_new_run() -> void:
 	dash_grenade_synergy_grenades = 0
 	has_dash_grenade_synergy = false
 
+	# ⭐ Reset all synergy upgrades
+	has_invis_shuriken_synergy = false
+	has_sniper_wallpierce_synergy = false
+	has_fireshield_synergy = false
+	has_turret_slowmo_sprinkler_synergy = false
+	has_shotgun_dash_autofire_synergy = false
+	has_shuriken_bubble_nova_synergy = false
+
 	coins            = 0
 	player_invisible = false
 	upgrade_purchase_counts.clear()
@@ -523,7 +539,7 @@ func set_alt_weapon(new_alt: int) -> void:
 	alt_weapon_changed.emit(alt_weapon)
 
 # -------------------------------------------------------------------
-# INVISIBILITY FLAG
+# INVIS FLAG
 # -------------------------------------------------------------------
 
 func set_player_invisible(is_invisible: bool) -> void:
@@ -1037,7 +1053,7 @@ func apply_upgrade(upgrade_id: String) -> void:
 			print("  → Slowmo ammo efficiency +%.1f%%" % [value * 100])
 
 		# ==============================
-		# INVISIBILITY ABILITY EFFECTS
+		# INVIS ABILITY EFFECTS
 		# ==============================
 		"invis_duration":
 			invis_duration_bonus_percent += value
@@ -1065,23 +1081,48 @@ func apply_upgrade(upgrade_id: String) -> void:
 		"sniper_invis_synergy":
 			sniper_invis_synergy_unlocked = true
 			synergy_sniper_invis_unlocked = true
+			has_sniper_wallpierce_synergy = true  # ⭐ NEW: Actually enable the synergy
 			print("  → Sniper + Invis synergy unlocked!")
 
 		"shield_flamethrower_synergy":
 			shield_flamethrower_synergy_unlocked = true
 			synergy_flamethrower_bubble_unlocked = true
+			has_fireshield_synergy = true  # ⭐ NEW: Actually enable the synergy
 			print("  → Shield + Flamethrower synergy unlocked!")
 
 		"dash_grenades_synergy":
 			dash_grenades_synergy_unlocked = true
 			synergy_grenade_dash_unlocked = true
-			print("  → Dash + Grenades synergy unlocked!")
+			# ⭐ NEW: Actually enable the synergy with default grenade count
+			var grenade_count := int(value) if value > 0 else 3  # Default to 3 grenades
+			dash_grenade_synergy_grenades = grenade_count
+			has_dash_grenade_synergy = true
+			print("  → Dash + Grenades synergy unlocked! (%d grenades per dash)" % grenade_count)
 
 		"dash_grenade_synergy":
 			var grenade_count := int(value)
 			dash_grenade_synergy_grenades = grenade_count
 			has_dash_grenade_synergy = (grenade_count > 0)
 			print("  → Dash + Grenade synergy: %d grenades per dash" % grenade_count)
+
+		# ==============================
+		# NEW SYNERGY UPGRADES
+		# ==============================
+		"invis_shuriken_synergy":
+			has_invis_shuriken_synergy = true
+			print("  → Invis + Shuriken synergy: Can shoot shuriken while invisible!")
+
+		"turret_slowmo_sprinkler_synergy":
+			has_turret_slowmo_sprinkler_synergy = true
+			print("  → Turret + Slowmo synergy: Turret fires 360° burst on slowmo!")
+
+		"shotgun_dash_autofire_synergy":
+			has_shotgun_dash_autofire_synergy = true
+			print("  → Shotgun + Dash synergy: Auto-fire shotgun on dash end!")
+
+		"shuriken_shield_nova_synergy":
+			has_shuriken_bubble_nova_synergy = true
+			print("  → Shuriken + Bubble synergy: Bubble spawns shuriken nova!")
 
 		# ==============================
 		# CHAOS CHALLENGES

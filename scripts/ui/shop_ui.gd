@@ -249,7 +249,7 @@ func _get_equipped_ability_name() -> String:
 	match GameState.ability:
 		GameState.AbilityType.DASH: return "dash"
 		GameState.AbilityType.SLOWMO: return "slowmo"
-		GameState.AbilityType.BUBBLE: return "bubble"
+		GameState.AbilityType.BUBBLE: return "bubble"  # Note: CSV uses 'shield' as alias
 		GameState.AbilityType.INVIS: return "invis"
 		_: return ""
 
@@ -299,18 +299,20 @@ func _get_rarity_weights_for_level(level: int) -> Dictionary:
 		epic += 1.0
 
 	# Only add synergy to pool if:
-	# 1. Player has both a weapon AND an ability
-	# 2. Player hasn't already purchased a synergy upgrade
-	var has_weapon := GameState.alt_weapon != GameState.AltWeaponType.NONE
-	var has_ability := GameState.ability != GameState.AbilityType.NONE
-	var has_synergy_upgrade := _player_has_any_synergy_upgrade()
-	var can_access_synergy := has_weapon and has_ability and not has_synergy_upgrade
+	# 1. Player has unlocked ANY weapon AND ANY ability
+	# Individual synergies are filtered by their requirements and stackable flag
+	var has_weapon := GameState.get_unlocked_weapons().size() > 0
+	var has_ability := GameState.get_unlocked_abilities().size() > 0
+	var can_access_synergy := has_weapon and has_ability
+	
+	print("[SYNERGY DEBUG] Unlocked weapons: %d, Unlocked abilities: %d, Can access: %s" % [GameState.get_unlocked_weapons().size(), GameState.get_unlocked_abilities().size(), can_access_synergy])
 	
 	var base_total := common + uncommon + rare + epic
 	var synergy := 0.0
 	if can_access_synergy:
 		# Synergy gets 25% chance, other rarities share the remaining 75%
 		synergy = base_total / 3.0  # 25% synergy means base_total is 75%, so synergy = 75/3 = 25%
+		print("[SYNERGY DEBUG] SYNERGY weight enabled: %f" % synergy)
 	
 	var total := base_total + synergy
 	if total <= 0.0:
@@ -357,6 +359,10 @@ func _filter_upgrades(all_upgrades: Array, wanted_rarity: Variant, taken_ids: Ar
 		if id == "" or id in taken_ids:
 			continue
 		
+		# Debug synergy filtering
+		if u.get("rarity", 0) == UpgradesDB.Rarity.SYNERGY:
+			print("[SYNERGY DEBUG] Checking synergy: %s" % id)
+		
 		# ⭐ EXCLUDE CHAOS UPGRADES FROM NORMAL SHOPS/CHESTS
 		if u.get("effect") == "chaos_challenge":
 			continue
@@ -370,7 +376,13 @@ func _filter_upgrades(all_upgrades: Array, wanted_rarity: Variant, taken_ids: Ar
 			continue
 
 		if not _upgrade_meets_requirements(u):
+			if u.get("rarity", 0) == UpgradesDB.Rarity.SYNERGY:
+				print("[SYNERGY DEBUG] Synergy %s FAILED requirements" % u.get("id", ""))
 			continue
+		
+		# If we got here, synergy passed all requirements
+		if u.get("rarity", 0) == UpgradesDB.Rarity.SYNERGY:
+			print("[SYNERGY DEBUG] Synergy %s PASSED all requirements!" % u.get("id", ""))
 
 		# Skip non-stackable upgrades that the player already owns
 		var stackable := bool(u.get("stackable", true))
@@ -382,6 +394,10 @@ func _filter_upgrades(all_upgrades: Array, wanted_rarity: Variant, taken_ids: Ar
 		if taken_bases.has(base_id):
 			continue
 		res.append(u)
+		
+		# Debug when synergy passes all filters
+		if u.get("rarity", 0) == UpgradesDB.Rarity.SYNERGY:
+			print("[SYNERGY DEBUG] Synergy %s ADDED to filtered pool!" % id)
 
 	return res
 
@@ -390,12 +406,28 @@ func _upgrade_meets_requirements(u: Dictionary) -> bool:
 	if u.has("requires_weapon") and u["requires_weapon"] != "":
 		var equipped_weapon := _get_equipped_weapon_name()
 		if u["requires_weapon"] != equipped_weapon:
+			if u.get("rarity", 0) == UpgradesDB.Rarity.SYNERGY:
+				print("[SYNERGY DEBUG] %s requires weapon '%s' but equipped is '%s' - FAILED" % [u.get("id", ""), u["requires_weapon"], equipped_weapon])
 			return false
+		else:
+			if u.get("rarity", 0) == UpgradesDB.Rarity.SYNERGY:
+				print("[SYNERGY DEBUG] %s weapon requirement '%s' PASSED" % [u.get("id", ""), u["requires_weapon"]])
 	
 	if u.has("requires_ability") and u["requires_ability"] != "":
 		var equipped_ability := _get_equipped_ability_name()
-		if u["requires_ability"] != equipped_ability:
+		var required_ability: String = u["requires_ability"]
+		
+		# Handle 'shield' as alias for 'bubble'
+		if required_ability == "shield":
+			required_ability = "bubble"
+		
+		if required_ability != equipped_ability:
+			if u.get("rarity", 0) == UpgradesDB.Rarity.SYNERGY:
+				print("[SYNERGY DEBUG] %s requires ability '%s' (original: '%s') but equipped is '%s' - FAILED" % [u.get("id", ""), required_ability, u["requires_ability"], equipped_ability])
 			return false
+		else:
+			if u.get("rarity", 0) == UpgradesDB.Rarity.SYNERGY:
+				print("[SYNERGY DEBUG] %s ability requirement '%s' PASSED" % [u.get("id", ""), required_ability])
 	
 	# Legacy: Exact weapon requirement (old schema with int values)
 	if u.has("requires_alt_weapon"):

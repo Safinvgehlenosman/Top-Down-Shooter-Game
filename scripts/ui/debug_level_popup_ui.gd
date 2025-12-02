@@ -189,7 +189,7 @@ func _get_weapon_suggestions(partial: String) -> Array:
 	return filtered
 
 func _get_ability_suggestions(partial: String) -> Array:
-	var abilities = ["dash", "slow", "bubble", "invisibility", "invis", "none"]
+	var abilities = ["dash", "slowmo", "bubble", "invis", "none"]
 	if partial == "":
 		return abilities
 	var filtered: Array = []
@@ -354,7 +354,7 @@ func _cmd_weapon(parts: Array) -> void:
 func _cmd_ability(parts: Array) -> void:
 	if parts.size() < 2:
 		print("[DEBUG] Usage: ability <name>")
-		print("[DEBUG] Available: dash, slow, bubble, invis, none")
+		print("[DEBUG] Available: dash, slowmo, bubble, invis, none")
 		return
 	
 	var ability_name = parts[1].to_lower()
@@ -365,7 +365,7 @@ func _cmd_ability(parts: Array) -> void:
 			GameState.set_ability(GameState.AbilityType.DASH)
 			print("[DEBUG] Unlocked and equipped dash ability")
 		
-		"slow", "slowmo", "bullet_time", "time":
+		"slowmo", "bullet_time", "time":
 			GameState.unlocked_slowmo = true
 			GameState.set_ability(GameState.AbilityType.SLOWMO)
 			print("[DEBUG] Unlocked and equipped bullet time ability")
@@ -375,10 +375,10 @@ func _cmd_ability(parts: Array) -> void:
 			GameState.set_ability(GameState.AbilityType.BUBBLE)
 			print("[DEBUG] Unlocked and equipped shield bubble ability")
 		
-		"invis", "invisibility":
+		"invis":
 			GameState.unlocked_invis = true
 			GameState.set_ability(GameState.AbilityType.INVIS)
-			print("[DEBUG] Unlocked and equipped invisibility ability")
+			print("[DEBUG] Unlocked and equipped invis ability")
 		
 		"none":
 			GameState.set_ability(GameState.AbilityType.NONE)
@@ -479,7 +479,7 @@ func _cmd_help() -> void:
 	print("=== DEBUG CONSOLE COMMANDS ===")
 	print("level <num>                - Jump to level (e.g., level 15)")
 	print("weapon <name> [ammo]       - Equip weapon, optional ammo override (e.g., weapon shotgun 10)")
-	print("ability <name>             - Equip ability (dash, slow, bubble, invis, none)")
+	print("ability <name>             - Equip ability (dash, slowmo, bubble, invis, none)")
 	print("upgrade <id> [count]       - Add upgrade 1 or N times (e.g., upgrade primary_damage_common 10)")
 	print("coins <amount>             - Set coins (e.g., coins 999)")
 	print("health <amount>            - Set health (e.g., health 50)")
