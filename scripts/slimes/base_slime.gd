@@ -45,6 +45,7 @@ var contact_timer: float = 0.0
 @export var retreat_hp_threshold: float = 0.5  # Retreat below 50% HP
 @export var retreat_if_alone: bool = true  # Only retreat if no allies nearby
 @export var retreat_speed_multiplier: float = 1.5  # Move 1.5x faster when retreating
+@export var retreat_duration: float = 1.5  # How long to flee before re-engaging
 
 # Pack spreading (surround player)
 @export var enable_pack_spreading: bool = true
@@ -89,8 +90,9 @@ var pack_cache_interval: float = 0.5  # refresh every 0.5 seconds
 
 # Retreat state tracking (prevents jittery back-and-forth)
 var is_retreating: bool = false
+var retreat_timer: float = 0.0  # Countdown timer for retreat duration
 var retreat_cooldown: float = 0.0
-var retreat_cooldown_time: float = 2.0  # Must wait 2 seconds before stopping retreat
+var retreat_cooldown_time: float = 8.0  # Must wait 8 seconds before starting another retreat
 
 # Level-based retreat scaling
 var current_level: int = 1  # Set by apply_level()
@@ -304,6 +306,10 @@ func _physics_process(delta: float) -> void:
 	# Decay retreat cooldown
 	if retreat_cooldown > 0.0:
 		retreat_cooldown -= scaled_delta
+	
+	# Decay retreat timer
+	if retreat_timer > 0.0:
+		retreat_timer -= scaled_delta
 
 	if is_dead:
 		_update_hit_feedback(scaled_delta)
@@ -388,22 +394,27 @@ func _update_ai(delta: float) -> void:
 		var can_see := _can_see_player()
 		
 		# TACTICAL RETREAT - Run away if low HP and alone
-		# Use state tracking to prevent jittery transitions
-		var should_retreat_now: bool = _should_retreat()
+		# Timed flee state: flee for duration, then re-engage regardless of HP
 		
-		if should_retreat_now and not is_retreating:
-			# Start retreating
-			is_retreating = true
-			retreat_cooldown = retreat_cooldown_time
-		elif is_retreating and retreat_cooldown <= 0.0:
-			# Cooldown expired, check if we can stop retreating
-			var hp_percent: float = float(health_component.health) / float(health_component.max_health)
-			# Use higher threshold to stop retreating (hysteresis)
-			var scaled_threshold = _get_retreat_threshold()
-			if hp_percent > scaled_threshold + 0.15 or not should_retreat_now:
-				is_retreating = false
+		print("[RETREAT] Frame check - is_retreating: ", is_retreating, " | retreat_timer: ", retreat_timer, " | retreat_cooldown: ", retreat_cooldown)
+		
+		# Check if we should START a new retreat (only check HP when not already retreating)
+		if not is_retreating and retreat_cooldown <= 0.0:
+			var should_start_retreat: bool = _should_retreat()
+			print("[RETREAT] Should start new retreat? ", should_start_retreat)
+			if should_start_retreat:
+				is_retreating = true
+				retreat_timer = retreat_duration  # Set timed flee duration
+				retreat_cooldown = retreat_cooldown_time  # Start cooldown to prevent spam
+				print("[RETREAT] ✅ STARTING RETREAT - HP: ", health_component.health, "/", health_component.max_health, " | Timer set to: ", retreat_timer)
+		
+		# Stop retreating when timer expires (ignore HP now)
+		if is_retreating and retreat_timer <= 0.0:
+			is_retreating = false
+			print("[RETREAT] ❌ RETREAT ENDED - Timer expired! Re-engaging player! HP: ", health_component.health, "/", health_component.max_health)
 		
 		if is_retreating:
+			print("[RETREAT] 🔵 FLEEING - Timer: ", snapped(retreat_timer, 0.01), " | Distance from player: ", snapped(distance, 1))
 			aggro = false
 			stuck_timer = 0.0
 			effective_speed *= retreat_speed_multiplier
@@ -413,6 +424,7 @@ func _update_ai(delta: float) -> void:
 		
 		# NORMAL AI
 		else:
+			print("[AI] Normal behavior - Aggro: ", aggro, " | Distance: ", snapped(distance, 1), " | Can see: ", can_see, " | HP: ", health_component.health, "/", health_component.max_health)
 			# CHECK FOR AMBUSH OPPORTUNITY
 			var player_cornered: bool = _is_player_cornered()
 			
@@ -728,6 +740,7 @@ func _is_player_cornered() -> bool:
 func _should_retreat() -> bool:
 	"""Check if slime should tactically retreat."""
 	if not enable_tactical_retreat or not health_component:
+		print("[RETREAT CHECK] Disabled or no health component")
 		return false
 	
 	var hp_percent: float = float(health_component.health) / float(health_component.max_health)
@@ -735,8 +748,11 @@ func _should_retreat() -> bool:
 	# Get level-scaled retreat threshold
 	var scaled_threshold = _get_retreat_threshold()
 	
+	print("[RETREAT CHECK] HP: ", health_component.health, "/", health_component.max_health, " (", snapped(hp_percent * 100, 0.1), "%) | Threshold: ", snapped(scaled_threshold * 100, 0.1), "% | Level: ", current_level)
+	
 	# Not low enough HP to retreat (or threshold is 0 - never retreat)
 	if hp_percent > scaled_threshold or scaled_threshold <= 0.0:
+		print("[RETREAT CHECK] ❌ HP too high (", snapped(hp_percent * 100, 0.1), "% > ", snapped(scaled_threshold * 100, 0.1), "%) or threshold 0")
 		return false
 	
 	# Check if alone (if retreat_if_alone is true)
@@ -760,11 +776,16 @@ func _should_retreat() -> bool:
 				# Only count ally if we can see them (no wall blocking)
 				if result.is_empty() or result.get("collider") == enemy:
 					allies_nearby += 1
+					print("[RETREAT CHECK] Found visible ally at distance: ", snapped(dist, 1))
+		
+		print("[RETREAT CHECK] Total allies nearby: ", allies_nearby)
 		
 		# Has allies nearby - don't retreat
 		if allies_nearby > 0:
+			print("[RETREAT CHECK] ❌ Has ", allies_nearby, " allies nearby - NOT retreating")
 			return false
 	
+	print("[RETREAT CHECK] ✅ ALL CONDITIONS MET - SHOULD RETREAT!")
 	return true
 func _get_flanking_position() -> Vector2:
 	"""Calculate position to surround player as part of pack."""
@@ -807,8 +828,8 @@ func _update_behavior_visuals() -> void:
 	var target_light_color: Color = original_light_color
 	var target_light_energy: float = 1.5
 	
-	# Check current behavior state
-	if _should_retreat():
+	# Check current behavior state - USE is_retreating FLAG, not _should_retreat()!
+	if is_retreating:
 		# RETREATING - Blue tint, dim light
 		target_modulate = Color(0.8, 0.8, 1.0)
 		target_light_color = Color(0.5, 0.5, 1.0)
