@@ -23,7 +23,6 @@ var invincible_time: float
 var alt_weapon: int = GameState.AltWeaponType.NONE
 
 
-
 # State
 var health: int = 0
 
@@ -203,7 +202,6 @@ func _process_movement(_delta: float) -> void:
 		velocity += knockback
 
 	move_and_slide()
-
 
 
 # choose input mode & update aim_dir

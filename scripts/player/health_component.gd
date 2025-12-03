@@ -185,8 +185,9 @@ func _apply_damage(amount: float, ignore_invincibility: bool) -> void:
 
 		emit_signal("damaged", int(amount))
 		
-		# Spawn damage number
-		_spawn_damage_number(int(amount))
+		# Spawn damage number (unless disabled via meta tag)
+		if not get_meta("skip_damage_numbers", false):
+			_spawn_damage_number(int(amount))
 	else:
 		emit_signal("healed", int(-amount))
 
@@ -220,7 +221,7 @@ func _spawn_damage_number(damage: int) -> void:
 		if time_since_last < DAMAGE_COMBO_WINDOW:
 			# Add to existing number instead of spawning new
 			if active_damage_number.has_method("add_damage"):
-				print("[HealthComponent] STACKING damage:", damage)
+
 				active_damage_number.add_damage(damage)
 				last_damage_time = current_time
 				return

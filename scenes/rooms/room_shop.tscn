@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=3 uid="uid://bklmc5x41aw7q"]
+[gd_scene load_steps=20 format=3 uid="uid://bklmc5x41aw7q"]
 
 [ext_resource type="Script" uid="uid://maxvyl6l376d" path="res://scenes/rooms/room_01.gd" id="1_axluv"]
 [ext_resource type="Texture2D" uid="uid://ddnj3o5q184op" path="res://assets/TilesetSheet.png" id="2_rarxk"]
@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://da26oiy1gxaxy" path="res://scenes/chest.tscn" id="4_kjxm2"]
 [ext_resource type="Script" uid="uid://dq84uw0tyintf" path="res://scripts/shop_chest.gd" id="5_5chtl"]
 [ext_resource type="AudioStream" uid="uid://dxpkrsr6bjeyf" path="res://assets/Audios/Shop.mp3" id="6_5chtl"]
+[ext_resource type="PackedScene" uid="uid://bwwnn447rlcaj" path="res://scenes/slimes/dps_dummy_slime.tscn" id="8_cp5x1"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_kjxm2"]
 texture = ExtResource("2_rarxk")
@@ -613,3 +614,6 @@ parameters/looping = true
 
 [node name="PlayerSpawn" type="Marker2D" parent="." groups=["player_spawn"]]
 position = Vector2(168, 128)
+
+[node name="DpsDummySlime" parent="." instance=ExtResource("8_cp5x1")]
+position = Vector2(124, 154)

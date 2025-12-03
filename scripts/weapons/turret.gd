@@ -42,9 +42,6 @@ func configure(data: Dictionary) -> void:
 	bullet_scene = data.get("bullet_scene", bullet_scene)
 	bullet_speed = data.get("bullet_speed", bullet_speed)
 	damage       = data.get("damage", damage)
-	
-	print("[TURRET DEBUG] Configured - bullet_scene: %s, speed: %f, dmg: %d, interval: %f, range: %f" % [bullet_scene, bullet_speed, damage, fire_interval, turret_range])
-
 
 func _process(delta: float) -> void:
 	if bullet_scene == null:
@@ -139,7 +136,7 @@ func _find_target() -> Node2D:
 
 func _fire_at(target: Node2D) -> void:
 	if bullet_scene == null:
-		print("[TURRET ERROR] Cannot fire - bullet_scene is null!")
+
 		return
 	
 	var dir := (target.global_position - muzzle.global_position).normalized()
@@ -161,7 +158,6 @@ func _fire_at(target: Node2D) -> void:
 		sfx_shoot.pitch_scale = randf_range(1.1, 1.3)  # Slightly higher, mechanical
 		sfx_shoot.volume_db = -6.0  # Quieter (fires often)
 		sfx_shoot.play()
-
 
 
 func do_sprinkler_burst() -> void:

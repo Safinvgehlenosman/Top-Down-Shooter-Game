@@ -39,9 +39,6 @@ func _ready() -> void:
 	# Play spawn sound
 	if sfx_spawn:
 		sfx_spawn.play()
-	
-	print("[ChaosChest] Chaos chest initialized and ready!")
-
 
 func _process(_delta: float) -> void:
 	# Check for player interaction
@@ -73,9 +70,7 @@ func _on_player_interact() -> void:
 	# Hide interaction prompt
 	if interact_prompt:
 		interact_prompt.visible = false
-	
-	print("[ChaosChest] Player interacted with chaos chest!")
-	
+
 	# Get chaos upgrade
 	var chaos_upgrade = _get_chaos_upgrade()
 	
@@ -99,9 +94,7 @@ func _get_chaos_upgrade() -> Dictionary:
 	"""Find and return a chaos upgrade from the database using shuffle system"""
 	# ⭐ Get next pact from shuffle pool
 	var pact_id = GameState.get_next_chaos_pact_id()
-	
-	print("[ChaosChest] Looking for pact with value:", pact_id)
-	
+
 	# UpgradesDB is already an autoload singleton
 	var all_upgrades = UpgradesDB.get_all()
 	
@@ -117,8 +110,7 @@ func _get_chaos_upgrade() -> Dictionary:
 
 func _despawn_chest() -> void:
 	"""Fade out and remove the chest"""
-	print("[ChaosChest] Despawning chest...")
-	
+
 	# Play despawn sound
 	if sfx_despawn:
 		sfx_despawn.play()

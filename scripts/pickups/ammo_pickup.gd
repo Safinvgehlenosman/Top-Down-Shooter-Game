@@ -114,8 +114,7 @@ func _on_body_entered(body: Node2D) -> void:
 	# 🟡 Apply ammo → through GameState
 	if amount > 0 and GameState.max_ammo > 0:
 		GameState.set_ammo(min(GameState.ammo + amount, GameState.max_ammo))
-		print("[AmmoPickup] Ammo now:", GameState.ammo, "/", GameState.max_ammo)
-		
+
 		# Spawn ammo number popup
 		_spawn_ammo_number(amount)
 
@@ -148,5 +147,3 @@ func _spawn_ammo_number(amount: int) -> void:
 	
 	# Add to scene root (not as child of ammo, it's about to despawn!)
 	get_tree().root.add_child(ammo_number)
-	
-	print("[AmmoPickup] Spawned ammo number: +", amount, " AMMO")

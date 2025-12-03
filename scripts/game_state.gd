@@ -526,8 +526,6 @@ func has_upgrade(upgrade_id: String) -> bool:
 func _record_acquired_upgrade(upgrade_id: String) -> void:
 	if not has_upgrade(upgrade_id):
 		acquired_upgrades.append(upgrade_id)
-		print("[GameState] Recorded acquired upgrade:", upgrade_id)
-
 
 func get_upgrade_price(upgrade_id: String, base_price: int) -> int:
 	"""Calculate exponentially scaled price based on rarity and purchase count."""
@@ -558,8 +556,6 @@ func record_upgrade_purchase(upgrade_id: String) -> void:
 	"""Increment purchase count for this upgrade ID."""
 	var current_count: int = upgrade_purchase_counts.get(upgrade_id, 0)
 	upgrade_purchase_counts[upgrade_id] = current_count + 1
-	print("[GameState] Upgrade '%s' purchased %d times" % [upgrade_id, current_count + 1])
-
 
 # -------------------------------------------------------------------
 # APPLY UPGRADE ENTRYPOINT
@@ -567,7 +563,6 @@ func record_upgrade_purchase(upgrade_id: String) -> void:
 # Keep this function limited to numeric changes of GameState or ALT_WEAPON_DATA
 # -------------------------------------------------------------------
 func apply_upgrade(upgrade_id: String) -> void:
-	print("[GameState] Applying upgrade:", upgrade_id)
 
 	# Load upgrade from CSV database
 	var upgrade := UpgradesDB.get_by_id(upgrade_id)
@@ -600,27 +595,27 @@ func apply_upgrade(upgrade_id: String) -> void:
 				"shotgun":
 					unlocked_shotgun = true
 					set_alt_weapon(AltWeaponType.SHOTGUN)
-					print("  → Unlocked and equipped weapon: shotgun")
+
 				"sniper":
 					unlocked_sniper = true
 					set_alt_weapon(AltWeaponType.SNIPER)
-					print("  → Unlocked and equipped weapon: sniper")
+
 				"flamethrower":
 					unlocked_flamethrower = true
 					set_alt_weapon(AltWeaponType.FLAMETHROWER)
-					print("  → Unlocked and equipped weapon: flamethrower")
+
 				"grenade":
 					unlocked_grenade = true
 					set_alt_weapon(AltWeaponType.GRENADE)
-					print("  → Unlocked and equipped weapon: grenade")
+
 				"shuriken":
 					unlocked_shuriken = true
 					set_alt_weapon(AltWeaponType.SHURIKEN)
-					print("  → Unlocked and equipped weapon: shuriken")
+
 				"turret":
 					unlocked_turret = true
 					set_alt_weapon(AltWeaponType.TURRET)
-					print("  → Unlocked and equipped weapon: turret")
+
 				_:
 					push_warning("[GameState] Unknown weapon unlock: %s" % weapon_id)
 
@@ -639,19 +634,19 @@ func apply_upgrade(upgrade_id: String) -> void:
 				"dash":
 					unlocked_dash = true
 					set_ability(AbilityType.DASH)
-					print("  → Unlocked and equipped ability: dash")
+
 				"slowmo":
 					unlocked_slowmo = true
 					set_ability(AbilityType.SLOWMO)
-					print("  → Unlocked and equipped ability: slowmo")
+
 				"bubble":
 					unlocked_bubble = true
 					set_ability(AbilityType.BUBBLE)
-					print("  → Unlocked and equipped ability: bubble")
+
 				"invis":
 					unlocked_invis = true
 					set_ability(AbilityType.INVIS)
-					print("  → Unlocked and equipped ability: invis")
+
 				_:
 					push_warning("[GameState] Unknown ability unlock: %s" % ability_id)
 
@@ -673,17 +668,13 @@ func apply_upgrade(upgrade_id: String) -> void:
 				if health_component:
 					health_component.max_health = max_health
 					health_component.health = health
-					print("  → HealthComponent synced: %d/%d" % [health, max_health])
-			
-			print("  → Max HP +%d, now: %d/%d" % [inc, health, max_health])
+
 
 		"hp_refill":
 			set_health(max_health)
-			print("  → HP refilled to:", max_health)
 
 		"ability_cooldown":
 			ability_cooldown_mult *= (1.0 + value)
-			print("  → Ability cooldown mult: %.2f" % ability_cooldown_mult)
 
 		# ==============================
 		# WEAPON / ABILITY UNLOCKS (LEGACY EFFECT-BASED)
@@ -693,53 +684,43 @@ func apply_upgrade(upgrade_id: String) -> void:
 		"unlock_shotgun":
 			unlocked_shotgun = true
 			set_alt_weapon(AltWeaponType.SHOTGUN)
-			print("  → Shotgun unlocked and equipped")
 
 		"unlock_sniper":
 			unlocked_sniper = true
 			set_alt_weapon(AltWeaponType.SNIPER)
-			print("  → Sniper unlocked and equipped")
 
 		"unlock_turret":
 			unlocked_turret = true
 			set_alt_weapon(AltWeaponType.TURRET)
-			print("  → Turret unlocked and equipped")
 
 		"unlock_flamethrower":
 			unlocked_flamethrower = true
 			set_alt_weapon(AltWeaponType.FLAMETHROWER)
-			print("  → Flamethrower unlocked and equipped")
 
 		"unlock_shuriken":
 			unlocked_shuriken = true
 			set_alt_weapon(AltWeaponType.SHURIKEN)
-			print("  → Shuriken unlocked and equipped")
 
 		"unlock_grenade":
 			unlocked_grenade = true
 			set_alt_weapon(AltWeaponType.GRENADE)
-			print("  → Grenade unlocked and equipped")
 
 		# Ability unlocks
 		"unlock_dash":
 			unlocked_dash = true
 			set_ability(AbilityType.DASH)
-			print("  → Dash ability unlocked and equipped")
 
 		"unlock_slowmo":
 			unlocked_slowmo = true
 			set_ability(AbilityType.SLOWMO)
-			print("  → Slowmo ability unlocked and equipped")
 
 		"unlock_bubble":
 			unlocked_bubble = true
 			set_ability(AbilityType.BUBBLE)
-			print("  → Bubble ability unlocked and equipped")
 
 		"unlock_invis":
 			unlocked_invis = true
 			set_ability(AbilityType.INVIS)
-			print("  → Invis ability unlocked and equipped")
 
 		# ==============================
 		# PRIMARY WEAPON EFFECTS
@@ -761,16 +742,13 @@ func apply_upgrade(upgrade_id: String) -> void:
 
 		"primary_reload_speed":
 			primary_reload_speed_bonus += value
-			print("  → Reload speed +%.1f%%" % [value * 100])
 
 		"primary_ammo_capacity":
 			var inc := int(value)
 			primary_ammo_capacity_bonus += inc
-			print("  → Ammo capacity +%d" % inc)
 
 		"primary_crit_chance":
 			primary_crit_chance += value
-			print("  → Crit chance +%.1f%%" % [value * 100])
 
 		# ==============================
 		# SHOTGUN EFFECTS
@@ -779,28 +757,23 @@ func apply_upgrade(upgrade_id: String) -> void:
 			var inc := int(value)
 			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN):
 				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["pellets"] += inc
-				print("  → Shotgun pellets +%d, now: %d" % [inc, ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["pellets"]])
 
 		"shotgun_spread":
 			# LINEAR SCALING: Reduce spread by flat amount
 			var spread_reduction = value * 18.0  # Convert percentage to degrees
 			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN):
 				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["spread_degrees"] += spread_reduction
-				print("  → Shotgun spread %.1f degrees, now: %.1f°" % [spread_reduction, ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["spread_degrees"]])
 
 		"shotgun_knockback":
 			shotgun_knockback_bonus_percent += value
 			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN):
 				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["recoil"] = 140.0 * (1.0 + shotgun_knockback_bonus_percent)
-				print("  → Shotgun knockback +%.1f%%, now: %.1f" % [value * 100, ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["recoil"]])
 
 		"shotgun_reload_speed":
 			shotgun_reload_speed_bonus += value
-			print("  → Shotgun reload speed +%.1f%%" % [value * 100])
 
 		"shotgun_damage_reduction":
 			shotgun_damage_reduction += value
-			print("  → Shotgun self-damage reduction +%.1f%%" % [value * 100])
 
 		# ==============================
 		# SNIPER EFFECTS
@@ -810,54 +783,44 @@ func apply_upgrade(upgrade_id: String) -> void:
 			var damage_increase = value * 35.0
 			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER):
 				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] += damage_increase
-				print("  → Sniper damage +%.1f, now: %.1f" % [damage_increase, ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"]])
 
 		"sniper_pierce":
 			var inc := int(value)
 			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER):
 				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["bounces"] += inc
-				print("  → Sniper pierce +%d, now: %d" % [inc, ALT_WEAPON_DATA[AltWeaponType.SNIPER]["bounces"]])
 
 		"sniper_charge_speed":
 			sniper_charge_bonus_percent += value
 			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER):
 				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] = 35.0 * (1.0 + sniper_damage_bonus_percent + sniper_charge_bonus_percent)
-				print("  → Sniper charge +%.1f%%, dmg: %.1f" % [value * 100, ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"]])
 
 		"sniper_crit_damage":
 			sniper_crit_damage_bonus += value
-			print("  → Sniper crit damage +%.1f%%" % [value * 100])
 
 		"sniper_accuracy":
 			sniper_accuracy_bonus += value
-			print("  → Sniper accuracy +%.1f%%" % [value * 100])
 
 		# ==============================
 		# FLAMETHROWER EFFECTS
 		# ==============================
 		"flamethrower_burn_damage":
 			flamethrower_burn_bonus_percent += value
-			print("  → Flamethrower burn +%.1f%%" % [value * 100])
 
 		"flamethrower_cone_size":
 			flamethrower_size_bonus_percent += value
 			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER):
 				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["damage"] = 4.0 * (1.0 + flamethrower_size_bonus_percent)
-				print("  → Flamethrower cone +%.1f%%" % [value * 100])
 
 		"flamethrower_duration":
 			flamethrower_lifetime_bonus_percent += value
 			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER):
 				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"] = 0.25 * (1.0 + flamethrower_lifetime_bonus_percent)
-				print("  → Flamethrower duration +%.1f%%, now: %.2fs" % [value * 100, ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"]])
 
 		"flamethrower_fuel_efficiency":
 			flamethrower_fuel_efficiency_bonus += value
-			print("  → Flamethrower fuel efficiency +%.1f%%" % [value * 100])
 
 		"flamethrower_tick_rate":
 			flamethrower_tick_rate_bonus += value
-			print("  → Flamethrower tick rate +%.1f%%" % [value * 100])
 
 		# ==============================
 		# GRENADES EFFECTS
@@ -866,14 +829,12 @@ func apply_upgrade(upgrade_id: String) -> void:
 			var inc := value
 			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE):
 				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["explosion_radius"] += inc
-				print("  → Grenade radius +%.0f, now: %.0f" % [inc, ALT_WEAPON_DATA[AltWeaponType.GRENADE]["explosion_radius"]])
 
 		"grenades_damage":
 			# LINEAR SCALING: Add damage directly
 			var damage_increase = value * 40.0
 			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE):
 				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["damage"] += damage_increase
-				print("  → Grenade damage +%.1f, now: %.1f" % [damage_increase, ALT_WEAPON_DATA[AltWeaponType.GRENADE]["damage"]])
 
 		"grenades_cooldown":
 			# LINEAR SCALING: Reduce cooldown by flat amount (value is negative)
@@ -881,17 +842,14 @@ func apply_upgrade(upgrade_id: String) -> void:
 			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE):
 				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["cooldown"] += cooldown_reduction
 				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["cooldown"] = max(0.5, ALT_WEAPON_DATA[AltWeaponType.GRENADE]["cooldown"])
-				print("  → Grenade cooldown %.2fs, now: %.2fs" % [cooldown_reduction, ALT_WEAPON_DATA[AltWeaponType.GRENADE]["cooldown"]])
 
 		"grenades_frag_count":
 			var inc := int(value)
 			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE):
 				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["pellets"] += inc
-				print("  → Grenade frags +%d, now: %d" % [inc, ALT_WEAPON_DATA[AltWeaponType.GRENADE]["pellets"]])
 
 		"grenades_status_chance":
 			grenades_status_chance += value
-			print("  → Grenade status chance +%.1f%%" % [value * 100])
 
 		# ==============================
 		# SHURIKEN EFFECTS
@@ -900,27 +858,22 @@ func apply_upgrade(upgrade_id: String) -> void:
 			var inc := int(value)
 			if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN):
 				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bounces"] += inc
-				print("  → Shuriken bounces +%d, now: %d" % [inc, ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bounces"]])
 
 		"shuriken_speed":
 			shuriken_speed_bonus_percent += value
 			if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN):
 				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bullet_speed"] = 950.0 * (1.0 + shuriken_speed_bonus_percent)
-				print("  → Shuriken speed +%.1f%%, now: %.0f" % [value * 100, ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bullet_speed"]])
 
 		"shuriken_pierce":
 			shuriken_ricochet_bonus_percent += value
 			if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN):
 				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["damage"] = 12.0 * (1.0 + shuriken_ricochet_bonus_percent)
-				print("  → Shuriken pierce +%.1f%%" % [value * 100])
 
 		"shuriken_return":
 			shuriken_return_enabled = true
-			print("  → Shuriken return enabled")
 
 		"shuriken_crit_chance":
 			shuriken_crit_chance += value
-			print("  → Shuriken crit chance +%.1f%%" % [value * 100])
 
 		# ==============================
 		# TURRET EFFECTS
@@ -929,119 +882,94 @@ func apply_upgrade(upgrade_id: String) -> void:
 			turret_fire_rate_bonus_percent += value
 			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET):
 				ALT_WEAPON_DATA[AltWeaponType.TURRET]["fire_rate"] = 0.4 * (1.0 - turret_fire_rate_bonus_percent)
-				print("  → Turret fire rate +%.1f%%, cooldown: %.2fs" % [value * 100, ALT_WEAPON_DATA[AltWeaponType.TURRET]["fire_rate"]])
 
 		"turret_range":
 			turret_range_bonus_percent += value
 			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET):
 				ALT_WEAPON_DATA[AltWeaponType.TURRET]["range"] = 220.0 * (1.0 + turret_range_bonus_percent)
-				print("  → Turret range +%.1f%%, now: %.0f" % [value * 100, ALT_WEAPON_DATA[AltWeaponType.TURRET]["range"]])
 
 		"turret_duration":
 			turret_duration_bonus += value
-			print("  → Turret duration +%.1fs" % value)
 
 		"turret_hp":
 			turret_hp_bonus += value
-			print("  → Turret HP +%.0f" % value)
 
 		"turret_bullet_speed":
 			turret_bullet_speed_bonus_percent += value
 			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET):
 				ALT_WEAPON_DATA[AltWeaponType.TURRET]["bullet_speed"] = 900.0 * (1.0 + turret_bullet_speed_bonus_percent)
-				print("  → Turret bullet speed +%.1f%%, now: %.0f" % [value * 100, ALT_WEAPON_DATA[AltWeaponType.TURRET]["bullet_speed"]])
 
 		# ==============================
 		# DASH ABILITY EFFECTS
 		# ==============================
 		"dash_distance":
 			dash_distance_bonus_percent += value
-			print("  → Dash distance +%.1f%%" % [value * 100])
 
 		"dash_cooldown":
 			ability_cooldown_mult *= (1.0 + value)
-			print("  → Dash cooldown %.1f%%" % [value * 100])
 
 		"dash_invuln_window":
 			dash_invuln_window_bonus += value
-			print("  → Dash invuln window +%.2fs" % value)
 
 		"dash_speed":
 			dash_speed_bonus += value
-			print("  → Dash speed +%.1f%%" % [value * 100])
 
 		"dash_charges":
 			dash_charges += int(value)
-			print("  → Dash charges now: %d" % dash_charges)
 
 		# ==============================
 		# SHIELD ABILITY EFFECTS
 		# ==============================
 		"shield_hp":
 			shield_hp += value
-			print("  → Shield HP now: %.0f" % shield_hp)
 
 		"shield_duration":
 			shield_duration += value
-			print("  → Shield duration now: %.1fs" % shield_duration)
 
 		"shield_cooldown":
 			shield_cooldown_mult *= (1.0 + value)
-			print("  → Shield cooldown %.1f%%" % [value * 100])
 
 		"shield_radius":
 			shield_radius_bonus += value
-			print("  → Shield radius +%.1f%%" % [value * 100])
 
 		"shield_reflect_chance":
 			shield_reflect_chance += value
-			print("  → Shield reflect chance +%.1f%%" % [value * 100])
 
 		# ==============================
 		# SLOWMO ABILITY EFFECTS
 		# ==============================
 		"slowmo_duration":
 			slowmo_duration += value
-			print("  → Slowmo duration now: %.1fs" % slowmo_duration)
 
 		"slowmo_cooldown":
 			slowmo_cooldown_mult *= (1.0 + value)
-			print("  → Slowmo cooldown %.1f%%" % [value * 100])
 
 		"slowmo_time_scale":
 			slowmo_time_scale *= (1.0 + value)
-			print("  → Slowmo time scale now: %.2f" % slowmo_time_scale)
 
 		"slowmo_radius":
 			slowmo_radius += value
-			print("  → Slowmo radius now: %.0f" % slowmo_radius)
 
 		"slowmo_ammo_efficiency":
 			slowmo_ammo_efficiency += value
-			print("  → Slowmo ammo efficiency +%.1f%%" % [value * 100])
 
 		# ==============================
 		# INVIS ABILITY EFFECTS
 		# ==============================
 		"invis_duration":
 			invis_duration_bonus_percent += value
-			print("  → Invis duration +%.1f%%" % [value * 100])
 
 		"invis_cooldown":
 			ability_cooldown_mult *= (1.0 + value)
-			print("  → Invis cooldown %.1f%%" % [value * 100])
 
 		"invis_fade_speed":
 			invis_fade_speed_bonus += value
-			print("  → Invis fade speed +%.1f%%" % [value * 100])
 
 		"invis_movement_speed":
 			invis_movement_speed_bonus += value
-			print("  → Invis movement speed +%.1f%%" % [value * 100])
 
 		"invis_first_hit_bonus":
 			invis_first_hit_bonus += value
-			print("  → Invis first hit bonus +%.1f%%" % [value * 100])
 
 		# ==============================
 		# SYNERGIES
@@ -1050,13 +978,11 @@ func apply_upgrade(upgrade_id: String) -> void:
 			sniper_invis_synergy_unlocked = true
 			synergy_sniper_invis_unlocked = true
 			has_sniper_wallpierce_synergy = true  # ⭐ NEW: Actually enable the synergy
-			print("  → Sniper + Invis synergy unlocked!")
 
 		"shield_flamethrower_synergy":
 			shield_flamethrower_synergy_unlocked = true
 			synergy_flamethrower_bubble_unlocked = true
 			has_fireshield_synergy = true  # ⭐ NEW: Actually enable the synergy
-			print("  → Shield + Flamethrower synergy unlocked!")
 
 		"dash_grenades_synergy":
 			dash_grenades_synergy_unlocked = true
@@ -1071,26 +997,21 @@ func apply_upgrade(upgrade_id: String) -> void:
 			var grenade_count := int(value)
 			dash_grenade_synergy_grenades = grenade_count
 			has_dash_grenade_synergy = (grenade_count > 0)
-			print("  → Dash + Grenade synergy: %d grenades per dash" % grenade_count)
 
 		# ==============================
 		# NEW SYNERGY UPGRADES
 		# ==============================
 		"invis_shuriken_synergy":
 			has_invis_shuriken_synergy = true
-			print("  → Invis + Shuriken synergy: Can shoot shuriken while invisible!")
 
 		"turret_slowmo_sprinkler_synergy":
 			has_turret_slowmo_sprinkler_synergy = true
-			print("  → Turret + Slowmo synergy: Turret fires 360° burst on slowmo!")
 
 		"shotgun_dash_autofire_synergy":
 			has_shotgun_dash_autofire_synergy = true
-			print("  → Shotgun + Dash synergy: Auto-fire shotgun on dash end!")
 
 		"shuriken_shield_nova_synergy":
 			has_shuriken_bubble_nova_synergy = true
-			print("  → Shuriken + Bubble synergy: Bubble spawns shuriken nova!")
 
 		# ==============================
 		# CHAOS CHALLENGES
@@ -1098,7 +1019,7 @@ func apply_upgrade(upgrade_id: String) -> void:
 		"chaos_challenge":
 			# Extract the actual challenge ID from the upgrade_id
 			var challenge_id := upgrade_id.replace("chaos_", "")
-			print("  → Starting chaos challenge:", challenge_id)
+
 			start_chaos_challenge(challenge_id)
 
 		_:
@@ -1166,11 +1087,8 @@ func start_chaos_challenge(challenge_id: String) -> void:
 	active_chaos_challenge = challenge_id
 	chaos_challenge_progress = 0
 	chaos_challenge_completed = false
-	
-	print("[GameState] ========================================")
-	print("[GameState] STARTING CHAOS CHALLENGE:", challenge_id)
-	print("[GameState] ========================================")
-	
+
+
 	# ⭐ Apply challenge penalty immediately
 	match challenge_id:
 		"half_hp_double_damage":
@@ -1179,7 +1097,7 @@ func start_chaos_challenge(challenge_id: String) -> void:
 			max_health = int(max_health / 2.0)
 			health = int(health / 2.0)
 			health = max(health, 1)
-			print("[GameState] Max HP halved! Survive 5 rooms for 2x damage!")
+
 			health_changed.emit(health, max_health)
 		
 		# ⭐ NEW CHAOS PACT 1
@@ -1188,37 +1106,26 @@ func start_chaos_challenge(challenge_id: String) -> void:
 			original_move_speed = move_speed
 			move_speed = move_speed / 2.0
 			move_speed_base = move_speed  # Update base too
-			print("[GameState] Move speed halved! Original:", original_move_speed, "New:", move_speed)
-			print("[GameState] Survive 3 rooms to DOUBLE base move speed!")
+
+
 			# ⭐ Force update player's actual speed NOW
 			var player = get_tree().get_first_node_in_group("player")
 			if player and player.has_method("sync_player_stats"):
 				player.sync_player_stats()
-				print("[GameState] Player speed synced to:", player.speed)
-		
+
 		# ⬅0 NEW CHAOS PACT 2
 		"no_shop_1000_coins":
 			chaos_challenge_target = 5
 			coin_pickups_disabled = true
 			coins = 0  # Reset coins to 0
-			print("[GameState] Coin pickups DISABLED! Coins set to 0!")
-			print("[GameState] Survive 5 rooms to gain 1000 coins!")
+
+
 			coins_changed.emit(coins)
 		
 		# ⭐ NEW CHAOS PACT 3
 		"no_primary_fire_triple_rate":
 			chaos_challenge_target = 3
 			primary_fire_disabled = true
-			print("[GameState] Primary fire DISABLED!")
-			print("[GameState] Survive 3 rooms to DOUBLE your fire rate!")
-	
-	print("[GameState] Target rooms:", chaos_challenge_target)
-	print("[GameState] Challenge state after start:")
-	print("[GameState] - move_speed:", move_speed)
-	print("[GameState] - coin_pickups_disabled:", coin_pickups_disabled)
-	print("[GameState] - primary_fire_disabled:", primary_fire_disabled)
-	print("[GameState] - coins:", coins)
-	print("[GameState] ========================================")
 
 
 func increment_chaos_challenge_progress() -> void:
@@ -1227,9 +1134,7 @@ func increment_chaos_challenge_progress() -> void:
 		return
 	
 	chaos_challenge_progress += 1
-	
-	print("[GameState] Chaos challenge progress: ", chaos_challenge_progress, "/", chaos_challenge_target)
-	
+
 	if chaos_challenge_progress >= chaos_challenge_target:
 		_complete_chaos_challenge()
 
@@ -1237,11 +1142,8 @@ func increment_chaos_challenge_progress() -> void:
 func _complete_chaos_challenge() -> void:
 	"""Complete the chaos challenge and grant rewards!"""
 	chaos_challenge_completed = true
-	
-	print("[GameState] ========================================")
-	print("[GameState] COMPLETING CHAOS CHALLENGE:", active_chaos_challenge)
-	print("[GameState] ========================================")
-	
+
+
 	# Apply reward based on challenge type
 	match active_chaos_challenge:
 		"half_hp_double_damage":
@@ -1249,7 +1151,7 @@ func _complete_chaos_challenge() -> void:
 			health = max_health
 			primary_damage_base *= 2.0
 			primary_damage = primary_damage_base * (1.0 + primary_damage_bonus)
-			print("[GameState] Max HP restored! Damage DOUBLED!")
+
 			health_changed.emit(health, max_health)
 		
 		# ⭐ NEW COMPLETION 1
@@ -1257,18 +1159,17 @@ func _complete_chaos_challenge() -> void:
 			# Double the ORIGINAL base speed (not current halved speed!)
 			move_speed = original_move_speed * 2.0
 			move_speed_base = move_speed  # Update base too
-			print("[GameState] Move speed DOUBLED! New speed:", move_speed)
+
 			# ⭐ Force update player's actual speed
 			var player = get_tree().get_first_node_in_group("player")
 			if player and player.has_method("sync_player_stats"):
 				player.sync_player_stats()
-				print("[GameState] Updated player's speed variable to:", player.speed)
-		
+
 		# ⬅0 NEW COMPLETION 2
 		"no_shop_1000_coins":
 			coin_pickups_disabled = false
 			coins = 1000  # Set to 1000 directly (not +=)
-			print("[GameState] Coin pickups RE-ENABLED!")
+
 			print("[GameState] Coins set to 1000! (was:", coins - 1000, ")")
 			coins_changed.emit(coins)
 		
@@ -1276,27 +1177,16 @@ func _complete_chaos_challenge() -> void:
 		"no_primary_fire_triple_rate":
 			# ⭐ RE-ENABLE primary fire FIRST!
 			primary_fire_disabled = false
-			print("[GameState] ✅ PRIMARY FIRE RE-ENABLED! Flag set to: ", primary_fire_disabled)
+
 			# THEN increase fire rate (double it)
 			fire_rate_bonus_percent += 1.0  # 100% increase (double fire rate)
 			fire_rate = fire_rate_base * max(0.05, 1.0 - fire_rate_bonus_percent)
-			print("[GameState] Fire rate DOUBLED! New rate:", fire_rate)
-	
-	print("[GameState] Challenge state after completion:")
-	print("[GameState] - move_speed:", move_speed)
-	print("[GameState] - coin_pickups_disabled:", coin_pickups_disabled)
-	print("[GameState] - primary_fire_disabled:", primary_fire_disabled)
-	print("[GameState] - coins:", coins)
-	print("[GameState] - fire_rate:", fire_rate)
-	print("[GameState] ========================================")
-	
+
+
 	# Clear challenge and reset counters
 	active_chaos_challenge = ""
 	chaos_challenge_progress = 0
 	chaos_challenge_target = 0
-	
-	print("[GameState] Chaos challenge cleared and counters reset")
-
 
 # -------------------------------------------------------------------
 # CHAOS PACT SHUFFLE SYSTEM
@@ -1311,21 +1201,17 @@ func _reset_chaos_pact_pool() -> void:
 		"no_primary_fire_triple_rate"
 	]
 	chaos_pact_pool.shuffle()
-	
-	print("[GameState] Chaos pact pool initialized and shuffled:", chaos_pact_pool)
-
 
 func get_next_chaos_pact_id() -> String:
 	"""Get next chaos pact from shuffle pool, ensures no duplicates until all seen."""
 	# If pool is empty, reset it
 	if chaos_pact_pool.is_empty():
-		print("[GameState] Chaos pool empty, reshuffling all pacts!")
+
 		_reset_chaos_pact_pool()
 	
 	# Get next pact from pool
 	var pact_id = chaos_pact_pool.pop_front()
-	
-	print("[GameState] Selected chaos pact:", pact_id)
+
 	print("[GameState] Remaining in pool:", chaos_pact_pool.size())
 	
 	return pact_id

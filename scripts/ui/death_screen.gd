@@ -47,7 +47,6 @@ func _move_focus(direction: int) -> void:
 	buttons[focused_index].grab_focus()
 
 
-
 func _on_restart_button_pressed() -> void:
 	# Make sure time_scale is normal again
 	Engine.time_scale = 1.0
@@ -63,7 +62,6 @@ func _on_restart_button_pressed() -> void:
 
 	# Finally reload the level
 	get_tree().change_scene_to_file("res://scenes/level_1.tscn")
-
 
 
 func _on_quit_button_pressed() -> void:

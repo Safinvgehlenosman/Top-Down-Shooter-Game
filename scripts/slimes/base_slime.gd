@@ -215,6 +215,7 @@ func _ready() -> void:
 	player = get_tree().get_first_node_in_group("player") as Node2D
 	last_position = global_position  # Initialize stuck detection
 
+	# Store base visual values for hit feedback
 	base_modulate = animated_sprite.modulate
 
 	if hit_light:
@@ -224,23 +225,25 @@ func _ready() -> void:
 	base_move_speed = speed
 	base_wander_speed = wander_speed
 	
+	# Apply unified speed scaling (capped at 2x for fairness)
+	# Speed pressure is mild - difficulty comes from HP + quantity
+	_apply_speed_scaling()
+	
 	# Random persistent flanking offset for unique pack behavior
 	my_flanking_offset = randf_range(-PI/6, PI/6)
 
-	# ❌ REMOVED - Smart AI makes them harder now, don't need raw stat buffs
-	# Old approach: Dumb AI + 1.2x speed/health = artificially harder
-	# New approach: Smart AI + balanced stats = naturally harder
-	# speed *= 1.2
-	# wander_speed *= 1.2
-	# max_health = int(round(max_health * 1.2))
-
-	# Apply level-based speed scaling (1.0x -> 2.0x over 50 levels)
-	_apply_speed_scaling()
-
 	# --- Health component wiring ---
+	# CRITICAL: GameManager sets HP BEFORE _ready() runs - don't override it!
+	# Only set HP if GameManager didn't set it (e.g. manually placed test enemy)
 	if health_component:
-		health_component.max_health = max_health
-		health_component.health     = max_health
+		if health_component.max_health <= 0:
+			# Fallback for manually placed enemies without GameManager scaling
+			health_component.max_health = GameConfig.slime_max_health
+			health_component.health = health_component.max_health
+		else:
+			# GameManager already set scaled HP - preserve it!
+			pass
+		
 		health_component.invincible_time = 0.0
 
 		health_component.connect("damaged", Callable(self, "_on_health_damaged"))
@@ -267,26 +270,17 @@ func _ready() -> void:
 		animated_sprite.speed_scale = speed_mult
 
 
-func apply_level(level: int) -> void:
+func apply_level_behaviors(level: int) -> void:
+	"""Apply level-based AI behaviors (NOT stats like HP/damage/speed).
+	HP, damage, and speed are now handled by GameManager's new unified scaling.
+	"""
 	current_level = level  # Store for retreat threshold calculation
-	var level_offset = max(level - 1, 0)
-	var final_max_hp := max_health
+	# No stat scaling here - GameManager handles all HP/damage/speed scaling
 
-	if level_offset > 0:
-		if health_growth_per_level != 0.0:
-			# Power formula: HP *= 1.04^(level-1)
-			var hp_mult = pow(1.0 + health_growth_per_level, float(level_offset))
-			final_max_hp = int(round(max_health * hp_mult))
 
-		if damage_growth_per_level != 0.0:
-			# Power formula: damage *= 1.06^(level-1)
-			var dmg_mult = pow(1.0 + damage_growth_per_level, float(level_offset))
-			contact_damage = int(round(contact_damage * dmg_mult))
-
-	max_health = final_max_hp
-	if health_component:
-		health_component.max_health = final_max_hp
-		health_component.health     = final_max_hp
+func apply_level(level: int) -> void:
+	"""Legacy compatibility - redirects to apply_level_behaviors."""
+	apply_level_behaviors(level)
 
 
 func _physics_process(delta: float) -> void:
@@ -396,25 +390,19 @@ func _update_ai(delta: float) -> void:
 		# TACTICAL RETREAT - Run away if low HP and alone
 		# Timed flee state: flee for duration, then re-engage regardless of HP
 		
-		print("[RETREAT] Frame check - is_retreating: ", is_retreating, " | retreat_timer: ", retreat_timer, " | retreat_cooldown: ", retreat_cooldown)
-		
 		# Check if we should START a new retreat (only check HP when not already retreating)
 		if not is_retreating and retreat_cooldown <= 0.0:
 			var should_start_retreat: bool = _should_retreat()
-			print("[RETREAT] Should start new retreat? ", should_start_retreat)
 			if should_start_retreat:
 				is_retreating = true
 				retreat_timer = retreat_duration  # Set timed flee duration
 				retreat_cooldown = retreat_cooldown_time  # Start cooldown to prevent spam
-				print("[RETREAT] ✅ STARTING RETREAT - HP: ", health_component.health, "/", health_component.max_health, " | Timer set to: ", retreat_timer)
 		
 		# Stop retreating when timer expires (ignore HP now)
 		if is_retreating and retreat_timer <= 0.0:
 			is_retreating = false
-			print("[RETREAT] ❌ RETREAT ENDED - Timer expired! Re-engaging player! HP: ", health_component.health, "/", health_component.max_health)
 		
 		if is_retreating:
-			print("[RETREAT] 🔵 FLEEING - Timer: ", snapped(retreat_timer, 0.01), " | Distance from player: ", snapped(distance, 1))
 			aggro = false
 			stuck_timer = 0.0
 			effective_speed *= retreat_speed_multiplier
@@ -424,7 +412,6 @@ func _update_ai(delta: float) -> void:
 		
 		# NORMAL AI
 		else:
-			print("[AI] Normal behavior - Aggro: ", aggro, " | Distance: ", snapped(distance, 1), " | Can see: ", can_see, " | HP: ", health_component.health, "/", health_component.max_health)
 			# CHECK FOR AMBUSH OPPORTUNITY
 			var player_cornered: bool = _is_player_cornered()
 			
@@ -575,8 +562,6 @@ func _update_ai(delta: float) -> void:
 	
 	# Knockback (always applies)
 	velocity += knockback_velocity
-
-
 
 
 func _can_see_player() -> bool:
@@ -740,7 +725,6 @@ func _is_player_cornered() -> bool:
 func _should_retreat() -> bool:
 	"""Check if slime should tactically retreat."""
 	if not enable_tactical_retreat or not health_component:
-		print("[RETREAT CHECK] Disabled or no health component")
 		return false
 	
 	var hp_percent: float = float(health_component.health) / float(health_component.max_health)
@@ -748,11 +732,8 @@ func _should_retreat() -> bool:
 	# Get level-scaled retreat threshold
 	var scaled_threshold = _get_retreat_threshold()
 	
-	print("[RETREAT CHECK] HP: ", health_component.health, "/", health_component.max_health, " (", snapped(hp_percent * 100, 0.1), "%) | Threshold: ", snapped(scaled_threshold * 100, 0.1), "% | Level: ", current_level)
-	
 	# Not low enough HP to retreat (or threshold is 0 - never retreat)
 	if hp_percent > scaled_threshold or scaled_threshold <= 0.0:
-		print("[RETREAT CHECK] ❌ HP too high (", snapped(hp_percent * 100, 0.1), "% > ", snapped(scaled_threshold * 100, 0.1), "%) or threshold 0")
 		return false
 	
 	# Check if alone (if retreat_if_alone is true)
@@ -776,16 +757,11 @@ func _should_retreat() -> bool:
 				# Only count ally if we can see them (no wall blocking)
 				if result.is_empty() or result.get("collider") == enemy:
 					allies_nearby += 1
-					print("[RETREAT CHECK] Found visible ally at distance: ", snapped(dist, 1))
-		
-		print("[RETREAT CHECK] Total allies nearby: ", allies_nearby)
 		
 		# Has allies nearby - don't retreat
 		if allies_nearby > 0:
-			print("[RETREAT CHECK] ❌ Has ", allies_nearby, " allies nearby - NOT retreating")
 			return false
 	
-	print("[RETREAT CHECK] ✅ ALL CONDITIONS MET - SHOULD RETREAT!")
 	return true
 func _get_flanking_position() -> Vector2:
 	"""Calculate position to surround player as part of pack."""
@@ -1065,17 +1041,20 @@ func force_deaggro() -> void:
 
 
 func _apply_speed_scaling() -> void:
-	"""Scale movement speed from 1.0x to 1.8x over 40 levels, capped at 1.8x."""
+	"""Scale movement speed with a 2x cap for fairness.
+	New system: 1.0x at L1 → 2.0x at L40+ (linear interpolation).
+	Difficulty comes from HP + quantity, not unfair speed.
+	"""
 	var game_manager = get_tree().get_first_node_in_group("game_manager")
 	if not game_manager:
 		return
 
 	var level = game_manager.current_level if "current_level" in game_manager else 1
 
-	# Target: 1.0x at level 1 → 1.8x at level 40, capped at 1.8x for levels 40+
-	# Formula: 1.0 + min((level - 1) / 39.0, 1.0) * 0.8
-	var progress = min((level - 1) / 39.0, 1.0)  # 0.0 at level 1, 1.0 at level 40+
-	var speed_multiplier = 1.0 + (progress * 0.8)  # Adds up to 0.8 = 1.8x total
+	# Linear scaling from 1.0x to 2.0x over 40 levels, hard capped at 2.0x
+	var progress = min(float(level - 1) / 39.0, 1.0)  # 0.0 at L1, 1.0 at L40+
+	var speed_multiplier = 1.0 + progress  # 1.0x at L1, 2.0x at L40+
+	speed_multiplier = min(speed_multiplier, 2.0)  # Hard cap
 
 	# Apply to movement speed
 	if base_move_speed > 0.0:

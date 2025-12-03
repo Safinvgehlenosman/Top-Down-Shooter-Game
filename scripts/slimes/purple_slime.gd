@@ -99,7 +99,6 @@ func _shoot_at_player() -> void:
 	get_tree().current_scene.add_child(proj)
 
 
-
 func _has_line_of_sight_to_player() -> bool:
 	if player == null:
 		return false

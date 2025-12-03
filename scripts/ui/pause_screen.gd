@@ -52,7 +52,6 @@ func _move_focus(direction: int) -> void:
 	buttons[focused_index].grab_focus()
 
 
-
 func _on_restart_button_pressed() -> void:
 	get_tree().paused = false
 
@@ -61,7 +60,6 @@ func _on_restart_button_pressed() -> void:
 
 	# Reload the level scene cleanly
 	get_tree().change_scene_to_file("res://scenes/level_1.tscn")
-
 
 
 func _on_quit_button_pressed() -> void:

@@ -33,6 +33,8 @@ signal exit_door_spawned(door: Node2D)
 @export var spawn_duration_wave_min: float = 5.0  # Minimum wave spawn duration
 @export var spawn_duration_wave_max: float = 10.0  # Maximum wave spawn duration
 
+const MIN_WAVE_SPAWN_DISTANCE_TO_PLAYER := 192.0  # Minimum distance from player for wave spawns
+
 
 # --- ENEMY SPAWN TABLE ----------------------------------------------
 # IMPORTANT: enemy_scenes indices should match these roles:
@@ -51,6 +53,51 @@ const ENEMY_INDEX_POISON := 3
 const ENEMY_INDEX_ICE    := 4
 const ENEMY_INDEX_PURPLE := 5
 const ENEMY_INDEX_GHOST  := 6
+
+# --- NEW UNIFIED ENEMY SCALING SYSTEM (BALANCING) ------------------
+# Design philosophy:
+# - HP scales exponentially (1.6x per level) to match OP player DPS
+# - Enemy count scales linearly (8 + level*2) for horde pressure
+# - Speed scales mildly and is capped at 2x to keep gameplay fair
+# - Damage scales gently (3% per level) and is capped at 2x
+# - Difficulty comes from QUANTITY + HP, not unfair one-shots
+
+func get_base_green_slime_hp(level: int) -> float:
+	"""New global HP curve: exponential growth for all enemy types.
+	Green slime is the baseline. Other types use multipliers of this.
+	L1=10, L2=16, L3=26, L5=66, L10=687
+	"""
+	return 10.0 * pow(1.6, level - 1)
+
+
+func get_scaled_enemy_hp_by_type(level: int, enemy_type: String) -> int:
+	"""Get scaled HP for a specific enemy type using multipliers."""
+	var base_hp := get_base_green_slime_hp(level)
+	var multiplier := 1.0
+	
+	match enemy_type:
+		"green", "fast":  # Green and Fast (darkgreen) use baseline
+			multiplier = 1.0
+		"purple":  # Shooter is slightly tankier
+			multiplier = 1.3
+		"fire", "ice", "poison":  # Elemental slimes are tankier
+			multiplier = 1.4
+		"ghost":  # Ghost is fragile but annoying
+			multiplier = 0.7
+		_:
+			multiplier = 1.0
+	
+	return int(round(base_hp * multiplier))
+
+
+func get_scaled_contact_damage(base_damage: float, level: int) -> float:
+	"""Damage scales gently (3% per level) with a 2x hard cap.
+	Danger comes from many enemies, not one-shot kills.
+	"""
+	var mult := pow(1.03, level - 1)
+	mult = min(mult, 2.0)  # Hard cap at 2x base damage
+	return base_damage * mult
+
 
 @export_group("Enemies")
 @export var enemy_scenes: Array[PackedScene] = []
@@ -93,6 +140,11 @@ var initial_enemies_defeated: bool = false
 var waves_remaining: int = 0  # How many waves left to spawn
 var current_wave_number: int = 0  # Which wave we're on
 var waves_enemy_budget: int = 0  # Enemy budget reserved for waves
+
+# Level-scoped budget tracking for door unlock
+var level_enemy_budget: int = 0      # Total enemies planned for this level
+var level_enemies_spawned: int = 0   # How many have been added to scene
+var level_enemies_killed: int = 0    # How many have been defeated
 
 # Chest spawning
 var chest_spawned: bool = false
@@ -167,7 +219,6 @@ func _ready() -> void:
 		# Connect exit door signal to UI
 		if game_ui and game_ui.has_method("_on_exit_door_spawned"):
 			exit_door_spawned.connect(game_ui._on_exit_door_spawned)
-			print("[GameManager] Connected exit_door_spawned signal to UI")
 
 	current_level = 1
 	_update_level_ui()
@@ -456,11 +507,9 @@ func _collect_room_spawn_points() -> void:
 	player_spawn_points.clear()
 	
 	if not current_room:
-		print("[SPAWN ERROR] No current_room - cannot collect spawn points")
+
 		return
-	
-	print("[SPAWN FILTER] Current room: %s" % current_room.name)
-	
+
 	# === ENEMY SPAWN FILTERING ===
 	var all_enemy_markers = get_tree().get_nodes_in_group("enemy_spawn")
 	print("[ENEMY SPAWN] All markers in group: %d" % all_enemy_markers.size())
@@ -469,8 +518,8 @@ func _collect_room_spawn_points() -> void:
 			enemy_spawn_points.append(marker)
 	print("[ENEMY SPAWN] Filtered markers in room: %d" % enemy_spawn_points.size())
 	for m in enemy_spawn_points:
-		print("  [ENEMY MARKER] %s at %s" % [m.name, m.global_position])
-	
+		pass
+
 	# === CRATE SPAWN FILTERING ===
 	var all_crate_markers = get_tree().get_nodes_in_group("crate_spawn")
 	print("[CRATE SPAWN] All markers in group: %d" % all_crate_markers.size())
@@ -479,8 +528,8 @@ func _collect_room_spawn_points() -> void:
 			crate_spawn_points.append(marker)
 	print("[CRATE SPAWN] Filtered markers in room: %d" % crate_spawn_points.size())
 	for m in crate_spawn_points:
-		print("  [CRATE MARKER] %s at %s" % [m.name, m.global_position])
-	
+		pass
+
 	# === DOOR SPAWN FILTERING ===
 	var all_door_markers = get_tree().get_nodes_in_group("door_spawn")
 	print("[DOOR SPAWN] All markers in group: %d" % all_door_markers.size())
@@ -489,8 +538,8 @@ func _collect_room_spawn_points() -> void:
 			door_spawn_points.append(marker)
 	print("[DOOR SPAWN] Filtered markers in room: %d" % door_spawn_points.size())
 	for m in door_spawn_points:
-		print("  [DOOR MARKER] %s at %s" % [m.name, m.global_position])
-	
+		pass
+
 	# === PLAYER SPAWN FILTERING ===
 	var all_player_markers = get_tree().get_nodes_in_group("player_spawn")
 	print("[PLAYER SPAWN] All markers in group: %d" % all_player_markers.size())
@@ -499,8 +548,8 @@ func _collect_room_spawn_points() -> void:
 			player_spawn_points.append(marker)
 	print("[PLAYER SPAWN] Filtered markers in room: %d" % player_spawn_points.size())
 	for m in player_spawn_points:
-		print("  [PLAYER MARKER] %s at %s" % [m.name, m.global_position])
-	
+		pass
+
 	# === SUMMARY ===
 	print("[SPAWN SUMMARY] Enemy: %d | Crate: %d | Door: %d | Player: %d" % 
 		[enemy_spawn_points.size(), crate_spawn_points.size(), 
@@ -509,12 +558,13 @@ func _collect_room_spawn_points() -> void:
 
 func _move_player_to_room_spawn() -> void:
 	var player := get_tree().get_first_node_in_group("player")
-	
-	print("[PLAYER SPAWN] === PLAYER SPAWN ATTEMPT ===")
+
 	if current_room:
-		print("[PLAYER SPAWN] Current room: %s" % current_room.name)
+		pass
+
 	else:
-		print("[PLAYER SPAWN] Current room: null")
+		pass
+
 	print("[PLAYER SPAWN] Player found: %s" % ("yes" if player else "no"))
 	print("[PLAYER SPAWN] Available spawn markers: %d" % player_spawn_points.size())
 	
@@ -529,7 +579,7 @@ func _move_player_to_room_spawn() -> void:
 		if current_room.has_method("get_player_spawn_point"):
 			var spawn_point: Node2D = current_room.get_player_spawn_point()
 			if spawn_point:
-				print("[PLAYER SPAWN] Using fallback method - spawning at: %s" % spawn_point.global_position)
+
 				player.global_position = spawn_point.global_position
 			else:
 				push_error("[PLAYER SPAWN] Fallback method returned null!")
@@ -537,15 +587,11 @@ func _move_player_to_room_spawn() -> void:
 	
 	# Use the FIRST marker (index 0) - should be the only one if filtering worked correctly
 	var chosen_marker := player_spawn_points[0]
-	var chosen_index := 0
 	var spawn_pos := chosen_marker.global_position
-	
-	print("[PLAYER SPAWN] Using marker [%d]: %s at %s" % [chosen_index, chosen_marker.name, spawn_pos])
-	
+
 	# Move player
 	player.global_position = spawn_pos
-	print("[PLAYER SPAWN] Player moved to: %s" % player.global_position)
-	
+
 	# Update UI with player reference
 	if game_ui and game_ui.has_method("set_player"):
 		game_ui.set_player(player)
@@ -682,28 +728,26 @@ func _get_valid_spawn_positions(spawn_points: Array[Node2D]) -> Array[Vector2]:
 	return far_enough
 
 
-
 # --- STAGGERED ENEMY SPAWNING --------------------------------------
 
 func _spawn_enemies_over_time(enemy_list: Array, spawn_points: Array[Node2D], duration: float, is_initial_spawn: bool = false) -> void:
 	"""Spawn enemies gradually over time with proper distribution."""
 	if enemy_list.is_empty():
 		return
-	
-	print("---- DEBUG SPAWNPOINTS ----")
+
 	print("[SPAWN] Total spawn_points provided:", spawn_points.size())
 	for sp in spawn_points:
-		print("  SP:", sp.name, "pos:", sp.global_position)
-	
+		pass
+
 	var spawned_enemies: Array = []
 	var candidate_positions := _get_valid_spawn_positions(spawn_points)
 	
 	print("[SPAWN] VALID COUNT:", candidate_positions.size())
 	for c in candidate_positions:
-		print("  VALID:", c)
-	
+		pass
+
 	if candidate_positions.is_empty():
-		print("[SPAWN] No valid positions found, aborting staggered spawn")
+
 		return
 	
 	# FOR INITIAL SPAWN: Cap enemy count to valid positions (no stacking)
@@ -732,9 +776,13 @@ func _spawn_enemies_over_time(enemy_list: Array, spawn_points: Array[Node2D], du
 	# Shuffle positions to spread enemies around
 	candidate_positions.shuffle()
 	
-	var interval := duration / float(enemy_list.size())
+	# Adjust spawn duration based on level (faster spawns at higher levels)
+	var level_adjusted_duration: float = clamp(duration - (current_level * 0.3), 2.0, duration)
+	var interval: float = level_adjusted_duration / float(enemy_list.size())
 	var pos_idx := 0
 	var spawn_count := 0
+	
+	print("[SPAWN TIMING] Level %d: duration %.1fs → adjusted %.1fs, interval %.2fs" % [current_level, duration, level_adjusted_duration, interval])
 	
 	for enemy_scene in enemy_list:
 		# Cycle through shuffled positions, wrapping around if more enemies than positions
@@ -747,19 +795,37 @@ func _spawn_enemies_over_time(enemy_list: Array, spawn_points: Array[Node2D], du
 			var enemy: Node2D = enemy_scene.instantiate()
 			enemy.global_position = pos
 			
-			if enemy.has_method("apply_level"):
+			# Determine enemy type for HP multiplier
+			var enemy_type := _get_enemy_type_from_scene(enemy_scene)
+			
+			# Apply new unified HP scaling
+			var health_comp = enemy.get_node_or_null("Health")
+			if health_comp:
+				var scaled_hp := get_scaled_enemy_hp_by_type(current_level, enemy_type)
+				health_comp.max_health = scaled_hp
+				health_comp.health = scaled_hp
+			
+			# Apply damage scaling
+			if "contact_damage" in enemy:
+				var base_damage := float(enemy.contact_damage)
+				enemy.contact_damage = int(round(get_scaled_contact_damage(base_damage, current_level)))
+			
+			# Level behaviors (NOT HP/damage, already handled above)
+			if enemy.has_method("apply_level_behaviors"):
+				enemy.apply_level_behaviors(current_level)
+			elif enemy.has_method("apply_level"):
 				enemy.apply_level(current_level)
 			
 			current_room.add_child(enemy)
 			alive_enemies += 1
+			level_enemies_spawned += 1  # Track for budget system
 			spawned_enemies.append(enemy)
 			
 			if enemy.has_signal("died"):
 				enemy.died.connect(_on_enemy_died.bind(enemy))
 			
 			spawn_count += 1
-			print("[SPAWN] Enemy spawned at: ", pos)
-		
+
 		# Wait before spawning next enemy (skip wait after last one)
 		if spawn_count < enemy_list.size():
 			await get_tree().create_timer(interval).timeout
@@ -799,7 +865,6 @@ func _spawn_enemies_over_time(enemy_list: Array, spawn_points: Array[Node2D], du
 				chest_dropper.set_meta("drops_chest", true)
 
 
-
 # --- SIMPLE INITIAL ENEMY SPAWNING ---------------------------------
 
 func _spawn_enemy_at(pos: Vector2, enemy_scene: PackedScene = null) -> Node2D:
@@ -813,11 +878,32 @@ func _spawn_enemy_at(pos: Vector2, enemy_scene: PackedScene = null) -> Node2D:
 	var enemy: Node2D = enemy_scene.instantiate()
 	enemy.global_position = pos
 	
-	if enemy.has_method("apply_level"):
+	# Determine enemy type for HP multiplier (parse from scene name)
+	var enemy_type := _get_enemy_type_from_scene(enemy_scene)
+	
+	# Apply new unified HP scaling
+	var health_comp = enemy.get_node_or_null("Health")
+	if health_comp:
+		var scaled_hp := get_scaled_enemy_hp_by_type(current_level, enemy_type)
+		health_comp.max_health = scaled_hp
+		health_comp.health = scaled_hp
+		print("[SCALING DEBUG] Spawned %s (type=%s) at level %d with HP=%d" % [enemy.name, enemy_type, current_level, scaled_hp])
+	
+	# Apply damage scaling if enemy has contact_damage
+	if "contact_damage" in enemy:
+		var base_damage := float(enemy.contact_damage)
+		enemy.contact_damage = int(round(get_scaled_contact_damage(base_damage, current_level)))
+	
+	# Level application for slime-specific behaviors (NOT for HP/damage, those are handled above)
+	if enemy.has_method("apply_level_behaviors"):
+		enemy.apply_level_behaviors(current_level)
+	elif enemy.has_method("apply_level"):
+		# Fallback for old method, but HP/damage already set above
 		enemy.apply_level(current_level)
 	
 	current_room.add_child(enemy)
 	alive_enemies += 1
+	level_enemies_spawned += 1  # Track for budget system
 	
 	if enemy.has_signal("died"):
 		enemy.died.connect(_on_enemy_died.bind(enemy))
@@ -832,21 +918,26 @@ func _spawn_initial_enemies(level: int) -> void:
 	
 	var spawns := enemy_spawn_points.duplicate()
 	if spawns.is_empty():
-		print("[SPAWN] Room '%s' has no enemy_spawn markers" % current_room.name)
+
 		return
 	
 	spawns.shuffle()
 	
 	var total_budget := _calculate_enemy_count_for_level(level, spawns.size())
-	var initial_budget: int = clamp(int(round(total_budget * 0.35)), 1, 8)
+	# 35% for initial spawn, no hard cap - let high levels spawn more up front
+	var initial_budget: int = max(int(round(total_budget * 0.35)), 1)
 	var initial_enemy_count: int = min(initial_budget, spawns.size())
+	
+	# Initialize level budget tracking
+	level_enemy_budget = total_budget
+	level_enemies_spawned = 0
+	level_enemies_killed = 0
+	
+	print("[SCALING DEBUG] Level %d: total_budget=%d, initial_spawn=%d, waves_budget=%d" % [level, total_budget, initial_enemy_count, total_budget - initial_enemy_count])
 	
 	# Store waves budget
 	waves_enemy_budget = max(total_budget - initial_enemy_count, 0)
-	
-	print("[SPAWN] Initial enemies: %d | Total budget: %d | Waves: %d | Level: %d" % 
-		[initial_enemy_count, total_budget, waves_enemy_budget, level])
-	
+
 	var themed_room := _is_themed_room(level)
 	var themed_slimes := _get_themed_room_slimes(level)
 	var spawned_enemies: Array = []
@@ -929,8 +1020,6 @@ func _ensure_minimum_one_enemy() -> void:
 			pos = Vector2(512, 384)  # Approximate room center
 		
 		_spawn_enemy_at(pos)
-		print("[SPAWN FAILSAFE] Room had 0 enemies, spawned 1 basic enemy")
-
 
 # --- SPAWNING ROOM CONTENT ------------------------------------------
 
@@ -949,11 +1038,14 @@ func _spawn_room_content() -> void:
 	
 	# Schedule waves based on level
 	if current_level >= 1 and not enemy_spawn_points.is_empty():
-		waves_remaining = get_wave_count()
+		waves_remaining = get_wave_count(current_level)
 		current_wave_number = 0
+		var total_enemies := _calculate_enemy_count_for_level(current_level, enemy_spawn_points.size())
+		var initial_count: int = max(int(round(total_enemies * 0.35)), 1)
+		print("[SCALING DEBUG] Level %d: total_enemies=%d, waves=%d, initial_spawn=%d, wave_budget=%d" % [current_level, total_enemies, waves_remaining, initial_count, total_enemies - initial_count])
 		if waves_remaining > 0:
-			print("[WAVE SYSTEM] Level %d: %d waves will spawn" % [current_level, waves_remaining])
-	
+			pass
+
 	# FAILSAFE: Ensure non-hub rooms always have at least 1 enemy
 	_ensure_minimum_one_enemy()
 	
@@ -968,20 +1060,26 @@ func _spawn_room_content() -> void:
 
 # --- SPAWN COUNT CALCULATION ---------------------------------------
 
-func _calculate_enemy_count_for_level(level: int, available_spawns: int) -> int:
-	"""Calculate how many enemies to spawn based on current level and spawn ratio."""
-	# Use actual spawn points available in the room
-	var total_spawns = available_spawns
+func get_base_enemy_count(level: int) -> int:
+	"""Base enemy count formula: more enemies for horde pressure."""
+	return int(round(8.0 + level * 2.0))
+
+
+func _calculate_enemy_count_for_level(level: int, _available_spawns: int) -> int:
+	"""Calculate how many enemies to spawn based on current level.
+	New formula: 8 + level * 2.0 for horde pressure.
+	L1=10, L5=18, L10=28, L20=48
 	
-	# Calculate enemy/crate split ratio
-	var enemy_ratio = _get_enemy_ratio_for_level(level)
+	NOTE: Crates are placed manually in editor, so we don't reduce enemy count.
+	The enemy_ratio system is obsolete for this new scaling.
+	"""
+	var base_wave_size := get_base_enemy_count(level)
 	
-	# Calculate enemy count based on ratio, then increase by +25%
-	var base_enemy_count = int(total_spawns * enemy_ratio)
-	var enemy_count = int(base_enemy_count * 1.25)
+	# Use the base count directly - NO reduction via enemy_ratio
+	# (enemy_ratio was for old crate/enemy distribution, now crates are manual)
+	var enemy_count: int = base_wave_size
 	
-	# Clamp to reasonable values (min 3, max based on available spawns)
-	enemy_count = clamp(enemy_count, 3, available_spawns)
+	print("[SCALING DEBUG] Level %d → enemy_count=%d (formula: 8 + level*2)" % [level, enemy_count])
 	
 	return enemy_count
 
@@ -1031,6 +1129,29 @@ func _get_enemy_ratio_for_level(level: int) -> float:
 		# 10→20: 75% → 90%
 		var progress = float(level - 10) / 10.0
 		return 0.75 + (progress * 0.15)
+
+
+func _get_enemy_type_from_scene(scene: PackedScene) -> String:
+	"""Determine enemy type from scene resource path for HP multiplier."""
+	if scene == null:
+		return "green"
+	
+	var path := scene.resource_path.to_lower()
+	
+	if "darkgreen" in path or "fast" in path:
+		return "fast"
+	elif "purple" in path:
+		return "purple"
+	elif "fire" in path:
+		return "fire"
+	elif "ice" in path:
+		return "ice"
+	elif "poison" in path:
+		return "poison"
+	elif "ghost" in path:
+		return "ghost"
+	else:
+		return "green"  # Default to green slime
 
 
 # --- ENEMY WEIGHT SCALING / PROGRESSION -----------------------------
@@ -1145,6 +1266,7 @@ func _update_enemy_weights_for_level() -> void:
 
 func _on_enemy_died(enemy: Node2D = null) -> void:
 	alive_enemies = max(alive_enemies - 1, 0)
+	level_enemies_killed += 1  # Track for budget system
 	
 	# Check if this enemy should drop chest
 	if enemy != null and enemy.has_meta("drops_chest") and not chest_spawned:
@@ -1155,22 +1277,16 @@ func _on_enemy_died(enemy: Node2D = null) -> void:
 	if enemy != null and enemy.has_meta("drops_chaos_chest"):
 		_spawn_chaos_chest_at_enemy_position(enemy.global_position)
 	
-	if alive_enemies == 0:
-		# Check if we have more waves to spawn
-		if waves_remaining > 0:
-			current_wave_number += 1
-			waves_remaining -= 1
-			initial_enemies_defeated = true
-			
-			var wave_size = get_wave_enemy_count()
-			print("[WAVE SYSTEM] Wave %d/%d starting with %d enemies" % [current_wave_number, get_wave_count(), wave_size])
-			
-			# Schedule next wave with delay
-			_schedule_wave(1.5, wave_size)
-			return
+	# Check if level budget is complete (all enemies killed AND all waves scheduled)
+	var all_waves_scheduled := waves_remaining <= 0
+	var budget_complete := level_enemies_killed >= level_enemy_budget
+	
+	if budget_complete and all_waves_scheduled:
+		# ⭐ LEVEL COMPLETE - ALL BUDGET ENEMIES DEFEATED
+		print("[SCALING DEBUG] Level %d complete: killed=%d / budget=%d (waves=%d)" % [
+			current_level, level_enemies_killed, level_enemy_budget, get_wave_count(current_level)
+		])
 		
-		# ⭐ ALL WAVES COMPLETE - ROOM CLEARED
-		print("[GameManager] All enemies dead. Active chaos challenge: '", GameState.active_chaos_challenge, "'")
 		if not GameState.active_chaos_challenge.is_empty():
 			GameState.increment_chaos_challenge_progress()
 		
@@ -1180,6 +1296,21 @@ func _on_enemy_died(enemy: Node2D = null) -> void:
 		# CRITICAL: Ensure door exists before unlocking
 		_ensure_exit_door_exists()
 		_unlock_exit_door()
+		return
+	
+	# If current wave is clear but more waves remain, schedule next wave
+	if alive_enemies == 0 and waves_remaining > 0:
+		current_wave_number += 1
+		waves_remaining -= 1
+		initial_enemies_defeated = true
+		
+		var total_waves := get_wave_count(current_level)
+		var total_budget := _calculate_enemy_count_for_level(current_level, enemy_spawn_points.size())
+		var wave_size := get_wave_enemy_count(current_wave_number + 1, total_waves, total_budget)
+		print("[WAVE SYSTEM] Wave %d/%d starting with %d enemies" % [current_wave_number + 1, total_waves, wave_size])
+		
+		# Schedule next wave with delay
+		_schedule_wave(1.5)
 
 
 func _spawn_exit_door() -> void:
@@ -1190,11 +1321,10 @@ func _spawn_exit_door() -> void:
 
 func _spawn_exit_door_internal(should_lock: bool) -> void:
 	"""Internal door spawn function. Always spawns, lock state depends on parameter."""
-	print("[EXIT DOOR] === DOOR SPAWN ATTEMPT ===")
-	
+
 	# Don't double-spawn if door already exists
 	if current_exit_door != null and is_instance_valid(current_exit_door) and current_exit_door.is_inside_tree():
-		print("[EXIT DOOR] Door already exists and is valid in current room")
+
 		return
 
 	if exit_door_scene == null:
@@ -1204,8 +1334,7 @@ func _spawn_exit_door_internal(should_lock: bool) -> void:
 	if not current_room:
 		push_error("[EXIT DOOR] No current_room - cannot spawn door")
 		return
-	
-	print("[EXIT DOOR] Current room: %s" % current_room.name)
+
 	print("[EXIT DOOR] Available door spawn markers: %d" % door_spawn_points.size())
 
 	# Error if no spawn markers found
@@ -1216,8 +1345,6 @@ func _spawn_exit_door_internal(should_lock: bool) -> void:
 	# Use first door marker - trust level design
 	var chosen_marker := door_spawn_points[0]
 	var spawn_pos := chosen_marker.global_position
-	
-	print("[EXIT DOOR] Using marker: %s at %s" % [chosen_marker.name, spawn_pos])
 
 	# Instantiate and add to room
 	current_exit_door = exit_door_scene.instantiate()
@@ -1238,11 +1365,11 @@ func _ensure_exit_door_exists() -> void:
 	"""CRITICAL FALLBACK: Ensure exit door exists. Spawns unlocked if missing in cleared room."""
 	# If door already exists and is in tree, we're good
 	if current_exit_door != null and is_instance_valid(current_exit_door) and current_exit_door.is_inside_tree():
-		print("[EXIT DOOR] Door already exists and is valid")
+
 		return
 	
 	# Door missing or invalid - spawn it
-	print("[EXIT DOOR] ⚠️ FALLBACK: Door missing, spawning now...")
+
 	current_exit_door = null  # Clear invalid reference
 	
 	# Spawn unlocked if room is already cleared, locked otherwise
@@ -1253,11 +1380,11 @@ func _ensure_exit_door_exists() -> void:
 func _on_room_cleared() -> void:
 	"""Called when all enemies and waves are defeated. Auto-breaks crates and collects pickups."""
 	if room_cleared:
-		print("[ROOM CLEAR] Already cleared, ignoring duplicate call")
+
 		return
 	
 	room_cleared = true
-	print("[ROOM CLEAR] Room cleared! Auto-breaking crates and collecting pickups...")
+
 	_auto_break_all_crates()
 	
 	# Wait a short moment for crates to drop their loot before enabling super magnet
@@ -1292,8 +1419,6 @@ func _disable_super_magnet() -> void:
 	GameConfig.current_pickup_magnet_range = GameConfig.pickup_magnet_range
 	GameConfig.current_pickup_magnet_speed = GameConfig.PICKUP_MAGNET_SPEED_NORMAL
 	GameConfig.current_pickup_magnet_accel = GameConfig.PICKUP_MAGNET_ACCEL_NORMAL
-	print("[AUTO COLLECT] Super magnet disabled")
-
 
 func _auto_break_all_crates() -> void:
 	"""Auto-break all crates in the current room when all enemies are defeated."""
@@ -1327,7 +1452,7 @@ func _get_room_nodes_in_group(group_name: String) -> Array:
 func _unlock_exit_door() -> void:
 	"""Unlock and open the exit door after all enemies are defeated."""
 	if current_exit_door == null:
-		print("[EXIT DOOR] Cannot unlock - door not spawned yet")
+
 		return
 	
 	# Check if still in scene tree before awaiting
@@ -1348,7 +1473,7 @@ func _unlock_exit_door() -> void:
 			current_exit_door.unlock_and_open(false)
 		else:
 			current_exit_door.unlock_and_open()
-		print("[EXIT DOOR] Door unlocked and opened")
+
 	else:
 		# Fallback to old open() method
 		if current_exit_door.has_method("open"):
@@ -1434,7 +1559,7 @@ func _process(delta: float) -> void:
 		
 		# Track enemy count changes for debugging
 		if living_enemies != last_enemy_count:
-			print("[WATCHDOG] Enemy count: %d" % living_enemies)
+
 			last_enemy_count = living_enemies
 		
 		if living_enemies == 0:
@@ -1442,7 +1567,7 @@ func _process(delta: float) -> void:
 			
 			# Force room clear after 2 seconds with no enemies
 			if no_enemy_time >= 2.0:
-				print("[SAFETY] No enemies for %.1fs -> forcing room clear + door unlock" % no_enemy_time)
+
 				_force_room_clear()
 		else:
 			no_enemy_time = 0.0
@@ -1451,7 +1576,7 @@ func _process(delta: float) -> void:
 	# If room is cleared but door is missing/invalid, respawn it unlocked
 	if room_cleared and not in_hub and not in_shop:
 		if not current_exit_door or not is_instance_valid(current_exit_door) or not current_exit_door.is_inside_tree():
-			print("[SAFETY] Cleared room missing door -> respawning unlocked door")
+
 			_ensure_exit_door_exists()
 
 
@@ -1470,8 +1595,7 @@ func _force_room_clear() -> void:
 		return
 	
 	room_cleared = true
-	print("[ROOM CLEAR] Forced clear by safety watchdog")
-	
+
 	# Auto-break crates and enable super magnet
 	_auto_break_all_crates()
 	await get_tree().create_timer(0.3).timeout
@@ -1491,8 +1615,7 @@ func _unlock_and_open_exit_door() -> void:
 		else:
 			print("[EXIT DOOR] WARNING: unlock_and_open() method not found")
 	else:
-		print("[EXIT DOOR] No valid door to unlock!")
-
+		pass
 
 func _open_exit_door() -> void:
 	if door_open:
@@ -1571,7 +1694,7 @@ func _open_shop() -> void:
 	if shop_ui:
 		# ⬅0 Check if shops are disabled by chaos challenge
 		if GameState.shop_disabled:
-			print("[GameManager] Shops are disabled by chaos challenge!")
+			pass
 			# TODO: Show message to player
 			return
 		
@@ -1802,65 +1925,75 @@ func _on_chaos_chest_opened(chaos_upgrade: Dictionary) -> void:
 		push_error("[GameManager] shop_ui doesn't have open_as_chest_with_loot method!")
 
 
-
 # --- WAVE SYSTEM ---------------------------------------------------
 
-func get_wave_enemy_count() -> int:
-	"""Calculate wave size based on current level with aggressive scaling."""
-	if current_level < 1:
-		return 0
+func get_wave_enemy_count(wave_number: int, total_waves: int, total_budget: int) -> int:
+	"""Calculate enemies for a specific wave using percentage distribution.
+	Wave distribution: W1=25%, W2=30%, W3=30%, W4=15%
+	Early waves warm-up, mid waves heavy pressure, final wave cleanup.
+	"""
+	if total_waves <= 0:
+		return total_budget
 	
-	# Base wave size (30% larger than before)
-	var base_size: int
+	# Define wave percentages (must sum to 1.0)
+	var wave_percentages := [0.25, 0.30, 0.30, 0.15]
 	
-	if current_level <= 5:
-		# Level 1-5: baseline +30% (4-8 enemies, was 3-6)
-		base_size = randi_range(4, 8)
-	elif current_level <= 10:
-		# Level 6-10: baseline × 1.75 (5-11 enemies)
-		base_size = randi_range(5, 11)
-	elif current_level <= 20:
-		# Level 11-20: baseline × 2.25 (7-14 enemies)
-		base_size = randi_range(7, 14)
+	# Clamp wave_number to valid range
+	var wave_idx: int = clamp(wave_number - 1, 0, wave_percentages.size() - 1)
+	
+	# If we have fewer waves than percentages, redistribute
+	if total_waves < wave_percentages.size():
+		# Use only the first N percentages and renormalize
+		var sum := 0.0
+		for i in range(total_waves):
+			sum += wave_percentages[i]
+		
+		var percentage: float = wave_percentages[wave_idx] / sum
+		return int(round(total_budget * percentage))
 	else:
-		# Level 20+: baseline × 3.0 (12-24 enemies)
-		base_size = randi_range(12, 24)
+		# Normal case: use percentage directly
+		return int(round(total_budget * wave_percentages[wave_idx]))
+
+
+func get_wave_count(level: int = -1) -> int:
+	"""Calculate how many waves should spawn based on level.
+	New distribution: L1-2=1 wave, L3-4=2 waves, L5-7=3 waves, L8+=4 waves
+	"""
+	var lvl := level if level > 0 else current_level
 	
-	print("[WAVE SIZE] Level %d wave size: %d enemies" % [current_level, base_size])
-	return base_size
-
-
-func get_wave_count() -> int:
-	"""Calculate how many waves should spawn based on current level."""
-	if current_level < 1:
+	if lvl < 1:
 		return 0
-	elif current_level <= 4:
-		# Level 1-4: 1 wave
-		return 1
-	elif current_level <= 9:
-		# Level 5-9: 2 waves minimum
-		return 2
+	elif lvl <= 2:
+		return 1  # Tutorial levels
+	elif lvl <= 4:
+		return 2  # Early game
+	elif lvl <= 7:
+		return 3  # Mid game
 	else:
-		# Level 10+: 3 waves
-		return 3
+		return 4  # Late game horde
 
 
-func _schedule_wave(delay: float, count: int) -> void:
-	"""Schedule a wave to spawn after a delay."""
+func _schedule_wave(delay: float) -> void:
+	"""Schedule a wave to spawn after a delay using new distribution system."""
 	if wave_scheduled:
 		return  # Already scheduled
 	
 	wave_scheduled = true
 	wave_spawned = false
-	
-	print("[WAVE] Scheduled wave of %d enemies in %.1f seconds" % [count, delay])
-	
+
 	# Wait for delay, then spawn the wave
 	await get_tree().create_timer(delay).timeout
 	
 	# Only spawn if initial enemies are actually defeated
 	if initial_enemies_defeated:
-		_spawn_wave(count)
+		# Calculate wave size based on distribution
+		var total_waves := get_wave_count(current_level)
+		var total_budget := _calculate_enemy_count_for_level(current_level, enemy_spawn_points.size())
+		# Use next wave number (current_wave_number is 0-based, incremented before scheduling)
+		var next_wave_idx := current_wave_number + 1
+		var wave_size := get_wave_enemy_count(next_wave_idx, total_waves, total_budget)
+		print("[SCALING DEBUG] Spawning wave %d/%d with %d enemies" % [next_wave_idx, total_waves, wave_size])
+		_spawn_wave(wave_size)
 
 
 func _spawn_wave(count: int) -> void:
@@ -1871,15 +2004,32 @@ func _spawn_wave(count: int) -> void:
 	wave_spawned = true
 	
 	if enemy_spawn_points.is_empty():
-		print("[WAVE] No enemy spawn points available for wave!")
+		print("[SPAWN ERROR] No enemy spawn points for wave!")
 		return
-	
-	print("[WAVE] Preparing wave of %d enemies!" % count)
-	
+
 	# Get available spawn points (use enemy spawn markers)
 	var available_spawns := enemy_spawn_points.duplicate()
+	
+	# Filter out spawn points too close to player
+	var player := get_tree().get_first_node_in_group("player")
+	if player:
+		var safe_spawns: Array[Node2D] = []
+		for marker in available_spawns:
+			var dist: float = marker.global_position.distance_to(player.global_position)
+			if dist >= MIN_WAVE_SPAWN_DISTANCE_TO_PLAYER:
+				safe_spawns.append(marker)
+		
+		# Fallback: if all spawns are too close, use them anyway (better than no spawn)
+		if not safe_spawns.is_empty():
+			available_spawns = safe_spawns
+			print("[SPAWN] Using %d safe spawn points (min distance %.1f)" % [
+				available_spawns.size(), MIN_WAVE_SPAWN_DISTANCE_TO_PLAYER
+			])
+		else:
+			print("[SPAWN] All spawns too close to player, using all %d points" % available_spawns.size())
+	
 	if available_spawns.is_empty():
-		print("[WAVE] No enemy spawn markers available!")
+		print("[SPAWN ERROR] No available spawn points for wave!")
 		return
 	
 	# Prepare enemy list
@@ -1956,7 +2106,7 @@ func _crossfade_to_shop_music() -> void:
 	var shop_music = current_room.get_node_or_null("AudioStreamPlayer") if current_room else null
 	
 	if not shop_music:
-		print("[MUSIC] No shop music found in room")
+
 		return
 	
 	# Stop shop music if it's already playing (prevent double-play)

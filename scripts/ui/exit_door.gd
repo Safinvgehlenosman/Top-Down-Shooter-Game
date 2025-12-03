@@ -82,8 +82,6 @@ func open(play_sound: bool = true) -> void:
 func set_locked(locked: bool) -> void:
 	"""Set the locked state of the door."""
 	door_locked = locked
-	print("[EXIT DOOR] Door locked state: %s" % door_locked)
-
 
 func unlock_and_open(play_sound: bool = true) -> void:
 	"""Unlock and open the door (called when room is cleared)."""

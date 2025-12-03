@@ -118,9 +118,9 @@ func _apply_level_from_input() -> void:
 				var gm := get_tree().get_first_node_in_group("game_manager")
 				if gm and gm.has_method("debug_set_level"):
 					gm.debug_set_level(target_level)
-					print("[DEBUG] Set level to:", target_level)
+
 			else:
-				print("[DEBUG] Unknown command:", command, "- Type 'help' for commands")
+				pass
 
 	_close_popup()
 	# Ensure dropdown hidden
@@ -282,7 +282,7 @@ func _on_debug_input_gui_input(event: InputEvent) -> void:
 
 func _cmd_level(parts: Array) -> void:
 	if parts.size() < 2:
-		print("[DEBUG] Usage: level <number>")
+
 		return
 	
 	var target_level := int(parts[1])
@@ -292,15 +292,14 @@ func _cmd_level(parts: Array) -> void:
 	var gm := get_tree().get_first_node_in_group("game_manager")
 	if gm and gm.has_method("debug_set_level"):
 		gm.debug_set_level(target_level)
-		print("[DEBUG] Jumped to level", target_level)
+
 	else:
 		print("[DEBUG] Could not find GameManager.debug_set_level()")
 
 
 func _cmd_weapon(parts: Array) -> void:
 	if parts.size() < 2:
-		print("[DEBUG] Usage: weapon <name>")
-		print("[DEBUG] Available: shotgun, sniper, flamethrower, grenade, shuriken, turret, none")
+		pass
 		return
 	
 	var weapon_name = parts[1].to_lower()
@@ -309,39 +308,32 @@ func _cmd_weapon(parts: Array) -> void:
 		"shotgun":
 			GameState.unlocked_shotgun = true
 			GameState.set_alt_weapon(GameState.AltWeaponType.SHOTGUN)
-			print("[DEBUG] Unlocked and equipped shotgun")
-		
+
 		"sniper":
 			GameState.unlocked_sniper = true
 			GameState.set_alt_weapon(GameState.AltWeaponType.SNIPER)
-			print("[DEBUG] Unlocked and equipped sniper")
-		
+
 		"flamethrower", "flame":
 			GameState.unlocked_flamethrower = true
 			GameState.set_alt_weapon(GameState.AltWeaponType.FLAMETHROWER)
-			print("[DEBUG] Unlocked and equipped flamethrower")
-		
+
 		"grenade":
 			GameState.unlocked_grenade = true
 			GameState.set_alt_weapon(GameState.AltWeaponType.GRENADE)
-			print("[DEBUG] Unlocked and equipped grenade")
-		
+
 		"shuriken":
 			GameState.unlocked_shuriken = true
 			GameState.set_alt_weapon(GameState.AltWeaponType.SHURIKEN)
-			print("[DEBUG] Unlocked and equipped shuriken")
-		
+
 		"turret":
 			GameState.unlocked_turret = true
 			GameState.set_alt_weapon(GameState.AltWeaponType.TURRET)
-			print("[DEBUG] Unlocked and equipped turret")
-		
+
 		"none":
 			GameState.set_alt_weapon(GameState.AltWeaponType.NONE)
-			print("[DEBUG] Removed weapon")
-		
+
 		_:
-			print("[DEBUG] Unknown weapon:", weapon_name)
+			pass
 
 	# Note: Ammo system has been replaced with rechargeable fuel bars
 	# No manual ammo override needed - fuel auto-regenerates per weapon
@@ -349,8 +341,7 @@ func _cmd_weapon(parts: Array) -> void:
 
 func _cmd_ability(parts: Array) -> void:
 	if parts.size() < 2:
-		print("[DEBUG] Usage: ability <name>")
-		print("[DEBUG] Available: dash, slowmo, bubble, invis, none")
+		pass
 		return
 	
 	var ability_name = parts[1].to_lower()
@@ -359,37 +350,29 @@ func _cmd_ability(parts: Array) -> void:
 		"dash":
 			GameState.unlocked_dash = true
 			GameState.set_ability(GameState.AbilityType.DASH)
-			print("[DEBUG] Unlocked and equipped dash ability")
-		
+
 		"slowmo", "bullet_time", "time":
 			GameState.unlocked_slowmo = true
 			GameState.set_ability(GameState.AbilityType.SLOWMO)
-			print("[DEBUG] Unlocked and equipped bullet time ability")
-		
+
 		"bubble", "shield":
 			GameState.unlocked_bubble = true
 			GameState.set_ability(GameState.AbilityType.BUBBLE)
-			print("[DEBUG] Unlocked and equipped shield bubble ability")
-		
+
 		"invis":
 			GameState.unlocked_invis = true
 			GameState.set_ability(GameState.AbilityType.INVIS)
-			print("[DEBUG] Unlocked and equipped invis ability")
-		
+
 		"none":
 			GameState.set_ability(GameState.AbilityType.NONE)
-			print("[DEBUG] Removed ability")
-		
-		_:
-			print("[DEBUG] Unknown ability:", ability_name)
 
+		_:
+			pass
 
 func _cmd_upgrade(parts: Array) -> void:
 	if parts.size() < 2:
-		print("[DEBUG] Usage: upgrade <upgrade_id> [count]")
-		print("[DEBUG] Examples: primary_damage_plus_10, shotgun_unlock, max_hp_plus_1")
+		pass
 		print("[DEBUG] Optional: upgrade primary_fire_rate_uncommon 10 (apply 10 times)")
-		print("[DEBUG] See Upgrades_DB.gd for full list")
 		return
 	
 	var upgrade_id = parts[1]
@@ -412,26 +395,24 @@ func _cmd_upgrade(parts: Array) -> void:
 			hc.sync_from_gamestate()
 	
 	if count > 1:
-		print("[DEBUG] Applied upgrade '", upgrade_id, "' x", count)
-	else:
-		print("[DEBUG] Applied upgrade:", upgrade_id)
+		pass
 
+	else:
+		pass
 
 func _cmd_coins(parts: Array) -> void:
 	if parts.size() < 2:
-		print("[DEBUG] Usage: coins <amount>")
+
 		return
 	
 	var amount = int(parts[1])
 	GameState.coins = amount
 	# Emit signal to update UI immediately
 	GameState.coins_changed.emit(amount)
-	print("[DEBUG] Set coins to", amount)
-
 
 func _cmd_health(parts: Array) -> void:
 	if parts.size() < 2:
-		print("[DEBUG] Usage: health <amount>")
+
 		return
 	
 	var amount = int(parts[1])
@@ -439,11 +420,9 @@ func _cmd_health(parts: Array) -> void:
 	# If setting health above current max, increase max_health first
 	if amount > GameState.max_health:
 		GameState.max_health = amount
-		print("[DEBUG] Increased max_health to", amount)
-	
+
 	# Update GameState via setter to emit signals/UI
 	GameState.set_health(amount)
-	print("[DEBUG] Set GameState health to", GameState.health, "/", GameState.max_health)
 
 	# Sync player Health component from GameState
 	var player := get_tree().get_first_node_in_group("player")
@@ -451,8 +430,6 @@ func _cmd_health(parts: Array) -> void:
 		var hc := player.get_node_or_null("Health")
 		if hc and hc.has_method("sync_from_gamestate"):
 			hc.sync_from_gamestate()
-			print("[DEBUG] Synced player Health component to", hc.health)
-
 
 func _cmd_clear() -> void:
 	# Reset to starting state
@@ -467,20 +444,14 @@ func _cmd_clear() -> void:
 	GameState.primary_burst_count = 1
 	GameState.move_speed = 200.0
 	GameState.ability_cooldown_multiplier = 1.0
-	
-	print("[DEBUG] Cleared all upgrades, weapons, and abilities")
-
 
 func _cmd_help() -> void:
-	print("=== DEBUG CONSOLE COMMANDS ===")
+
 	print("level <num>                - Jump to level (e.g., level 15)")
 	print("weapon <name> [ammo]       - Equip weapon, optional ammo override (e.g., weapon shotgun 10)")
 	print("ability <name>             - Equip ability (dash, slowmo, bubble, invis, none)")
 	print("upgrade <id> [count]       - Add upgrade 1 or N times (e.g., upgrade primary_damage_common 10)")
 	print("coins <amount>             - Set coins (e.g., coins 999)")
 	print("health <amount>            - Set health (e.g., health 50)")
-	print("clear                      - Remove all upgrades/weapons/abilities")
-	print("help                       - Show this help")
-	print("")
-	print("TIP: You can still just type a number to jump to that level!")
-	print("===============================")
+
+

@@ -340,8 +340,7 @@ func _get_rarity_weights_for_level(level: int) -> Dictionary:
 	if can_access_synergy:
 		# Synergy gets 25% chance, other rarities share the remaining 75%
 		synergy = base_total / 3.0  # 25% synergy means base_total is 75%, so synergy = 75/3 = 25%
-		print("[SYNERGY DEBUG] SYNERGY weight enabled: %f" % synergy)
-	
+
 	var total := base_total + synergy
 	if total <= 0.0:
 		return {
@@ -389,8 +388,8 @@ func _filter_upgrades(all_upgrades: Array, wanted_rarity: Variant, taken_ids: Ar
 		
 		# Debug synergy filtering
 		if u.get("rarity", 0) == UpgradesDB.Rarity.SYNERGY:
-			print("[SYNERGY DEBUG] Checking synergy: %s" % id)
-		
+			pass
+
 		# ⭐ EXCLUDE CHAOS UPGRADES FROM NORMAL SHOPS/CHESTS
 		if u.get("effect") == "chaos_challenge":
 			continue
@@ -425,7 +424,7 @@ func _filter_upgrades(all_upgrades: Array, wanted_rarity: Variant, taken_ids: Ar
 		
 		# Debug when synergy passes all filters
 		if u.get("rarity", 0) == UpgradesDB.Rarity.SYNERGY:
-			print("[SYNERGY DEBUG] Synergy %s ADDED to filtered pool!" % id)
+			pass
 
 	return res
 

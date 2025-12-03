@@ -56,15 +56,14 @@ func _ready() -> void:
 	if door_arrow_root:
 		door_arrow_root.visible = false
 		exit_door = null
-		print("[UI] Door arrow initially hidden")
+
 	else:
-		print("[UI] WARNING: DoorArrowRoot not found - check node path!")
-	
+		pass
+
 	# ALWAYS start with fuel bar hidden - only show when weapon equipped in-run
 	if ammo_container:
 		ammo_container.visible = false
-		print("[UI] Fuel bar initially hidden")
-	
+
 	# Connect to alt weapon changes
 	GameState.alt_weapon_changed.connect(_on_alt_weapon_changed)
 	
@@ -91,22 +90,19 @@ func clear_exit_door() -> void:
 	exit_door = null
 	if door_arrow_root:
 		door_arrow_root.visible = false
-		print("[UI] Door arrow disabled")
-
 
 func _on_exit_door_spawned(door: Node2D) -> void:
 	"""Handle exit door spawned signal from GameManager (stores reference only)."""
-	print("[UI DOOR ARROW] Door spawned signal received")
-	print("[UI DOOR ARROW] is_in_hub: %s, in_shop: %s" % [is_in_hub, in_shop])
-	
+
+
 	# Always store the door reference (filtering happens in _should_show_door_arrow)
 	exit_door = door
 	
 	if is_in_hub or in_shop:
-		print("[UI DOOR ARROW] In hub/shop - arrow will be hidden by visibility check")
-	else:
-		print("[UI DOOR ARROW] Combat room - arrow will show when door opens")
+		pass
 
+	else:
+		pass
 
 func _on_alt_weapon_changed(new_weapon: int) -> void:
 	"""Handle alt weapon change to show/hide fuel bar."""
@@ -114,7 +110,7 @@ func _on_alt_weapon_changed(new_weapon: int) -> void:
 	if new_weapon == ALT_WEAPON_NONE or new_weapon == ALT_WEAPON_TURRET:
 		if ammo_container:
 			ammo_container.visible = false
-			print("[UI] Hiding fuel bar - weapon is NONE or TURRET")
+
 	# Otherwise gun.gd will call show_alt_weapon_fuel() if weapon uses fuel
 
 
@@ -235,11 +231,10 @@ func show_alt_weapon_fuel(weapon_id: String, max_fuel: float, current_fuel: floa
 	
 	# ONLY show if NOT in hub
 	if is_in_hub:
-		print("[UI] NOT showing fuel bar - in hub mode")
+
 		ammo_container.visible = false
 		return
-	
-	print("[UI] Showing fuel bar for weapon: ", weapon_id)
+
 	# Show container
 	ammo_container.visible = true
 	
@@ -409,8 +404,7 @@ func _update_chaos_pact_indicator() -> void:
 	
 	# Debug output when state changes
 	if is_active != was_visible:
-		print("[UI] Chaos pact indicator: ", "ACTIVE" if is_active else "INACTIVE", " - Challenge: '", GameState.active_chaos_challenge, "'")
-
+		pass
 
 # --------------------------------------------------------------------
 # HUB MODE (Hide in-run UI when in hub)
@@ -419,8 +413,7 @@ func _update_chaos_pact_indicator() -> void:
 func set_in_hub(is_in_hub_mode: bool) -> void:
 	"""Toggle hub mode - hides/shows in-run UI elements."""
 	is_in_hub = is_in_hub_mode
-	print("[UI] set_in_hub called: ", is_in_hub_mode)
-	
+
 	# Clear door arrow when entering hub
 	if is_in_hub:
 		exit_door = null
@@ -430,8 +423,7 @@ func set_in_hub(is_in_hub_mode: bool) -> void:
 	# FORCE hide ammo container when entering hub
 	if is_in_hub_mode and ammo_container:
 		ammo_container.visible = false
-		print("[UI] FORCE hiding fuel bar in hub")
-	
+
 	# Hide in-run UI when in hub, show them during runs
 	var show_ui = not is_in_hub_mode
 	var hp_bar = get_node_or_null("PlayerInfo/HPFill")
@@ -460,5 +452,3 @@ func set_in_hub(is_in_hub_mode: bool) -> void:
 	
 	# Keep chaos pact indicator visible if active (even in hub)
 	# It's already handled by _update_chaos_pact_indicator()
-	
-	print("[UI] Hub mode: ", "ENABLED" if is_in_hub_mode else "DISABLED", " - In-run UI: ", "HIDDEN" if is_in_hub_mode else "VISIBLE")

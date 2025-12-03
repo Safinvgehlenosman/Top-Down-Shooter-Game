@@ -47,7 +47,7 @@ func _ready() -> void:
 	velocity = direction.normalized() * s
 
 	if debug_prints:
-		print("[FireProjectile] Spawned - Speed: ", s, " Lifetime: ", lifetime, " Direction: ", direction)
+		pass
 
 	# --- Visual setup (no logic changes) -----------------------------
 	if sprite:
@@ -142,14 +142,14 @@ func _on_body_entered(body: Node2D) -> void:
 
 	if target_node == null:
 		if debug_prints:
-			print("[FireProjectile] no target found for collider", body)
+			pass
 		return
 
 	if target_node.has_method("apply_burn"):
 		target_node.apply_burn(burn_damage_per_tick, burn_duration, burn_tick_interval)
 	else:
 		if debug_prints:
-			print("[FireProjectile] resolved target has no apply_burn:", target_node)
+			pass
 
 	# No direct impact damage, just the DoT
 	queue_free()

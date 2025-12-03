@@ -23,9 +23,6 @@ func _ready() -> void:
 	if bounces_left <= 0:
 		bounces_left = default_bounces   # ensure at least 1 bounce
 
-	print("Shuriken ready. speed=", speed, " damage=", damage, " bounces_left=", bounces_left)
-
-
 func _physics_process(delta: float) -> void:
 	if direction == Vector2.ZERO:
 		return
@@ -42,7 +39,6 @@ func _physics_process(delta: float) -> void:
 	if collision:
 		var collider := collision.get_collider()
 		var normal: Vector2 = collision.get_normal()
-		print("Shuriken hit:", collider, " normal=", normal, " bounces_left=", bounces_left)
 
 		# ✅ Hit enemy → deal damage and disappear
 		if collider and collider.is_in_group("enemy"):
@@ -64,7 +60,6 @@ func _physics_process(delta: float) -> void:
 			# move slightly out of the wall so we don't instantly collide again
 			global_position = collision.get_position() + normal * 2.0
 
-			print("Bounced! new dir=", direction, " bounces_left=", bounces_left)
 		else:
-			print("No bounces left -> despawn")
+
 			queue_free()

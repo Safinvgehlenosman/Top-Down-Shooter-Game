@@ -270,7 +270,6 @@ static func get_by_id(id: String) -> Dictionary:
 # -------------------------------------------------------------------
 
 static func apply_upgrade(upgrade_id: String) -> void:
-	print("[UpgradesDB] Applying upgrade:", upgrade_id)
 
 	# Delegate to GameState which now owns upgrade application logic
 	if Engine.has_singleton("GameState"):
@@ -295,7 +294,6 @@ static func _sync_player_after_upgrade() -> void:
 	var player = tree.get_first_node_in_group("player")
 	if player and player.has_method("sync_from_gamestate"):
 		player.sync_from_gamestate()
-		print("[UpgradesDB] Player synced after upgrade")
 
 	var gun_node = null
 	if player and player.has_node("Gun"):
@@ -303,4 +301,3 @@ static func _sync_player_after_upgrade() -> void:
 	
 	if gun_node and gun_node.has_method("init_from_state"):
 		gun_node.init_from_state()
-		print("[UpgradesDB] Gun synced after upgrade")

@@ -365,8 +365,7 @@ func _get_ability_name_from_type(ability_type: int) -> String:
 # -------------------------------------------------------------------
 
 func apply_upgrade(upgrade_id: String) -> void:
-	print("[UpgradesDB] Applying upgrade:", upgrade_id)
-	
+
 	if Engine.has_singleton("GameState"):
 		GameState.apply_upgrade(upgrade_id)
 	else:
@@ -383,12 +382,10 @@ func _sync_player_after_upgrade() -> void:
 	var player = tree.get_first_node_in_group("player")
 	if player and player.has_method("sync_from_gamestate"):
 		player.sync_from_gamestate()
-		print("[UpgradesDB] Player synced after upgrade")
-	
+
 	var gun_node = null
 	if player and player.has_node("Gun"):
 		gun_node = player.get_node("Gun")
 	
 	if gun_node and gun_node.has_method("init_from_state"):
 		gun_node.init_from_state()
-		print("[UpgradesDB] Gun synced after upgrade")

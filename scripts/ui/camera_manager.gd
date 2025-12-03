@@ -29,7 +29,6 @@ func update_current_room(body, room_a: int, room_b: int) -> void:
 		update_camera()
 
 
-
 func update_camera() -> void:
 	# 👇 now handle 3 cameras instead of 2
 	var cameras = [Camera_Room0, Camera_Room1, Camera_Room2]
@@ -52,7 +51,6 @@ func update_camera() -> void:
 func _on_room_01_body_entered(body: Node2D) -> void:
 	# transition between room 0 and room 1
 	update_current_room(body, 0, 1)
-
 
 
 func _on_room_02_body_entered(body: Node2D) -> void:

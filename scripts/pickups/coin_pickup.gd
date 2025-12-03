@@ -121,7 +121,7 @@ func _on_body_entered(body: Node2D) -> void:
 		
 		# ⭐ If coin pickups are disabled by chaos challenge, set value to 0
 		if GameState.coin_pickups_disabled:
-			print("[CoinPickup] Coin pickups disabled by chaos challenge! Value set to 0")
+
 			coin_value = 0
 		
 		GameState.add_coins(coin_value)
@@ -208,5 +208,3 @@ func _spawn_coin_number(amount: int) -> void:
 	
 	# Add to scene root (not as child of coin, it's about to despawn!)
 	get_tree().root.add_child(coin_number)
-	
-	print("[CoinPickup] Spawned coin number: +", amount)

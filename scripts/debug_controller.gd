@@ -34,7 +34,6 @@ func _debug_open_shop() -> void:
 	var gm := get_tree().get_first_node_in_group("game_manager")
 	if gm and gm.has_method("_open_shop"):
 		gm._open_shop()
-		print("[DEBUG] Shop opened.")
 	else:
 		print("[DEBUG] Could not find GameManager._open_shop()")
 
@@ -68,13 +67,13 @@ func _debug_open_level_popup() -> void:
 
 func _debug_toggle_god_mode() -> void:
 	GameState.debug_god_mode = !GameState.debug_god_mode
-	print("[DEBUG] God mode:", GameState.debug_god_mode)
+
 	_update_overlay_text()
 
 
 func _debug_toggle_infinite_ammo() -> void:
 	GameState.debug_infinite_ammo = !GameState.debug_infinite_ammo
-	print("[DEBUG] Infinite ammo:", GameState.debug_infinite_ammo)
+
 	_update_overlay_text()
 
 
@@ -87,14 +86,11 @@ func _debug_toggle_noclip() -> void:
 		if shape and shape is CollisionShape2D:
 			shape.disabled = GameState.debug_noclip
 
-	print("[DEBUG] Noclip:", GameState.debug_noclip)
 	_update_overlay_text()
 
 
 func _debug_toggle_laser_mode() -> void:
 	GameState.debug_laser_mode = !GameState.debug_laser_mode
-	var state := "ON" if GameState.debug_laser_mode else "OFF"
-	print("[DEBUG] Laser mode:", state)
 	_update_overlay_text()
 
 
@@ -112,10 +108,9 @@ func _debug_toggle_overlay() -> void:
 
 	if overlay.visible:
 		_update_overlay_text()
-		print("[DEBUG] Debug overlay ON")
 	else:
-		print("[DEBUG] Debug overlay OFF")
-
+		pass
+		pass
 
 func _update_overlay_text() -> void:
 	var overlay := get_tree().get_first_node_in_group("debug_overlay")

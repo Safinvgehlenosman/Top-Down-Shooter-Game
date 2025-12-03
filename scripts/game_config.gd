@@ -20,25 +20,23 @@ extends Node
 @export var slime_heart_drop_chance: float = 0.2
 
 @export_category("Pickup Magnet")
-@export var pickup_magnet_range: float = 160.0
+@export var pickup_magnet_range: float = 400.0  # Increased from 160 to match old "super" magnet
 @export var pickup_magnet_strength: float = 500.0
 
-# Magnet speed configuration
-const PICKUP_MAGNET_SPEED_NORMAL := 600.0   # Normal magnet max speed
-const PICKUP_MAGNET_SPEED_SUPER  := 1200.0  # Super magnet for room clear (2x faster)
-const PICKUP_MAGNET_ACCEL_NORMAL := 800.0   # Normal acceleration
-const PICKUP_MAGNET_ACCEL_SUPER  := 2400.0  # Super acceleration (3x faster)
+# Magnet speed configuration - now using strong values as default
+const PICKUP_MAGNET_SPEED_BASE := 1200.0   # Base magnet max speed (was SUPER)
+const PICKUP_MAGNET_ACCEL_BASE := 2400.0   # Base acceleration (was SUPER)
 
-# Dynamic magnet radius (modified at runtime for super magnet)
-var current_pickup_magnet_range: float = 160.0
-var current_pickup_magnet_speed: float = PICKUP_MAGNET_SPEED_NORMAL
-var current_pickup_magnet_accel: float = PICKUP_MAGNET_ACCEL_NORMAL
+# Dynamic magnet radius (modified at runtime for room-clear auto-collect)
+var current_pickup_magnet_range: float = 400.0
+var current_pickup_magnet_speed: float = PICKUP_MAGNET_SPEED_BASE
+var current_pickup_magnet_accel: float = PICKUP_MAGNET_ACCEL_BASE
 
 func _ready() -> void:
-	# Initialize dynamic magnet values
+	# Initialize dynamic magnet values with strong baseline
 	current_pickup_magnet_range = pickup_magnet_range
-	current_pickup_magnet_speed = PICKUP_MAGNET_SPEED_NORMAL
-	current_pickup_magnet_accel = PICKUP_MAGNET_ACCEL_NORMAL
+	current_pickup_magnet_speed = PICKUP_MAGNET_SPEED_BASE
+	current_pickup_magnet_accel = PICKUP_MAGNET_ACCEL_BASE
 
 @export_category("Hit Feedback")
 @export var hit_shake_strength: float = 8.0

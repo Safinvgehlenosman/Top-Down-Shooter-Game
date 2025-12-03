@@ -191,5 +191,3 @@ func _spawn_hp_number(amount: int) -> void:
 	
 	# Add to scene root (not as child of heart, it's about to despawn!)
 	get_tree().root.add_child(hp_number)
-	
-	print("[HPPickup] Spawned HP number: +", amount, "HP")

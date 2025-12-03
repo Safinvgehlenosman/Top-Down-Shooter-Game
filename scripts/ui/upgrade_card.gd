@@ -302,11 +302,11 @@ func _on_buy_pressed() -> void:
 
 	# Play purchase sound effect
 	if sfx_collect:
-		print("Playing SFX_Collect - Stream: ", sfx_collect.stream, " Playing: ", sfx_collect.playing)
+
 		sfx_collect.play()
 		print("After play() - Playing: ", sfx_collect.playing)
 	else:
-		print("ERROR: sfx_collect is null!")
+		pass
 
 	# ⭐ NOTE: Do NOT touch scale here - shop_ui manages card scales for layout
 	# Only emit signal and refresh this card's state

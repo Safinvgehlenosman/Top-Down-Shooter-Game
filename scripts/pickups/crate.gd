@@ -101,8 +101,6 @@ func _spawn_loot() -> void:
 		get_tree().current_scene.add_child(coin)
 
 
-
-
 func _break_and_despawn() -> void:
 	# disable both the Area2D hitbox and the solid collider
 	if collision:
