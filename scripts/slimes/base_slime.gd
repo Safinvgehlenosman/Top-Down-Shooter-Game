@@ -1032,6 +1032,9 @@ func play_death_sequence() -> void:
 	if hit_light:
 		hit_light.color = original_light_color
 	
+	# Set corpse to lower z-index so living slimes appear on top
+	z_index = -1
+	
 	# Disable collisions so bullets don't hit corpse
 	if collision_shape:
 		collision_shape.set_deferred("disabled", true)
