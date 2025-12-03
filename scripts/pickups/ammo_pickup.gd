@@ -11,8 +11,10 @@ var z_height: float = 0.0
 var z_velocity: float = 0.0
 
 var magnet_velocity: Vector2 = Vector2.ZERO
-var magnet_acceleration: float = 800.0  # How fast pickups accelerate toward player
-var max_magnet_speed: float = 600.0     # Maximum speed cap
+
+# Auto-collect variables
+var auto_collect_target: Node2D = null
+var auto_collect_speed: float = 500.0
 
 @onready var sprite: Node2D = $Sprite2D
 @onready var collision: CollisionShape2D = $CollisionShape2D
@@ -23,29 +25,49 @@ var is_collected: bool = false
 
 func _ready() -> void:
 	add_to_group("room_cleanup")
+	add_to_group("pickup_ammo")
+
+func start_auto_collect(target: Node2D) -> void:
+	"""Start auto-collecting this pickup towards the target (player)."""
+	auto_collect_target = target
 
 func _physics_process(delta: float) -> void:
 	if is_collected:
+		return
+
+	# Auto-collect mode: fly directly to target
+	if auto_collect_target:
+		var to_target: Vector2 = auto_collect_target.global_position - global_position
+		var distance := to_target.length()
+		if distance < 8.0:
+			# Close enough, trigger pickup
+			_on_body_entered(auto_collect_target)
+			return
+		global_position += to_target.normalized() * auto_collect_speed * delta
 		return
 
 	# Magnet attraction with acceleration
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	if player:
 		var dist = global_position.distance_to(player.global_position)
-		if dist < GameConfig.pickup_magnet_range:
+		# Use dynamic magnet range from GameConfig
+		var magnet_range: float = GameConfig.current_pickup_magnet_range
+		if dist < magnet_range:
 			# Calculate direction to player
 			var dir = (player.global_position - global_position).normalized()
 			# Add damping to prevent runaway velocity
 			magnet_velocity *= 0.90  # Apply 10% friction each frame
+			# Get dynamic acceleration and max speed from GameConfig
+			var accel: float = GameConfig.current_pickup_magnet_accel
+			var max_speed: float = GameConfig.current_pickup_magnet_speed
 			# Stronger acceleration when very close (within 50 pixels)
-			var accel = magnet_acceleration
 			if dist < 50.0:
 				accel *= 2.0  # Double acceleration when close
 			# Accelerate toward player
 			magnet_velocity += dir * accel * delta
 			# Cap at maximum speed
-			if magnet_velocity.length() > max_magnet_speed:
-				magnet_velocity = magnet_velocity.normalized() * max_magnet_speed
+			if magnet_velocity.length() > max_speed:
+				magnet_velocity = magnet_velocity.normalized() * max_speed
 			# Move with accumulated velocity
 			global_position += magnet_velocity * delta
 			# Skip normal hop physics while being magnetized

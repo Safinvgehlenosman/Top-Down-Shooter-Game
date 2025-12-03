@@ -790,7 +790,7 @@ layer_0/tile_data = PackedInt32Array(0, 65536, 1, 65536, 65536, 1, 131072, 65536
 z_index = 1
 tile_set = SubResource("TileSet_1fnh7")
 
-[node name="Floor" type="TileMapLayer" parent="TileMap"]
+[node name="Floor" type="TileMapLayer" parent="TileMap" groups=["player_spawn"]]
 tile_set = SubResource("TileSet_0xadw")
 
 [node name="EnvironmentLights" type="Node" parent="TileMap"]
@@ -868,5 +868,5 @@ position = Vector2(1249, 218)
 [node name="Spawn21" type="Marker2D" parent="SpawnPoints" groups=["spawn_point"]]
 position = Vector2(714, 284)
 
-[node name="PlayerSpawn" type="Marker2D" parent="." groups=["player_spawn"]]
+[node name="PlayerSpawn" type="Marker2D" parent="."]
 position = Vector2(744, 544)

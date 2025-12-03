@@ -11,9 +11,16 @@ extends CanvasLayer
 @onready var coin_label: Label = get_node_or_null("Coins/CoinsLabel")
 @onready var level_label: Label = get_node_or_null("Level/LevelLabel")
 @onready var chaos_pact_indicator: TextureRect = get_node_or_null("ChaosPact")
+@onready var door_arrow_root: Control = $DoorArrowRoot
+@onready var door_arrow: TextureRect = $DoorArrowRoot/DoorArrow
 
 # Fuel bar configuration (assign in inspector)
 @export var weapon_fuel_progress_texture: Array[Texture2D] = []
+
+# Door arrow tracking
+var exit_door: Node2D = null
+var player: Node2D = null
+var in_shop: bool = false
 
 # Use GameState enums directly
 const ABILITY_NONE = GameState.AbilityType.NONE
@@ -45,6 +52,14 @@ func _ready() -> void:
 	if chaos_pact_indicator:
 		chaos_pact_indicator.visible = false
 	
+	# Hide door arrow by default
+	if door_arrow_root:
+		door_arrow_root.visible = false
+		exit_door = null
+		print("[UI] Door arrow initially hidden")
+	else:
+		print("[UI] WARNING: DoorArrowRoot not found - check node path!")
+	
 	# ALWAYS start with fuel bar hidden - only show when weapon equipped in-run
 	if ammo_container:
 		ammo_container.visible = false
@@ -52,6 +67,45 @@ func _ready() -> void:
 	
 	# Connect to alt weapon changes
 	GameState.alt_weapon_changed.connect(_on_alt_weapon_changed)
+	
+	# Get player reference
+	player = get_tree().get_first_node_in_group("player")
+
+
+func set_player(p: Node2D) -> void:
+	"""Set player reference for door arrow."""
+	player = p
+
+
+func set_in_shop(value: bool) -> void:
+	"""Update shop state and hide arrow when entering shop."""
+	in_shop = value
+	if in_shop:
+		exit_door = null
+		if door_arrow_root:
+			door_arrow_root.visible = false
+
+
+func clear_exit_door() -> void:
+	"""Clear exit door reference and hide arrow."""
+	exit_door = null
+	if door_arrow_root:
+		door_arrow_root.visible = false
+		print("[UI] Door arrow disabled")
+
+
+func _on_exit_door_spawned(door: Node2D) -> void:
+	"""Handle exit door spawned signal from GameManager (stores reference only)."""
+	print("[UI DOOR ARROW] Door spawned signal received")
+	print("[UI DOOR ARROW] is_in_hub: %s, in_shop: %s" % [is_in_hub, in_shop])
+	
+	# Always store the door reference (filtering happens in _should_show_door_arrow)
+	exit_door = door
+	
+	if is_in_hub or in_shop:
+		print("[UI DOOR ARROW] In hub/shop - arrow will be hidden by visibility check")
+	else:
+		print("[UI DOOR ARROW] Combat room - arrow will show when door opens")
 
 
 func _on_alt_weapon_changed(new_weapon: int) -> void:
@@ -69,11 +123,77 @@ func _process(_delta: float) -> void:
 	if coin_animation_cooldown > 0:
 		coin_animation_cooldown -= _delta
 	
+	# Update player reference if needed
+	if not player or not is_instance_valid(player):
+		player = get_tree().get_first_node_in_group("player")
+	
+	# Update door arrow rotation
+	_update_door_arrow()
+	
 	# Update displays
 	_update_hp_from_state()
 	_update_ability_bar()
 	_update_level_label()
 	_update_chaos_pact_indicator()
+
+
+func _should_show_door_arrow() -> bool:
+	"""Check if door arrow should be visible."""
+	# Never show in hub or shop
+	if is_in_hub or in_shop:
+		return false
+	
+	# Must have valid player and door references
+	if player == null or exit_door == null:
+		return false
+	
+	if not is_instance_valid(player) or not is_instance_valid(exit_door):
+		return false
+	
+	# Only show when the door is actually visible on screen
+	if not exit_door.visible:
+		return false
+	
+	# Only show when door is unlocked (check door_locked property)
+	# Door is always spawned now, but locked in combat rooms until cleared
+	if "door_locked" in exit_door and exit_door.door_locked:
+		return false
+	
+	# Only show when door is open (unlocked doors should be open)
+	if "door_open" in exit_door and not exit_door.door_open:
+		return false
+	
+	# Hide when player is very close to the door (already at it)
+	var distance := player.global_position.distance_to(exit_door.global_position)
+	if distance < 32.0:
+		return false
+	
+	return true
+
+
+func _update_door_arrow() -> void:
+	"""Update door arrow visibility and rotation."""
+	if not door_arrow_root:
+		return
+	
+	if not _should_show_door_arrow():
+		door_arrow_root.visible = false
+		return
+	
+	# Show arrow
+	door_arrow_root.visible = true
+	
+	# Calculate direction from player to door in WORLD space
+	var dir: Vector2 = exit_door.global_position - player.global_position
+	if dir == Vector2.ZERO:
+		return
+	
+	# Get angle (relative to +X axis)
+	var angle := dir.angle()
+	
+	# Arrow sprite points UP by default, so offset by +PI/2 to point in direction
+	# (UP is -Y in Godot, angle() returns 0 for +X, so UP would be -PI/2 or 3*PI/2)
+	door_arrow_root.rotation = angle + PI / 2.0
 
 
 # --------------------------------------------------------------------
@@ -300,6 +420,12 @@ func set_in_hub(is_in_hub_mode: bool) -> void:
 	"""Toggle hub mode - hides/shows in-run UI elements."""
 	is_in_hub = is_in_hub_mode
 	print("[UI] set_in_hub called: ", is_in_hub_mode)
+	
+	# Clear door arrow when entering hub
+	if is_in_hub:
+		exit_door = null
+		if door_arrow_root:
+			door_arrow_root.visible = false
 	
 	# FORCE hide ammo container when entering hub
 	if is_in_hub_mode and ammo_container:

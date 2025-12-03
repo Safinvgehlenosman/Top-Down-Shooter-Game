@@ -15,7 +15,21 @@ var destroyed: bool = false
 @onready var health_component: Node = $Health
 
 
+func force_break() -> void:
+	"""Force break the crate (called on room clear)."""
+	if destroyed:
+		return
+	# Trigger death through health component
+	if health_component and health_component.has_method("kill"):
+		health_component.kill()
+	else:
+		# Fallback: directly call die handler
+		_on_health_died()
+
+
 func _ready() -> void:
+	add_to_group("crate")
+	
 	if animated_sprite:
 		animated_sprite.play("idle")
 		base_modulate = animated_sprite.modulate
@@ -57,12 +71,17 @@ func _spawn_loot() -> void:
 	# Dynamic pickup spawn based on player needs
 	var hp_percent := 1.0
 	
-	# Calculate HP percentage
+	# Calculate HP percentage from GameState
 	if GameState.max_health > 0:
 		hp_percent = float(GameState.health) / float(GameState.max_health)
 	
 	# ⭐ Check if chaos challenge is active (no HP upgrades allowed)
 	var chaos_active := not GameState.active_chaos_challenge.is_empty()
+	
+	# LOOT PRIORITY:
+	# 1. During chaos challenge → always coins
+	# 2. Player missing HP → hearts (but NOT if at full HP)
+	# 3. Player at full HP → coins only
 	
 	# During chaos challenge always spawn coins
 	if chaos_active:
@@ -70,12 +89,12 @@ func _spawn_loot() -> void:
 			var coin := CoinScene.instantiate()
 			coin.global_position = global_position
 			get_tree().current_scene.add_child(coin)
-	# If HP is below max, always drop hearts
+	# If HP is below max, drop hearts
 	elif hp_percent < 1.0 and HeartScene:
 		var heart := HeartScene.instantiate()
 		heart.global_position = global_position
 		get_tree().current_scene.add_child(heart)
-	# Otherwise drop coins
+	# Otherwise drop coins (includes full HP case - no hearts when full!)
 	elif CoinScene:
 		var coin := CoinScene.instantiate()
 		coin.global_position = global_position

@@ -5,6 +5,7 @@ extends Area2D
 @onready var sfx_spawn: AudioStreamPlayer2D = $SFX_Spawn
 
 var door_open: bool = false
+var door_locked: bool = false  # NEW: Track locked state
 var player_in_range: bool = false
 var is_transitioning: bool = false  # NEW
 
@@ -20,6 +21,7 @@ var base_prompt_pos: Vector2
 
 func _ready() -> void:
 	visible = false
+	door_locked = false  # Start unlocked by default
 	
 	# Get reference to InteractPrompt
 	interact_prompt = get_node_or_null("InteractPrompt")
@@ -77,8 +79,20 @@ func open(play_sound: bool = true) -> void:
 			break
 
 
+func set_locked(locked: bool) -> void:
+	"""Set the locked state of the door."""
+	door_locked = locked
+	print("[EXIT DOOR] Door locked state: %s" % door_locked)
+
+
+func unlock_and_open(play_sound: bool = true) -> void:
+	"""Unlock and open the door (called when room is cleared)."""
+	door_locked = false
+	open(play_sound)
+
+
 func _on_body_entered(body: Node2D) -> void:
-	if not door_open:
+	if not door_open or door_locked:
 		return
 	
 	if body.is_in_group("player"):
@@ -116,6 +130,9 @@ func _on_animation_finished() -> void:
 
 
 func _enter_shop() -> void:
+	if door_locked:
+		return  # Can't enter locked door
+	
 	is_transitioning = true
 	
 	# Hide prompt immediately

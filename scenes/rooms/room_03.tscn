@@ -710,50 +710,50 @@ occluder = SubResource("OccluderPolygon2D_mtc6m")
 [node name="SpawnPoints" type="Node2D" parent="."]
 position = Vector2(-6, 6)
 
-[node name="Spawn1" type="Marker2D" parent="SpawnPoints" groups=["spawn_point"]]
-position = Vector2(102, 38)
+[node name="EnemySpawn" type="Marker2D" parent="SpawnPoints" groups=["enemy_spawn"]]
+position = Vector2(95, 44)
 
-[node name="Spawn2" type="Marker2D" parent="SpawnPoints" groups=["spawn_point"]]
-position = Vector2(173, 94)
+[node name="EnemySpawn2" type="Marker2D" parent="SpawnPoints" groups=["enemy_spawn"]]
+position = Vector2(151, 119)
 
-[node name="Spawn3" type="Marker2D" parent="SpawnPoints" groups=["spawn_point"]]
-position = Vector2(246, 50)
+[node name="EnemySpawn3" type="Marker2D" parent="SpawnPoints" groups=["enemy_spawn"]]
+position = Vector2(257, 72)
 
-[node name="Spawn4" type="Marker2D" parent="SpawnPoints" groups=["spawn_point"]]
-position = Vector2(211, 202)
+[node name="EnemySpawn4" type="Marker2D" parent="SpawnPoints" groups=["enemy_spawn"]]
+position = Vector2(357, 144)
 
-[node name="Spawn5" type="Marker2D" parent="SpawnPoints" groups=["spawn_point"]]
-position = Vector2(204, 328)
+[node name="EnemySpawn5" type="Marker2D" parent="SpawnPoints" groups=["enemy_spawn"]]
+position = Vector2(315, 251)
 
-[node name="Spawn6" type="Marker2D" parent="SpawnPoints" groups=["spawn_point"]]
-position = Vector2(60, 112)
+[node name="EnemySpawn6" type="Marker2D" parent="SpawnPoints" groups=["enemy_spawn"]]
+position = Vector2(448, 244)
 
-[node name="Spawn7" type="Marker2D" parent="SpawnPoints" groups=["spawn_point"]]
-position = Vector2(353, 140)
+[node name="EnemySpawn7" type="Marker2D" parent="SpawnPoints" groups=["enemy_spawn"]]
+position = Vector2(513, 320)
 
-[node name="Spawn8" type="Marker2D" parent="SpawnPoints" groups=["spawn_point"]]
-position = Vector2(379, 37)
+[node name="EnemySpawn8" type="Marker2D" parent="SpawnPoints" groups=["enemy_spawn"]]
+position = Vector2(376, 322)
 
-[node name="Spawn9" type="Marker2D" parent="SpawnPoints" groups=["spawn_point"]]
-position = Vector2(512, 131)
+[node name="CrateSpawn" type="Marker2D" parent="SpawnPoints" groups=["crate_spawn"]]
+position = Vector2(545, 223)
 
-[node name="Spawn10" type="Marker2D" parent="SpawnPoints" groups=["spawn_point"]]
-position = Vector2(532, 45)
+[node name="CrateSpawn2" type="Marker2D" parent="SpawnPoints" groups=["crate_spawn"]]
+position = Vector2(384, 264)
 
-[node name="Spawn11" type="Marker2D" parent="SpawnPoints" groups=["spawn_point"]]
-position = Vector2(505, 322)
+[node name="CrateSpawn3" type="Marker2D" parent="SpawnPoints" groups=["crate_spawn"]]
+position = Vector2(455, 329)
 
-[node name="Spawn12" type="Marker2D" parent="SpawnPoints" groups=["spawn_point"]]
-position = Vector2(366, 230)
+[node name="CrateSpawn4" type="Marker2D" parent="SpawnPoints" groups=["crate_spawn"]]
+position = Vector2(74, 134)
 
-[node name="Spawn13" type="Marker2D" parent="SpawnPoints" groups=["spawn_point"]]
-position = Vector2(430, 260)
+[node name="CrateSpawn5" type="Marker2D" parent="SpawnPoints" groups=["crate_spawn"]]
+position = Vector2(174, 50)
 
-[node name="Spawn14" type="Marker2D" parent="SpawnPoints" groups=["spawn_point"]]
-position = Vector2(548, 275)
+[node name="CrateSpawn6" type="Marker2D" parent="SpawnPoints" groups=["crate_spawn"]]
+position = Vector2(538, 136)
 
-[node name="Spawn15" type="Marker2D" parent="SpawnPoints" groups=["spawn_point"]]
-position = Vector2(367, 331)
+[node name="DoorSpawn" type="Marker2D" parent="SpawnPoints" groups=["door_spawn"]]
+position = Vector2(542, 37)
 
 [node name="PlayerSpawn" type="Marker2D" parent="." groups=["player_spawn"]]
-position = Vector2(81, 268)
+position = Vector2(59, 243)

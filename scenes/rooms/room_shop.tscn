@@ -575,11 +575,9 @@ texture_scale = 0.3
 [node name="SpawnPoints" type="Node2D" parent="."]
 position = Vector2(-620, 6)
 
-[node name="Spawn1" type="Marker2D" parent="SpawnPoints" groups=["spawn_point"]]
-position = Vector2(828, 42)
-
-[node name="PlayerSpawn" type="Marker2D" parent="." groups=["player_spawn"]]
-position = Vector2(168, 128)
+[node name="DoorSpawn" type="Marker2D" parent="SpawnPoints" groups=["door_spawn"]]
+position = Vector2(836.00006, 146)
+scale = Vector2(1.2, 1.2)
 
 [node name="ShopNPC" type="AnimatedSprite2D" parent="."]
 position = Vector2(148, 54)
@@ -612,3 +610,6 @@ script = ExtResource("5_5chtl")
 stream = ExtResource("6_5chtl")
 bus = &"BG"
 parameters/looping = true
+
+[node name="PlayerSpawn" type="Marker2D" parent="." groups=["player_spawn"]]
+position = Vector2(168, 128)

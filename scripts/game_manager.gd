@@ -1,5 +1,8 @@
 extends Node
 
+# Signals
+signal exit_door_spawned(door: Node2D)
+
 @export var death_screen_path: NodePath
 @export var shop_path: NodePath
 @export var exit_door_path: NodePath
@@ -63,9 +66,13 @@ var current_level: int = 1
 
 var current_room: Node2D
 var alive_enemies: int = 0
-var door_spawn_point: Node2D = null
 var current_exit_door: Node2D = null
-var room_spawn_points: Array[Node2D] = []
+
+# Spawn marker arrays (populated from groups)
+var enemy_spawn_points: Array[Node2D] = []
+var crate_spawn_points: Array[Node2D] = []
+var door_spawn_points: Array[Node2D] = []
+var player_spawn_points: Array[Node2D] = []
 
 # Shop room tracking
 var in_shop: bool = false
@@ -83,7 +90,6 @@ var current_wave_number: int = 0  # Which wave we're on
 var waves_enemy_budget: int = 0  # Enemy budget reserved for waves
 
 # Chest spawning
-var chest_spawn_point: Node2D = null
 var chest_spawned: bool = false
 
 @export_range(0.0, 1.0, 0.05) var chest_spawn_chance: float = 0.75  # 75% chance per level
@@ -153,6 +159,10 @@ func _ready() -> void:
 
 	if ui_root_path != NodePath():
 		game_ui = get_node(ui_root_path)
+		# Connect exit door signal to UI
+		if game_ui and game_ui.has_method("_on_exit_door_spawned"):
+			exit_door_spawned.connect(game_ui._on_exit_door_spawned)
+			print("[GameManager] Connected exit_door_spawned signal to UI")
 
 	current_level = 1
 	_update_level_ui()
@@ -165,6 +175,21 @@ func load_combat_room() -> void:
 	"""Load a random combat room with enemies and crates."""
 	in_shop = false
 	in_hub = false
+	
+	# Disable super magnet from previous room
+	_disable_super_magnet()
+	
+	# Clear door arrow before loading new room
+	if game_ui and game_ui.has_method("clear_exit_door"):
+		game_ui.clear_exit_door()
+	
+	# Notify UI we're not in hub/shop
+	if game_ui:
+		if game_ui.has_method("set_in_hub"):
+			game_ui.set_in_hub(false)
+		if game_ui.has_method("set_in_shop"):
+			game_ui.set_in_shop(false)
+	
 	_load_room_internal()
 
 
@@ -176,6 +201,18 @@ func load_shop_room() -> void:
 	
 	in_shop = true
 	in_hub = false
+	
+	# Disable super magnet
+	_disable_super_magnet()
+	
+	# Clear door arrow and notify UI
+	if game_ui:
+		if game_ui.has_method("clear_exit_door"):
+			game_ui.clear_exit_door()
+		if game_ui.has_method("set_in_shop"):
+			game_ui.set_in_shop(true)
+		if game_ui.has_method("set_in_hub"):
+			game_ui.set_in_hub(false)
 	
 	# Fade out global music and fade in shop music
 	_crossfade_to_shop_music()
@@ -192,8 +229,6 @@ func load_shop_room() -> void:
 	current_room = null
 	current_exit_door = null
 	alive_enemies = 0
-	door_spawn_point = null
-	room_spawn_points.clear()
 	
 	# Reset wave variables
 	wave_scheduled = false
@@ -201,7 +236,6 @@ func load_shop_room() -> void:
 	initial_enemies_defeated = false
 	
 	# Reset chest variables
-	chest_spawn_point = null
 	chest_spawned = false
 	
 	# Reset alpha slime tracking
@@ -214,12 +248,8 @@ func load_shop_room() -> void:
 	# Fade music to shop track
 	_crossfade_to_shop_music()
 	
-	# Get spawn points from shop room
-	if current_room.has_method("get_spawn_points"):
-		room_spawn_points = current_room.get_spawn_points()
-		if not room_spawn_points.is_empty():
-			# Reserve one spawn point for the exit door
-			door_spawn_point = room_spawn_points.pop_back()
+	# Collect spawn markers from shop room
+	_collect_room_spawn_points()
 	
 	# Move player to shop spawn
 	_move_player_to_room_spawn()
@@ -242,6 +272,18 @@ func load_hub_room() -> void:
 	in_shop = false
 	run_started = false
 	
+	# Disable super magnet
+	_disable_super_magnet()
+	
+	# Clear door arrow and notify UI we're in hub
+	if game_ui:
+		if game_ui.has_method("clear_exit_door"):
+			game_ui.clear_exit_door()
+		if game_ui.has_method("set_in_hub"):
+			game_ui.set_in_hub(true)
+		if game_ui.has_method("set_in_shop"):
+			game_ui.set_in_shop(false)
+	
 	# Clear room transient objects
 	_clear_room_transient_objects()
 	for bullet in get_tree().get_nodes_in_group("player_bullet"):
@@ -254,8 +296,6 @@ func load_hub_room() -> void:
 	current_room = null
 	current_exit_door = null
 	alive_enemies = 0
-	door_spawn_point = null
-	room_spawn_points.clear()
 	
 	# Reset wave variables
 	wave_scheduled = false
@@ -265,7 +305,6 @@ func load_hub_room() -> void:
 	current_wave_number = 0
 	
 	# Reset chest variables
-	chest_spawn_point = null
 	chest_spawned = false
 	
 	# Reset alpha slime tracking
@@ -275,16 +314,8 @@ func load_hub_room() -> void:
 	current_room = hub_room_scene.instantiate()
 	room_container.add_child(current_room)
 	
-	# Get spawn points from hub room
-	if current_room.has_method("get_spawn_points"):
-		room_spawn_points = current_room.get_spawn_points()
-		print("[HUB] Found %d spawn points" % room_spawn_points.size())
-		if not room_spawn_points.is_empty():
-			# Reserve one spawn point for the exit door
-			door_spawn_point = room_spawn_points.pop_back()
-			print("[HUB] Reserved spawn point for exit door at: ", door_spawn_point.global_position)
-	else:
-		print("[HUB] ERROR: Room doesn't have get_spawn_points method!")
+	# Collect spawn markers from hub room
+	_collect_room_spawn_points()
 	
 	# Move player to hub spawn
 	_move_player_to_room_spawn()
@@ -359,8 +390,6 @@ func _load_room_internal() -> void:
 	current_room = null
 	current_exit_door = null
 	alive_enemies = 0
-	door_spawn_point = null
-	room_spawn_points.clear()
 	
 	# Reset wave variables
 	wave_scheduled = false
@@ -370,7 +399,6 @@ func _load_room_internal() -> void:
 	current_wave_number = 0
 	
 	# Reset chest variables
-	chest_spawn_point = null
 	chest_spawned = false
 	
 	# Reset alpha slime tracking
@@ -386,6 +414,9 @@ func _load_room_internal() -> void:
 
 	current_room = scene_for_level.instantiate()
 	room_container.add_child(current_room)
+	
+	# Collect spawn markers from room
+	_collect_room_spawn_points()
 
 	_spawn_room_content()
 	_move_player_to_room_spawn()
@@ -403,18 +434,107 @@ func _update_level_ui() -> void:
 			label.modulate = Color(1, 1, 1) # White
 
 
+func _collect_room_spawn_points() -> void:
+	"""Collect spawn markers ONLY from the current room (filtered by is_ancestor_of)."""
+	enemy_spawn_points.clear()
+	crate_spawn_points.clear()
+	door_spawn_points.clear()
+	player_spawn_points.clear()
+	
+	if not current_room:
+		print("[SPAWN ERROR] No current_room - cannot collect spawn points")
+		return
+	
+	print("[SPAWN FILTER] Current room: %s" % current_room.name)
+	
+	# === ENEMY SPAWN FILTERING ===
+	var all_enemy_markers = get_tree().get_nodes_in_group("enemy_spawn")
+	print("[ENEMY SPAWN] All markers in group: %d" % all_enemy_markers.size())
+	for marker in all_enemy_markers:
+		if marker is Node2D and current_room.is_ancestor_of(marker):
+			enemy_spawn_points.append(marker)
+	print("[ENEMY SPAWN] Filtered markers in room: %d" % enemy_spawn_points.size())
+	for m in enemy_spawn_points:
+		print("  [ENEMY MARKER] %s at %s" % [m.name, m.global_position])
+	
+	# === CRATE SPAWN FILTERING ===
+	var all_crate_markers = get_tree().get_nodes_in_group("crate_spawn")
+	print("[CRATE SPAWN] All markers in group: %d" % all_crate_markers.size())
+	for marker in all_crate_markers:
+		if marker is Node2D and current_room.is_ancestor_of(marker):
+			crate_spawn_points.append(marker)
+	print("[CRATE SPAWN] Filtered markers in room: %d" % crate_spawn_points.size())
+	for m in crate_spawn_points:
+		print("  [CRATE MARKER] %s at %s" % [m.name, m.global_position])
+	
+	# === DOOR SPAWN FILTERING ===
+	var all_door_markers = get_tree().get_nodes_in_group("door_spawn")
+	print("[DOOR SPAWN] All markers in group: %d" % all_door_markers.size())
+	for marker in all_door_markers:
+		if marker is Node2D and current_room.is_ancestor_of(marker):
+			door_spawn_points.append(marker)
+	print("[DOOR SPAWN] Filtered markers in room: %d" % door_spawn_points.size())
+	for m in door_spawn_points:
+		print("  [DOOR MARKER] %s at %s" % [m.name, m.global_position])
+	
+	# === PLAYER SPAWN FILTERING ===
+	var all_player_markers = get_tree().get_nodes_in_group("player_spawn")
+	print("[PLAYER SPAWN] All markers in group: %d" % all_player_markers.size())
+	for marker in all_player_markers:
+		if marker is Node2D and current_room.is_ancestor_of(marker):
+			player_spawn_points.append(marker)
+	print("[PLAYER SPAWN] Filtered markers in room: %d" % player_spawn_points.size())
+	for m in player_spawn_points:
+		print("  [PLAYER MARKER] %s at %s" % [m.name, m.global_position])
+	
+	# === SUMMARY ===
+	print("[SPAWN SUMMARY] Enemy: %d | Crate: %d | Door: %d | Player: %d" % 
+		[enemy_spawn_points.size(), crate_spawn_points.size(), 
+		 door_spawn_points.size(), player_spawn_points.size()])
+
+
 func _move_player_to_room_spawn() -> void:
 	var player := get_tree().get_first_node_in_group("player")
+	
+	print("[PLAYER SPAWN] === PLAYER SPAWN ATTEMPT ===")
+	if current_room:
+		print("[PLAYER SPAWN] Current room: %s" % current_room.name)
+	else:
+		print("[PLAYER SPAWN] Current room: null")
+	print("[PLAYER SPAWN] Player found: %s" % ("yes" if player else "no"))
+	print("[PLAYER SPAWN] Available spawn markers: %d" % player_spawn_points.size())
+	
 	if not player or not current_room:
+		push_error("[PLAYER SPAWN] Missing player or current_room - cannot spawn")
 		return
-
-	if not current_room.has_method("get_player_spawn_point"):
-		push_warning("Current room has no get_player_spawn_point() method")
+	
+	# Error if no spawn markers found
+	if player_spawn_points.is_empty():
+		push_error("[SPAWN ERROR] No player_spawn markers found in room %s" % current_room.name)
+		# Try fallback method if available
+		if current_room.has_method("get_player_spawn_point"):
+			var spawn_point: Node2D = current_room.get_player_spawn_point()
+			if spawn_point:
+				print("[PLAYER SPAWN] Using fallback method - spawning at: %s" % spawn_point.global_position)
+				player.global_position = spawn_point.global_position
+			else:
+				push_error("[PLAYER SPAWN] Fallback method returned null!")
 		return
-
-	var spawn_point: Node2D = current_room.get_player_spawn_point()
-	if spawn_point:
-		player.global_position = spawn_point.global_position
+	
+	# Use the FIRST marker (index 0) - should be the only one if filtering worked correctly
+	var chosen_marker := player_spawn_points[0]
+	var chosen_index := 0
+	var spawn_pos := chosen_marker.global_position
+	
+	print("[PLAYER SPAWN] Using marker [%d]: %s at %s" % [chosen_index, chosen_marker.name, spawn_pos])
+	
+	# Move player
+	player.global_position = spawn_pos
+	print("[PLAYER SPAWN] Player moved to: %s" % player.global_position)
+	
+	# Update UI with player reference
+	if game_ui and game_ui.has_method("set_player"):
+		game_ui.set_player(player)
 
 
 func _pick_room_scene_for_level(_level: int) -> PackedScene:
@@ -691,39 +811,36 @@ func _spawn_enemy_at(pos: Vector2, enemy_scene: PackedScene = null) -> Node2D:
 	return enemy
 
 
-func _spawn_initial_enemies(level: int, spawn_points: Array[Node2D], themed_room: bool, themed_slimes: Array) -> void:
-	"""Simple initial spawn: one enemy per spawn point max, no validation."""
-	# Skip if in hub
+func _spawn_initial_enemies(level: int) -> void:
+	"""Spawn initial enemies using enemy_spawn markers (no physics validation)."""
 	if in_hub:
 		return
 	
-	# 1) Decide total room budget
-	var total_budget := _calculate_enemy_count_for_level(level, spawn_points.size())
-	
-	# 2) Initial enemies: 35% of total, capped 1-8
-	var initial_budget: int = clamp(int(round(total_budget * 0.35)), 1, 8)
-	
-	# 3) Clamp by spawn point count: 1 enemy per spawn point max
-	var max_initial_by_positions := spawn_points.size()
-	var initial_enemy_count: int = min(initial_budget, max_initial_by_positions)
-	
-	# 4) If no spawn points, bail
-	if initial_enemy_count <= 0:
+	var spawns := enemy_spawn_points.duplicate()
+	if spawns.is_empty():
+		print("[SPAWN] Room '%s' has no enemy_spawn markers" % current_room.name)
 		return
 	
-	# 5) Shuffle spawn points for distribution
-	var shuffled := spawn_points.duplicate()
-	shuffled.shuffle()
+	spawns.shuffle()
+	
+	var total_budget := _calculate_enemy_count_for_level(level, spawns.size())
+	var initial_budget: int = clamp(int(round(total_budget * 0.35)), 1, 8)
+	var initial_enemy_count: int = min(initial_budget, spawns.size())
 	
 	# Store waves budget
 	waves_enemy_budget = max(total_budget - initial_enemy_count, 0)
 	
-	print("[SPAWN] Initial: %d enemies | Total budget: %d | Waves: %d | Level: %d" % [initial_enemy_count, total_budget, waves_enemy_budget, level])
+	print("[SPAWN] Initial enemies: %d | Total budget: %d | Waves: %d | Level: %d" % 
+		[initial_enemy_count, total_budget, waves_enemy_budget, level])
 	
-	# 6) Spawn one enemy per spawn point, no validation
+	var themed_room := _is_themed_room(level)
+	var themed_slimes := _get_themed_room_slimes(level)
 	var spawned_enemies: Array = []
+	
+	# Spawn one enemy per marker (no validation)
 	for i in range(initial_enemy_count):
-		var sp: Node2D = shuffled[i]
+		var spawn_node: Node2D = spawns[i]
+		var pos: Vector2 = spawn_node.global_position
 		var enemy_scene: PackedScene = null
 		
 		if themed_room and themed_slimes.size() > 0:
@@ -731,7 +848,7 @@ func _spawn_initial_enemies(level: int, spawn_points: Array[Node2D], themed_room
 		else:
 			enemy_scene = _pick_enemy_scene()
 		
-		var enemy := _spawn_enemy_at(sp.global_position, enemy_scene)
+		var enemy := _spawn_enemy_at(pos, enemy_scene)
 		if enemy:
 			spawned_enemies.append(enemy)
 	
@@ -767,7 +884,23 @@ func _spawn_initial_enemies(level: int, spawn_points: Array[Node2D], themed_room
 				chest_dropper.set_meta("drops_chest", true)
 
 
-func _ensure_minimum_one_enemy(spawn_points: Array[Node2D]) -> void:
+func _spawn_crates_for_room() -> void:
+	"""Spawn crates at crate_spawn markers."""
+	if not crate_scene:
+		return
+	
+	if crate_spawn_points.is_empty():
+		return
+	
+	for spawn_node in crate_spawn_points:
+		var crate := crate_scene.instantiate()
+		current_room.add_child(crate)
+		crate.global_position = spawn_node.global_position
+	
+	print("[SPAWN] Crates: %d" % crate_spawn_points.size())
+
+
+func _ensure_minimum_one_enemy() -> void:
 	"""Failsafe: ensure non-hub rooms always have at least 1 enemy."""
 	if in_hub or in_shop:
 		return
@@ -775,8 +908,8 @@ func _ensure_minimum_one_enemy(spawn_points: Array[Node2D]) -> void:
 	# Check if we have any enemies alive
 	if alive_enemies <= 0:
 		var pos: Vector2
-		if spawn_points.size() > 0:
-			pos = spawn_points[0].global_position
+		if not enemy_spawn_points.is_empty():
+			pos = enemy_spawn_points[0].global_position
 		else:
 			# Fallback to room center or origin
 			pos = Vector2(512, 384)  # Approximate room center
@@ -790,65 +923,27 @@ func _ensure_minimum_one_enemy(spawn_points: Array[Node2D]) -> void:
 func _spawn_room_content() -> void:
 	if current_room == null:
 		return
-
-	if not current_room.has_method("get_spawn_points"):
-		push_warning("Current room has no get_spawn_points() method")
-		return
-
-	room_spawn_points = current_room.get_spawn_points()
-	if room_spawn_points.is_empty():
-		push_warning("Room '%s' has no spawn points" % current_room.name)
-		return
-
-	print("[SPAWN] Room has %d total spawn points before reserving door spawn" % room_spawn_points.size())
-	room_spawn_points.shuffle()
-
-	# reserve one spawn for the door
-	door_spawn_point = room_spawn_points.pop_back()
-	print("[SPAWN] Reserved door spawn, %d spawn points remaining for entities" % room_spawn_points.size())
 	
 	chest_spawned = false
 	alive_enemies = 0
-
-	var themed_room := _is_themed_room(current_level)
-	var themed_slimes := _get_themed_room_slimes(current_level)
-
-	# Calculate crate count
-	var crate_count := 0
-	if not themed_room:
-		crate_count = _calculate_crate_count_for_level(current_level, room_spawn_points.size())
 	
-	# --- SPAWN CRATES FIRST (IMMEDIATELY) ---
-	if not themed_room and crate_scene and crate_count > 0:
-		var crate_positions: Array[Vector2] = []
-		for sp in room_spawn_points:
-			crate_positions.append(sp.global_position)
-		
-		crate_positions.shuffle()
-		var crates_spawned := 0
-		
-		for i in range(min(crate_count, crate_positions.size())):
-			var crate := crate_scene.instantiate()
-			crate.global_position = crate_positions[i]
-			current_room.add_child(crate)
-			crates_spawned += 1
-		
-		print("[SPAWN] Crates: %d" % crates_spawned)
+	# Spawn crates at crate markers
+	_spawn_crates_for_room()
 	
-	# --- SPAWN INITIAL ENEMIES (SIMPLE, NO VALIDATION) ---
-	_spawn_initial_enemies(current_level, room_spawn_points, themed_room, themed_slimes)
+	# Spawn initial enemies at enemy markers
+	_spawn_initial_enemies(current_level)
 	
-	# Schedule multiple waves based on level
-	if current_level >= 1 and not room_spawn_points.is_empty():
+	# Schedule waves based on level
+	if current_level >= 1 and not enemy_spawn_points.is_empty():
 		waves_remaining = get_wave_count()
 		current_wave_number = 0
 		if waves_remaining > 0:
 			print("[WAVE SYSTEM] Level %d: %d waves will spawn" % [current_level, waves_remaining])
 	
 	# FAILSAFE: Ensure non-hub rooms always have at least 1 enemy
-	_ensure_minimum_one_enemy(room_spawn_points)
+	_ensure_minimum_one_enemy()
 	
-	# Always spawn the door immediately
+	# Spawn exit door at door marker
 	_spawn_exit_door()
 	
 	# In hub/shop, unlock immediately (always visible)
@@ -1065,47 +1160,60 @@ func _on_enemy_died(enemy: Node2D = null) -> void:
 		if not GameState.active_chaos_challenge.is_empty():
 			GameState.increment_chaos_challenge_progress()
 		
+		# QoL: Auto-break crates and collect pickups
+		_on_room_cleared()
+		
 		# CRITICAL: Ensure door exists before unlocking
 		_ensure_exit_door_exists()
 		_unlock_exit_door()
 
 
 func _spawn_exit_door() -> void:
-	print("[EXIT DOOR] Attempting to spawn exit door...")
+	"""Spawn exit door once when entering a room. Always spawns, lock state depends on room type."""
+	print("[EXIT DOOR] === DOOR SPAWN ATTEMPT ===")
 	
-	if current_exit_door != null:
-		print("[EXIT DOOR] Door already spawned, skipping")
-		return # already spawned
+	if current_exit_door != null and is_instance_valid(current_exit_door) and current_exit_door.is_inside_tree():
+		print("[EXIT DOOR] Door already exists and is valid in current room")
+		return
 
 	if exit_door_scene == null:
-		push_warning("[EXIT DOOR] No exit_door_scene assigned!")
+		push_error("[EXIT DOOR] No exit_door_scene assigned!")
 		return
 	
-	print("[EXIT DOOR] Exit door scene found: ", exit_door_scene)
-
-	# Failsafe: if door_spawn_point is somehow null, pick one now.
-	if door_spawn_point == null:
-		print("[EXIT DOOR] door_spawn_point is null, trying to find one...")
-		var candidates: Array[Node2D] = room_spawn_points
-		if candidates.is_empty() and current_room and current_room.has_method("get_spawn_points"):
-			candidates = current_room.get_spawn_points()
-
-		if candidates.is_empty():
-			push_warning("[EXIT DOOR] Tried to spawn door but room has no spawn points at all")
-			return
-
-		candidates.shuffle()
-		door_spawn_point = candidates[0]
-		print("[EXIT DOOR] Found spawn point: ", door_spawn_point.global_position)
-	else:
-		print("[EXIT DOOR] Using reserved spawn point: ", door_spawn_point.global_position)
-
-	current_exit_door = exit_door_scene.instantiate()
-	current_exit_door.global_position = door_spawn_point.global_position
+	if not current_room:
+		push_error("[EXIT DOOR] No current_room - cannot spawn door")
+		return
 	
+	print("[EXIT DOOR] Current room: %s" % current_room.name)
+	print("[EXIT DOOR] Available door spawn markers: %d" % door_spawn_points.size())
+
+	# Error if no spawn markers found
+	if door_spawn_points.is_empty():
+		push_error("[SPAWN ERROR] No door_spawn markers found in room %s" % current_room.name)
+		return
+	
+	# Use first door marker - trust level design
+	var chosen_marker := door_spawn_points[0]
+	var spawn_pos := chosen_marker.global_position
+	
+	print("[EXIT DOOR] Using marker: %s at %s" % [chosen_marker.name, spawn_pos])
+
+	# Instantiate and add to room
+	current_exit_door = exit_door_scene.instantiate()
+	current_exit_door.global_position = spawn_pos
 	current_room.add_child(current_exit_door)
 	
-	print("[EXIT DOOR] Door spawned successfully at: ", current_exit_door.global_position)
+	# Determine if this is a combat room (needs to be locked initially)
+	var is_combat_room := not in_hub and not in_shop
+	
+	# Set locked state
+	if current_exit_door.has_method("set_locked"):
+		current_exit_door.set_locked(is_combat_room)
+	
+	print("[EXIT DOOR] Door spawned at: %s (locked: %s)" % [current_exit_door.global_position, is_combat_room])
+	
+	# Emit signal for UI
+	emit_signal("exit_door_spawned", current_exit_door)
 
 
 func _ensure_exit_door_exists() -> void:
@@ -1121,23 +1229,119 @@ func _ensure_exit_door_exists() -> void:
 	_spawn_exit_door()
 
 
+func _on_room_cleared() -> void:
+	"""Called when all enemies and waves are defeated. Auto-breaks crates and collects pickups."""
+	print("[ROOM CLEAR] Room cleared! Auto-breaking crates and collecting pickups...")
+	_auto_break_all_crates()
+	
+	# Wait a short moment for crates to drop their loot before enabling super magnet
+	await get_tree().create_timer(0.3).timeout
+	
+	# Enable super magnet to auto-collect all pickups
+	_enable_super_magnet()
+	
+	# Unlock and open the door
+	if current_exit_door and is_instance_valid(current_exit_door) and current_exit_door.is_inside_tree():
+		if current_exit_door.has_method("unlock_and_open"):
+			current_exit_door.unlock_and_open()
+			print("[EXIT DOOR] Door unlocked via unlock_and_open()")
+		else:
+			print("[EXIT DOOR] WARNING: unlock_and_open() method not found, using fallback")
+			_unlock_exit_door()
+	else:
+		push_error("[EXIT DOOR] Room cleared but no door exists, spawning failsafe door.")
+		_spawn_exit_door()
+		await get_tree().process_frame
+		if current_exit_door and current_exit_door.has_method("unlock_and_open"):
+			current_exit_door.unlock_and_open()
+
+
+func _enable_super_magnet() -> void:
+	"""Enable super magnet to attract all pickups in the room."""
+	# Set magnet radius to cover entire room
+	GameConfig.current_pickup_magnet_range = 9999.0
+	# Set super magnet speed and acceleration for fast collection
+	GameConfig.current_pickup_magnet_speed = GameConfig.PICKUP_MAGNET_SPEED_SUPER
+	GameConfig.current_pickup_magnet_accel = GameConfig.PICKUP_MAGNET_ACCEL_SUPER
+	
+	# Log pickup count for debugging
+	var pickups: Array = []
+	pickups += get_tree().get_nodes_in_group("pickup_coin")
+	pickups += get_tree().get_nodes_in_group("pickup_heart")
+	pickups += get_tree().get_nodes_in_group("pickup_ammo")
+	print("[AUTO COLLECT] Super magnet enabled - collecting %d pickups" % pickups.size())
+
+
+func _disable_super_magnet() -> void:
+	"""Disable super magnet and restore normal magnet radius."""
+	GameConfig.current_pickup_magnet_range = GameConfig.pickup_magnet_range
+	GameConfig.current_pickup_magnet_speed = GameConfig.PICKUP_MAGNET_SPEED_NORMAL
+	GameConfig.current_pickup_magnet_accel = GameConfig.PICKUP_MAGNET_ACCEL_NORMAL
+	print("[AUTO COLLECT] Super magnet disabled")
+
+
+func _auto_break_all_crates() -> void:
+	"""Auto-break all crates in the current room when all enemies are defeated."""
+	if not current_room:
+		return
+	
+	var crates := _get_room_nodes_in_group("crate")
+	print("[AUTO BREAK] Breaking ", crates.size(), " crates")
+	
+	for crate in crates:
+		if crate.has_method("force_break"):
+			crate.force_break()
+		elif crate.has_method("take_damage"):
+			# Fallback: deal massive damage to break it
+			crate.take_damage(9999)
+
+
+func _get_room_nodes_in_group(group_name: String) -> Array:
+	"""Get all nodes in a group that are children of the current room."""
+	var result: Array = []
+	if not current_room:
+		return result
+	
+	for node in get_tree().get_nodes_in_group(group_name):
+		if current_room.is_ancestor_of(node):
+			result.append(node)
+	
+	return result
+
+
 func _unlock_exit_door() -> void:
 	"""Unlock and open the exit door after all enemies are defeated."""
 	if current_exit_door == null:
 		print("[EXIT DOOR] Cannot unlock - door not spawned yet")
 		return
 	
+	# Check if still in scene tree before awaiting
+	if not is_inside_tree():
+		return
+	
 	# Wait one frame to ensure door's _ready() has run
 	await get_tree().process_frame
 	
-	# Call open() to make door visible and interactable
-	if current_exit_door.has_method("open"):
+	# Check again after await in case node was removed
+	if not is_inside_tree() or current_exit_door == null:
+		return
+	
+	# Call unlock_and_open() method
+	if current_exit_door.has_method("unlock_and_open"):
 		# Don't play sound in hub or shop
 		if in_hub or in_shop:
-			current_exit_door.open(false)
+			current_exit_door.unlock_and_open(false)
 		else:
-			current_exit_door.open()
+			current_exit_door.unlock_and_open()
 		print("[EXIT DOOR] Door unlocked and opened")
+	else:
+		# Fallback to old open() method
+		if current_exit_door.has_method("open"):
+			if in_hub or in_shop:
+				current_exit_door.open(false)
+			else:
+				current_exit_door.open()
+			print("[EXIT DOOR] Door opened (fallback)")
 
 
 func _spawn_chest_at_enemy_position(position: Vector2) -> void:
@@ -1485,9 +1689,6 @@ func _spawn_chaos_chest_at_enemy_position(position: Vector2) -> void:
 		chaos_chest.chaos_chest_opened.connect(_on_chaos_chest_opened)
 	
 	current_room.add_child(chaos_chest)
-	
-	# Clear spawn point
-	chaos_chest_spawn_point = null
 
 
 func _are_all_chaos_upgrades_purchased() -> bool:
@@ -1590,16 +1791,17 @@ func _spawn_wave(count: int) -> void:
 	
 	wave_spawned = true
 	
-	if room_spawn_points.is_empty():
-		print("[WAVE] No spawn points available for wave!")
+	if enemy_spawn_points.is_empty():
+		print("[WAVE] No enemy spawn points available for wave!")
 		return
 	
 	print("[WAVE] Preparing wave of %d enemies!" % count)
 	
-	# Get available spawn points (exclude door spawn point)
-	var available_spawns = room_spawn_points.duplicate()
-	if door_spawn_point != null and door_spawn_point in available_spawns:
-		available_spawns.erase(door_spawn_point)
+	# Get available spawn points (use enemy spawn markers)
+	var available_spawns := enemy_spawn_points.duplicate()
+	if available_spawns.is_empty():
+		print("[WAVE] No enemy spawn markers available!")
+		return
 	
 	# Prepare enemy list
 	var themed_room := _is_themed_room(current_level)
