@@ -1,8 +1,8 @@
-[gd_scene load_steps=30 format=3 uid="uid://dkiblxaxpjj7c"]
+[gd_scene load_steps=36 format=3 uid="uid://dkiblxaxpjj7c"]
 
 [ext_resource type="Script" uid="uid://dm3cuuhskl12n" path="res://scripts/slimes/poison_slime.gd" id="1_lc8kg"]
 [ext_resource type="PackedScene" uid="uid://e2ens20cba54" path="res://scenes/slimes/poison_projectile.tscn" id="2_nganf"]
-[ext_resource type="Material" path="res://shaders/alpha_slime_material.tres" id="3_37jjl"]
+[ext_resource type="Material" uid="uid://cxvq8y2n3h4qr" path="res://shaders/alpha_slime_material.tres" id="3_37jjl"]
 [ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="3_mou80"]
 [ext_resource type="Texture2D" uid="uid://xyta8eli1ed" path="res://assets/poisonslime.png" id="5_gqrom"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="6_mnjl1"]
@@ -14,6 +14,30 @@
 [ext_resource type="Texture2D" uid="uid://d4igq4x5r01bn" path="res://assets/Separated/progressbarfill3.png" id="11_8j43l"]
 [ext_resource type="Material" uid="uid://b1lf7fv1llupn" path="res://shaders/poison_material.tres" id="11_uk53o"]
 [ext_resource type="Material" uid="uid://cy47t6cojlqrw" path="res://shaders/burn_material.tres" id="12_mnjl1"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j3qjd"]
+atlas = ExtResource("5_gqrom")
+region = Rect2(128, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7jusa"]
+atlas = ExtResource("5_gqrom")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7nfs7"]
+atlas = ExtResource("5_gqrom")
+region = Rect2(192, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3jpey"]
+atlas = ExtResource("5_gqrom")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6qlm3"]
+atlas = ExtResource("5_gqrom")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nfnbb"]
+atlas = ExtResource("5_gqrom")
+region = Rect2(64, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_585hm"]
 atlas = ExtResource("5_gqrom")
@@ -57,6 +81,29 @@ region = Rect2(160, 32, 32, 32)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_fur4c"]
 animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j3qjd")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7jusa")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7nfs7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3jpey")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6qlm3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nfnbb")
+}],
+"loop": false,
+"name": &"death",
+"speed": 5.0
+}, {
 "frames": [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_585hm")
@@ -131,7 +178,7 @@ CoinScene = ExtResource("3_mou80")
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(0, -5)
 sprite_frames = SubResource("SpriteFrames_fur4c")
-animation = &"moving"
+animation = &"death"
 autoplay = "moving"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

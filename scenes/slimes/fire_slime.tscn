@@ -1,10 +1,10 @@
-[gd_scene load_steps=30 format=3 uid="uid://cs7ihugsroow2"]
+[gd_scene load_steps=36 format=3 uid="uid://cs7ihugsroow2"]
 
 [ext_resource type="Texture2D" uid="uid://h8v2n05n2ryy" path="res://assets/fireslime.png" id="1_3rmme"]
 [ext_resource type="Script" uid="uid://c408tfsaimou5" path="res://scripts/slimes/fire_slime.gd" id="1_sri36"]
 [ext_resource type="PackedScene" uid="uid://cv5pv01n43dm2" path="res://scenes/bullets/fire_projectile.tscn" id="2_ykb4d"]
 [ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="3_son63"]
-[ext_resource type="Material" path="res://shaders/alpha_slime_material.tres" id="3_u1faj"]
+[ext_resource type="Material" uid="uid://cxvq8y2n3h4qr" path="res://shaders/alpha_slime_material.tres" id="3_u1faj"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="6_e0il6"]
 [ext_resource type="AudioStream" uid="uid://dl8r8jnncqnmf" path="res://assets/Audios/Hurt.wav" id="7_bbhrb"]
 [ext_resource type="AudioStream" uid="uid://6jgtwphqqvnt" path="res://assets/Audios/SlimeLand.wav" id="8_cmako"]
@@ -55,6 +55,30 @@ region = Rect2(128, 32, 32, 32)
 atlas = ExtResource("1_3rmme")
 region = Rect2(160, 32, 32, 32)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_cmako"]
+atlas = ExtResource("1_3rmme")
+region = Rect2(128, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_giqe7"]
+atlas = ExtResource("1_3rmme")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_25psd"]
+atlas = ExtResource("1_3rmme")
+region = Rect2(192, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_odkl6"]
+atlas = ExtResource("1_3rmme")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cd2i6"]
+atlas = ExtResource("1_3rmme")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fiejs"]
+atlas = ExtResource("1_3rmme")
+region = Rect2(64, 0, 32, 32)
+
 [sub_resource type="SpriteFrames" id="SpriteFrames_i03xf"]
 animations = [{
 "frames": [{
@@ -91,6 +115,29 @@ animations = [{
 "loop": true,
 "name": &"moving",
 "speed": 7.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cmako")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_giqe7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_25psd")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_odkl6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cd2i6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fiejs")
+}],
+"loop": false,
+"name": &"new_animation",
+"speed": 5.0
 }]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_pu8ps"]
@@ -127,8 +174,10 @@ CoinScene = ExtResource("3_son63")
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(0, -5)
 sprite_frames = SubResource("SpriteFrames_i03xf")
-animation = &"moving"
+animation = &"new_animation"
 autoplay = "moving"
+frame = 5
+frame_progress = 1.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -4)

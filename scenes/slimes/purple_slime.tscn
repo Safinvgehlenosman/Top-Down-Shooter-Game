@@ -1,9 +1,9 @@
-[gd_scene load_steps=30 format=3 uid="uid://cqim488pqgwa"]
+[gd_scene load_steps=36 format=3 uid="uid://cqim488pqgwa"]
 
 [ext_resource type="Script" uid="uid://cwadqyd2jrm74" path="res://scripts/slimes/purple_slime.gd" id="1_o0hry"]
 [ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="2_5vw4l"]
 [ext_resource type="PackedScene" uid="uid://c1ddwf2sacphd" path="res://scenes/bullets/enemyprojectile.tscn" id="2_818gd"]
-[ext_resource type="Material" path="res://shaders/alpha_slime_material.tres" id="3_84keh"]
+[ext_resource type="Material" uid="uid://cxvq8y2n3h4qr" path="res://shaders/alpha_slime_material.tres" id="3_84keh"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="4_4btqv"]
 [ext_resource type="AudioStream" uid="uid://dl8r8jnncqnmf" path="res://assets/Audios/Hurt.wav" id="5_bf0kl"]
 [ext_resource type="Texture2D" uid="uid://dsok60txc11jj" path="res://assets/purpleslime.png" id="5_revln"]
@@ -14,6 +14,30 @@
 [ext_resource type="Material" uid="uid://b1lf7fv1llupn" path="res://shaders/poison_material.tres" id="11_uc8gj"]
 [ext_resource type="Texture2D" uid="uid://d4igq4x5r01bn" path="res://assets/Separated/progressbarfill3.png" id="11_wduws"]
 [ext_resource type="Material" uid="uid://cy47t6cojlqrw" path="res://shaders/burn_material.tres" id="12_ybwue"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_otew3"]
+atlas = ExtResource("5_revln")
+region = Rect2(128, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dywru"]
+atlas = ExtResource("5_revln")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gnuce"]
+atlas = ExtResource("5_revln")
+region = Rect2(192, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6pifi"]
+atlas = ExtResource("5_revln")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rbrl4"]
+atlas = ExtResource("5_revln")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_u3n70"]
+atlas = ExtResource("5_revln")
+region = Rect2(64, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_rj2ur"]
 atlas = ExtResource("5_revln")
@@ -57,6 +81,29 @@ region = Rect2(160, 32, 32, 32)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_a02ik"]
 animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_otew3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dywru")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gnuce")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6pifi")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rbrl4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_u3n70")
+}],
+"loop": false,
+"name": &"death",
+"speed": 5.0
+}, {
 "frames": [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_rj2ur")
@@ -128,8 +175,10 @@ CoinScene = ExtResource("2_5vw4l")
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(0, -5)
 sprite_frames = SubResource("SpriteFrames_a02ik")
-animation = &"moving"
+animation = &"death"
 autoplay = "moving"
+frame = 5
+frame_progress = 1.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 visible = false

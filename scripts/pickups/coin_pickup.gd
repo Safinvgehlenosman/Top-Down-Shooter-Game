@@ -28,6 +28,7 @@ var auto_collect_speed: float = 500.0
 func _ready() -> void:
 	add_to_group("room_cleanup")
 	add_to_group("pickup_coin")
+	print("[MAGNET DEBUG] Coin pickup using magnet radius = ", GameConfig.current_pickup_magnet_range)
 
 func start_auto_collect(target: Node2D) -> void:
 	"""Start auto-collecting this pickup towards the target (player)."""

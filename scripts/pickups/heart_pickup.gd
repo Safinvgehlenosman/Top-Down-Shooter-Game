@@ -27,6 +27,7 @@ var is_collected: bool = false   # <-- added
 func _ready() -> void:
 	add_to_group("room_cleanup")
 	add_to_group("pickup_heart")
+	print("[MAGNET DEBUG] Heart pickup using magnet radius = ", GameConfig.current_pickup_magnet_range)
 
 
 func start_auto_collect(target: Node2D) -> void:

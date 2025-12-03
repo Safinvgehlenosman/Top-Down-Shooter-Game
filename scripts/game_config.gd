@@ -20,21 +20,21 @@ extends Node
 @export var slime_heart_drop_chance: float = 0.2
 
 @export_category("Pickup Magnet")
-@export var pickup_magnet_range: float = 400.0  # Increased from 160 to match old "super" magnet
+@export var pickup_magnet_range: float = 9999.0  # Always room-wide vacuum range
 @export var pickup_magnet_strength: float = 500.0
 
 # Magnet speed configuration - now using strong values as default
 const PICKUP_MAGNET_SPEED_BASE := 1200.0   # Base magnet max speed (was SUPER)
 const PICKUP_MAGNET_ACCEL_BASE := 2400.0   # Base acceleration (was SUPER)
 
-# Dynamic magnet radius (modified at runtime for room-clear auto-collect)
-var current_pickup_magnet_range: float = 400.0
+# Dynamic magnet values - now always use maximum range (9999)
+var current_pickup_magnet_range: float = 9999.0
 var current_pickup_magnet_speed: float = PICKUP_MAGNET_SPEED_BASE
 var current_pickup_magnet_accel: float = PICKUP_MAGNET_ACCEL_BASE
 
 func _ready() -> void:
-	# Initialize dynamic magnet values with strong baseline
-	current_pickup_magnet_range = pickup_magnet_range
+	# Initialize dynamic magnet values - always use room-wide range
+	current_pickup_magnet_range = pickup_magnet_range  # Always 9999
 	current_pickup_magnet_speed = PICKUP_MAGNET_SPEED_BASE
 	current_pickup_magnet_accel = PICKUP_MAGNET_ACCEL_BASE
 

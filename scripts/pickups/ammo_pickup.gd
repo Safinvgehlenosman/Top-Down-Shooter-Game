@@ -26,6 +26,7 @@ var is_collected: bool = false
 func _ready() -> void:
 	add_to_group("room_cleanup")
 	add_to_group("pickup_ammo")
+	print("[MAGNET DEBUG] Ammo pickup using magnet radius = ", GameConfig.current_pickup_magnet_range)
 
 func start_auto_collect(target: Node2D) -> void:
 	"""Start auto-collecting this pickup towards the target (player)."""

@@ -1053,8 +1053,8 @@ func _spawn_room_content() -> void:
 	_spawn_exit_door()
 	
 	# In hub/shop, unlock immediately (always visible)
-	# In combat rooms, unlock only when enemies are defeated
-	if in_hub or in_shop or alive_enemies == 0:
+	# In combat rooms, door stays locked until budget-based clear
+	if in_hub or in_shop:
 		_unlock_exit_door()
 
 
@@ -1281,21 +1281,15 @@ func _on_enemy_died(enemy: Node2D = null) -> void:
 	var all_waves_scheduled := waves_remaining <= 0
 	var budget_complete := level_enemies_killed >= level_enemy_budget
 	
-	if budget_complete and all_waves_scheduled:
-		# ⭐ LEVEL COMPLETE - ALL BUDGET ENEMIES DEFEATED
-		print("[SCALING DEBUG] Level %d complete: killed=%d / budget=%d (waves=%d)" % [
-			current_level, level_enemies_killed, level_enemy_budget, get_wave_count(current_level)
+	# Safety warning: waves finished but budget incomplete
+	if all_waves_scheduled and not budget_complete and level_enemy_budget > 0:
+		print("[SCALING WARNING] Level %d: waves finished but kills=%d < budget=%d" % [
+			current_level, level_enemies_killed, level_enemy_budget
 		])
-		
-		if not GameState.active_chaos_challenge.is_empty():
-			GameState.increment_chaos_challenge_progress()
-		
-		# QoL: Auto-break crates and collect pickups
-		_on_room_cleared()
-		
-		# CRITICAL: Ensure door exists before unlocking
-		_ensure_exit_door_exists()
-		_unlock_exit_door()
+	
+	if budget_complete and all_waves_scheduled:
+		# ⭐ LEVEL COMPLETE - Trigger centralized clear function
+		_on_level_cleared()
 		return
 	
 	# If current wave is clear but more waves remain, schedule next wave
@@ -1377,20 +1371,29 @@ func _ensure_exit_door_exists() -> void:
 	_spawn_exit_door_internal(should_lock)
 
 
-func _on_room_cleared() -> void:
-	"""Called when all enemies and waves are defeated. Auto-breaks crates and collects pickups."""
+func _on_level_cleared() -> void:
+	"""SINGLE CENTRALIZED FUNCTION - Called only when budget-based level clear conditions are met."""
 	if room_cleared:
-
-		return
+		return  # Already cleared, prevent duplicate execution
 	
 	room_cleared = true
-
+	
+	# Print budget completion confirmation
+	print("[LEVEL CLEAR] Level %d complete: killed=%d / budget=%d (waves=%d)" % [
+		current_level, level_enemies_killed, level_enemy_budget, get_wave_count(current_level)
+	])
+	
+	# Update chaos challenge progress if active
+	if not GameState.active_chaos_challenge.is_empty():
+		GameState.increment_chaos_challenge_progress()
+	
+	# Auto-break all crates in the room
 	_auto_break_all_crates()
 	
-	# Wait a short moment for crates to drop their loot before enabling super magnet
+	# Wait for crate loot to drop before collecting
 	await get_tree().create_timer(0.3).timeout
 	
-	# Enable super magnet to auto-collect all pickups
+	# Auto-collect all pickups (magnet already at 9999 range)
 	_enable_super_magnet()
 	
 	# Ensure door exists and unlock it
@@ -1399,26 +1402,23 @@ func _on_room_cleared() -> void:
 
 
 func _enable_super_magnet() -> void:
-	"""Enable super magnet to attract all pickups in the room."""
-	# Set magnet radius to cover entire room
-	GameConfig.current_pickup_magnet_range = 9999.0
-	# Set super magnet speed and acceleration for fast collection
-	GameConfig.current_pickup_magnet_speed = GameConfig.PICKUP_MAGNET_SPEED_SUPER
-	GameConfig.current_pickup_magnet_accel = GameConfig.PICKUP_MAGNET_ACCEL_SUPER
+	"""Trigger auto-collect phase (magnet range already 9999 by default)."""
+	# Magnet radius is always 9999 now - no need to change it
+	# This function just logs the auto-collect phase for debugging
 	
 	# Log pickup count for debugging
 	var pickups: Array = []
 	pickups += get_tree().get_nodes_in_group("pickup_coin")
 	pickups += get_tree().get_nodes_in_group("pickup_heart")
 	pickups += get_tree().get_nodes_in_group("pickup_ammo")
-	print("[AUTO COLLECT] Super magnet enabled - collecting %d pickups" % pickups.size())
+	print("[AUTO COLLECT] Room-wide collection triggered (magnet range already 9999) - collecting %d pickups" % pickups.size())
 
 
 func _disable_super_magnet() -> void:
-	"""Disable super magnet and restore normal magnet radius."""
-	GameConfig.current_pickup_magnet_range = GameConfig.pickup_magnet_range
-	GameConfig.current_pickup_magnet_speed = GameConfig.PICKUP_MAGNET_SPEED_NORMAL
-	GameConfig.current_pickup_magnet_accel = GameConfig.PICKUP_MAGNET_ACCEL_NORMAL
+	"""End auto-collect phase (magnet range stays at 9999 always)."""
+	# Magnet radius stays at 9999 - no changes needed
+	# This function kept for future behavior or logging if needed
+	print("[AUTO COLLECT] Auto-collect phase ended (magnet range stays 9999)")
 
 func _auto_break_all_crates() -> void:
 	"""Auto-break all crates in the current room when all enemies are defeated."""
@@ -1590,20 +1590,21 @@ func _get_living_enemy_count() -> int:
 
 
 func _force_room_clear() -> void:
-	"""Force room clear even if wave system miscounted. Prevents softlocks."""
+	"""Force room clear even if wave system miscounted. Prevents softlocks.
+	This is a WATCHDOG FAILSAFE - should not normally trigger if budget system works correctly.
+	⚠️ DISABLED: No longer unlocks door to prevent masking budget bugs."""
 	if room_cleared:
 		return
 	
-	room_cleared = true
-
-	# Auto-break crates and enable super magnet
-	_auto_break_all_crates()
-	await get_tree().create_timer(0.3).timeout
-	_enable_super_magnet()
+	# Log warning - this indicates budget system may have miscounted
+	print("[SCALING WARNING] FAILSAFE TRIGGERED - Force clearing level %d (killed=%d, budget=%d, waves_remaining=%d)" % [
+		current_level, level_enemies_killed, level_enemy_budget, waves_remaining
+	])
+	print("[SCALING WARNING] _force_room_clear() called - this should NOT normally happen")
+	print("[SCALING WARNING] Door will NOT unlock to expose budget tracking bugs")
 	
-	# Ensure door exists and unlock it
-	_ensure_exit_door_exists()
-	_unlock_and_open_exit_door()
+	# DO NOT unlock door - let the bug be visible so we can fix it
+	# The budget system should handle all unlocks via _on_level_cleared()
 
 
 func _unlock_and_open_exit_door() -> void:
