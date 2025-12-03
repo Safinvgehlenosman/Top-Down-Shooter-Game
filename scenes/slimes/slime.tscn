@@ -1,4 +1,4 @@
-[gd_scene load_steps=35 format=3 uid="uid://0gile0fujjql"]
+[gd_scene load_steps=41 format=3 uid="uid://0gile0fujjql"]
 
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="1_371uh"]
 [ext_resource type="Script" uid="uid://dwrplk25tpc2x" path="res://scripts/slimes/green_slime.gd" id="1_pjw23"]
@@ -78,6 +78,30 @@ region = Rect2(0, 32, 32, 32)
 atlas = ExtResource("4_gstla")
 region = Rect2(32, 32, 32, 32)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_umvj8"]
+atlas = ExtResource("4_gstla")
+region = Rect2(224, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_c3mo4"]
+atlas = ExtResource("4_gstla")
+region = Rect2(192, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cmyi3"]
+atlas = ExtResource("4_gstla")
+region = Rect2(160, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lbfv2"]
+atlas = ExtResource("4_gstla")
+region = Rect2(128, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_b1hr5"]
+atlas = ExtResource("4_gstla")
+region = Rect2(96, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_150dh"]
+atlas = ExtResource("4_gstla")
+region = Rect2(64, 32, 32, 32)
+
 [sub_resource type="SpriteFrames" id="SpriteFrames_umvj8"]
 animations = [{
 "frames": [{
@@ -137,6 +161,29 @@ animations = [{
 "loop": true,
 "name": &"moving",
 "speed": 7.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_umvj8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_c3mo4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cmyi3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lbfv2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_b1hr5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_150dh")
+}],
+"loop": false,
+"name": &"spawn",
+"speed": 5.0
 }]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_pu8ps"]
@@ -171,7 +218,7 @@ CoinScene = ExtResource("2_gstla")
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(0, -5)
 sprite_frames = SubResource("SpriteFrames_umvj8")
-animation = &"death"
+animation = &"spawn"
 autoplay = "moving"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

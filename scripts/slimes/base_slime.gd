@@ -212,6 +212,9 @@ func _get_retreat_threshold() -> float:
 
 
 func _ready() -> void:
+	# CRITICAL: Add to enemy group so GameManager can track us
+	add_to_group("enemy")
+	
 	player = get_tree().get_first_node_in_group("player") as Node2D
 	last_position = global_position  # Initialize stuck detection
 

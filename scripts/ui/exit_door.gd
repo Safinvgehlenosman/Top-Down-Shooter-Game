@@ -20,8 +20,13 @@ var base_prompt_pos: Vector2
 
 
 func _ready() -> void:
-	visible = false
-	door_locked = false  # Start unlocked by default
+	visible = true  # Always visible from start
+	door_locked = true  # Start locked for combat rooms (GameManager sets to false for hub/shop)
+	
+	# Ensure high z-index for visibility
+	if animated_sprite:
+		animated_sprite.z_index = 10
+		animated_sprite.z_as_relative = false
 	
 	# Get reference to InteractPrompt
 	interact_prompt = get_node_or_null("InteractPrompt")
@@ -46,8 +51,13 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	# Check for E key input
 	if Input.is_action_just_pressed("ui_accept") or Input.is_action_just_pressed("interact"):
-		if player_in_range and door_open and not is_transitioning:
-			_enter_shop()
+		if player_in_range and door_open:
+			if door_locked:
+				print("[EXIT DOOR] Player tried to use locked door")
+				# TODO: Play locked sound or show hint
+				return
+			if not is_transitioning:
+				_enter_shop()
 	
 	# Hover animation for prompt (same as chest)
 	if interact_prompt and interact_prompt.visible:
@@ -82,28 +92,50 @@ func open(play_sound: bool = true) -> void:
 func set_locked(locked: bool) -> void:
 	"""Set the locked state of the door."""
 	door_locked = locked
+	_update_visual_state()
+
+
+func _update_visual_state() -> void:
+	"""Update door visual based on locked state."""
+	if not animated_sprite:
+		return
+	# You can add different animations for locked/unlocked here if you have them
+	# For now, just ensure we're playing the default animation
+	if not door_open:
+		animated_sprite.play("default")
 
 func unlock_and_open(play_sound: bool = true) -> void:
 	"""Unlock and open the door (called when room is cleared)."""
+	print("[EXIT DOOR] unlock_and_open called - setting locked to false")
 	door_locked = false
 	open(play_sound)
+	print("[EXIT DOOR] Door state after unlock: locked=%s, open=%s" % [door_locked, door_open])
 
 
 func _on_body_entered(body: Node2D) -> void:
-	if not door_open or door_locked:
+	if not body.is_in_group("player"):
 		return
 	
-	if body.is_in_group("player"):
-		player_in_range = true
-		
-		# Play open animation
-		if animated_sprite:
-			animated_sprite.play("open")
-		
-		# Show prompt
-		if interact_prompt:
+	player_in_range = true
+	
+	if door_locked:
+		print("[EXIT DOOR] Player touched locked door")
+		# Show prompt even when locked so player knows it's there
+		if interact_prompt and door_open:
 			interact_prompt.visible = true
 			hover_time = 0.0
+		return
+	
+	if not door_open:
+		return
+	
+	# Door is unlocked and open
+	if animated_sprite:
+		animated_sprite.play("open")
+	
+	if interact_prompt:
+		interact_prompt.visible = true
+		hover_time = 0.0
 
 
 func _on_body_exited(body: Node2D) -> void:

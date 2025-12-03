@@ -1,7 +1,24 @@
 extends Node
 
+# ============================================================================
+# B2 WAVE SYSTEM - CLEAN, TIMER-DRIVEN, RELIABLE
+# ============================================================================
+# Wave Count: 1 + floor(level / 3)  →  L1-2=1, L3-5=2, L6-8=3, L9-11=4, etc.
+# Enemy Distribution: Total enemies divided evenly across waves
+# Wave Timing: 8s - (level * 0.2s), minimum 4s between waves
+# Door Spawning: ONLY when remaining_enemies reaches 0
+# No kill-based triggers, no race conditions, no overspawning
+# ============================================================================
+
 # Signals
 signal exit_door_spawned(door: Node2D)
+
+# === B2 WAVE SYSTEM - CLEAN TRACKING ===
+var remaining_enemies: int = 0  # Total enemies alive in this combat room
+var total_waves: int = 0  # Total number of waves for this level
+var current_wave: int = 0  # Which wave we're currently on (1-indexed)
+var scheduled_waves: int = 0  # How many waves have been spawned so far
+var door_has_spawned: bool = false  # Has exit door been spawned yet?
 
 @export var death_screen_path: NodePath
 @export var shop_path: NodePath
@@ -28,12 +45,10 @@ signal exit_door_spawned(door: Node2D)
 @export var min_spawn_distance_from_player: float = 120.0  # Distance from player (with fallback)
 @export var spawn_check_radius: float = 6.0  # Radius for wall collision check
 
-@export_group("Staggered Spawning")
-@export var spawn_duration_initial: float = 5.0  # Time to spawn initial room enemies
-@export var spawn_duration_wave_min: float = 5.0  # Minimum wave spawn duration
-@export var spawn_duration_wave_max: float = 10.0  # Maximum wave spawn duration
-
-const MIN_WAVE_SPAWN_DISTANCE_TO_PLAYER := 192.0  # Minimum distance from player for wave spawns
+# B2 Wave timing - decreases with level for faster pacing
+const WAVE_INTERVAL_BASE := 8.0  # Base seconds between waves
+const WAVE_INTERVAL_PER_LEVEL := 0.2  # Reduction per level
+const WAVE_INTERVAL_MIN := 4.0  # Minimum interval
 
 
 # --- ENEMY SPAWN TABLE ----------------------------------------------
@@ -112,13 +127,7 @@ var current_level: int = 1
 @onready var room_container: Node2D = $"../RoomContainer"
 
 var current_room: Node2D
-var alive_enemies: int = 0
 var current_exit_door: Node2D = null
-
-# Safety: Room clear tracking and door fail-safe
-var room_cleared: bool = false
-var no_enemy_time: float = 0.0
-var last_enemy_count: int = 0
 
 # Spawn marker arrays (populated from groups)
 var enemy_spawn_points: Array[Node2D] = []
@@ -133,18 +142,7 @@ var in_shop: bool = false
 var in_hub: bool = false
 var run_started: bool = false
 
-# Wave system - supports multiple waves
-var wave_scheduled: bool = false
-var wave_spawned: bool = false
-var initial_enemies_defeated: bool = false
-var waves_remaining: int = 0  # How many waves left to spawn
-var current_wave_number: int = 0  # Which wave we're on
-var waves_enemy_budget: int = 0  # Enemy budget reserved for waves
-
-# Level-scoped budget tracking for door unlock
-var level_enemy_budget: int = 0      # Total enemies planned for this level
-var level_enemies_spawned: int = 0   # How many have been added to scene
-var level_enemies_killed: int = 0    # How many have been defeated
+# Wave system - timer-driven waves (NOT kill-driven)
 
 # Chest spawning
 var chest_spawned: bool = false
@@ -231,9 +229,8 @@ func load_combat_room() -> void:
 	"""Load a random combat room with enemies and crates."""
 	in_shop = false
 	in_hub = false
-	room_cleared = false  # Reset for new room
-	no_enemy_time = 0.0   # Reset watchdog timer
-	last_enemy_count = 0  # Reset enemy tracking
+	remaining_enemies = 0
+	door_has_spawned = false
 	
 	# Disable super magnet from previous room
 	_disable_super_magnet()
@@ -260,9 +257,8 @@ func load_shop_room() -> void:
 	
 	in_shop = true
 	in_hub = false
-	room_cleared = true  # Shop is always "cleared"
-	no_enemy_time = 0.0
-	last_enemy_count = 0
+	remaining_enemies = 0
+	door_has_spawned = false
 	
 	# Disable super magnet
 	_disable_super_magnet()
@@ -290,12 +286,6 @@ func load_shop_room() -> void:
 	
 	current_room = null
 	current_exit_door = null
-	alive_enemies = 0
-	
-	# Reset wave variables
-	wave_scheduled = false
-	wave_spawned = false
-	initial_enemies_defeated = false
 	
 	# Reset chest variables
 	chest_spawned = false
@@ -318,8 +308,6 @@ func load_shop_room() -> void:
 	
 	# Spawn exit door immediately and unlock it (no enemies to kill in shop)
 	_spawn_exit_door()
-	await get_tree().process_frame  # Wait for door to be added to scene
-	_unlock_exit_door()
 
 
 func load_hub_room() -> void:
@@ -333,9 +321,8 @@ func load_hub_room() -> void:
 	in_hub = true
 	in_shop = false
 	run_started = false
-	room_cleared = true  # Hub is always "cleared"
-	no_enemy_time = 0.0
-	last_enemy_count = 0
+	remaining_enemies = 0
+	door_has_spawned = false
 	
 	# Disable super magnet
 	_disable_super_magnet()
@@ -360,14 +347,6 @@ func load_hub_room() -> void:
 	
 	current_room = null
 	current_exit_door = null
-	alive_enemies = 0
-	
-	# Reset wave variables
-	wave_scheduled = false
-	wave_spawned = false
-	initial_enemies_defeated = false
-	waves_remaining = 0
-	current_wave_number = 0
 	
 	# Reset chest variables
 	chest_spawned = false
@@ -378,8 +357,6 @@ func load_hub_room() -> void:
 	# Instance hub room
 	current_room = hub_room_scene.instantiate()
 	room_container.add_child(current_room)
-	
-	# Collect spawn markers from hub room
 	_collect_room_spawn_points()
 	
 	# Move player to hub spawn
@@ -392,8 +369,6 @@ func load_hub_room() -> void:
 	
 	# Spawn exit door immediately and unlock it (no enemies to kill in hub)
 	_spawn_exit_door()
-	await get_tree().process_frame  # Wait for door to be added to scene
-	_unlock_exit_door()
 	
 	# Tell UI to hide in-run elements
 	if game_ui and game_ui.has_method("set_in_hub"):
@@ -454,14 +429,8 @@ func _load_room_internal() -> void:
 
 	current_room = null
 	current_exit_door = null
-	alive_enemies = 0
-	
-	# Reset wave variables
-	wave_scheduled = false
-	wave_spawned = false
-	initial_enemies_defeated = false
-	waves_remaining = 0
-	current_wave_number = 0
+	remaining_enemies = 0
+	door_has_spawned = false
 	
 	# Reset chest variables
 	chest_spawned = false
@@ -817,8 +786,6 @@ func _spawn_enemies_over_time(enemy_list: Array, spawn_points: Array[Node2D], du
 				enemy.apply_level(current_level)
 			
 			current_room.add_child(enemy)
-			alive_enemies += 1
-			level_enemies_spawned += 1  # Track for budget system
 			spawned_enemies.append(enemy)
 			
 			if enemy.has_signal("died"):
@@ -902,8 +869,6 @@ func _spawn_enemy_at(pos: Vector2, enemy_scene: PackedScene = null) -> Node2D:
 		enemy.apply_level(current_level)
 	
 	current_room.add_child(enemy)
-	alive_enemies += 1
-	level_enemies_spawned += 1  # Track for budget system
 	
 	if enemy.has_signal("died"):
 		enemy.died.connect(_on_enemy_died.bind(enemy))
@@ -928,15 +893,13 @@ func _spawn_initial_enemies(level: int) -> void:
 	var initial_budget: int = max(int(round(total_budget * 0.35)), 1)
 	var initial_enemy_count: int = min(initial_budget, spawns.size())
 	
-	# Initialize level budget tracking
-	level_enemy_budget = total_budget
-	level_enemies_spawned = 0
-	level_enemies_killed = 0
-	
-	print("[SCALING DEBUG] Level %d: total_budget=%d, initial_spawn=%d, waves_budget=%d" % [level, total_budget, initial_enemy_count, total_budget - initial_enemy_count])
-	
-	# Store waves budget
-	waves_enemy_budget = max(total_budget - initial_enemy_count, 0)
+	# SET REMAINING_ENEMIES TO TOTAL BUDGET (all enemies for this room)
+	remaining_enemies = total_budget
+	print("[ROOM] ========================================")
+	print("[ROOM] Level %d: Total enemies = %d" % [level, total_budget])
+	print("[ROOM] Initial spawn = %d, Wave budget = %d" % [initial_enemy_count, total_budget - initial_enemy_count])
+	print("[ROOM] Remaining enemies set to: %d" % remaining_enemies)
+	print("[ROOM] ========================================")
 
 	var themed_room := _is_themed_room(level)
 	var themed_slimes := _get_themed_room_slimes(level)
@@ -1005,21 +968,7 @@ func _spawn_crates_for_room() -> void:
 	print("[SPAWN] Crates: %d" % crate_spawn_points.size())
 
 
-func _ensure_minimum_one_enemy() -> void:
-	"""Failsafe: ensure non-hub rooms always have at least 1 enemy."""
-	if in_hub or in_shop:
-		return
-	
-	# Check if we have any enemies alive
-	if alive_enemies <= 0:
-		var pos: Vector2
-		if not enemy_spawn_points.is_empty():
-			pos = enemy_spawn_points[0].global_position
-		else:
-			# Fallback to room center or origin
-			pos = Vector2(512, 384)  # Approximate room center
-		
-		_spawn_enemy_at(pos)
+
 
 # --- SPAWNING ROOM CONTENT ------------------------------------------
 
@@ -1028,34 +977,37 @@ func _spawn_room_content() -> void:
 		return
 	
 	chest_spawned = false
-	alive_enemies = 0
 	
+	# Detect room type from room script
+	var room_type := "combat"  # Default
+	if current_room.has_method("get") and "room_type" in current_room:
+		room_type = current_room.room_type
+	print("[ROOM] Room type detected: %s" % room_type)
+	
+	# Handle non-combat rooms (shop/hub) - spawn door immediately and skip combat logic
+	if room_type in ["shop", "hub"]:
+		print("[DOOR] Non-combat room (%s) → spawning door immediately." % room_type)
+		_spawn_crates_for_room()  # Crates may exist in hub/shop
+		_spawn_exit_door()
+		return  # Skip all combat logic below
+	
+	# === COMBAT ROOM LOGIC ONLY ===
 	# Spawn crates at crate markers
 	_spawn_crates_for_room()
 	
-	# Spawn initial enemies at enemy markers
-	_spawn_initial_enemies(current_level)
+	# B2 Wave System Initialization
+	var total_enemies := get_base_enemy_count(current_level)
+	remaining_enemies = total_enemies
+	total_waves = get_wave_count(current_level)
+	current_wave = 0
+	scheduled_waves = 0
 	
-	# Schedule waves based on level
-	if current_level >= 1 and not enemy_spawn_points.is_empty():
-		waves_remaining = get_wave_count(current_level)
-		current_wave_number = 0
-		var total_enemies := _calculate_enemy_count_for_level(current_level, enemy_spawn_points.size())
-		var initial_count: int = max(int(round(total_enemies * 0.35)), 1)
-		print("[SCALING DEBUG] Level %d: total_enemies=%d, waves=%d, initial_spawn=%d, wave_budget=%d" % [current_level, total_enemies, waves_remaining, initial_count, total_enemies - initial_count])
-		if waves_remaining > 0:
-			pass
-
-	# FAILSAFE: Ensure non-hub rooms always have at least 1 enemy
-	_ensure_minimum_one_enemy()
+	print("[WAVES] Level %d → waves=%d, enemies=%d total" % [current_level, total_waves, total_enemies])
 	
-	# Spawn exit door at door marker
-	_spawn_exit_door()
+	# Spawn first wave immediately
+	_spawn_next_wave()
 	
-	# In hub/shop, unlock immediately (always visible)
-	# In combat rooms, door stays locked until budget-based clear
-	if in_hub or in_shop:
-		_unlock_exit_door()
+	# DO NOT SPAWN EXIT DOOR HERE - it spawns when all enemies die (combat rooms only)
 
 
 # --- SPAWN COUNT CALCULATION ---------------------------------------
@@ -1265,140 +1217,82 @@ func _update_enemy_weights_for_level() -> void:
 # --- ENEMY DEATH / DOOR SPAWN --------------------------------------
 
 func _on_enemy_died(enemy: Node2D = null) -> void:
-	alive_enemies = max(alive_enemies - 1, 0)
-	level_enemies_killed += 1  # Track for budget system
+	"""B2: Simple enemy death handler - decrements counter and spawns door when all dead."""
+	remaining_enemies -= 1
+	print("[ROOM] Enemy died, remaining=%d" % remaining_enemies)
 	
 	# Check if this enemy should drop chest
 	if enemy != null and enemy.has_meta("drops_chest") and not chest_spawned:
 		_spawn_chest_at_enemy_position(enemy.global_position)
 		chest_spawned = true
 	
-	# ⭐ Check if this enemy should drop chaos chest
+	# Check if this enemy should drop chaos chest
 	if enemy != null and enemy.has_meta("drops_chaos_chest"):
 		_spawn_chaos_chest_at_enemy_position(enemy.global_position)
 	
-	# Check if level budget is complete (all enemies killed AND all waves scheduled)
-	var all_waves_scheduled := waves_remaining <= 0
-	var budget_complete := level_enemies_killed >= level_enemy_budget
-	
-	# Safety warning: waves finished but budget incomplete
-	if all_waves_scheduled and not budget_complete and level_enemy_budget > 0:
-		print("[SCALING WARNING] Level %d: waves finished but kills=%d < budget=%d" % [
-			current_level, level_enemies_killed, level_enemy_budget
-		])
-	
-	if budget_complete and all_waves_scheduled:
-		# ⭐ LEVEL COMPLETE - Trigger centralized clear function
-		_on_level_cleared()
-		return
-	
-	# If current wave is clear but more waves remain, schedule next wave
-	if alive_enemies == 0 and waves_remaining > 0:
-		current_wave_number += 1
-		waves_remaining -= 1
-		initial_enemies_defeated = true
-		
-		var total_waves := get_wave_count(current_level)
-		var total_budget := _calculate_enemy_count_for_level(current_level, enemy_spawn_points.size())
-		var wave_size := get_wave_enemy_count(current_wave_number + 1, total_waves, total_budget)
-		print("[WAVE SYSTEM] Wave %d/%d starting with %d enemies" % [current_wave_number + 1, total_waves, wave_size])
-		
-		# Schedule next wave with delay
-		_schedule_wave(1.5)
+	# B2: When all enemies are dead, break crates and spawn the exit door
+	if remaining_enemies == 0:
+		print("[CRATES] Room cleared → breaking all crates")
+		_break_all_crates_in_room()
+		_spawn_exit_door()
+
+
+
+
+
+
 
 
 func _spawn_exit_door() -> void:
-	"""Public wrapper for spawning exit door. Determines lock state based on room type."""
-	var is_combat_room := not in_hub and not in_shop
-	_spawn_exit_door_internal(is_combat_room)
-
-
-func _spawn_exit_door_internal(should_lock: bool) -> void:
-	"""Internal door spawn function. Always spawns, lock state depends on parameter."""
-
-	# Don't double-spawn if door already exists
-	if current_exit_door != null and is_instance_valid(current_exit_door) and current_exit_door.is_inside_tree():
-
-		return
-
+	"""B2: Spawn the exit door (simple, clean, unlocked)."""
+	if door_has_spawned:
+		return  # Already spawned
+	
 	if exit_door_scene == null:
-		push_error("[EXIT DOOR] No exit_door_scene assigned!")
+		push_error("[DOOR] No exit_door_scene assigned!")
 		return
 	
 	if not current_room:
-		push_error("[EXIT DOOR] No current_room - cannot spawn door")
+		push_error("[DOOR] No current_room - cannot spawn door")
 		return
-
-	print("[EXIT DOOR] Available door spawn markers: %d" % door_spawn_points.size())
-
-	# Error if no spawn markers found
+	
 	if door_spawn_points.is_empty():
-		push_error("[SPAWN ERROR] No door_spawn markers found in room %s" % current_room.name)
+		push_error("[DOOR] No spawn markers found!")
 		return
 	
-	# Use first door marker - trust level design
-	var chosen_marker := door_spawn_points[0]
-	var spawn_pos := chosen_marker.global_position
-
-	# Instantiate and add to room
-	current_exit_door = exit_door_scene.instantiate()
-	current_exit_door.global_position = spawn_pos
-	current_room.add_child(current_exit_door)
+	var marker = door_spawn_points.pick_random()
+	var door = exit_door_scene.instantiate()
+	door.global_position = marker.global_position
+	current_room.add_child(door)
+	current_exit_door = door
+	door_has_spawned = true
 	
-	# Set locked state based on parameter
-	if current_exit_door.has_method("set_locked"):
-		current_exit_door.set_locked(should_lock)
+	# Wait for door's _ready() to finish before unlocking
+	await get_tree().process_frame
 	
-	print("[EXIT DOOR] Door spawned at: %s (locked: %s)" % [current_exit_door.global_position, should_lock])
+	# Door is always unlocked when spawned
+	if door.has_method("unlock_and_open"):
+		door.unlock_and_open()
+	
+	print("[DOOR] Exit door spawned at: %s" % marker.global_position)
 	
 	# Emit signal for UI
-	emit_signal("exit_door_spawned", current_exit_door)
+	emit_signal("exit_door_spawned", door)
 
 
-func _ensure_exit_door_exists() -> void:
-	"""CRITICAL FALLBACK: Ensure exit door exists. Spawns unlocked if missing in cleared room."""
-	# If door already exists and is in tree, we're good
-	if current_exit_door != null and is_instance_valid(current_exit_door) and current_exit_door.is_inside_tree():
 
-		return
-	
-	# Door missing or invalid - spawn it
-
-	current_exit_door = null  # Clear invalid reference
-	
-	# Spawn unlocked if room is already cleared, locked otherwise
-	var should_lock := not room_cleared
-	_spawn_exit_door_internal(should_lock)
 
 
 func _on_level_cleared() -> void:
-	"""SINGLE CENTRALIZED FUNCTION - Called only when budget-based level clear conditions are met."""
-	if room_cleared:
-		return  # Already cleared, prevent duplicate execution
-	
-	room_cleared = true
-	
-	# Print budget completion confirmation
-	print("[LEVEL CLEAR] Level %d complete: killed=%d / budget=%d (waves=%d)" % [
-		current_level, level_enemies_killed, level_enemy_budget, get_wave_count(current_level)
-	])
-	
-	# Update chaos challenge progress if active
-	if not GameState.active_chaos_challenge.is_empty():
-		GameState.increment_chaos_challenge_progress()
-	
-	# Auto-break all crates in the room
-	_auto_break_all_crates()
-	
-	# Wait for crate loot to drop before collecting
-	await get_tree().create_timer(0.3).timeout
-	
-	# Auto-collect all pickups (magnet already at 9999 range)
-	_enable_super_magnet()
-	
-	# Ensure door exists and unlock it
-	_ensure_exit_door_exists()
-	_unlock_and_open_exit_door()
+	"""DEPRECATED - No longer used. Room clear logic moved to _check_room_cleared().
+	This function used budget-based logic which was too fragile.
+	Kept for reference only - can be removed in future cleanup."""
+	pass
+	# OLD BUDGET-BASED LOGIC (NO LONGER USED):
+	# - Checked budget_complete AND all_waves_scheduled
+	# - Had hard safety guard for enemy count
+	# - Called _auto_break_crates, _enable_super_magnet, _unlock_and_open_exit_door
+	# NOW: _check_room_cleared() handles all this based on actual enemy count only
 
 
 func _enable_super_magnet() -> void:
@@ -1420,13 +1314,21 @@ func _disable_super_magnet() -> void:
 	# This function kept for future behavior or logging if needed
 	print("[AUTO COLLECT] Auto-collect phase ended (magnet range stays 9999)")
 
-func _auto_break_all_crates() -> void:
-	"""Auto-break all crates in the current room when all enemies are defeated."""
+func _break_all_crates_in_room() -> void:
+	"""Break all crates in the current combat room when all enemies are defeated."""
 	if not current_room:
 		return
 	
+	# Only break crates in combat rooms
+	var room_type := "combat"
+	if current_room.has_method("get") and "room_type" in current_room:
+		room_type = current_room.room_type
+	
+	if room_type in ["shop", "hub"]:
+		return  # Don't break crates in shop/hub
+	
 	var crates := _get_room_nodes_in_group("crate")
-	print("[AUTO BREAK] Breaking ", crates.size(), " crates")
+	print("[AUTO BREAK] Breaking %d crates" % crates.size())
 	
 	for crate in crates:
 		if crate.has_method("force_break"):
@@ -1447,41 +1349,6 @@ func _get_room_nodes_in_group(group_name: String) -> Array:
 			result.append(node)
 	
 	return result
-
-
-func _unlock_exit_door() -> void:
-	"""Unlock and open the exit door after all enemies are defeated."""
-	if current_exit_door == null:
-
-		return
-	
-	# Check if still in scene tree before awaiting
-	if not is_inside_tree():
-		return
-	
-	# Wait one frame to ensure door's _ready() has run
-	await get_tree().process_frame
-	
-	# Check again after await in case node was removed
-	if not is_inside_tree() or current_exit_door == null:
-		return
-	
-	# Call unlock_and_open() method
-	if current_exit_door.has_method("unlock_and_open"):
-		# Don't play sound in hub or shop
-		if in_hub or in_shop:
-			current_exit_door.unlock_and_open(false)
-		else:
-			current_exit_door.unlock_and_open()
-
-	else:
-		# Fallback to old open() method
-		if current_exit_door.has_method("open"):
-			if in_hub or in_shop:
-				current_exit_door.open(false)
-			else:
-				current_exit_door.open()
-			print("[EXIT DOOR] Door opened (fallback)")
 
 
 func _spawn_chest_at_enemy_position(position: Vector2) -> void:
@@ -1551,72 +1418,13 @@ func _spawn_chest_at_enemy_position(position: Vector2) -> void:
 # - Reset chest_instance to null
 # - Reset chest_spawn_point to null
 
-func _process(delta: float) -> void:
-	# === SAFETY WATCHDOG: Prevent door softlocks ===
-	# If we're in a combat room and no enemies exist for 2+ seconds, force clear
-	if not in_hub and not in_shop and not room_cleared:
-		var living_enemies := _get_living_enemy_count()
-		
-		# Track enemy count changes for debugging
-		if living_enemies != last_enemy_count:
-
-			last_enemy_count = living_enemies
-		
-		if living_enemies == 0:
-			no_enemy_time += delta
-			
-			# Force room clear after 2 seconds with no enemies
-			if no_enemy_time >= 2.0:
-
-				_force_room_clear()
-		else:
-			no_enemy_time = 0.0
-	
-	# === DOOR EXISTENCE CHECK ===
-	# If room is cleared but door is missing/invalid, respawn it unlocked
-	if room_cleared and not in_hub and not in_shop:
-		if not current_exit_door or not is_instance_valid(current_exit_door) or not current_exit_door.is_inside_tree():
-
-			_ensure_exit_door_exists()
 
 
-func _get_living_enemy_count() -> int:
-	"""Count how many enemies are actually alive in the scene tree."""
-	var count := 0
-	for enemy in get_tree().get_nodes_in_group("enemy"):
-		if is_instance_valid(enemy) and enemy.is_inside_tree():
-			count += 1
-	return count
 
 
-func _force_room_clear() -> void:
-	"""Force room clear even if wave system miscounted. Prevents softlocks.
-	This is a WATCHDOG FAILSAFE - should not normally trigger if budget system works correctly.
-	⚠️ DISABLED: No longer unlocks door to prevent masking budget bugs."""
-	if room_cleared:
-		return
-	
-	# Log warning - this indicates budget system may have miscounted
-	print("[SCALING WARNING] FAILSAFE TRIGGERED - Force clearing level %d (killed=%d, budget=%d, waves_remaining=%d)" % [
-		current_level, level_enemies_killed, level_enemy_budget, waves_remaining
-	])
-	print("[SCALING WARNING] _force_room_clear() called - this should NOT normally happen")
-	print("[SCALING WARNING] Door will NOT unlock to expose budget tracking bugs")
-	
-	# DO NOT unlock door - let the bug be visible so we can fix it
-	# The budget system should handle all unlocks via _on_level_cleared()
 
 
-func _unlock_and_open_exit_door() -> void:
-	"""Unlock and open the exit door (used by force clear and normal clear)."""
-	if current_exit_door and is_instance_valid(current_exit_door) and current_exit_door.is_inside_tree():
-		if current_exit_door.has_method("unlock_and_open"):
-			current_exit_door.unlock_and_open()
-			print("[EXIT DOOR] Door unlocked via unlock_and_open()")
-		else:
-			print("[EXIT DOOR] WARNING: unlock_and_open() method not found")
-	else:
-		pass
+
 
 func _open_exit_door() -> void:
 	if door_open:
@@ -1928,117 +1736,65 @@ func _on_chaos_chest_opened(chaos_upgrade: Dictionary) -> void:
 
 # --- WAVE SYSTEM ---------------------------------------------------
 
-func get_wave_enemy_count(wave_number: int, total_waves: int, total_budget: int) -> int:
-	"""Calculate enemies for a specific wave using percentage distribution.
-	Wave distribution: W1=25%, W2=30%, W3=30%, W4=15%
-	Early waves warm-up, mid waves heavy pressure, final wave cleanup.
+# --- B2 WAVE SYSTEM ------------------------------------------------
+
+func get_wave_count(level: int) -> int:
+	"""B2 WAVE FORMULA: 1 + floor(level / 3)
+	L1-2=1 wave, L3-5=2 waves, L6-8=3 waves, L9-11=4 waves, etc.
+	This is the ONLY place this formula exists.
 	"""
-	if total_waves <= 0:
-		return total_budget
-	
-	# Define wave percentages (must sum to 1.0)
-	var wave_percentages := [0.25, 0.30, 0.30, 0.15]
-	
-	# Clamp wave_number to valid range
-	var wave_idx: int = clamp(wave_number - 1, 0, wave_percentages.size() - 1)
-	
-	# If we have fewer waves than percentages, redistribute
-	if total_waves < wave_percentages.size():
-		# Use only the first N percentages and renormalize
-		var sum := 0.0
-		for i in range(total_waves):
-			sum += wave_percentages[i]
-		
-		var percentage: float = wave_percentages[wave_idx] / sum
-		return int(round(total_budget * percentage))
-	else:
-		# Normal case: use percentage directly
-		return int(round(total_budget * wave_percentages[wave_idx]))
+	return 1 + int(floor(level / 3.0))
 
 
-func get_wave_count(level: int = -1) -> int:
-	"""Calculate how many waves should spawn based on level.
-	New distribution: L1-2=1 wave, L3-4=2 waves, L5-7=3 waves, L8+=4 waves
-	"""
-	var lvl := level if level > 0 else current_level
-	
-	if lvl < 1:
-		return 0
-	elif lvl <= 2:
-		return 1  # Tutorial levels
-	elif lvl <= 4:
-		return 2  # Early game
-	elif lvl <= 7:
-		return 3  # Mid game
-	else:
-		return 4  # Late game horde
+func _calculate_wave_interval() -> float:
+	"""Calculate wave spawn interval based on level (gets faster as you progress)."""
+	return clamp(WAVE_INTERVAL_BASE - current_level * WAVE_INTERVAL_PER_LEVEL, WAVE_INTERVAL_MIN, WAVE_INTERVAL_BASE)
 
 
-func _schedule_wave(delay: float) -> void:
-	"""Schedule a wave to spawn after a delay using new distribution system."""
-	if wave_scheduled:
-		return  # Already scheduled
+func _spawn_next_wave() -> void:
+	"""Spawn the next wave and schedule the following one if needed."""
+	if current_wave >= total_waves:
+		return  # No more waves to spawn
 	
-	wave_scheduled = true
-	wave_spawned = false
-
-	# Wait for delay, then spawn the wave
-	await get_tree().create_timer(delay).timeout
+	current_wave += 1
+	scheduled_waves += 1
 	
-	# Only spawn if initial enemies are actually defeated
-	if initial_enemies_defeated:
-		# Calculate wave size based on distribution
-		var total_waves := get_wave_count(current_level)
-		var total_budget := _calculate_enemy_count_for_level(current_level, enemy_spawn_points.size())
-		# Use next wave number (current_wave_number is 0-based, incremented before scheduling)
-		var next_wave_idx := current_wave_number + 1
-		var wave_size := get_wave_enemy_count(next_wave_idx, total_waves, total_budget)
-		print("[SCALING DEBUG] Spawning wave %d/%d with %d enemies" % [next_wave_idx, total_waves, wave_size])
-		_spawn_wave(wave_size)
+	# Calculate enemies for this wave
+	var total_enemies := get_base_enemy_count(current_level)
+	var enemies_per_wave := int(floor(float(total_enemies) / float(total_waves)))
+	
+	# Last wave gets any remainder
+	var wave_enemy_count := enemies_per_wave
+	if current_wave == total_waves:
+		wave_enemy_count = total_enemies - (enemies_per_wave * (total_waves - 1))
+	
+	print("[WAVES] Wave %d/%d spawning %d enemies" % [current_wave, total_waves, wave_enemy_count])
+	
+	# Spawn the wave
+	_spawn_wave(wave_enemy_count)
+	
+	# Schedule next wave if not the last
+	if current_wave < total_waves:
+		var interval := _calculate_wave_interval()
+		get_tree().create_timer(interval).timeout.connect(_spawn_next_wave)
 
 
 func _spawn_wave(count: int) -> void:
-	"""Spawn a wave of enemies using existing spawn points and logic."""
-	if wave_spawned:
-		return  # Already spawned
-	
-	wave_spawned = true
-	
+	"""Spawn exactly 'count' enemies at available spawn points."""
 	if enemy_spawn_points.is_empty():
 		print("[SPAWN ERROR] No enemy spawn points for wave!")
 		return
-
-	# Get available spawn points (use enemy spawn markers)
+	
 	var available_spawns := enemy_spawn_points.duplicate()
+	available_spawns.shuffle()
 	
-	# Filter out spawn points too close to player
-	var player := get_tree().get_first_node_in_group("player")
-	if player:
-		var safe_spawns: Array[Node2D] = []
-		for marker in available_spawns:
-			var dist: float = marker.global_position.distance_to(player.global_position)
-			if dist >= MIN_WAVE_SPAWN_DISTANCE_TO_PLAYER:
-				safe_spawns.append(marker)
-		
-		# Fallback: if all spawns are too close, use them anyway (better than no spawn)
-		if not safe_spawns.is_empty():
-			available_spawns = safe_spawns
-			print("[SPAWN] Using %d safe spawn points (min distance %.1f)" % [
-				available_spawns.size(), MIN_WAVE_SPAWN_DISTANCE_TO_PLAYER
-			])
-		else:
-			print("[SPAWN] All spawns too close to player, using all %d points" % available_spawns.size())
-	
-	if available_spawns.is_empty():
-		print("[SPAWN ERROR] No available spawn points for wave!")
-		return
-	
-	# Prepare enemy list
+	# Determine if themed room
 	var themed_room := _is_themed_room(current_level)
 	var themed_slimes := _get_themed_room_slimes(current_level)
-	var enemy_list: Array = []
 	
+	# Spawn enemies immediately (B2: no staggered spawning)
 	for i in range(count):
+		var spawn_marker: Node2D = available_spawns[i % available_spawns.size()]
 		var enemy_scene: PackedScene = null
 		
 		if themed_room and themed_slimes.size() > 0:
@@ -2047,16 +1803,7 @@ func _spawn_wave(count: int) -> void:
 			enemy_scene = _pick_enemy_scene()
 		
 		if enemy_scene:
-			enemy_list.append(enemy_scene)
-	
-	enemy_list.shuffle()
-	
-	# Pick random duration for this wave
-	var wave_duration := randf_range(spawn_duration_wave_min, spawn_duration_wave_max)
-	
-	# Start staggered wave spawning
-	if not enemy_list.is_empty():
-		_spawn_enemies_over_time(enemy_list, available_spawns, wave_duration, false)  # false = not initial, allow expansion
+			_spawn_enemy_at(spawn_marker.global_position, enemy_scene)
 
 
 # --- THEMED ROOM CONFIGURATION ---

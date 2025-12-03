@@ -1,5 +1,8 @@
 extends Node2D
 
+# Room type: "combat", "shop", or "hub"
+@export var room_type: String = "combat"
+
 # Helper to find the SpawnPoints node safely
 func _get_spawn_points_root() -> Node2D:
 	var node := get_node_or_null("SpawnPoints")

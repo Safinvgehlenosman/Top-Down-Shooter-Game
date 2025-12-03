@@ -499,6 +499,7 @@ fill_to = Vector2(0.76495725, 0.7777778)
 
 [node name="Hub" type="Node2D"]
 script = ExtResource("1_j3a0i")
+room_type = "hub"
 
 [node name="TileMap" type="TileMap" parent="."]
 z_index = -1
