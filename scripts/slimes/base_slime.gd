@@ -12,6 +12,7 @@ var contact_timer: float = 0.0
 
 @onready var hitbox: Area2D = $Hitbox
 @export var vision_radius: float = 250.0
+@onready var hp_bar: TextureRect = $HPBar
 @onready var hp_fill: TextureProgressBar = $HPBar/HPFill
 @onready var health_component: Node = $Health
 
@@ -142,6 +143,8 @@ var wander_timer: float = 0.0
 var wander_direction: Vector2 = Vector2.ZERO
 
 var is_dead: bool = false
+var is_spawning: bool = false  # Track if slime is in spawn sequence
+var ai_enabled: bool = false   # Track if AI is active
 
 # Knockback
 @export var knockback_friction: float = 600.0
@@ -234,6 +237,9 @@ func _ready() -> void:
 	
 	# Random persistent flanking offset for unique pack behavior
 	my_flanking_offset = randf_range(-PI/6, PI/6)
+	
+	# Start spawn sequence instead of immediately activating
+	play_spawn_sequence()
 
 	# --- Health component wiring ---
 	# CRITICAL: GameManager sets HP BEFORE _ready() runs - don't override it!
@@ -254,22 +260,82 @@ func _ready() -> void:
 
 		_update_hp_bar()
 
-	# De-sync animations between instances: pick a random start frame and slight speed jitter
-	if animated_sprite:
-		# Play first so animation resource is available
-		animated_sprite.play("moving")
 
-		# If sprite frames resource has the animation, clamp jitter to animation length
+func play_spawn_sequence() -> void:
+	"""Play full spawn sequence: puddle → wait → spawn animation → activate."""
+	is_spawning = true
+	ai_enabled = false
+	
+	# Hide HP bar during spawn
+	if hp_bar:
+		hp_bar.visible = false
+	
+	# Disable AI and movement
+	velocity = Vector2.ZERO
+	aggro = false
+	
+	# Disable collisions
+	if collision_shape:
+		collision_shape.set_deferred("disabled", true)
+	if hitbox and hitbox.has_node("CollisionShape2D"):
+		hitbox.get_node("CollisionShape2D").set_deferred("disabled", true)
+	
+	# Force sprite to frame 0 of "spawn" animation (puddle frame)
+	if animated_sprite and animated_sprite.sprite_frames and animated_sprite.sprite_frames.has_animation("spawn"):
+		animated_sprite.stop()
+		animated_sprite.animation = "spawn"
+		animated_sprite.frame = 0
+		
+		# Wait for spawn delay
+		await get_tree().create_timer(GameConfig.slime_spawn_delay).timeout
+		
+		# Set animation speed from config
+		animated_sprite.speed_scale = GameConfig.slime_spawn_anim_speed
+		
+		# Play spawn animation
+		animated_sprite.play("spawn")
+		
+		# Wait for animation to finish
+		await animated_sprite.animation_finished
+		
+		# Activate slime after spawn completes
+		_activate_after_spawn()
+	else:
+		# No spawn animation available - activate immediately
+		_activate_after_spawn()
+
+
+func _activate_after_spawn() -> void:
+	"""Activate the slime after spawn animation completes."""
+	is_spawning = false
+	ai_enabled = true
+	
+	# Show HP bar when active
+	if hp_bar:
+		hp_bar.visible = true
+	
+	# Enable collisions
+	if collision_shape:
+		collision_shape.set_deferred("disabled", false)
+	if hitbox and hitbox.has_node("CollisionShape2D"):
+		hitbox.get_node("CollisionShape2D").set_deferred("disabled", false)
+	
+	# Reset animation speed to normal
+	if animated_sprite:
+		animated_sprite.speed_scale = 1.0
+		
+		# De-sync animations between instances: pick a random start frame and slight speed jitter
+		animated_sprite.play("moving")
+		
 		if animated_sprite.sprite_frames and animated_sprite.sprite_frames.has_animation("moving"):
 			var fc = int(animated_sprite.sprite_frames.get_frame_count("moving"))
 			if fc > 0:
 				var max_j = int(min(fc - 1, animation_frame_jitter_max))
 				var start_frame = int(randi() % (max_j + 1))
 				animated_sprite.frame = start_frame
-
+		
 		# Small random speed variation so they don't animate in lockstep
 		var speed_mult := 1.0 + randf_range(-animation_speed_jitter_percent, animation_speed_jitter_percent)
-		# AnimatedSprite2D has `speed_scale` in Godot 4 — set it.
 		animated_sprite.speed_scale = speed_mult
 
 
@@ -309,6 +375,11 @@ func _physics_process(delta: float) -> void:
 		retreat_timer -= scaled_delta
 
 	if is_dead:
+		_update_hit_feedback(scaled_delta)
+		return
+	
+	# Don't update AI or movement during spawn sequence
+	if is_spawning or not ai_enabled:
 		_update_hit_feedback(scaled_delta)
 		return
 
@@ -936,13 +1007,73 @@ func apply_burn(dmg_per_tick: int, duration: float, interval: float) -> void:
 		health_component.apply_burn(dmg_per_tick, duration, interval)
 
 
+func play_death_sequence() -> void:
+	"""Play full death sequence: stop movement → death animation → freeze as corpse."""
+	if is_dead:
+		return
+	
+	is_dead = true
+	
+	# Hide HP bar during death
+	if hp_bar:
+		hp_bar.visible = false
+	
+	# Stop ALL movement
+	velocity = Vector2.ZERO
+	knockback_velocity = Vector2.ZERO
+	
+	# Disable AI and chasing
+	ai_enabled = false
+	aggro = false
+	
+	# Reset sprite and light to original colors
+	if animated_sprite:
+		animated_sprite.modulate = base_modulate
+	if hit_light:
+		hit_light.color = original_light_color
+	
+	# Disable collisions so bullets don't hit corpse
+	if collision_shape:
+		collision_shape.set_deferred("disabled", true)
+	if hitbox and hitbox.has_node("CollisionShape2D"):
+		hitbox.get_node("CollisionShape2D").set_deferred("disabled", true)
+	
+	# Stop any ongoing animations
+	if animated_sprite:
+		animated_sprite.stop()
+		
+		# Play death animation if available
+		if animated_sprite.sprite_frames and animated_sprite.sprite_frames.has_animation("death"):
+			animated_sprite.play("death")
+			
+			# Wait for animation to finish
+			await animated_sprite.animation_finished
+			
+			# Freeze on last frame (don't queue_free)
+			animated_sprite.stop()
+			if animated_sprite.sprite_frames.has_animation("death"):
+				var death_last_frame = animated_sprite.sprite_frames.get_frame_count("death") - 1
+				animated_sprite.frame = death_last_frame
+	
+	# Spawn loot
+	_spawn_loot()
+	
+	# Signal death for GameManager tracking
+	emit_signal("died")
+	
+	# Only clean up if config says to, otherwise leave corpse
+	if GameConfig.slime_death_cleanup:
+		queue_free()
+	# Otherwise corpse stays forever (or until room reset)
+
+
 func die() -> void:
-	collision_shape.set_deferred("disabled", true)
-	animated_sprite.stop()
-	_die_after_sound()
+	"""Legacy die function - redirects to death sequence."""
+	play_death_sequence()
 
 
 func _die_after_sound() -> void:
+	"""Deprecated - kept for compatibility."""
 	if sfx_death:
 		await sfx_death.finished
 
@@ -998,8 +1129,6 @@ func _on_health_died() -> void:
 	if is_dead:
 		return
 
-	is_dead = true
-
 	if hit_light:
 		hit_light.color = Color(1.0, 0.25, 0.25, 1.0)
 
@@ -1008,7 +1137,9 @@ func _on_health_died() -> void:
 		sfx_death.play()
 
 	call_deferred("_update_hp_bar")
-	die()
+	
+	# Use death sequence instead of instant die
+	play_death_sequence()
 
 
 func _maybe_play_land_sound() -> void:

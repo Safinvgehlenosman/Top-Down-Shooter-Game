@@ -18,6 +18,9 @@ extends Node
 @export var slime_max_health: int = 30           # ⬅ was 3
 @export var slime_contact_damage: int = 10       # ⬅ was 1
 @export var slime_heart_drop_chance: float = 0.2
+@export var slime_spawn_delay: float = 1.5       # how long the slime stays as a puddle BEFORE playing spawn anim
+@export var slime_spawn_anim_speed: float = 1.0  # speed multiplier for the spawn animation
+@export var slime_death_cleanup: bool = false    # if true, clear puddles when leaving the room
 
 @export_category("Pickup Magnet")
 @export var pickup_magnet_range: float = 9999.0  # Always room-wide vacuum range
