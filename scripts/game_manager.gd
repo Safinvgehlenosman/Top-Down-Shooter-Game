@@ -68,6 +68,11 @@ var current_room: Node2D
 var alive_enemies: int = 0
 var current_exit_door: Node2D = null
 
+# Safety: Room clear tracking and door fail-safe
+var room_cleared: bool = false
+var no_enemy_time: float = 0.0
+var last_enemy_count: int = 0
+
 # Spawn marker arrays (populated from groups)
 var enemy_spawn_points: Array[Node2D] = []
 var crate_spawn_points: Array[Node2D] = []
@@ -175,6 +180,9 @@ func load_combat_room() -> void:
 	"""Load a random combat room with enemies and crates."""
 	in_shop = false
 	in_hub = false
+	room_cleared = false  # Reset for new room
+	no_enemy_time = 0.0   # Reset watchdog timer
+	last_enemy_count = 0  # Reset enemy tracking
 	
 	# Disable super magnet from previous room
 	_disable_super_magnet()
@@ -201,6 +209,9 @@ func load_shop_room() -> void:
 	
 	in_shop = true
 	in_hub = false
+	room_cleared = true  # Shop is always "cleared"
+	no_enemy_time = 0.0
+	last_enemy_count = 0
 	
 	# Disable super magnet
 	_disable_super_magnet()
@@ -271,6 +282,9 @@ func load_hub_room() -> void:
 	in_hub = true
 	in_shop = false
 	run_started = false
+	room_cleared = true  # Hub is always "cleared"
+	no_enemy_time = 0.0
+	last_enemy_count = 0
 	
 	# Disable super magnet
 	_disable_super_magnet()
@@ -1169,9 +1183,16 @@ func _on_enemy_died(enemy: Node2D = null) -> void:
 
 
 func _spawn_exit_door() -> void:
-	"""Spawn exit door once when entering a room. Always spawns, lock state depends on room type."""
+	"""Public wrapper for spawning exit door. Determines lock state based on room type."""
+	var is_combat_room := not in_hub and not in_shop
+	_spawn_exit_door_internal(is_combat_room)
+
+
+func _spawn_exit_door_internal(should_lock: bool) -> void:
+	"""Internal door spawn function. Always spawns, lock state depends on parameter."""
 	print("[EXIT DOOR] === DOOR SPAWN ATTEMPT ===")
 	
+	# Don't double-spawn if door already exists
 	if current_exit_door != null and is_instance_valid(current_exit_door) and current_exit_door.is_inside_tree():
 		print("[EXIT DOOR] Door already exists and is valid in current room")
 		return
@@ -1203,34 +1224,39 @@ func _spawn_exit_door() -> void:
 	current_exit_door.global_position = spawn_pos
 	current_room.add_child(current_exit_door)
 	
-	# Determine if this is a combat room (needs to be locked initially)
-	var is_combat_room := not in_hub and not in_shop
-	
-	# Set locked state
+	# Set locked state based on parameter
 	if current_exit_door.has_method("set_locked"):
-		current_exit_door.set_locked(is_combat_room)
+		current_exit_door.set_locked(should_lock)
 	
-	print("[EXIT DOOR] Door spawned at: %s (locked: %s)" % [current_exit_door.global_position, is_combat_room])
+	print("[EXIT DOOR] Door spawned at: %s (locked: %s)" % [current_exit_door.global_position, should_lock])
 	
 	# Emit signal for UI
 	emit_signal("exit_door_spawned", current_exit_door)
 
 
 func _ensure_exit_door_exists() -> void:
-	"""CRITICAL FALLBACK: Ensure exit door exists after room clear. Prevents softlocks."""
+	"""CRITICAL FALLBACK: Ensure exit door exists. Spawns unlocked if missing in cleared room."""
 	# If door already exists and is in tree, we're good
 	if current_exit_door != null and is_instance_valid(current_exit_door) and current_exit_door.is_inside_tree():
 		print("[EXIT DOOR] Door already exists and is valid")
 		return
 	
-	# Door missing or invalid - force spawn it
-	print("[EXIT DOOR] ⚠️ FALLBACK: Door missing after room clear, force spawning!")
+	# Door missing or invalid - spawn it
+	print("[EXIT DOOR] ⚠️ FALLBACK: Door missing, spawning now...")
 	current_exit_door = null  # Clear invalid reference
-	_spawn_exit_door()
+	
+	# Spawn unlocked if room is already cleared, locked otherwise
+	var should_lock := not room_cleared
+	_spawn_exit_door_internal(should_lock)
 
 
 func _on_room_cleared() -> void:
 	"""Called when all enemies and waves are defeated. Auto-breaks crates and collects pickups."""
+	if room_cleared:
+		print("[ROOM CLEAR] Already cleared, ignoring duplicate call")
+		return
+	
+	room_cleared = true
 	print("[ROOM CLEAR] Room cleared! Auto-breaking crates and collecting pickups...")
 	_auto_break_all_crates()
 	
@@ -1240,20 +1266,9 @@ func _on_room_cleared() -> void:
 	# Enable super magnet to auto-collect all pickups
 	_enable_super_magnet()
 	
-	# Unlock and open the door
-	if current_exit_door and is_instance_valid(current_exit_door) and current_exit_door.is_inside_tree():
-		if current_exit_door.has_method("unlock_and_open"):
-			current_exit_door.unlock_and_open()
-			print("[EXIT DOOR] Door unlocked via unlock_and_open()")
-		else:
-			print("[EXIT DOOR] WARNING: unlock_and_open() method not found, using fallback")
-			_unlock_exit_door()
-	else:
-		push_error("[EXIT DOOR] Room cleared but no door exists, spawning failsafe door.")
-		_spawn_exit_door()
-		await get_tree().process_frame
-		if current_exit_door and current_exit_door.has_method("unlock_and_open"):
-			current_exit_door.unlock_and_open()
+	# Ensure door exists and unlock it
+	_ensure_exit_door_exists()
+	_unlock_and_open_exit_door()
 
 
 func _enable_super_magnet() -> void:
@@ -1411,8 +1426,72 @@ func _spawn_chest_at_enemy_position(position: Vector2) -> void:
 # - Reset chest_instance to null
 # - Reset chest_spawn_point to null
 
-func _process(_delta: float) -> void:
-	pass
+func _process(delta: float) -> void:
+	# === SAFETY WATCHDOG: Prevent door softlocks ===
+	# If we're in a combat room and no enemies exist for 2+ seconds, force clear
+	if not in_hub and not in_shop and not room_cleared:
+		var living_enemies := _get_living_enemy_count()
+		
+		# Track enemy count changes for debugging
+		if living_enemies != last_enemy_count:
+			print("[WATCHDOG] Enemy count: %d" % living_enemies)
+			last_enemy_count = living_enemies
+		
+		if living_enemies == 0:
+			no_enemy_time += delta
+			
+			# Force room clear after 2 seconds with no enemies
+			if no_enemy_time >= 2.0:
+				print("[SAFETY] No enemies for %.1fs -> forcing room clear + door unlock" % no_enemy_time)
+				_force_room_clear()
+		else:
+			no_enemy_time = 0.0
+	
+	# === DOOR EXISTENCE CHECK ===
+	# If room is cleared but door is missing/invalid, respawn it unlocked
+	if room_cleared and not in_hub and not in_shop:
+		if not current_exit_door or not is_instance_valid(current_exit_door) or not current_exit_door.is_inside_tree():
+			print("[SAFETY] Cleared room missing door -> respawning unlocked door")
+			_ensure_exit_door_exists()
+
+
+func _get_living_enemy_count() -> int:
+	"""Count how many enemies are actually alive in the scene tree."""
+	var count := 0
+	for enemy in get_tree().get_nodes_in_group("enemy"):
+		if is_instance_valid(enemy) and enemy.is_inside_tree():
+			count += 1
+	return count
+
+
+func _force_room_clear() -> void:
+	"""Force room clear even if wave system miscounted. Prevents softlocks."""
+	if room_cleared:
+		return
+	
+	room_cleared = true
+	print("[ROOM CLEAR] Forced clear by safety watchdog")
+	
+	# Auto-break crates and enable super magnet
+	_auto_break_all_crates()
+	await get_tree().create_timer(0.3).timeout
+	_enable_super_magnet()
+	
+	# Ensure door exists and unlock it
+	_ensure_exit_door_exists()
+	_unlock_and_open_exit_door()
+
+
+func _unlock_and_open_exit_door() -> void:
+	"""Unlock and open the exit door (used by force clear and normal clear)."""
+	if current_exit_door and is_instance_valid(current_exit_door) and current_exit_door.is_inside_tree():
+		if current_exit_door.has_method("unlock_and_open"):
+			current_exit_door.unlock_and_open()
+			print("[EXIT DOOR] Door unlocked via unlock_and_open()")
+		else:
+			print("[EXIT DOOR] WARNING: unlock_and_open() method not found")
+	else:
+		print("[EXIT DOOR] No valid door to unlock!")
 
 
 func _open_exit_door() -> void:

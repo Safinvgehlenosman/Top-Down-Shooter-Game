@@ -115,8 +115,8 @@ var ALT_WEAPON_DATA := {
 	"id": "turret",
 	"bullet_scene": BulletScene_TURRET,  # ← ADD THIS (or use turret-specific bullet)
 	"bullet_speed": 225.0,                # ← ADD THIS (reduced by 75%)
-	"damage": 7.0,
-	"fire_rate": 0.4,
+	"damage": 1.0,  # Changed from 7 to 1
+	"fire_rate": 0.8,  # Changed from 0.4 to 0.8 (halved fire rate)
 	"range": 220.0,
 	"spread_degrees": 5.0,                # ← ADD THIS (small spread)
 	},
