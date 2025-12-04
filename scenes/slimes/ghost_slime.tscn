@@ -1,7 +1,7 @@
 [gd_scene load_steps=25 format=3 uid="uid://qeylggg2h2ax"]
 
 [ext_resource type="Script" uid="uid://m8dmaiywm4pq" path="res://scripts/slimes/ghost_slime.gd" id="1_43r53"]
-[ext_resource type="Material" path="res://shaders/alpha_slime_material.tres" id="2_c7amy"]
+[ext_resource type="Material" uid="uid://cxvq8y2n3h4qr" path="res://shaders/alpha_slime_material.tres" id="2_c7amy"]
 [ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="2_udu5k"]
 [ext_resource type="Texture2D" uid="uid://csw36agbxaibb" path="res://assets/ghostslime.png" id="4_nqef8"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="5_k66um"]
@@ -67,9 +67,6 @@ animations = [{
 [sub_resource type="CircleShape2D" id="CircleShape2D_pu8ps"]
 radius = 4.0
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_p2gj0"]
-radius = 6.6666665
-
 [sub_resource type="Gradient" id="Gradient_kmthg"]
 offsets = PackedFloat32Array(0.016129032, 0.8064516, 1)
 colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0)
@@ -81,6 +78,9 @@ height = 256
 fill = 1
 fill_from = Vector2(0.517094, 0.52136755)
 fill_to = Vector2(0.76495725, 0.7777778)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_c7amy"]
+radius = 10.008677
 
 [node name="GhostSlime" type="CharacterBody2D" groups=["enemy"]]
 scale = Vector2(1.2, 1.2)
@@ -109,15 +109,6 @@ z_index = -1
 texture = ExtResource("5_k66um")
 region_enabled = true
 region_rect = Rect2(201.99591, 204.99461, 12.041901, 5.0242004)
-
-[node name="Hitbox" type="Area2D" parent="."]
-collision_layer = 8
-collision_mask = 2
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
-visible = false
-position = Vector2(0, -4.1666665)
-shape = SubResource("CircleShape2D_p2gj0")
 
 [node name="SFX_Hurt" type="AudioStreamPlayer2D" parent="."]
 stream = ExtResource("6_xodj6")
@@ -187,4 +178,10 @@ target_position = Vector2(35, -35)
 [node name="RayCastRight" type="RayCast2D" parent="."]
 target_position = Vector2(35, 35)
 
-[connection signal="body_entered" from="Hitbox" to="." method="_on_hitbox_body_entered"]
+[node name="Hitbox" type="Area2D" parent="."]
+collision_layer = 8
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+position = Vector2(0, -4.1666665)
+shape = SubResource("CircleShape2D_c7amy")

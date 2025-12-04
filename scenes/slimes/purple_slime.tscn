@@ -1,4 +1,4 @@
-[gd_scene load_steps=42 format=3 uid="uid://cqim488pqgwa"]
+[gd_scene load_steps=45 format=3 uid="uid://cqim488pqgwa"]
 
 [ext_resource type="Script" uid="uid://cwadqyd2jrm74" path="res://scripts/slimes/purple_slime.gd" id="1_o0hry"]
 [ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="2_5vw4l"]
@@ -77,29 +77,41 @@ region = Rect2(128, 32, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0vlha"]
 atlas = ExtResource("5_revln")
-region = Rect2(160, 32, 32, 32)
+region = Rect2(192, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_ibw36"]
 atlas = ExtResource("5_revln")
-region = Rect2(64, 0, 32, 32)
+region = Rect2(224, 32, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_fyx0c"]
 atlas = ExtResource("5_revln")
-region = Rect2(32, 0, 32, 32)
+region = Rect2(192, 32, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_6s3f8"]
 atlas = ExtResource("5_revln")
-region = Rect2(0, 0, 32, 32)
+region = Rect2(160, 32, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_xfclb"]
 atlas = ExtResource("5_revln")
-region = Rect2(192, 0, 32, 32)
+region = Rect2(64, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_yomci"]
 atlas = ExtResource("5_revln")
-region = Rect2(160, 0, 32, 32)
+region = Rect2(32, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_w0emu"]
+atlas = ExtResource("5_revln")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_reqb5"]
+atlas = ExtResource("5_revln")
+region = Rect2(192, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dl3ct"]
+atlas = ExtResource("5_revln")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0lpde"]
 atlas = ExtResource("5_revln")
 region = Rect2(128, 0, 32, 32)
 
@@ -181,6 +193,15 @@ animations = [{
 }, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_w0emu")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_reqb5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dl3ct")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0lpde")
 }],
 "loop": false,
 "name": &"spawn",
@@ -189,9 +210,6 @@ animations = [{
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_pu8ps"]
 radius = 4.0
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_p2gj0"]
-radius = 6.6666665
 
 [sub_resource type="Gradient" id="Gradient_kmthg"]
 offsets = PackedFloat32Array(0.016129032, 0.8064516, 1)
@@ -204,6 +222,9 @@ height = 256
 fill = 1
 fill_from = Vector2(0.517094, 0.52136755)
 fill_to = Vector2(0.76495725, 0.7777778)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_84keh"]
+radius = 10.008677
 
 [node name="PurpleSlime" type="CharacterBody2D" groups=["enemy"]]
 scale = Vector2(1.2, 1.2)
@@ -222,10 +243,8 @@ CoinScene = ExtResource("2_5vw4l")
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(0, -5)
 sprite_frames = SubResource("SpriteFrames_a02ik")
-animation = &"spawn"
+animation = &"death"
 autoplay = "moving"
-frame = 5
-frame_progress = 1.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 visible = false
@@ -238,15 +257,6 @@ z_index = -1
 texture = ExtResource("4_4btqv")
 region_enabled = true
 region_rect = Rect2(201.99591, 204.99461, 12.041901, 5.0242004)
-
-[node name="Hitbox" type="Area2D" parent="."]
-visible = false
-collision_layer = 8
-collision_mask = 2
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
-position = Vector2(0, -4.1666665)
-shape = SubResource("CircleShape2D_p2gj0")
 
 [node name="SFX_Hurt" type="AudioStreamPlayer2D" parent="."]
 stream = ExtResource("5_bf0kl")
@@ -313,5 +323,12 @@ target_position = Vector2(35, -35)
 [node name="RayCastRight" type="RayCast2D" parent="."]
 target_position = Vector2(35, 35)
 
+[node name="Hitbox" type="Area2D" parent="."]
+collision_layer = 8
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+position = Vector2(0, -4.1666665)
+shape = SubResource("CircleShape2D_84keh")
+
 [connection signal="frame_changed" from="AnimatedSprite2D" to="." method="_on_animated_sprite_2d_frame_changed"]
-[connection signal="body_entered" from="Hitbox" to="." method="_on_hitbox_body_entered"]

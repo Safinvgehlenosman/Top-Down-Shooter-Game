@@ -1,4 +1,4 @@
-[gd_scene load_steps=42 format=3 uid="uid://wyjj07qulq2n"]
+[gd_scene load_steps=45 format=3 uid="uid://wyjj07qulq2n"]
 
 [ext_resource type="Script" uid="uid://cceb7bill2as7" path="res://scripts/slimes/ice_slime.gd" id="1_f6i3m"]
 [ext_resource type="PackedScene" uid="uid://cxo8ho16py78a" path="res://scenes/coin_pickup.tscn" id="2_i03xf"]
@@ -77,29 +77,41 @@ region = Rect2(128, 32, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_2b7qy"]
 atlas = ExtResource("4_y14di")
-region = Rect2(160, 32, 32, 32)
+region = Rect2(192, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_5di25"]
 atlas = ExtResource("4_y14di")
-region = Rect2(64, 0, 32, 32)
+region = Rect2(224, 32, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_gb2l2"]
 atlas = ExtResource("4_y14di")
-region = Rect2(32, 0, 32, 32)
+region = Rect2(192, 32, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_bwvwm"]
 atlas = ExtResource("4_y14di")
-region = Rect2(0, 0, 32, 32)
+region = Rect2(160, 32, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_i6dqs"]
 atlas = ExtResource("4_y14di")
-region = Rect2(192, 0, 32, 32)
+region = Rect2(64, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_hrax2"]
 atlas = ExtResource("4_y14di")
-region = Rect2(160, 0, 32, 32)
+region = Rect2(32, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_q2bad"]
+atlas = ExtResource("4_y14di")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xb5lb"]
+atlas = ExtResource("4_y14di")
+region = Rect2(192, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ray3g"]
+atlas = ExtResource("4_y14di")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_elgy7"]
 atlas = ExtResource("4_y14di")
 region = Rect2(128, 0, 32, 32)
 
@@ -181,6 +193,15 @@ animations = [{
 }, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_q2bad")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xb5lb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ray3g")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_elgy7")
 }],
 "loop": false,
 "name": &"spawn",
@@ -189,9 +210,6 @@ animations = [{
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_pu8ps"]
 radius = 4.0
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_p2gj0"]
-radius = 6.6666665
 
 [sub_resource type="Gradient" id="Gradient_kmthg"]
 offsets = PackedFloat32Array(0.016129032, 0.8064516, 1)
@@ -204,6 +222,9 @@ height = 256
 fill = 1
 fill_from = Vector2(0.517094, 0.52136755)
 fill_to = Vector2(0.76495725, 0.7777778)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_qgsdp"]
+radius = 10.008677
 
 [node name="IceSlime" type="CharacterBody2D" groups=["enemy"]]
 scale = Vector2(1.2, 1.2)
@@ -223,8 +244,10 @@ CoinScene = ExtResource("2_i03xf")
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(0, -5)
 sprite_frames = SubResource("SpriteFrames_i03xf")
-animation = &"spawn"
+animation = &"death"
 autoplay = "moving"
+frame = 5
+frame_progress = 1.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -4)
@@ -236,14 +259,6 @@ z_index = -1
 texture = ExtResource("5_qgsdp")
 region_enabled = true
 region_rect = Rect2(201.99591, 204.99461, 12.041901, 5.0242004)
-
-[node name="Hitbox" type="Area2D" parent="."]
-collision_layer = 8
-collision_mask = 2
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
-position = Vector2(0, -4.1666665)
-shape = SubResource("CircleShape2D_p2gj0")
 
 [node name="SFX_Hurt" type="AudioStreamPlayer2D" parent="."]
 stream = ExtResource("6_7e7yk")
@@ -311,4 +326,10 @@ target_position = Vector2(35, -35)
 [node name="RayCastRight" type="RayCast2D" parent="."]
 target_position = Vector2(35, 35)
 
-[connection signal="body_entered" from="Hitbox" to="." method="_on_hitbox_body_entered"]
+[node name="Hitbox" type="Area2D" parent="."]
+collision_layer = 8
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+position = Vector2(0, -4.1666665)
+shape = SubResource("CircleShape2D_qgsdp")
