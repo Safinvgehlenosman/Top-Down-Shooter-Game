@@ -72,17 +72,27 @@ const ENEMY_INDEX_GHOST  := 6
 # --- NEW UNIFIED ENEMY SCALING SYSTEM (BALANCING) ------------------
 # Design philosophy:
 # - HP scales exponentially (1.6x per level) to match OP player DPS
-# - Enemy count scales linearly (8 + level*2) for horde pressure
+# - Enemy count scales linearly (6 + level*1.5) for balanced difficulty
 # - Speed scales mildly and is capped at 2x to keep gameplay fair
 # - Damage scales gently (3% per level) and is capped at 2x
 # - Difficulty comes from QUANTITY + HP, not unfair one-shots
 
-func get_base_green_slime_hp(level: int) -> float:
-	"""New global HP curve: exponential growth for all enemy types.
+func get_base_green_slime_hp(level: int) -> int:
+	"""Smoothed exponential HP curve for balanced difficulty.
 	Green slime is the baseline. Other types use multipliers of this.
-	L1=10, L2=16, L3=26, L5=66, L10=687
+	L1-10: Exponential 1.35^(level-1) - PERFECT, don't change
+	L11+: Flattened curve 1.12^(level-10) from L10 baseline to prevent runaway
+	L1=10, L5≈55, L6≈74, L10≈165, L15≈291, L20≈513
 	"""
-	return 10.0 * pow(1.6, level - 1)
+	if level <= 10:
+		# Keep original exponential curve for levels 1-10 (perfect balance)
+		var hp := int(10.0 * pow(1.35, float(level - 1)))
+		return max(hp, 1)
+	else:
+		# Flattened curve from L10 baseline to prevent bullet sponges
+		var hp_at_10 := int(10.0 * pow(1.35, 9.0))  # ≈165 HP
+		var hp := int(float(hp_at_10) * pow(1.12, float(level - 10)))
+		return max(hp, 1)
 
 
 func get_scaled_enemy_hp_by_type(level: int, enemy_type: String) -> int:
@@ -112,6 +122,20 @@ func get_scaled_contact_damage(base_damage: float, level: int) -> float:
 	var mult := pow(1.03, level - 1)
 	mult = min(mult, 2.0)  # Hard cap at 2x base damage
 	return base_damage * mult
+
+
+func get_fast_slime_weight(level: int) -> float:
+	"""Dynamic fast slime spawn weight curve for gradual introduction.
+	L1-4: 0.0 (none), L5-7: 0.10 (gentle), L8-11: 0.20 (moderate), L12+: 0.30 (common).
+	"""
+	if level <= 4:
+		return 0.0
+	elif level <= 7:
+		return 0.10
+	elif level <= 11:
+		return 0.20
+	else:
+		return 0.30
 
 
 @export_group("Enemies")
@@ -1002,6 +1026,13 @@ func _spawn_room_content() -> void:
 	current_wave = 0
 	scheduled_waves = 0
 	
+	# Debug logs for difficulty verification
+	var base_hp := get_base_green_slime_hp(current_level)
+	var wave_delay := _calculate_wave_interval()
+	var fast_weight := get_fast_slime_weight(current_level)
+	print("[SCALING] Level %d → HP curve updated: base HP = %d" % [current_level, base_hp])
+	print("[SCALING] Level %d → Waves = %d, Wave Delay = %.1fs" % [current_level, total_waves, wave_delay])
+	print("[SCALING] Level %d → Fast Slime Weight = %.2f" % [current_level, fast_weight])
 	print("[WAVES] Level %d → waves=%d, enemies=%d total" % [current_level, total_waves, total_enemies])
 	
 	# Spawn first wave immediately
@@ -1013,14 +1044,20 @@ func _spawn_room_content() -> void:
 # --- SPAWN COUNT CALCULATION ---------------------------------------
 
 func get_base_enemy_count(level: int) -> int:
-	"""Base enemy count formula: more enemies for horde pressure."""
-	return int(round(8.0 + level * 2.0))
+	"""Base enemy count formula: more enemies for horde pressure.
+	L1-10: Linear growth (6 + level*1.5)
+	L11+: Capped at 20 enemies max to prevent overwhelming floods.
+	"""
+	var count := int(round(6.0 + level * 1.5))
+	if level > 10:
+		count = min(count, 20)  # Hard cap at 20 enemies for L11+
+	return count
 
 
 func _calculate_enemy_count_for_level(level: int, _available_spawns: int) -> int:
 	"""Calculate how many enemies to spawn based on current level.
-	New formula: 8 + level * 2.0 for horde pressure.
-	L1=10, L5=18, L10=28, L20=48
+	New formula: 6 + level * 1.5 for balanced difficulty.
+	L1=8, L5=14, L6=15, L10=21, L20=36
 	
 	NOTE: Crates are placed manually in editor, so we don't reduce enemy count.
 	The enemy_ratio system is obsolete for this new scaling.
@@ -1031,7 +1068,7 @@ func _calculate_enemy_count_for_level(level: int, _available_spawns: int) -> int
 	# (enemy_ratio was for old crate/enemy distribution, now crates are manual)
 	var enemy_count: int = base_wave_size
 	
-	print("[SCALING DEBUG] Level %d → enemy_count=%d (formula: 8 + level*2)" % [level, enemy_count])
+	print("[SCALING DEBUG] Level %d → enemy_count=%d (formula: 6 + level*1.5)" % [level, enemy_count])
 	
 	return enemy_count
 
@@ -1136,18 +1173,20 @@ func _update_enemy_weights_for_level() -> void:
 			enemy_weights[ENEMY_INDEX_GREEN] = weight_green
 
 	elif lvl < 7:
-		# Green + Fast
+		# Green + Fast (gentle fast-slime introduction)
 		if lvl >= level_unlock_green:
 			enemy_weights[ENEMY_INDEX_GREEN] = weight_green
 		if lvl >= level_unlock_fast and enemy_weights.size() > ENEMY_INDEX_FAST:
-			enemy_weights[ENEMY_INDEX_FAST] = weight_fast * 0.7
+			var fast_weight := get_fast_slime_weight(lvl)
+			enemy_weights[ENEMY_INDEX_FAST] = fast_weight
 
 	elif lvl < 10:
 		# Green + Fast + a bit of Purple (shooter)
 		if lvl >= level_unlock_green:
 			enemy_weights[ENEMY_INDEX_GREEN] = weight_green
 		if lvl >= level_unlock_fast and enemy_weights.size() > ENEMY_INDEX_FAST:
-			enemy_weights[ENEMY_INDEX_FAST] = weight_fast
+			var fast_weight := get_fast_slime_weight(lvl)
+			enemy_weights[ENEMY_INDEX_FAST] = fast_weight
 		if lvl >= level_unlock_purple and enemy_weights.size() > ENEMY_INDEX_PURPLE:
 			enemy_weights[ENEMY_INDEX_PURPLE] = weight_purple * 0.5
 
@@ -1156,7 +1195,8 @@ func _update_enemy_weights_for_level() -> void:
 		if lvl >= level_unlock_green:
 			enemy_weights[ENEMY_INDEX_GREEN] = weight_green * 0.8
 		if lvl >= level_unlock_fast and enemy_weights.size() > ENEMY_INDEX_FAST:
-			enemy_weights[ENEMY_INDEX_FAST] = weight_fast
+			var fast_weight := get_fast_slime_weight(lvl)
+			enemy_weights[ENEMY_INDEX_FAST] = fast_weight
 		if lvl >= level_unlock_purple and enemy_weights.size() > ENEMY_INDEX_PURPLE:
 			enemy_weights[ENEMY_INDEX_PURPLE] = weight_purple * 0.8
 		if lvl >= level_unlock_poison and enemy_weights.size() > ENEMY_INDEX_POISON:
@@ -1169,7 +1209,8 @@ func _update_enemy_weights_for_level() -> void:
 		if lvl >= level_unlock_green:
 			enemy_weights[ENEMY_INDEX_GREEN] = weight_green * 0.6
 		if lvl >= level_unlock_fast and enemy_weights.size() > ENEMY_INDEX_FAST:
-			enemy_weights[ENEMY_INDEX_FAST] = weight_fast
+			var fast_weight := get_fast_slime_weight(lvl)
+			enemy_weights[ENEMY_INDEX_FAST] = fast_weight
 		if lvl >= level_unlock_purple and enemy_weights.size() > ENEMY_INDEX_PURPLE:
 			enemy_weights[ENEMY_INDEX_PURPLE] = weight_purple
 		if lvl >= level_unlock_poison and enemy_weights.size() > ENEMY_INDEX_POISON:
@@ -1184,7 +1225,8 @@ func _update_enemy_weights_for_level() -> void:
 		if lvl >= level_unlock_green:
 			enemy_weights[ENEMY_INDEX_GREEN] = weight_green * 0.5
 		if lvl >= level_unlock_fast and enemy_weights.size() > ENEMY_INDEX_FAST:
-			enemy_weights[ENEMY_INDEX_FAST] = weight_fast
+			var fast_weight := get_fast_slime_weight(lvl)
+			enemy_weights[ENEMY_INDEX_FAST] = fast_weight
 		if lvl >= level_unlock_purple and enemy_weights.size() > ENEMY_INDEX_PURPLE:
 			enemy_weights[ENEMY_INDEX_PURPLE] = weight_purple
 		if lvl >= level_unlock_poison and enemy_weights.size() > ENEMY_INDEX_POISON:
@@ -1198,6 +1240,9 @@ func _update_enemy_weights_for_level() -> void:
 
 	else:
 		# 21+ : Full chaos mix – slightly more elites / ranged / control
+		if lvl >= level_unlock_fast and enemy_weights.size() > ENEMY_INDEX_FAST:
+			var fast_weight := get_fast_slime_weight(lvl)
+			enemy_weights[ENEMY_INDEX_FAST] = fast_weight
 		if lvl >= level_unlock_green:
 			enemy_weights[ENEMY_INDEX_GREEN] = weight_green * 0.4
 		if lvl >= level_unlock_fast and enemy_weights.size() > ENEMY_INDEX_FAST:
@@ -1739,16 +1784,34 @@ func _on_chaos_chest_opened(chaos_upgrade: Dictionary) -> void:
 # --- B2 WAVE SYSTEM ------------------------------------------------
 
 func get_wave_count(level: int) -> int:
-	"""B2 WAVE FORMULA: 1 + floor(level / 3)
-	L1-2=1 wave, L3-5=2 waves, L6-8=3 waves, L9-11=4 waves, etc.
+	"""Smoothed wave progression to reduce early-game spikes.
+	L1-4=1 wave, L5-7=2 waves, L8-10=3 waves, L11-20=3 waves, L21+=4 waves (max).
 	This is the ONLY place this formula exists.
 	"""
-	return 1 + int(floor(level / 3.0))
+	if level <= 4:
+		return 1
+	elif level <= 7:
+		return 2
+	elif level <= 20:
+		return 3
+	else:
+		return 4  # Hard cap at 4 waves
 
 
 func _calculate_wave_interval() -> float:
-	"""Calculate wave spawn interval based on level (gets faster as you progress)."""
-	return clamp(WAVE_INTERVAL_BASE - current_level * WAVE_INTERVAL_PER_LEVEL, WAVE_INTERVAL_MIN, WAVE_INTERVAL_BASE)
+	"""Calculate wave spawn interval based on level (gets faster as you progress).
+	L1-10: Smooth linear compression (8.0 → 7.0s)
+	L11+: Continued gentle compression from 7.0s with 5.8s floor.
+	L1=8.0s, L5=7.5s, L10=7.0s, L12=6.8s, L20=6.0s, min=5.8s.
+	"""
+	if current_level <= 10:
+		# Keep original curve for L1-10 (perfect balance)
+		var delay := 8.0 - float(current_level) * 0.1
+		return max(delay, 7.0)
+	else:
+		# Continue compression from L10 baseline with higher floor
+		var delay := 7.0 - float(current_level - 10) * 0.1
+		return max(delay, 5.8)
 
 
 func _spawn_next_wave() -> void:

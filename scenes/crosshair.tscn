@@ -9,6 +9,7 @@ z_index = 4096
 script = ExtResource("1_norqy")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(0, -5)
 texture = ExtResource("2_qnjby")
 region_rect = Rect2(72, 104, 16, 16)
 

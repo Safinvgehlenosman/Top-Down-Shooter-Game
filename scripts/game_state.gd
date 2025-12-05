@@ -204,7 +204,7 @@ var sniper_pierce_bonus: int = 0
 var sniper_charge_bonus_percent: float = 0.0
 
 var flamethrower_lifetime_bonus_percent: float = 0.0
-var flamethrower_burn_bonus_percent: float = 0.0
+var flamethrower_burn_bonus_percent: float = 1.0  # Multiplicative base
 var flamethrower_size_bonus_percent: float = 0.0
 
 var grenade_radius_bonus: float = 0.0
@@ -220,7 +220,7 @@ var turret_range_bonus_percent: float = 0.0
 var turret_bullet_speed_bonus_percent: float = 0.0
 
 # Ability bonuses
-var dash_distance_bonus_percent: float = 0.0
+var dash_distance_bonus_percent: float = 1.0  # Multiplicative base
 var bubble_duration_bonus_percent: float = 0.0
 var bubble_duration_bonus_seconds: float = 0.0
 var slowmo_time_bonus_seconds: float = 0.0
@@ -292,14 +292,14 @@ var dash_charges: int = 1
 var shield_hp: float = 100.0
 var shield_duration: float = 3.0
 var shield_cooldown_mult: float = 1.0
-var shield_radius_bonus: float = 0.0
+var shield_radius_bonus: float = 1.0  # Multiplicative base
 var shield_reflect_chance: float = 0.0
 
 # Slowmo ability
 var slowmo_duration: float = 1.5
 var slowmo_cooldown_mult: float = 1.0
 var slowmo_time_scale: float = 0.3
-var slowmo_radius: float = 0.0
+var slowmo_radius: float = 1.0  # Multiplicative base
 var slowmo_ammo_efficiency: float = 0.0
 
 # Invis ability
@@ -392,7 +392,7 @@ func start_new_run() -> void:
 	sniper_charge_bonus_percent = 0.0
 
 	flamethrower_lifetime_bonus_percent = 0.0
-	flamethrower_burn_bonus_percent = 0.0
+	flamethrower_burn_bonus_percent = 1.0  # Multiplicative base
 	flamethrower_size_bonus_percent = 0.0
 
 	grenade_radius_bonus = 0.0
@@ -407,7 +407,7 @@ func start_new_run() -> void:
 	turret_range_bonus_percent = 0.0
 	turret_bullet_speed_bonus_percent = 0.0
 
-	dash_distance_bonus_percent = 0.0
+	dash_distance_bonus_percent = 1.0  # Multiplicative base
 	bubble_duration_bonus_percent = 0.0
 	bubble_duration_bonus_seconds = 0.0
 	slowmo_time_bonus_seconds = 0.0
@@ -451,6 +451,18 @@ func start_new_run() -> void:
 	ability_cooldown_left = 0.0
 	ability_active_left = 0.0
 	ability_bubble_duration_bonus = 0.0
+	
+	# Reset ability stat bonuses
+	shield_hp = 100.0
+	shield_duration = 3.0
+	shield_cooldown_mult = 1.0
+	shield_radius_bonus = 1.0  # Multiplicative base
+	shield_reflect_chance = 0.0
+	slowmo_duration = 1.5
+	slowmo_cooldown_mult = 1.0
+	slowmo_time_scale = 0.3
+	slowmo_radius = 1.0  # Multiplicative base
+	slowmo_ammo_efficiency = 0.0
 
 	debug_laser_mode     = false
 	debug_infinite_ammo  = false
@@ -726,19 +738,15 @@ func apply_upgrade(upgrade_id: String) -> void:
 		# PRIMARY WEAPON EFFECTS
 		# ==============================
 		"primary_damage":
-			# LINEAR SCALING: Add damage directly, not multiply
-			var damage_increase = value * primary_damage_base  # Convert percentage to flat value
-			primary_damage += damage_increase
-			print("  → Primary damage +%.1f (base: %.1f, total now: %.1f)" % [damage_increase, primary_damage_base, primary_damage])
+			# EXPONENTIAL SCALING: Multiply damage by constant per tier
+			primary_damage *= GameConfig.UPGRADE_MULTIPLIERS["damage"]
+			print("  → Primary damage ×%.2f (total now: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["damage"], primary_damage])
 
 		"primary_fire_rate":
-			# LINEAR SCALING: Each upgrade reduces cooldown by a fixed absolute amount
-			# Instead of percentages that compound, we track how many tiers purchased
-			fire_rate_bonus_percent += value
-			# Calculate total absolute reduction: each 0.05 (5%) tier = 0.025s reduction
-			var absolute_reduction = fire_rate_bonus_percent * 0.5  # Each 5% = 0.025s
-			fire_rate = max(0.05, fire_rate_base - absolute_reduction)
-			print("  → Fire rate tier added, cooldown now: %.3fs (reduction: %.3fs)" % [fire_rate, absolute_reduction])
+			# EXPONENTIAL SCALING: Multiply cooldown by constant per tier (reduces cooldown)
+			fire_rate *= GameConfig.UPGRADE_MULTIPLIERS["fire_rate"]
+			fire_rate = max(0.05, fire_rate)  # Hard floor at 0.05s
+			print("  → Fire rate ×%.2f (cooldown now: %.3fs)" % [GameConfig.UPGRADE_MULTIPLIERS["fire_rate"], fire_rate])
 
 		"primary_reload_speed":
 			primary_reload_speed_bonus += value
@@ -754,15 +762,18 @@ func apply_upgrade(upgrade_id: String) -> void:
 		# SHOTGUN EFFECTS
 		# ==============================
 		"shotgun_pellets":
-			var inc := int(value)
+			# EXPONENTIAL SCALING: Multiply pellet count by constant per tier
 			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN):
-				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["pellets"] += inc
+				var old_pellets: int = ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["pellets"]
+				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["pellets"] = max(1, int(round(old_pellets * GameConfig.UPGRADE_MULTIPLIERS["pellets"])))
+				print("  → Shotgun pellets ×%.2f (%d → %d)" % [GameConfig.UPGRADE_MULTIPLIERS["pellets"], old_pellets, ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["pellets"]])
 
 		"shotgun_spread":
-			# LINEAR SCALING: Reduce spread by flat amount
-			var spread_reduction = value * 18.0  # Convert percentage to degrees
+			# EXPONENTIAL SCALING: Reduce spread multiplicatively (tighter cone)
 			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN):
-				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["spread_degrees"] += spread_reduction
+				var old_spread: float = ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["spread_degrees"]
+				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["spread_degrees"] *= 0.85  # 15% tighter per tier
+				print("  → Shotgun spread ×0.85 (%.1f° → %.1f°)" % [old_spread, ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["spread_degrees"]])
 
 		"shotgun_knockback":
 			shotgun_knockback_bonus_percent += value
@@ -779,20 +790,25 @@ func apply_upgrade(upgrade_id: String) -> void:
 		# SNIPER EFFECTS
 		# ==============================
 		"sniper_damage":
-			# LINEAR SCALING: Add damage directly
-			var damage_increase = value * 35.0
+			# EXPONENTIAL SCALING: Multiply damage by constant per tier
 			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER):
-				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] += damage_increase
+				var old_damage: float = ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"]
+				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] *= GameConfig.UPGRADE_MULTIPLIERS["damage"]
+				print("  → Sniper damage ×%.2f (%.1f → %.1f)" % [GameConfig.UPGRADE_MULTIPLIERS["damage"], old_damage, ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"]])
 
 		"sniper_pierce":
-			var inc := int(value)
+			# EXPONENTIAL SCALING: Multiply pierce count by constant per tier
 			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER):
-				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["bounces"] += inc
+				var old_bounces: int = ALT_WEAPON_DATA[AltWeaponType.SNIPER]["bounces"]
+				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["bounces"] = max(0, int(round((old_bounces + 1) * 1.5)) - 1)  # Exponential growth from base
+				print("  → Sniper pierce +1 bounce (%d → %d)" % [old_bounces, ALT_WEAPON_DATA[AltWeaponType.SNIPER]["bounces"]])
 
 		"sniper_charge_speed":
-			sniper_charge_bonus_percent += value
+			# EXPONENTIAL SCALING: Multiply charge multiplier by constant per tier
 			if ALT_WEAPON_DATA.has(AltWeaponType.SNIPER):
-				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] = 35.0 * (1.0 + sniper_damage_bonus_percent + sniper_charge_bonus_percent)
+				var old_damage: float = ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"]
+				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] *= GameConfig.UPGRADE_MULTIPLIERS["sniper_charge"]
+				print("  → Sniper charge ×%.2f (damage: %.1f → %.1f)" % [GameConfig.UPGRADE_MULTIPLIERS["sniper_charge"], old_damage, ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"]])
 
 		"sniper_crit_damage":
 			sniper_crit_damage_bonus += value
@@ -804,17 +820,23 @@ func apply_upgrade(upgrade_id: String) -> void:
 		# FLAMETHROWER EFFECTS
 		# ==============================
 		"flamethrower_burn_damage":
-			flamethrower_burn_bonus_percent += value
+			# EXPONENTIAL SCALING: Track as multiplier for burn damage
+			flamethrower_burn_bonus_percent *= GameConfig.UPGRADE_MULTIPLIERS["burn_damage"]
+			print("  → Flamethrower burn ×%.2f (multiplier now: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["burn_damage"], flamethrower_burn_bonus_percent])
 
 		"flamethrower_cone_size":
-			flamethrower_size_bonus_percent += value
+			# EXPONENTIAL SCALING: Multiply cone damage by constant per tier
 			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER):
-				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["damage"] = 4.0 * (1.0 + flamethrower_size_bonus_percent)
+				var old_damage: float = ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["damage"]
+				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["damage"] *= 1.18  # 18% larger cone per tier
+				print("  → Flamethrower cone ×1.18 (damage: %.1f → %.1f)" % [old_damage, ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["damage"]])
 
 		"flamethrower_duration":
-			flamethrower_lifetime_bonus_percent += value
+			# EXPONENTIAL SCALING: Multiply flame lifetime by constant per tier
 			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER):
-				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"] = 0.25 * (1.0 + flamethrower_lifetime_bonus_percent)
+				var old_lifetime: float = ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"]
+				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"] *= GameConfig.UPGRADE_MULTIPLIERS["ability_duration"]
+				print("  → Flamethrower duration ×%.2f (%.2fs → %.2fs)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_duration"], old_lifetime, ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"]])
 
 		"flamethrower_fuel_efficiency":
 			flamethrower_fuel_efficiency_bonus += value
@@ -826,27 +848,33 @@ func apply_upgrade(upgrade_id: String) -> void:
 		# GRENADES EFFECTS
 		# ==============================
 		"grenades_radius":
-			var inc := value
+			# EXPONENTIAL SCALING: Multiply explosion radius by constant per tier
 			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE):
-				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["explosion_radius"] += inc
+				var old_radius: float = ALT_WEAPON_DATA[AltWeaponType.GRENADE]["explosion_radius"]
+				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["explosion_radius"] *= GameConfig.UPGRADE_MULTIPLIERS["grenade_radius"]
+				print("  → Grenade radius ×%.2f (%.1f → %.1f)" % [GameConfig.UPGRADE_MULTIPLIERS["grenade_radius"], old_radius, ALT_WEAPON_DATA[AltWeaponType.GRENADE]["explosion_radius"]])
 
 		"grenades_damage":
-			# LINEAR SCALING: Add damage directly
-			var damage_increase = value * 40.0
+			# EXPONENTIAL SCALING: Multiply damage by constant per tier
 			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE):
-				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["damage"] += damage_increase
+				var old_damage: float = ALT_WEAPON_DATA[AltWeaponType.GRENADE]["damage"]
+				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["damage"] *= GameConfig.UPGRADE_MULTIPLIERS["damage"]
+				print("  → Grenade damage ×%.2f (%.1f → %.1f)" % [GameConfig.UPGRADE_MULTIPLIERS["damage"], old_damage, ALT_WEAPON_DATA[AltWeaponType.GRENADE]["damage"]])
 
 		"grenades_cooldown":
-			# LINEAR SCALING: Reduce cooldown by flat amount (value is negative)
-			var cooldown_reduction = value * 2.2  # Base cooldown is 2.2s
+			# EXPONENTIAL SCALING: Multiply cooldown by constant per tier (reduces cooldown)
 			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE):
-				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["cooldown"] += cooldown_reduction
+				var old_cooldown: float = ALT_WEAPON_DATA[AltWeaponType.GRENADE]["cooldown"]
+				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["cooldown"] *= GameConfig.UPGRADE_MULTIPLIERS["fire_rate"]
 				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["cooldown"] = max(0.5, ALT_WEAPON_DATA[AltWeaponType.GRENADE]["cooldown"])
+				print("  → Grenade cooldown ×%.2f (%.2fs → %.2fs)" % [GameConfig.UPGRADE_MULTIPLIERS["fire_rate"], old_cooldown, ALT_WEAPON_DATA[AltWeaponType.GRENADE]["cooldown"]])
 
 		"grenades_frag_count":
-			var inc := int(value)
+			# EXPONENTIAL SCALING: Multiply fragment count by constant per tier
 			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE):
-				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["pellets"] += inc
+				var old_pellets: int = ALT_WEAPON_DATA[AltWeaponType.GRENADE]["pellets"]
+				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["pellets"] = max(1, int(round(old_pellets * GameConfig.UPGRADE_MULTIPLIERS["grenade_fragments"])))
+				print("  → Grenade fragments ×%.2f (%d → %d)" % [GameConfig.UPGRADE_MULTIPLIERS["grenade_fragments"], old_pellets, ALT_WEAPON_DATA[AltWeaponType.GRENADE]["pellets"]])
 
 		"grenades_status_chance":
 			grenades_status_chance += value
@@ -855,19 +883,25 @@ func apply_upgrade(upgrade_id: String) -> void:
 		# SHURIKEN EFFECTS
 		# ==============================
 		"shuriken_bounce_count":
-			var inc := int(value)
+			# EXPONENTIAL SCALING: Multiply bounce count by constant per tier
 			if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN):
-				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bounces"] += inc
+				var old_bounces: int = ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bounces"]
+				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bounces"] = max(1, int(round(old_bounces * GameConfig.UPGRADE_MULTIPLIERS["shuriken_bounces"])))
+				print("  → Shuriken bounces ×%.2f (%d → %d)" % [GameConfig.UPGRADE_MULTIPLIERS["shuriken_bounces"], old_bounces, ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bounces"]])
 
 		"shuriken_speed":
-			shuriken_speed_bonus_percent += value
+			# EXPONENTIAL SCALING: Multiply bullet speed by constant per tier
 			if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN):
-				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bullet_speed"] = 950.0 * (1.0 + shuriken_speed_bonus_percent)
+				var old_speed: float = ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bullet_speed"]
+				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bullet_speed"] *= GameConfig.UPGRADE_MULTIPLIERS["projectile_speed"]
+				print("  → Shuriken speed ×%.2f (%.1f → %.1f)" % [GameConfig.UPGRADE_MULTIPLIERS["projectile_speed"], old_speed, ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bullet_speed"]])
 
 		"shuriken_pierce":
-			shuriken_ricochet_bonus_percent += value
+			# EXPONENTIAL SCALING: Multiply ricochet damage by constant per tier
 			if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN):
-				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["damage"] = 12.0 * (1.0 + shuriken_ricochet_bonus_percent)
+				var old_damage: float = ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["damage"]
+				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["damage"] *= GameConfig.UPGRADE_MULTIPLIERS["shuriken_ricochet_damage"]
+				print("  → Shuriken pierce damage ×%.2f (%.1f → %.1f)" % [GameConfig.UPGRADE_MULTIPLIERS["shuriken_ricochet_damage"], old_damage, ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["damage"]])
 
 		"shuriken_return":
 			shuriken_return_enabled = true
@@ -879,14 +913,18 @@ func apply_upgrade(upgrade_id: String) -> void:
 		# TURRET EFFECTS
 		# ==============================
 		"turret_fire_rate":
-			turret_fire_rate_bonus_percent += value
+			# EXPONENTIAL SCALING: Multiply fire rate cooldown by constant per tier
 			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET):
-				ALT_WEAPON_DATA[AltWeaponType.TURRET]["fire_rate"] = 0.4 * (1.0 - turret_fire_rate_bonus_percent)
+				var old_fire_rate: float = ALT_WEAPON_DATA[AltWeaponType.TURRET]["fire_rate"]
+				ALT_WEAPON_DATA[AltWeaponType.TURRET]["fire_rate"] *= GameConfig.UPGRADE_MULTIPLIERS["turret_fire_rate"]
+				print("  → Turret fire rate ×%.2f (%.2fs → %.2fs)" % [GameConfig.UPGRADE_MULTIPLIERS["turret_fire_rate"], old_fire_rate, ALT_WEAPON_DATA[AltWeaponType.TURRET]["fire_rate"]])
 
 		"turret_range":
-			turret_range_bonus_percent += value
+			# EXPONENTIAL SCALING: Multiply range by constant per tier
 			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET):
-				ALT_WEAPON_DATA[AltWeaponType.TURRET]["range"] = 220.0 * (1.0 + turret_range_bonus_percent)
+				var old_range: float = ALT_WEAPON_DATA[AltWeaponType.TURRET]["range"]
+				ALT_WEAPON_DATA[AltWeaponType.TURRET]["range"] *= GameConfig.UPGRADE_MULTIPLIERS["turret_range"]
+				print("  → Turret range ×%.2f (%.1f → %.1f)" % [GameConfig.UPGRADE_MULTIPLIERS["turret_range"], old_range, ALT_WEAPON_DATA[AltWeaponType.TURRET]["range"]])
 
 		"turret_duration":
 			turret_duration_bonus += value
@@ -895,18 +933,24 @@ func apply_upgrade(upgrade_id: String) -> void:
 			turret_hp_bonus += value
 
 		"turret_bullet_speed":
-			turret_bullet_speed_bonus_percent += value
+			# EXPONENTIAL SCALING: Multiply bullet speed by constant per tier
 			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET):
-				ALT_WEAPON_DATA[AltWeaponType.TURRET]["bullet_speed"] = 900.0 * (1.0 + turret_bullet_speed_bonus_percent)
+				var old_speed: float = ALT_WEAPON_DATA[AltWeaponType.TURRET]["bullet_speed"]
+				ALT_WEAPON_DATA[AltWeaponType.TURRET]["bullet_speed"] *= GameConfig.UPGRADE_MULTIPLIERS["turret_bullet_speed"]
+				print("  → Turret bullet speed ×%.2f (%.1f → %.1f)" % [GameConfig.UPGRADE_MULTIPLIERS["turret_bullet_speed"], old_speed, ALT_WEAPON_DATA[AltWeaponType.TURRET]["bullet_speed"]])
 
 		# ==============================
 		# DASH ABILITY EFFECTS
 		# ==============================
 		"dash_distance":
-			dash_distance_bonus_percent += value
+			# EXPONENTIAL SCALING: Multiply distance multiplier per tier
+			dash_distance_bonus_percent *= GameConfig.UPGRADE_MULTIPLIERS["ability_speed"]
+			print("  → Dash distance ×%.2f (multiplier now: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_speed"], dash_distance_bonus_percent])
 
 		"dash_cooldown":
-			ability_cooldown_mult *= (1.0 + value)
+			# EXPONENTIAL SCALING: Multiply cooldown reduction per tier
+			ability_cooldown_mult *= GameConfig.UPGRADE_MULTIPLIERS["ability_cooldown"]
+			print("  → Dash cooldown ×%.2f (multiplier now: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_cooldown"], ability_cooldown_mult])
 
 		"dash_invuln_window":
 			dash_invuln_window_bonus += value
@@ -924,13 +968,19 @@ func apply_upgrade(upgrade_id: String) -> void:
 			shield_hp += value
 
 		"shield_duration":
-			shield_duration += value
+			# EXPONENTIAL SCALING: Multiply duration by constant per tier
+			shield_duration *= GameConfig.UPGRADE_MULTIPLIERS["ability_duration"]
+			print("  → Shield duration ×%.2f (now: %.2fs)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_duration"], shield_duration])
 
 		"shield_cooldown":
-			shield_cooldown_mult *= (1.0 + value)
+			# EXPONENTIAL SCALING: Multiply cooldown reduction per tier
+			shield_cooldown_mult *= GameConfig.UPGRADE_MULTIPLIERS["ability_cooldown"]
+			print("  → Shield cooldown ×%.2f (multiplier now: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_cooldown"], shield_cooldown_mult])
 
 		"shield_radius":
-			shield_radius_bonus += value
+			# EXPONENTIAL SCALING: Multiply radius multiplier per tier
+			shield_radius_bonus *= GameConfig.UPGRADE_MULTIPLIERS["ability_radius"]
+			print("  → Shield radius ×%.2f (multiplier now: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_radius"], shield_radius_bonus])
 
 		"shield_reflect_chance":
 			shield_reflect_chance += value
@@ -939,16 +989,24 @@ func apply_upgrade(upgrade_id: String) -> void:
 		# SLOWMO ABILITY EFFECTS
 		# ==============================
 		"slowmo_duration":
-			slowmo_duration += value
+			# EXPONENTIAL SCALING: Multiply duration by constant per tier
+			slowmo_duration *= GameConfig.UPGRADE_MULTIPLIERS["ability_duration"]
+			print("  → Slowmo duration ×%.2f (now: %.2fs)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_duration"], slowmo_duration])
 
 		"slowmo_cooldown":
-			slowmo_cooldown_mult *= (1.0 + value)
+			# EXPONENTIAL SCALING: Multiply cooldown reduction per tier
+			slowmo_cooldown_mult *= GameConfig.UPGRADE_MULTIPLIERS["ability_cooldown"]
+			print("  → Slowmo cooldown ×%.2f (multiplier now: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_cooldown"], slowmo_cooldown_mult])
 
 		"slowmo_time_scale":
-			slowmo_time_scale *= (1.0 + value)
+			# EXPONENTIAL SCALING: Multiply time scale (slower = stronger effect)
+			slowmo_time_scale *= 0.90  # 10% slower per tier
+			print("  → Slowmo time scale ×0.90 (now: %.2f)" % slowmo_time_scale)
 
 		"slowmo_radius":
-			slowmo_radius += value
+			# EXPONENTIAL SCALING: Multiply radius multiplier per tier
+			slowmo_radius *= GameConfig.UPGRADE_MULTIPLIERS["ability_radius"]
+			print("  → Slowmo radius ×%.2f (now: %.1f)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_radius"], slowmo_radius])
 
 		"slowmo_ammo_efficiency":
 			slowmo_ammo_efficiency += value
@@ -1215,3 +1273,34 @@ func get_next_chaos_pact_id() -> String:
 	print("[GameState] Remaining in pool:", chaos_pact_pool.size())
 	
 	return pact_id
+
+# -------------------------------------------------------------------
+# DPS LOGGING (FOR EXPONENTIAL SCALING ANALYSIS)
+# -------------------------------------------------------------------
+
+var last_combat_dps: float = 0.0  # Store last calculated DPS for logging
+
+func log_current_dps(level: int) -> void:
+	"""Log current DPS stats for exponential curve analysis.
+	Call this after level completion, after major upgrades, or periodically during combat."""
+	
+	# Try to find DPS dummy in scene if available
+	var dps_dummy = get_tree().get_first_node_in_group("dps_dummy")
+	if dps_dummy and dps_dummy.has_method("get_current_dps"):
+		last_combat_dps = dps_dummy.get_current_dps()
+		print("[DPS DEBUG] Level %d | Measured DPS=%.2f" % [level, last_combat_dps])
+	else:
+		# Calculate theoretical DPS from stats if no dummy available
+		var theoretical_dps = _calculate_theoretical_dps()
+		last_combat_dps = theoretical_dps
+		print("[DPS DEBUG] Level %d | Theoretical DPS=%.2f (primary_damage=%.2f, fire_rate=%.3fs)" % [level, theoretical_dps, primary_damage, fire_rate])
+
+func _calculate_theoretical_dps() -> float:
+	"""Calculate theoretical DPS from current stats (primary weapon only)."""
+	if fire_rate <= 0.0:
+		return 0.0
+	
+	var base_bullet_damage = GameConfig.bullet_base_damage * primary_damage
+	var shots_per_second = 1.0 / fire_rate
+	return base_bullet_damage * shots_per_second * primary_burst_count
+

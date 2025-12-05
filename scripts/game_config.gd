@@ -110,3 +110,62 @@ const WEAPON_FUEL_CONFIG := {
 		"mode": "continuous"       # special continuous mode
 	},
 }
+
+# -------------------------------------------------------------------
+# EXPONENTIAL UPGRADE MULTIPLIERS
+# -------------------------------------------------------------------
+# All upgrades use multiplicative scaling per tier for explosive growth.
+# Example: damage tier 5 = base * (1.15^5) = base * 2.01
+# Centralized here for easy global tuning.
+const UPGRADE_MULTIPLIERS := {
+	# Weapon damage (most weapons)
+	"damage": 1.15,  # 15% increase per tier
+	
+	# Fire rate (cooldown reduction)
+	"fire_rate": 0.90,  # 10% faster per tier (cooldown *= 0.90)
+	
+	# Shotgun pellets
+	"pellets": 1.20,  # 20% more pellets per tier
+	
+	# Projectile speed (bullets, shurikens, etc.)
+	"projectile_speed": 1.12,  # 12% faster per tier
+	
+	# Flamethrower burn damage
+	"burn_damage": 1.25,  # 25% more burn damage per tier
+	
+	# Grenade explosion radius
+	"grenade_radius": 1.18,  # 18% larger radius per tier
+	
+	# Grenade fragment count
+	"grenade_fragments": 1.20,  # 20% more fragments per tier
+	
+	# Shuriken bounce count
+	"shuriken_bounces": 1.15,  # 15% more bounces per tier
+	
+	# Shuriken ricochet damage
+	"shuriken_ricochet_damage": 1.20,  # 20% more damage per bounce tier
+	
+	# Sniper charge multiplier
+	"sniper_charge": 1.30,  # 30% stronger charge per tier
+	
+	# Turret fire rate
+	"turret_fire_rate": 0.90,  # 10% faster per tier
+	
+	# Turret bullet speed
+	"turret_bullet_speed": 1.15,  # 15% faster per tier
+	
+	# Turret range
+	"turret_range": 1.12,  # 12% longer range per tier
+	
+	# Ability duration (dash, slowmo, invis, bubble)
+	"ability_duration": 1.15,  # 15% longer duration per tier
+	
+	# Ability cooldown reduction
+	"ability_cooldown": 0.90,  # 10% faster cooldown per tier
+	
+	# Ability radius (slowmo, bubble)
+	"ability_radius": 1.20,  # 20% larger radius per tier
+	
+	# Ability movement speed boost
+	"ability_speed": 1.10,  # 10% faster movement per tier
+}

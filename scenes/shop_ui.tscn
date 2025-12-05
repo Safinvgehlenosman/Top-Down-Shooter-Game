@@ -55,18 +55,16 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -527.0
-offset_top = -17.0
-offset_right = 629.0
-offset_bottom = -17.0
+offset_left = -452.0
+offset_top = 56.0
+offset_right = 704.0
+offset_bottom = 56.0
 grow_horizontal = 2
 grow_vertical = 2
 scale = Vector2(0.75, 0.75)
 
 [node name="UpgradeCard" parent="Panel/Cards" instance=ExtResource("4_crtus")]
 layout_mode = 0
-offset_right = 0.0
-offset_bottom = 0.0
 
 [node name="SFX_Collect" type="AudioStreamPlayer" parent="Panel/Cards/UpgradeCard"]
 stream = ExtResource("4_s287r")
@@ -74,9 +72,7 @@ bus = &"SFX"
 
 [node name="UpgradeCard2" parent="Panel/Cards" instance=ExtResource("4_crtus")]
 layout_mode = 0
-offset_left = 289.0
-offset_right = 289.0
-offset_bottom = 0.0
+offset_left = 240.0
 
 [node name="SFX_Collect" type="AudioStreamPlayer" parent="Panel/Cards/UpgradeCard2"]
 stream = ExtResource("4_s287r")
@@ -84,9 +80,7 @@ bus = &"SFX"
 
 [node name="UpgradeCard3" parent="Panel/Cards" instance=ExtResource("4_crtus")]
 layout_mode = 0
-offset_left = 578.0
-offset_right = 578.0
-offset_bottom = 0.0
+offset_left = 480.0
 
 [node name="SFX_Collect" type="AudioStreamPlayer" parent="Panel/Cards/UpgradeCard3"]
 stream = ExtResource("4_s287r")
@@ -94,9 +88,7 @@ bus = &"SFX"
 
 [node name="UpgradeCard4" parent="Panel/Cards" instance=ExtResource("4_crtus")]
 layout_mode = 0
-offset_left = 867.0
-offset_right = 867.0
-offset_bottom = 0.0
+offset_left = 720.0
 
 [node name="SFX_Collect" type="AudioStreamPlayer" parent="Panel/Cards/UpgradeCard4"]
 stream = ExtResource("4_s287r")
@@ -104,9 +96,7 @@ bus = &"SFX"
 
 [node name="UpgradeCard5" parent="Panel/Cards" instance=ExtResource("4_crtus")]
 layout_mode = 0
-offset_left = 1156.0
-offset_right = 1156.0
-offset_bottom = 0.0
+offset_left = 960.0
 
 [node name="SFX_Collect" type="AudioStreamPlayer" parent="Panel/Cards/UpgradeCard5"]
 stream = ExtResource("4_s287r")
@@ -120,9 +110,9 @@ anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -106.0
-offset_top = -100.0
+offset_top = -90.0
 offset_right = 94.0
-offset_bottom = -50.0
+offset_bottom = -40.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_fonts/font = ExtResource("1_oixfk")

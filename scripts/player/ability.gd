@@ -210,7 +210,8 @@ func _start_dash(data: Dictionary) -> void:
 	var base_distance: float = data.get("distance", 220.0)
 	var distance: float = base_distance
 	if "dash_distance_bonus_percent" in GameState:
-		distance = base_distance * (1.0 + GameState.dash_distance_bonus_percent)
+		# EXPONENTIAL SCALING: dash_distance_bonus_percent is now a multiplier (starts at 1.0)
+		distance = base_distance * GameState.dash_distance_bonus_percent
 	dash_speed = distance / max(duration, 0.01)
 
 	var base_cooldown: float = data.get("cooldown", 5.0)

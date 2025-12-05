@@ -1,15 +1,12 @@
 [remap]
 
-importer="csv_translation"
-type="Translation"
-uid="uid://b41756ajrroh7"
-valid=false
+importer="keep"
+type=""
 
 [deps]
 
 source_file="res://data/upgrades.csv"
+dest_files=[]
 
 [params]
 
-compress=true
-delimiter=0
