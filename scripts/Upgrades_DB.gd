@@ -41,7 +41,7 @@ var ALL_UPGRADES: Array = []
 # Lazy-load upgrades from CSV on first access
 func _ensure_loaded() -> void:
 	if ALL_UPGRADES.is_empty():
-		ALL_UPGRADES = _load_upgrades_from_csv("res://data/upgrades.csv")
+		ALL_UPGRADES = _load_upgrades_from_csv("res://data/upgrades_cleaned.csv")
 
 # Parse rarity string to enum value
 func _parse_rarity(rarity_str: String) -> int:

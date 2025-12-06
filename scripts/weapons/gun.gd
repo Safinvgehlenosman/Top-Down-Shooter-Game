@@ -248,6 +248,7 @@ func handle_primary_fire(is_pressed: bool, aim_dir: Vector2) -> void:
 		bullet.damage = roundi(final_damage)  # Round instead of truncate
 		var m := float(GameState.primary_bullet_size_multiplier)
 		bullet.scale = bullet.scale * Vector2(m, m)
+		
 		get_tree().current_scene.add_child(bullet)
 
 	if sfx_shoot:
@@ -399,6 +400,15 @@ func _fire_weapon(data: Dictionary, aim_pos: Vector2, weapon_type: int) -> void:
 			bullet.bounces_left = bounces
 		if "explosion_radius" in bullet:
 			bullet.explosion_radius = explosion_radius
+		
+		# Apply shuriken chainshot upgrades
+		if weapon_type == GameState.AltWeaponType.SHURIKEN:
+			if "chain_count" in bullet:
+				bullet.chain_count = int(GameState.shuriken_chain_count_mult - 1.0)
+				bullet.chain_radius = 300.0 * GameState.shuriken_chain_radius_mult
+				bullet.chain_speed_mult = GameState.shuriken_speed_chain_mult
+				bullet.blade_split_chance = GameState.shuriken_blade_split_chance
+		
 		get_tree().current_scene.add_child(bullet)
 
 	# Play shoot sound with weapon-specific pitch

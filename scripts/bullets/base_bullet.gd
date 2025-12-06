@@ -5,7 +5,6 @@ extends Area2D
 
 @export var target_group: StringName = "enemy"
 
-
 var direction: Vector2 = Vector2.ZERO
 
 func _ready() -> void:
@@ -24,9 +23,6 @@ func _on_visible_on_screen_notifier_2d_screen_exited() -> void:
 
 
 func _on_body_entered(body: Node2D) -> void:
-	if body.is_in_group("enemy"):
-		if body.has_method("take_damage"):
-			body.take_damage(damage)
-
-	# despawn on any collision (enemy or wall)
+	if body.has_method("take_damage"):
+		body.take_damage(damage)
 	queue_free()

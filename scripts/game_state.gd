@@ -100,7 +100,7 @@ var ALT_WEAPON_DATA := {
 	AltWeaponType.SHURIKEN: {
 		"id": "shuriken",
 		"bullet_scene": BulletScene_SHURIKEN,
-		"bullet_speed": 240.0,
+		"bullet_speed": 480.0,
 		"pellets": 1,
 		"spread_degrees": 0.0,
 		"damage": 12.0,
@@ -193,6 +193,17 @@ var primary_bullet_size_multiplier: float = 1.0
 var fire_rate_base: float = 0.0
 var fire_rate_bonus_percent: float = 0.0
 var primary_burst_count: int = 1
+var primary_extra_burst: int = 0  # Sequential burst: +1 bullet per shot with delay (stackable)
+
+# Piercing Rounds upgrade
+var primary_pierce_mult: float = 1.0
+var primary_pierce: int = 0
+
+# Shuriken Chainshot + Blade Split upgrades
+var shuriken_chain_count_mult: float = 1.0
+var shuriken_chain_radius_mult: float = 1.0
+var shuriken_speed_chain_mult: float = 1.0
+var shuriken_blade_split_chance: float = 0.0
 
 # --- Per-line / weapon bonuses (populated by upgrades) ----
 var shotgun_pellets_bonus: int = 0
@@ -332,6 +343,17 @@ func start_new_run() -> void:
 	primary_damage = primary_damage_base * (1.0 + primary_damage_bonus)
 
 	primary_burst_count = 1
+	primary_extra_burst = 0
+	
+	# Reset piercing and homing
+	primary_pierce_mult = 1.0
+	primary_pierce = 0
+	
+	# Reset shuriken chainshot
+	shuriken_chain_count_mult = 1.0
+	shuriken_chain_radius_mult = 1.0
+	shuriken_speed_chain_mult = 1.0
+	shuriken_blade_split_chance = 0.0
 
 	# reset per-line bonuses
 	shotgun_spread_bonus_percent = 0.0
@@ -687,6 +709,17 @@ func apply_upgrade(upgrade_id: String) -> void:
 			fire_rate = max(0.05, fire_rate)  # Hard floor at 0.05s
 			print("  → Fire rate ×%.2f (cooldown now: %.3fs)" % [GameConfig.UPGRADE_MULTIPLIERS["fire_rate"], fire_rate])
 
+		"primary_extra_burst":
+			# Stackable: adds +1 sequential bullet per upgrade
+			primary_extra_burst += int(value)
+			print("  → Primary extra burst +%d (total: %d)" % [int(value), primary_extra_burst])
+
+		"primary_pierce":
+			# EXPONENTIAL SCALING: Multiply pierce count by 1.20 per tier
+			primary_pierce_mult *= 1.20
+			primary_pierce = int(primary_pierce_mult - 1.0)
+			print("  → Primary pierce ×1.20 (total pierces: %d)" % primary_pierce)
+
 		# ==============================
 		# SHOTGUN EFFECTS
 		# ==============================
@@ -796,6 +829,37 @@ func apply_upgrade(upgrade_id: String) -> void:
 				var old_bounces: int = ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bounces"]
 				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bounces"] = max(1, int(round(old_bounces * GameConfig.UPGRADE_MULTIPLIERS["shuriken_bounces"])))
 				print("  → Shuriken bounces ×%.2f (%d → %d)" % [GameConfig.UPGRADE_MULTIPLIERS["shuriken_bounces"], old_bounces, ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bounces"]])
+
+		"shuriken_chain_i":
+			# COMMON: +1 chain, radius ×1.10
+			shuriken_chain_count_mult += 1.0
+			shuriken_chain_radius_mult *= 1.10
+			print("  → Shuriken chain +1 (total: %.0f), radius ×1.10 (total: ×%.2f)" % [shuriken_chain_count_mult - 1.0, shuriken_chain_radius_mult])
+
+		"shuriken_chain_ii":
+			# UNCOMMON: +2 chains, radius ×1.20
+			shuriken_chain_count_mult += 2.0
+			shuriken_chain_radius_mult *= 1.20
+			print("  → Shuriken chain +2 (total: %.0f), radius ×1.20 (total: ×%.2f)" % [shuriken_chain_count_mult - 1.0, shuriken_chain_radius_mult])
+
+		"shuriken_chain_iii":
+			# RARE: +4 chains, radius ×1.30, speed ×1.10
+			shuriken_chain_count_mult += 4.0
+			shuriken_chain_radius_mult *= 1.30
+			shuriken_speed_chain_mult *= 1.10
+			print("  → Shuriken chain +4 (total: %.0f), radius ×1.30 (total: ×%.2f), speed ×1.10 (total: ×%.2f)" % [shuriken_chain_count_mult - 1.0, shuriken_chain_radius_mult, shuriken_speed_chain_mult])
+
+		"shuriken_chain_iv":
+			# EPIC: infinite chains (999), radius ×1.50, speed ×1.15
+			shuriken_chain_count_mult = 1000.0  # 999 chains
+			shuriken_chain_radius_mult *= 1.50
+			shuriken_speed_chain_mult *= 1.15
+			print("  → Shuriken chain INFINITE (999), radius ×1.50 (total: ×%.2f), speed ×1.15 (total: ×%.2f)" % [shuriken_chain_radius_mult, shuriken_speed_chain_mult])
+
+		"shuriken_blade_split":
+			# EPIC: 25% chance to spawn mini-shuriken on chain
+			shuriken_blade_split_chance += 0.25
+			print("  → Blade Split +25%% (total: %.0f%%)" % (shuriken_blade_split_chance * 100.0))
 
 		"shuriken_speed":
 			# EXPONENTIAL SCALING: Multiply bullet speed by constant per tier
