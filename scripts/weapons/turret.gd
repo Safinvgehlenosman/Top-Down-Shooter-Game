@@ -141,15 +141,23 @@ func _fire_at(target: Node2D) -> void:
 	
 	var dir := (target.global_position - muzzle.global_position).normalized()
 
-	# add inaccuracy
-	if spread_rad > 0.0:
-		dir = dir.rotated(randf_range(-spread_rad, spread_rad))
+	# Apply accuracy spread (improves with upgrades)
+	var spread_radians := deg_to_rad(10.0 * GameState.turret_accuracy_mult)
+	dir = dir.rotated(randf_range(-spread_radians, spread_radians))
 
 	var bullet = bullet_scene.instantiate()
 	bullet.global_position = muzzle.global_position
 	bullet.direction = dir
 	bullet.speed = bullet_speed
 	bullet.damage = damage
+	
+	# Apply homing to bullet (if upgraded)
+	if "homing_enabled" in bullet:
+		bullet.homing_enabled = GameState.turret_homing_angle_deg > 0.0
+		bullet.homing_angle_deg = GameState.turret_homing_angle_deg
+		bullet.homing_turn_speed = GameState.turret_homing_turn_speed
+	
+	print("[TURRET] accuracy_mult=%.2f, homing_angle=%.1f°, turn_speed=%.2f" % [GameState.turret_accuracy_mult, GameState.turret_homing_angle_deg, GameState.turret_homing_turn_speed])
 
 	get_tree().current_scene.add_child(bullet)
 	

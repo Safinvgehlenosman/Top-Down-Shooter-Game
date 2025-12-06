@@ -113,12 +113,12 @@ var ALT_WEAPON_DATA := {
 
 	AltWeaponType.TURRET: {
 	"id": "turret",
-	"bullet_scene": BulletScene_TURRET,  # ← ADD THIS (or use turret-specific bullet)
-	"bullet_speed": 225.0,                # ← ADD THIS (reduced by 75%)
-	"damage": 1.0,  # Changed from 7 to 1
-	"fire_rate": 0.8,  # Changed from 0.4 to 0.8 (halved fire rate)
+	"bullet_scene": BulletScene_TURRET,
+	"bullet_speed": 135.0,  # Reduced to 60% of 225
+	"damage": 1.0,
+	"fire_rate": 1.2,  # Slower base fire rate (was 0.8)
 	"range": 220.0,
-	"spread_degrees": 5.0,                # ← ADD THIS (small spread)
+	"spread_degrees": 10.0,  # Base inaccuracy spread
 	},
 }
 
@@ -204,6 +204,11 @@ var shuriken_chain_count_mult: float = 1.0
 var shuriken_chain_radius_mult: float = 1.0
 var shuriken_speed_chain_mult: float = 1.0
 var shuriken_blade_split_chance: float = 0.0
+
+# Turret upgrades - accuracy and homing
+var turret_accuracy_mult: float = 1.0
+var turret_homing_angle_deg: float = 0.0
+var turret_homing_turn_speed: float = 0.0
 
 # --- Per-line / weapon bonuses (populated by upgrades) ----
 var shotgun_pellets_bonus: int = 0
@@ -354,6 +359,11 @@ func start_new_run() -> void:
 	shuriken_chain_radius_mult = 1.0
 	shuriken_speed_chain_mult = 1.0
 	shuriken_blade_split_chance = 0.0
+	
+	# Reset turret accuracy and homing
+	turret_accuracy_mult = 1.0
+	turret_homing_angle_deg = 0.0
+	turret_homing_turn_speed = 0.0
 
 	# reset per-line bonuses
 	shotgun_spread_bonus_percent = 0.0
@@ -898,6 +908,17 @@ func apply_upgrade(upgrade_id: String) -> void:
 				var old_speed: float = ALT_WEAPON_DATA[AltWeaponType.TURRET]["bullet_speed"]
 				ALT_WEAPON_DATA[AltWeaponType.TURRET]["bullet_speed"] *= GameConfig.UPGRADE_MULTIPLIERS["turret_bullet_speed"]
 				print("  → Turret bullet speed ×%.2f (%.1f → %.1f)" % [GameConfig.UPGRADE_MULTIPLIERS["turret_bullet_speed"], old_speed, ALT_WEAPON_DATA[AltWeaponType.TURRET]["bullet_speed"]])
+		
+		"turret_accuracy":
+			# EXPONENTIAL SCALING: Multiply accuracy by 0.85 per tier (lower = more accurate)
+			turret_accuracy_mult *= 0.85
+			print("  → Turret accuracy ×0.85 (spread mult: %.2f)" % turret_accuracy_mult)
+		
+		"turret_homing":
+			# EXPONENTIAL SCALING: Increase homing cone and turn speed
+			turret_homing_angle_deg += 20.0
+			turret_homing_turn_speed = turret_homing_turn_speed * 1.1 + 0.5
+			print("  → Turret homing angle +20° (total: %.1f°), turn speed ×1.1 +0.5 (total: %.2f)" % [turret_homing_angle_deg, turret_homing_turn_speed])
 
 		# ==============================
 		# DASH ABILITY EFFECTS
