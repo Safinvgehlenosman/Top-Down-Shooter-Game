@@ -36,12 +36,44 @@ var reload_timer: float = 0.0
 var is_reloading: bool = false
 var is_overheated: bool = false  # for flamethrower
 var is_firing_flame: bool = false  # track flamethrower firing state
+var is_firing_burst: bool = false  # for burst/multishot lockout
 
 
 func _ready() -> void:
 	# Connect to weapon changes
 	GameState.alt_weapon_changed.connect(_on_alt_weapon_changed)
 	_initialize_fuel_for_weapon()
+
+
+func _input(event):
+	if event.is_action_pressed("reload"):
+		manual_reload()
+
+# -------------------------------------------------------------------
+# MANUAL RELOAD SYSTEM
+# -------------------------------------------------------------------
+func manual_reload() -> void:
+	# Only reload if not already reloading, not firing burst/flame, and not full
+	if is_reloading:
+		return
+	if is_firing_burst or is_firing_flame:
+		return
+	if fuel_mode == "clip":
+		if fuel >= max_fuel:
+			return
+		start_reload()
+	elif fuel_mode == "continuous":
+		if fuel >= max_fuel:
+			return
+		# Flamethrower: instant refill
+		fuel = max_fuel
+		is_overheated = false
+		is_reloading = false
+		reload_timer = 0.0
+		_notify_ui_fuel_changed()
+		# Optional: play reload animation/sound here
+		if sprite.has_method("play") and sprite.has_animation("reload"):
+			sprite.play("reload")
 
 
 func _on_alt_weapon_changed(_new_weapon: int) -> void:
@@ -153,11 +185,12 @@ func _update_fuel(delta: float) -> void:
 		ui.update_alt_weapon_fuel(fuel)
 
 
+
 func _update_clip_fuel(delta: float) -> void:
 	"""Reload logic for clip-based weapons."""
 	if fuel <= 0.0:
-		is_reloading = true
-	
+		start_reload()
+
 	if is_reloading:
 		reload_timer += delta
 		if reload_timer >= fuel_reload_delay:
@@ -166,6 +199,15 @@ func _update_clip_fuel(delta: float) -> void:
 				fuel = max_fuel
 				is_reloading = false
 				reload_timer = 0.0
+
+func start_reload() -> void:
+	if is_reloading:
+		return
+	is_reloading = true
+	reload_timer = 0.0
+	# Optional: play reload animation/sound here
+	if sprite.has_method("play") and sprite.has_animation("reload"):
+		sprite.play("reload")
 
 
 func _update_continuous_fuel(delta: float) -> void:
@@ -384,7 +426,10 @@ func _handle_flamethrower_fire(aim_pos: Vector2) -> void:
 # GENERIC ALT FIRE (SHOTGUN / SNIPER / GRENADE / SHURIKEN)
 # --------------------------------------------------------------------
 
+
 func _fire_weapon(data: Dictionary, aim_pos: Vector2, weapon_type: int) -> void:
+	# Block reload during burst/multishot
+	is_firing_burst = true
 	# Consume fuel instead of ammo
 	if not GameState.debug_infinite_ammo:
 		fuel -= fuel_drain_per_shot
@@ -400,7 +445,7 @@ func _fire_weapon(data: Dictionary, aim_pos: Vector2, weapon_type: int) -> void:
 	var recoil_strength: float = data.get("recoil", 0.0)
 	var bounces: int = data.get("bounces", 0)
 	var explosion_radius: float = data.get("explosion_radius", 0.0)
-	
+
 	# Apply weapon-specific multipliers
 	if weapon_type == GameState.AltWeaponType.SHOTGUN:
 		damage *= GameState.shotgun_damage_mult
@@ -409,12 +454,12 @@ func _fire_weapon(data: Dictionary, aim_pos: Vector2, weapon_type: int) -> void:
 
 	var base_dir := (aim_pos - muzzle.global_position).normalized()
 	var start_offset := -float(pellets - 1) / 2.0
-	
+
 	# Determine burst count for sniper
 	var burst_count: int = 1
 	if weapon_type == GameState.AltWeaponType.SNIPER:
 		burst_count = GameState.sniper_burst_count
-	
+
 	# Fire burst shots
 	for burst_idx in range(burst_count):
 		for i in range(pellets):
@@ -444,6 +489,8 @@ func _fire_weapon(data: Dictionary, aim_pos: Vector2, weapon_type: int) -> void:
 		# Delay between burst shots (except last)
 		if burst_idx < burst_count - 1:
 			await get_tree().create_timer(0.05).timeout
+
+	is_firing_burst = false
 
 	# Play shoot sound with weapon-specific pitch
 	if sfx_shoot:
