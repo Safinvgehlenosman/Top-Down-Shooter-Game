@@ -69,6 +69,7 @@ offset_left = 302.6667
 offset_top = -493.3333
 offset_right = 526.66675
 offset_bottom = -258.3333
+rarity_outline_materials = null
 
 [node name="SFX_Collect" type="AudioStreamPlayer" parent="Panel/Cards/UpgradeCard"]
 stream = ExtResource("4_s287r")
@@ -80,6 +81,7 @@ offset_left = 302.66666
 offset_top = -378.6667
 offset_right = 302.66666
 offset_bottom = -143.66669
+rarity_outline_materials = null
 
 [node name="SFX_Collect" type="AudioStreamPlayer" parent="Panel/Cards/UpgradeCard2"]
 stream = ExtResource("4_s287r")
@@ -91,6 +93,7 @@ offset_left = 302.66666
 offset_top = -255.99998
 offset_right = 302.66666
 offset_bottom = -20.999985
+rarity_outline_materials = null
 
 [node name="SFX_Collect" type="AudioStreamPlayer" parent="Panel/Cards/UpgradeCard3"]
 stream = ExtResource("4_s287r")
@@ -102,6 +105,7 @@ offset_left = 302.66666
 offset_top = -133.33333
 offset_right = 302.66666
 offset_bottom = 101.66667
+rarity_outline_materials = null
 
 [node name="SFX_Collect" type="AudioStreamPlayer" parent="Panel/Cards/UpgradeCard4"]
 stream = ExtResource("4_s287r")
@@ -113,6 +117,7 @@ offset_left = 302.66666
 offset_top = -15.999992
 offset_right = 302.66666
 offset_bottom = 219.0
+rarity_outline_materials = null
 
 [node name="SFX_Collect" type="AudioStreamPlayer" parent="Panel/Cards/UpgradeCard5"]
 stream = ExtResource("4_s287r")
@@ -224,6 +229,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="VHSLayer" parent="." instance=ExtResource("10_0yw5g")]
+layer = -1
 
 [node name="Ammo" type="TextureRect" parent="."]
 offset_top = 579.0

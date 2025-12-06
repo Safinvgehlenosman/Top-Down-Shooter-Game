@@ -23,7 +23,7 @@ script = ExtResource("1_0hv3p")
 rarity_outline_textures = Array[Texture2D]([ExtResource("6_33rkj"), ExtResource("3_feudy"), ExtResource("4_dvncl"), ExtResource("5_acdrt"), ExtResource("6_sa0xp"), ExtResource("7_dvncl")])
 rarity = 3
 
-[node name="VisualRoot" type="Node2D" parent="."]
+[node name="VisualRoot" type="Control" parent="."]
 
 [node name="PriceArea" type="HBoxContainer" parent="VisualRoot"]
 offset_left = 5.0
@@ -93,3 +93,5 @@ offset_bottom = 3339.9998
 scale = Vector2(0.1, 0.1)
 mouse_filter = 2
 texture = ExtResource("6_33rkj")
+
+[node name="HoverArea" type="Control" parent="VisualRoot"]

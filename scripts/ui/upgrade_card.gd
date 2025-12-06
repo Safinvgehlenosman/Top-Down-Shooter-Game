@@ -1,5 +1,28 @@
 extends Control
 
+# --- POLISH ANIMATIONS ---
+# set_hovered(is_hovered): Smooth scale/"lift" animation using SceneTreeTween. Only one hover tween runs at a time.
+# play_intro(delay): Sequential fade/slide-in animation for shop opening. Only one intro tween runs at a time.
+
+var intro_base_position: Vector2 = Vector2.ZERO
+var intro_tween: Tween = null
+
+func play_intro(delay: float) -> void:
+	# Sequential fade/slide-in animation for shop opening
+	# Immediately set VisualRoot to hidden/offset state
+	if not visual_root:
+		return
+	if intro_tween and intro_tween.is_running():
+		intro_tween.kill()
+	visual_root.modulate.a = 0.0
+	intro_base_position = visual_root.position
+	var intro_offset_y := -12.0
+	visual_root.position.y = intro_base_position.y + intro_offset_y
+	intro_tween = create_tween()
+	intro_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	intro_tween.tween_property(visual_root, "modulate:a", 1.0, 0.18).set_delay(delay).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	intro_tween.tween_property(visual_root, "position:y", intro_base_position.y, 0.18).set_delay(delay).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
 signal purchased
 
 # Rarity outline textures (set in inspector, indices match UpgradesDB.Rarity enum)
@@ -11,7 +34,7 @@ signal purchased
 @export var rarity: UpgradesDB.Rarity = UpgradesDB.Rarity.COMMON
 
 # Visual root for scaling/animations (set in scene)
-@onready var visual_root: Node2D = $VisualRoot
+@onready var visual_root: Control = $VisualRoot
 
 # UI references (all inside VisualRoot)
 @onready var outline: TextureRect = $VisualRoot/Outline
@@ -20,6 +43,7 @@ signal purchased
 @onready var icon_rect: TextureRect = $VisualRoot/Icon
 @onready var desc_label: Label = $VisualRoot/Label
 @onready var buy_button: Button = $VisualRoot/Button
+## Removed HoverArea; use root node for hover detection
 
 # SFX stays on root
 @onready var sfx_collect: AudioStreamPlayer = $SFX_Collect
@@ -57,9 +81,15 @@ func _ready() -> void:
 
 	if buy_button and not buy_button.pressed.is_connected(_on_buy_pressed):
 		buy_button.pressed.connect(_on_buy_pressed)
-		# Connect tooltip to button hover
-		buy_button.mouse_entered.connect(_on_mouse_entered)
-		buy_button.mouse_exited.connect(_on_mouse_exited)
+	if buy_button:
+		buy_button.mouse_filter = Control.MOUSE_FILTER_STOP
+	# Connect hover signals to root node
+	mouse_entered.connect(func(): set_hovered(true))
+	mouse_exited.connect(func(): set_hovered(false))
+	# Set VisualRoot pivot to center
+	# VisualRoot is Node2D in this scene
+	if visual_root and visual_root is Control:
+		visual_root.pivot_offset = Vector2(visual_root.size.x / 2, visual_root.size.y / 2)
 	
 	# Node2D has no mouse_filter; skip this for Node2D visual_root
 	
@@ -90,10 +120,6 @@ func _ready() -> void:
 	# IMPORTANT: Keep root card scale at Vector2.ONE always
 	scale = Vector2.ONE
 	
-	# Wait one frame then set pivot to center of VisualRoot (Node2D: use position/offset if needed)
-	await get_tree().process_frame
-	if visual_root.has_method("set_pivot_offset"):
-		visual_root.pivot_offset = visual_root.size * 0.5
 	
 	# Update outline texture and material based on rarity
 	_apply_rarity_visuals()
@@ -106,24 +132,23 @@ func set_slot_scale(mult: float) -> void:
 	if visual_root:
 		visual_root.scale = Vector2.ONE * mult
 
-
 func set_hovered(is_hovered: bool) -> void:
-	"""Scale the visual root on hover without affecting card layout."""
 	if not visual_root:
 		return
-	
-	# Kill existing tween
+	# Smooth scale/"lift" animation for hover
+	if not visual_root:
+		return
 	var existing_tween = get_meta("hover_tween", null)
 	if existing_tween and existing_tween is Tween:
 		existing_tween.kill()
-	
-	var tween = create_tween()
-	set_meta("hover_tween", tween)
-	
+	var hover_tween = create_tween()
+	set_meta("hover_tween", hover_tween)
 	if is_hovered:
-		tween.tween_property(visual_root, "scale", Vector2(1.05, 1.05), 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		hover_tween.tween_property(visual_root, "scale", Vector2(1.05, 1.05), 0.1).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		hover_tween.tween_property(visual_root, "position:y", intro_base_position.y - 6, 0.1).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	else:
-		tween.tween_property(visual_root, "scale", Vector2.ONE, 0.15).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		hover_tween.tween_property(visual_root, "scale", Vector2.ONE, 0.1).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		hover_tween.tween_property(visual_root, "position:y", intro_base_position.y, 0.1).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 
 func setup(data: Dictionary) -> void:
