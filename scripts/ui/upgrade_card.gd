@@ -11,7 +11,7 @@ signal purchased
 @export var rarity: UpgradesDB.Rarity = UpgradesDB.Rarity.COMMON
 
 # Visual root for scaling/animations (set in scene)
-@onready var visual_root: Control = $VisualRoot
+@onready var visual_root: Node2D = $VisualRoot
 
 # UI references (all inside VisualRoot)
 @onready var outline: TextureRect = $VisualRoot/Outline
@@ -61,8 +61,7 @@ func _ready() -> void:
 		buy_button.mouse_entered.connect(_on_mouse_entered)
 		buy_button.mouse_exited.connect(_on_mouse_exited)
 	
-	# Set mouse filter to PASS so we receive mouse events even when hovering over children
-	mouse_filter = Control.MOUSE_FILTER_PASS
+	# Node2D has no mouse_filter; skip this for Node2D visual_root
 	
 	# Create a Panel for rounded corners background
 	if color_rect and not background_panel:
@@ -91,9 +90,10 @@ func _ready() -> void:
 	# IMPORTANT: Keep root card scale at Vector2.ONE always
 	scale = Vector2.ONE
 	
-	# Wait one frame then set pivot to center of VisualRoot
+	# Wait one frame then set pivot to center of VisualRoot (Node2D: use position/offset if needed)
 	await get_tree().process_frame
-	visual_root.pivot_offset = visual_root.size * 0.5
+	if visual_root.has_method("set_pivot_offset"):
+		visual_root.pivot_offset = visual_root.size * 0.5
 	
 	# Update outline texture and material based on rarity
 	_apply_rarity_visuals()
@@ -141,7 +141,7 @@ func setup(data: Dictionary) -> void:
 	
 	# Visibility & interaction
 	visible = true
-	mouse_filter = Control.MOUSE_FILTER_STOP
+	# Node2D has no mouse_filter; skip
 	
 	# Z-index
 	z_index = 0

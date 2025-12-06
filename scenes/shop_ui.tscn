@@ -40,9 +40,9 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -128.0
-offset_top = 60.0
+offset_top = 19.0
 offset_right = 128.0
-offset_bottom = 124.00006
+offset_bottom = 83.00006
 grow_horizontal = 2
 theme_override_fonts/font = ExtResource("1_oixfk")
 theme_override_font_sizes/font_size = 64
@@ -65,6 +65,10 @@ scale = Vector2(0.75, 0.75)
 
 [node name="UpgradeCard" parent="Panel/Cards" instance=ExtResource("4_crtus")]
 layout_mode = 0
+offset_left = 302.6667
+offset_top = -493.3333
+offset_right = 526.66675
+offset_bottom = -258.3333
 
 [node name="SFX_Collect" type="AudioStreamPlayer" parent="Panel/Cards/UpgradeCard"]
 stream = ExtResource("4_s287r")
@@ -72,7 +76,10 @@ bus = &"SFX"
 
 [node name="UpgradeCard2" parent="Panel/Cards" instance=ExtResource("4_crtus")]
 layout_mode = 0
-offset_left = 240.0
+offset_left = 302.66666
+offset_top = -378.6667
+offset_right = 302.66666
+offset_bottom = -143.66669
 
 [node name="SFX_Collect" type="AudioStreamPlayer" parent="Panel/Cards/UpgradeCard2"]
 stream = ExtResource("4_s287r")
@@ -80,7 +87,10 @@ bus = &"SFX"
 
 [node name="UpgradeCard3" parent="Panel/Cards" instance=ExtResource("4_crtus")]
 layout_mode = 0
-offset_left = 480.0
+offset_left = 302.66666
+offset_top = -255.99998
+offset_right = 302.66666
+offset_bottom = -20.999985
 
 [node name="SFX_Collect" type="AudioStreamPlayer" parent="Panel/Cards/UpgradeCard3"]
 stream = ExtResource("4_s287r")
@@ -88,7 +98,10 @@ bus = &"SFX"
 
 [node name="UpgradeCard4" parent="Panel/Cards" instance=ExtResource("4_crtus")]
 layout_mode = 0
-offset_left = 720.0
+offset_left = 302.66666
+offset_top = -133.33333
+offset_right = 302.66666
+offset_bottom = 101.66667
 
 [node name="SFX_Collect" type="AudioStreamPlayer" parent="Panel/Cards/UpgradeCard4"]
 stream = ExtResource("4_s287r")
@@ -96,7 +109,10 @@ bus = &"SFX"
 
 [node name="UpgradeCard5" parent="Panel/Cards" instance=ExtResource("4_crtus")]
 layout_mode = 0
-offset_left = 960.0
+offset_left = 302.66666
+offset_top = -15.999992
+offset_right = 302.66666
+offset_bottom = 219.0
 
 [node name="SFX_Collect" type="AudioStreamPlayer" parent="Panel/Cards/UpgradeCard5"]
 stream = ExtResource("4_s287r")
