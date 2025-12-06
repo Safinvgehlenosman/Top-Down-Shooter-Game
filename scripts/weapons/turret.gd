@@ -104,8 +104,8 @@ func _find_target() -> Node2D:
 			continue
 		
 		# Skip dead enemies (check health component)
-		if body.has_node("HealthComponent"):
-			var health_comp = body.get_node("HealthComponent")
+		if body.has_node("Health"):
+			var health_comp = body.get_node("Health")
 			if health_comp.health <= 0:
 				continue
 		

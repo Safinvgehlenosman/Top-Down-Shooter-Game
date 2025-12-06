@@ -1014,6 +1014,9 @@ func play_death_sequence() -> void:
 	
 	is_dead = true
 	
+	# Remove from enemy group so turret stops targeting
+	remove_from_group("enemy")
+	
 	# Hide HP bar during death
 	if hp_bar:
 		hp_bar.visible = false
