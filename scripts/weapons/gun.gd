@@ -79,7 +79,16 @@ func _initialize_fuel_for_weapon() -> void:
 	
 	var config: Dictionary = GameConfig.WEAPON_FUEL_CONFIG[weapon_id]
 	fuel_mode = config.get("mode", "clip")
-	max_fuel = config.get("max_fuel", 10.0)
+	var base_max_fuel: float = config.get("max_fuel", 10.0)
+	
+	# Apply weapon-specific magazine size multipliers
+	if current_alt == GameState.AltWeaponType.SHOTGUN:
+		max_fuel = base_max_fuel * GameState.shotgun_mag_mult
+	elif current_alt == GameState.AltWeaponType.SNIPER:
+		max_fuel = base_max_fuel * GameState.sniper_mag_mult
+	else:
+		max_fuel = base_max_fuel
+	
 	fuel_reload_delay = config.get("reload_delay", 0.5)
 	
 	if fuel_mode == "clip":
@@ -289,7 +298,15 @@ func handle_alt_fire(is_pressed: bool, aim_pos: Vector2) -> void:
 	if data.is_empty():
 		return
 
-	alt_fire_cooldown_timer = data.get("cooldown", 1.0)
+	var base_cooldown: float = data.get("cooldown", 1.0)
+	
+	# Apply weapon-specific fire rate multipliers
+	if current_alt == GameState.AltWeaponType.SHOTGUN:
+		base_cooldown *= GameState.shotgun_fire_rate_mult
+	elif current_alt == GameState.AltWeaponType.SNIPER:
+		base_cooldown *= GameState.sniper_fire_rate_mult
+	
+	alt_fire_cooldown_timer = base_cooldown
 	_fire_weapon(data, aim_pos, current_alt)
 
 
@@ -383,33 +400,50 @@ func _fire_weapon(data: Dictionary, aim_pos: Vector2, weapon_type: int) -> void:
 	var recoil_strength: float = data.get("recoil", 0.0)
 	var bounces: int = data.get("bounces", 0)
 	var explosion_radius: float = data.get("explosion_radius", 0.0)
+	
+	# Apply weapon-specific multipliers
+	if weapon_type == GameState.AltWeaponType.SHOTGUN:
+		damage *= GameState.shotgun_damage_mult
+	elif weapon_type == GameState.AltWeaponType.SNIPER:
+		damage *= GameState.sniper_damage_mult
 
 	var base_dir := (aim_pos - muzzle.global_position).normalized()
 	var start_offset := -float(pellets - 1) / 2.0
+	
+	# Determine burst count for sniper
+	var burst_count: int = 1
+	if weapon_type == GameState.AltWeaponType.SNIPER:
+		burst_count = GameState.sniper_burst_count
+	
+	# Fire burst shots
+	for burst_idx in range(burst_count):
+		for i in range(pellets):
+			var angle := (start_offset + i) * spread_rad
+			var dir := base_dir.rotated(angle)
 
-	for i in range(pellets):
-		var angle := (start_offset + i) * spread_rad
-		var dir := base_dir.rotated(angle)
-
-		var bullet = bullet_scene.instantiate()
-		bullet.global_position = muzzle.global_position
-		bullet.direction = dir
-		bullet.speed = float(bullet_speed) * 0.5
-		bullet.damage = damage
-		if "bounces_left" in bullet:
-			bullet.bounces_left = bounces
-		if "explosion_radius" in bullet:
-			bullet.explosion_radius = explosion_radius
+			var bullet = bullet_scene.instantiate()
+			bullet.global_position = muzzle.global_position
+			bullet.direction = dir
+			bullet.speed = float(bullet_speed) * 0.5
+			bullet.damage = damage
+			if "bounces_left" in bullet:
+				bullet.bounces_left = bounces
+			if "explosion_radius" in bullet:
+				bullet.explosion_radius = explosion_radius
+			
+			# Apply shuriken chainshot upgrades
+			if weapon_type == GameState.AltWeaponType.SHURIKEN:
+				if "chain_count" in bullet:
+					bullet.chain_count = int(GameState.shuriken_chain_count_mult - 1.0)
+					bullet.chain_radius = 300.0 * GameState.shuriken_chain_radius_mult
+					bullet.chain_speed_mult = GameState.shuriken_speed_chain_mult
+					bullet.blade_split_chance = GameState.shuriken_blade_split_chance
+			
+			get_tree().current_scene.add_child(bullet)
 		
-		# Apply shuriken chainshot upgrades
-		if weapon_type == GameState.AltWeaponType.SHURIKEN:
-			if "chain_count" in bullet:
-				bullet.chain_count = int(GameState.shuriken_chain_count_mult - 1.0)
-				bullet.chain_radius = 300.0 * GameState.shuriken_chain_radius_mult
-				bullet.chain_speed_mult = GameState.shuriken_speed_chain_mult
-				bullet.blade_split_chance = GameState.shuriken_blade_split_chance
-		
-		get_tree().current_scene.add_child(bullet)
+		# Delay between burst shots (except last)
+		if burst_idx < burst_count - 1:
+			await get_tree().create_timer(0.05).timeout
 
 	# Play shoot sound with weapon-specific pitch
 	if sfx_shoot:

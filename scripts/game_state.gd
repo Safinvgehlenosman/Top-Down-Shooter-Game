@@ -211,6 +211,17 @@ var turret_homing_angle_deg: float = 0.0
 var turret_homing_turn_speed: float = 0.0
 var turret_damage_mult: float = 1.0
 
+# Shotgun upgrades - exponential multipliers
+var shotgun_damage_mult: float = 1.0
+var shotgun_fire_rate_mult: float = 1.0
+var shotgun_mag_mult: float = 1.0
+
+# Sniper upgrades - exponential multipliers
+var sniper_damage_mult: float = 1.0
+var sniper_fire_rate_mult: float = 1.0
+var sniper_mag_mult: float = 1.0
+var sniper_burst_count: int = 1
+
 # --- Per-line / weapon bonuses (populated by upgrades) ----
 var shotgun_pellets_bonus: int = 0
 var shotgun_spread_bonus_percent: float = 0.0
@@ -366,6 +377,17 @@ func start_new_run() -> void:
 	turret_homing_angle_deg = 0.0
 	turret_homing_turn_speed = 0.0
 	turret_damage_mult = 1.0
+	
+	# Reset shotgun multipliers
+	shotgun_damage_mult = 1.0
+	shotgun_fire_rate_mult = 1.0
+	shotgun_mag_mult = 1.0
+	
+	# Reset sniper multipliers
+	sniper_damage_mult = 1.0
+	sniper_fire_rate_mult = 1.0
+	sniper_mag_mult = 1.0
+	sniper_burst_count = 1
 
 	# reset per-line bonuses
 	shotgun_spread_bonus_percent = 0.0
@@ -751,6 +773,21 @@ func apply_upgrade(upgrade_id: String) -> void:
 
 		"shotgun_knockback":
 			shotgun_knockback_bonus_percent += value
+		
+		"shotgun_damage":
+			# EXPONENTIAL SCALING: Multiply damage by 1.15 per tier
+			shotgun_damage_mult *= GameConfig.UPGRADE_MULTIPLIERS["shotgun_damage"]
+			print("  → Shotgun damage ×%.2f (total mult: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["shotgun_damage"], shotgun_damage_mult])
+		
+		"shotgun_fire_rate":
+			# EXPONENTIAL SCALING: Reduce cooldown by 10% per tier
+			shotgun_fire_rate_mult *= GameConfig.UPGRADE_MULTIPLIERS["shotgun_fire_rate"]
+			print("  → Shotgun fire rate ×%.2f (total mult: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["shotgun_fire_rate"], shotgun_fire_rate_mult])
+		
+		"shotgun_mag":
+			# EXPONENTIAL SCALING: Increase magazine size by 20% per tier
+			shotgun_mag_mult *= GameConfig.UPGRADE_MULTIPLIERS["shotgun_mag"]
+			print("  → Shotgun mag size ×%.2f (total mult: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["shotgun_mag"], shotgun_mag_mult])
 			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN):
 				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["recoil"] = 140.0 * (1.0 + shotgun_knockback_bonus_percent)
 
@@ -777,6 +814,26 @@ func apply_upgrade(upgrade_id: String) -> void:
 				var old_damage: float = ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"]
 				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] *= GameConfig.UPGRADE_MULTIPLIERS["sniper_charge"]
 				print("  → Sniper charge ×%.2f (damage: %.1f → %.1f)" % [GameConfig.UPGRADE_MULTIPLIERS["sniper_charge"], old_damage, ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"]])
+		
+		"sniper_burst":
+			# Stackable burst shots
+			sniper_burst_count += 1
+			print("  → Sniper burst +1 (total: %d shots)" % sniper_burst_count)
+		
+		"sniper_damage_mult":
+			# EXPONENTIAL SCALING: Multiply damage by 20% per tier
+			sniper_damage_mult *= GameConfig.UPGRADE_MULTIPLIERS["sniper_damage"]
+			print("  → Sniper damage ×%.2f (total mult: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["sniper_damage"], sniper_damage_mult])
+		
+		"sniper_fire_rate":
+			# EXPONENTIAL SCALING: Reduce cooldown by 10% per tier
+			sniper_fire_rate_mult *= GameConfig.UPGRADE_MULTIPLIERS["sniper_fire_rate"]
+			print("  → Sniper fire rate ×%.2f (total mult: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["sniper_fire_rate"], sniper_fire_rate_mult])
+		
+		"sniper_mag":
+			# EXPONENTIAL SCALING: Increase magazine size by 20% per tier
+			sniper_mag_mult *= GameConfig.UPGRADE_MULTIPLIERS["sniper_mag"]
+			print("  → Sniper mag size ×%.2f (total mult: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["sniper_mag"], sniper_mag_mult])
 
 		# ==============================
 		# FLAMETHROWER EFFECTS

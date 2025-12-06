@@ -160,6 +160,16 @@ const UPGRADE_MULTIPLIERS := {
 	# Turret range
 	"turret_range": 1.12,  # 12% longer range per tier
 	
+	# Shotgun upgrades
+	"shotgun_damage": 1.15,  # 15% more damage per tier
+	"shotgun_fire_rate": 0.90,  # 10% faster fire rate per tier (cooldown reduction)
+	"shotgun_mag": 1.20,  # 20% more ammo per tier
+	
+	# Sniper upgrades
+	"sniper_damage": 1.20,  # 20% more damage per tier
+	"sniper_fire_rate": 0.90,  # 10% faster fire rate per tier
+	"sniper_mag": 1.20,  # 20% more ammo per tier
+	
 	# Ability duration (dash, slowmo, invis, bubble)
 	"ability_duration": 1.15,  # 15% longer duration per tier
 	
