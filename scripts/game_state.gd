@@ -115,7 +115,7 @@ var ALT_WEAPON_DATA := {
 	"id": "turret",
 	"bullet_scene": BulletScene_TURRET,
 	"bullet_speed": 135.0,  # Reduced to 60% of 225
-	"damage": 1.0,
+	"damage": 7.0,  # Increased from 1.0
 	"fire_rate": 1.2,  # Slower base fire rate (was 0.8)
 	"range": 220.0,
 	"spread_degrees": 10.0,  # Base inaccuracy spread
@@ -209,6 +209,7 @@ var shuriken_blade_split_chance: float = 0.0
 var turret_accuracy_mult: float = 1.0
 var turret_homing_angle_deg: float = 0.0
 var turret_homing_turn_speed: float = 0.0
+var turret_damage_mult: float = 1.0
 
 # --- Per-line / weapon bonuses (populated by upgrades) ----
 var shotgun_pellets_bonus: int = 0
@@ -364,6 +365,7 @@ func start_new_run() -> void:
 	turret_accuracy_mult = 1.0
 	turret_homing_angle_deg = 0.0
 	turret_homing_turn_speed = 0.0
+	turret_damage_mult = 1.0
 
 	# reset per-line bonuses
 	shotgun_spread_bonus_percent = 0.0
@@ -919,6 +921,11 @@ func apply_upgrade(upgrade_id: String) -> void:
 			turret_homing_angle_deg += 20.0
 			turret_homing_turn_speed = turret_homing_turn_speed * 1.1 + 0.5
 			print("  → Turret homing angle +20° (total: %.1f°), turn speed ×1.1 +0.5 (total: %.2f)" % [turret_homing_angle_deg, turret_homing_turn_speed])
+		
+		"turret_damage":
+			# EXPONENTIAL SCALING: Multiply damage by 1.15 per tier
+			turret_damage_mult *= GameConfig.UPGRADE_MULTIPLIERS["turret_damage"]
+			print("  → Turret damage ×%.2f (total mult: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["turret_damage"], turret_damage_mult])
 
 		# ==============================
 		# DASH ABILITY EFFECTS

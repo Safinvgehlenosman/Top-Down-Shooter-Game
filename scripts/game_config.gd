@@ -151,6 +151,9 @@ const UPGRADE_MULTIPLIERS := {
 	# Turret fire rate
 	"turret_fire_rate": 0.90,  # 10% faster per tier
 	
+	# Turret damage
+	"turret_damage": 1.15,  # 15% more damage per tier
+	
 	# Turret bullet speed
 	"turret_bullet_speed": 1.15,  # 15% faster per tier
 	

@@ -103,6 +103,12 @@ func _find_target() -> Node2D:
 		if not body.is_inside_tree():
 			continue
 		
+		# Skip dead enemies (check health component)
+		if body.has_node("HealthComponent"):
+			var health_comp = body.get_node("HealthComponent")
+			if health_comp.health <= 0:
+				continue
+		
 		# Skip ghost slimes (turret can't target them)
 		if body.name.to_lower().contains("ghost"):
 			continue
@@ -149,7 +155,7 @@ func _fire_at(target: Node2D) -> void:
 	bullet.global_position = muzzle.global_position
 	bullet.direction = dir
 	bullet.speed = bullet_speed
-	bullet.damage = damage
+	bullet.damage = int(damage * GameState.turret_damage_mult)
 	
 	# Apply homing to bullet (if upgraded)
 	if "homing_enabled" in bullet:
