@@ -168,8 +168,11 @@ var run_started: bool = false
 
 # Wave system - timer-driven waves (NOT kill-driven)
 
-# Chest spawning
-var chest_spawned: bool = false
+# Chest spawning - one random chest per level system
+var chest_should_spawn_this_level: bool = false
+var chest_has_spawned_this_level: bool = false
+var chest_drop_kill_index: int = -1
+var enemy_death_counter: int = 0
 
 @export_range(0.0, 1.0, 0.05) var chest_spawn_chance: float = 0.75  # 75% chance per level
 
@@ -311,9 +314,6 @@ func load_shop_room() -> void:
 	current_room = null
 	current_exit_door = null
 	
-	# Reset chest variables
-	chest_spawned = false
-	
 	# Reset alpha slime tracking
 	has_spawned_alpha_this_level = false
 	
@@ -371,9 +371,6 @@ func load_hub_room() -> void:
 	
 	current_room = null
 	current_exit_door = null
-	
-	# Reset chest variables
-	chest_spawned = false
 	
 	# Reset alpha slime tracking
 	has_spawned_alpha_this_level = false
@@ -456,8 +453,9 @@ func _load_room_internal() -> void:
 	remaining_enemies = 0
 	door_has_spawned = false
 	
-	# Reset chest variables
-	chest_spawned = false
+	# Reset chest variables (old system - will be replaced in _spawn_room_content)
+	enemy_death_counter = 0
+	chest_has_spawned_this_level = false
 	
 	# Reset alpha slime tracking
 	has_spawned_alpha_this_level = false
@@ -834,26 +832,14 @@ func _spawn_enemies_over_time(enemy_list: Array, spawn_points: Array[Node2D], du
 					has_spawned_alpha_this_level = true
 					break
 	
-	# --- MARK CHEST DROPPERS ---
+	# --- CHAOS CHEST DROPPER MARKING ---
+	# Only mark chaos chest droppers (normal chests use kill-index system)
 	var should_spawn_chaos := chaos_chest_spawned_this_cycle and GameState.active_chaos_challenge.is_empty()
-	var should_spawn_normal := randf() < chest_spawn_chance
 	
 	if should_spawn_chaos and not spawned_enemies.is_empty():
 		spawned_enemies.shuffle()
 		if is_instance_valid(spawned_enemies[0]):
 			spawned_enemies[0].set_meta("drops_chaos_chest", true)
-	
-	if should_spawn_normal and not spawned_enemies.is_empty():
-		spawned_enemies.shuffle()
-		var chest_dropper = spawned_enemies[0]
-		if is_instance_valid(chest_dropper):
-			if chest_dropper.has_meta("drops_chaos_chest"):
-				if spawned_enemies.size() > 1:
-					chest_dropper = spawned_enemies[1]
-				else:
-					chest_dropper = null
-			if chest_dropper and is_instance_valid(chest_dropper):
-				chest_dropper.set_meta("drops_chest", true)
 
 
 # --- SIMPLE INITIAL ENEMY SPAWNING ---------------------------------
@@ -1000,8 +986,6 @@ func _spawn_room_content() -> void:
 	if current_room == null:
 		return
 	
-	chest_spawned = false
-	
 	# Detect room type from room script
 	var room_type := "combat"  # Default
 	if current_room.has_method("get") and "room_type" in current_room:
@@ -1025,6 +1009,24 @@ func _spawn_room_content() -> void:
 	total_waves = get_wave_count(current_level)
 	current_wave = 0
 	scheduled_waves = 0
+	
+	# Initialize chest system for this level
+	enemy_death_counter = 0
+	chest_has_spawned_this_level = false
+	
+	# 75% chance this level gets a chest at all
+	chest_should_spawn_this_level = randf() < chest_spawn_chance
+	
+	if chest_should_spawn_this_level and remaining_enemies > 0:
+		chest_drop_kill_index = randi_range(1, remaining_enemies)
+		print("[CHEST] Level %d: chest will drop on kill #%d (total enemies=%d)" % [
+			current_level,
+			chest_drop_kill_index,
+			remaining_enemies,
+		])
+	else:
+		chest_drop_kill_index = -1
+		print("[CHEST] Level %d: no chest this level (roll failed or no enemies)." % current_level)
 	
 	# Debug logs for difficulty verification
 	var base_hp := get_base_green_slime_hp(current_level)
@@ -1266,10 +1268,21 @@ func _on_enemy_died(enemy: Node2D = null) -> void:
 	remaining_enemies -= 1
 	print("[ROOM] Enemy died, remaining=%d" % remaining_enemies)
 	
-	# Check if this enemy should drop chest
-	if enemy != null and enemy.has_meta("drops_chest") and not chest_spawned:
-		_spawn_chest_at_enemy_position(enemy.global_position)
-		chest_spawned = true
+	# Track total kills in this room
+	enemy_death_counter += 1
+	
+	# Check chest drop based on kill index
+	if chest_should_spawn_this_level \
+			and not chest_has_spawned_this_level \
+			and enemy_death_counter == chest_drop_kill_index:
+		var chest_type := _choose_random_chest_type()
+		_spawn_chest_at_enemy_position(enemy.global_position, chest_type)
+		chest_has_spawned_this_level = true
+		print("[CHEST] Dropped %s chest on kill #%d at %s" % [
+			str(chest_type),
+			enemy_death_counter,
+			str(enemy.global_position),
+		])
 	
 	# Check if this enemy should drop chaos chest
 	if enemy != null and enemy.has_meta("drops_chaos_chest"):
@@ -1396,21 +1409,41 @@ func _get_room_nodes_in_group(group_name: String) -> Array:
 	return result
 
 
-func _spawn_chest_at_enemy_position(position: Vector2) -> void:
-	"""Spawn a weighted random chest at the enemy's death position. In themed rooms, always spawn gold chest."""
+func _choose_random_chest_type() -> String:
+	"""Choose a random chest type with weighted probability.
+	Bronze: 50%, Normal: 35%, Gold: 15%
+	"""
+	var r := randf()
+	if r < 0.5:
+		return "bronze"
+	elif r < 0.85:
+		return "normal"
+	else:
+		return "gold"
+
+
+func _spawn_chest_at_enemy_position(position: Vector2, chest_type: String = "") -> void:
+	"""Spawn a chest at the enemy's death position. In themed rooms, always spawn gold chest."""
 	print("[CHEST] Spawning chest at position: ", position)
 	var chest_scene: PackedScene = null
+	
+	# Use provided chest type, or default to gold in themed rooms
 	if _is_themed_room(current_level):
 		chest_scene = gold_chest_scene
+	elif chest_type == "bronze":
+		chest_scene = bronze_chest_scene
+	elif chest_type == "normal":
+		chest_scene = normal_chest_scene
+	elif chest_type == "gold":
+		chest_scene = gold_chest_scene
 	else:
-		# Weighted random chest selection
-		# Bronze: 50%, Normal: 35%, Gold: 15%
+		# Fallback: use weighted random selection
 		var chest_roll := randf()
-		if chest_roll < 0.50:  # 50% bronze
+		if chest_roll < 0.50:
 			chest_scene = bronze_chest_scene
-		elif chest_roll < 0.85:  # 35% normal (0.50 + 0.35)
+		elif chest_roll < 0.85:
 			chest_scene = normal_chest_scene
-		else:  # 15% gold
+		else:
 			chest_scene = gold_chest_scene
 
 	# Fallback to normal if specific scene is missing
