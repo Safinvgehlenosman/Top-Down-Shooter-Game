@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://cqbbwnh24pj70"
+
+[deps]
+
+files=["res://data/upgrades_backup.text.translation", "res://data/upgrades_backup.rarity.translation", "res://data/upgrades_backup.price.translation", "res://data/upgrades_backup.category.translation", "res://data/upgrades_backup.pool.translation", "res://data/upgrades_backup.icon.translation", "res://data/upgrades_backup.effect.translation", "res://data/upgrades_backup.value.translation", "res://data/upgrades_backup.requires.translation", "res://data/upgrades_backup.requires.translation", "res://data/upgrades_backup.enabled.translation", "res://data/upgrades_backup.unlock.translation", "res://data/upgrades_backup.unlock.translation"]
+
+source_file="res://data/upgrades_backup.csv"
+dest_files=["res://data/upgrades_backup.text.translation", "res://data/upgrades_backup.rarity.translation", "res://data/upgrades_backup.price.translation", "res://data/upgrades_backup.category.translation", "res://data/upgrades_backup.pool.translation", "res://data/upgrades_backup.icon.translation", "res://data/upgrades_backup.effect.translation", "res://data/upgrades_backup.value.translation", "res://data/upgrades_backup.requires.translation", "res://data/upgrades_backup.requires.translation", "res://data/upgrades_backup.enabled.translation", "res://data/upgrades_backup.unlock.translation", "res://data/upgrades_backup.unlock.translation"]
+
+[params]
+
+compress=true
+delimiter=0

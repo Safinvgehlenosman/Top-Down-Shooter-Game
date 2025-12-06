@@ -203,28 +203,16 @@ var sniper_damage_bonus_percent: float = 0.0
 var sniper_pierce_bonus: int = 0
 var sniper_charge_bonus_percent: float = 0.0
 
-var flamethrower_lifetime_bonus_percent: float = 0.0
 var flamethrower_burn_bonus_percent: float = 1.0  # Multiplicative base
-var flamethrower_size_bonus_percent: float = 0.0
 
-var grenade_radius_bonus: float = 0.0
-var grenade_fragments_bonus: int = 0
-var grenade_damage_bonus_percent: float = 0.0
+# Grenade bonuses are applied directly to ALT_WEAPON_DATA
 
-var shuriken_bounces_bonus: int = 0
-var shuriken_speed_bonus_percent: float = 0.0
-var shuriken_ricochet_bonus_percent: float = 0.0
+# Shuriken bonuses are applied directly to ALT_WEAPON_DATA
 
-var turret_fire_rate_bonus_percent: float = 0.0
-var turret_range_bonus_percent: float = 0.0
-var turret_bullet_speed_bonus_percent: float = 0.0
+# Turret bonuses are applied directly to ALT_WEAPON_DATA
 
 # Ability bonuses
 var dash_distance_bonus_percent: float = 1.0  # Multiplicative base
-var bubble_duration_bonus_percent: float = 0.0
-var bubble_duration_bonus_seconds: float = 0.0
-var slowmo_time_bonus_seconds: float = 0.0
-var invis_duration_bonus_percent: float = 0.0
 
 # Primary bullet size (this one can stay multiplicative as it's visual only)
 var primary_bullet_size_bonus_percent: float = 0.0
@@ -253,59 +241,21 @@ var has_turret_slowmo_sprinkler_synergy: bool = false
 var has_shotgun_dash_autofire_synergy: bool = false
 var has_shuriken_bubble_nova_synergy: bool = false
 
-# ⭐ Additional stat fields for CSV-based upgrades
-# Primary weapon
-var primary_crit_chance: float = 0.0
-var primary_reload_speed_bonus: float = 0.0
-var primary_ammo_capacity_bonus: int = 0
-
-# Shotgun
-var shotgun_reload_speed_bonus: float = 0.0
-var shotgun_damage_reduction: float = 0.0
-
-# Sniper
-var sniper_crit_damage_bonus: float = 0.0
-var sniper_accuracy_bonus: float = 0.0
-
-# Flamethrower
-var flamethrower_fuel_efficiency_bonus: float = 0.0
-var flamethrower_tick_rate_bonus: float = 0.0
-
-# Grenades
-var grenades_cooldown_bonus: float = 0.0
-var grenades_status_chance: float = 0.0
-
-# Shuriken
-var shuriken_return_enabled: bool = false
-var shuriken_crit_chance: float = 0.0
-
-# Turret
-var turret_duration_bonus: float = 0.0
-var turret_hp_bonus: float = 0.0
-
-# Dash ability
-var dash_invuln_window_bonus: float = 0.0
-var dash_speed_bonus: float = 0.0
-var dash_charges: int = 1
-
 # Shield ability
-var shield_hp: float = 100.0
 var shield_duration: float = 3.0
 var shield_cooldown_mult: float = 1.0
 var shield_radius_bonus: float = 1.0  # Multiplicative base
-var shield_reflect_chance: float = 0.0
 
 # Slowmo ability
 var slowmo_duration: float = 1.5
 var slowmo_cooldown_mult: float = 1.0
 var slowmo_time_scale: float = 0.3
 var slowmo_radius: float = 1.0  # Multiplicative base
-var slowmo_ammo_efficiency: float = 0.0
 
-# Invis ability
-var invis_fade_speed_bonus: float = 0.0
-var invis_movement_speed_bonus: float = 0.0
-var invis_first_hit_bonus: float = 0.0
+# Invis ability (WORKING UPGRADES ONLY)
+var invis_duration: float = 3.0  # Base duration from ABILITY_DATA
+var invis_duration_mult: float = 1.0  # Multiplicative scaling
+var invis_movement_speed_mult: float = 1.0  # Multiplicative base for movement speed
 
 # economy
 var coins: int = 0
@@ -391,27 +341,19 @@ func start_new_run() -> void:
 	sniper_pierce_bonus = 0
 	sniper_charge_bonus_percent = 0.0
 
-	flamethrower_lifetime_bonus_percent = 0.0
 	flamethrower_burn_bonus_percent = 1.0  # Multiplicative base
-	flamethrower_size_bonus_percent = 0.0
 
-	grenade_radius_bonus = 0.0
-	grenade_fragments_bonus = 0
-	grenade_damage_bonus_percent = 0.0
+	# Grenade bonuses reset in ALT_WEAPON_DATA
 
-	shuriken_bounces_bonus = 0
-	shuriken_speed_bonus_percent = 0.0
-	shuriken_ricochet_bonus_percent = 0.0
+	# Shuriken bonuses reset in ALT_WEAPON_DATA
 
-	turret_fire_rate_bonus_percent = 0.0
-	turret_range_bonus_percent = 0.0
-	turret_bullet_speed_bonus_percent = 0.0
+	# Turret bonuses reset in ALT_WEAPON_DATA
 
 	dash_distance_bonus_percent = 1.0  # Multiplicative base
-	bubble_duration_bonus_percent = 0.0
-	bubble_duration_bonus_seconds = 0.0
-	slowmo_time_bonus_seconds = 0.0
-	invis_duration_bonus_percent = 0.0
+	invis_duration = 3.0  # Reset to base
+	invis_duration_mult = 1.0
+	invis_movement_speed_mult = 1.0
+	invis_movement_speed_mult = 1.0  # Reset to base
 
 	# reset synergies
 	synergy_flamethrower_bubble_unlocked = false
@@ -453,16 +395,13 @@ func start_new_run() -> void:
 	ability_bubble_duration_bonus = 0.0
 	
 	# Reset ability stat bonuses
-	shield_hp = 100.0
 	shield_duration = 3.0
 	shield_cooldown_mult = 1.0
 	shield_radius_bonus = 1.0  # Multiplicative base
-	shield_reflect_chance = 0.0
 	slowmo_duration = 1.5
 	slowmo_cooldown_mult = 1.0
 	slowmo_time_scale = 0.3
 	slowmo_radius = 1.0  # Multiplicative base
-	slowmo_ammo_efficiency = 0.0
 
 	debug_laser_mode     = false
 	debug_infinite_ammo  = false
@@ -748,16 +687,6 @@ func apply_upgrade(upgrade_id: String) -> void:
 			fire_rate = max(0.05, fire_rate)  # Hard floor at 0.05s
 			print("  → Fire rate ×%.2f (cooldown now: %.3fs)" % [GameConfig.UPGRADE_MULTIPLIERS["fire_rate"], fire_rate])
 
-		"primary_reload_speed":
-			primary_reload_speed_bonus += value
-
-		"primary_ammo_capacity":
-			var inc := int(value)
-			primary_ammo_capacity_bonus += inc
-
-		"primary_crit_chance":
-			primary_crit_chance += value
-
 		# ==============================
 		# SHOTGUN EFFECTS
 		# ==============================
@@ -779,12 +708,6 @@ func apply_upgrade(upgrade_id: String) -> void:
 			shotgun_knockback_bonus_percent += value
 			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN):
 				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["recoil"] = 140.0 * (1.0 + shotgun_knockback_bonus_percent)
-
-		"shotgun_reload_speed":
-			shotgun_reload_speed_bonus += value
-
-		"shotgun_damage_reduction":
-			shotgun_damage_reduction += value
 
 		# ==============================
 		# SNIPER EFFECTS
@@ -810,12 +733,6 @@ func apply_upgrade(upgrade_id: String) -> void:
 				ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"] *= GameConfig.UPGRADE_MULTIPLIERS["sniper_charge"]
 				print("  → Sniper charge ×%.2f (damage: %.1f → %.1f)" % [GameConfig.UPGRADE_MULTIPLIERS["sniper_charge"], old_damage, ALT_WEAPON_DATA[AltWeaponType.SNIPER]["damage"]])
 
-		"sniper_crit_damage":
-			sniper_crit_damage_bonus += value
-
-		"sniper_accuracy":
-			sniper_accuracy_bonus += value
-
 		# ==============================
 		# FLAMETHROWER EFFECTS
 		# ==============================
@@ -837,12 +754,6 @@ func apply_upgrade(upgrade_id: String) -> void:
 				var old_lifetime: float = ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"]
 				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"] *= GameConfig.UPGRADE_MULTIPLIERS["ability_duration"]
 				print("  → Flamethrower duration ×%.2f (%.2fs → %.2fs)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_duration"], old_lifetime, ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"]])
-
-		"flamethrower_fuel_efficiency":
-			flamethrower_fuel_efficiency_bonus += value
-
-		"flamethrower_tick_rate":
-			flamethrower_tick_rate_bonus += value
 
 		# ==============================
 		# GRENADES EFFECTS
@@ -876,9 +787,6 @@ func apply_upgrade(upgrade_id: String) -> void:
 				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["pellets"] = max(1, int(round(old_pellets * GameConfig.UPGRADE_MULTIPLIERS["grenade_fragments"])))
 				print("  → Grenade fragments ×%.2f (%d → %d)" % [GameConfig.UPGRADE_MULTIPLIERS["grenade_fragments"], old_pellets, ALT_WEAPON_DATA[AltWeaponType.GRENADE]["pellets"]])
 
-		"grenades_status_chance":
-			grenades_status_chance += value
-
 		# ==============================
 		# SHURIKEN EFFECTS
 		# ==============================
@@ -903,12 +811,6 @@ func apply_upgrade(upgrade_id: String) -> void:
 				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["damage"] *= GameConfig.UPGRADE_MULTIPLIERS["shuriken_ricochet_damage"]
 				print("  → Shuriken pierce damage ×%.2f (%.1f → %.1f)" % [GameConfig.UPGRADE_MULTIPLIERS["shuriken_ricochet_damage"], old_damage, ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["damage"]])
 
-		"shuriken_return":
-			shuriken_return_enabled = true
-
-		"shuriken_crit_chance":
-			shuriken_crit_chance += value
-
 		# ==============================
 		# TURRET EFFECTS
 		# ==============================
@@ -925,12 +827,6 @@ func apply_upgrade(upgrade_id: String) -> void:
 				var old_range: float = ALT_WEAPON_DATA[AltWeaponType.TURRET]["range"]
 				ALT_WEAPON_DATA[AltWeaponType.TURRET]["range"] *= GameConfig.UPGRADE_MULTIPLIERS["turret_range"]
 				print("  → Turret range ×%.2f (%.1f → %.1f)" % [GameConfig.UPGRADE_MULTIPLIERS["turret_range"], old_range, ALT_WEAPON_DATA[AltWeaponType.TURRET]["range"]])
-
-		"turret_duration":
-			turret_duration_bonus += value
-
-		"turret_hp":
-			turret_hp_bonus += value
 
 		"turret_bullet_speed":
 			# EXPONENTIAL SCALING: Multiply bullet speed by constant per tier
@@ -952,21 +848,10 @@ func apply_upgrade(upgrade_id: String) -> void:
 			ability_cooldown_mult *= GameConfig.UPGRADE_MULTIPLIERS["ability_cooldown"]
 			print("  → Dash cooldown ×%.2f (multiplier now: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_cooldown"], ability_cooldown_mult])
 
-		"dash_invuln_window":
-			dash_invuln_window_bonus += value
-
-		"dash_speed":
-			dash_speed_bonus += value
-
-		"dash_charges":
-			dash_charges += int(value)
-
 		# ==============================
+		# SHIELD ABILITY EFFECTS========
 		# SHIELD ABILITY EFFECTS
 		# ==============================
-		"shield_hp":
-			shield_hp += value
-
 		"shield_duration":
 			# EXPONENTIAL SCALING: Multiply duration by constant per tier
 			shield_duration *= GameConfig.UPGRADE_MULTIPLIERS["ability_duration"]
@@ -981,9 +866,6 @@ func apply_upgrade(upgrade_id: String) -> void:
 			# EXPONENTIAL SCALING: Multiply radius multiplier per tier
 			shield_radius_bonus *= GameConfig.UPGRADE_MULTIPLIERS["ability_radius"]
 			print("  → Shield radius ×%.2f (multiplier now: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_radius"], shield_radius_bonus])
-
-		"shield_reflect_chance":
-			shield_reflect_chance += value
 
 		# ==============================
 		# SLOWMO ABILITY EFFECTS
@@ -1008,26 +890,18 @@ func apply_upgrade(upgrade_id: String) -> void:
 			slowmo_radius *= GameConfig.UPGRADE_MULTIPLIERS["ability_radius"]
 			print("  → Slowmo radius ×%.2f (now: %.1f)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_radius"], slowmo_radius])
 
-		"slowmo_ammo_efficiency":
-			slowmo_ammo_efficiency += value
-
 		# ==============================
 		# INVIS ABILITY EFFECTS
 		# ==============================
 		"invis_duration":
-			invis_duration_bonus_percent += value
-
-		"invis_cooldown":
-			ability_cooldown_mult *= (1.0 + value)
-
-		"invis_fade_speed":
-			invis_fade_speed_bonus += value
+			# EXPONENTIAL SCALING: Multiply duration directly by constant per tier
+			invis_duration_mult *= GameConfig.UPGRADE_MULTIPLIERS["ability_duration"]
+			print("  → Invis duration ×%.2f (multiplier now: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_duration"], invis_duration_mult])
 
 		"invis_movement_speed":
-			invis_movement_speed_bonus += value
-
-		"invis_first_hit_bonus":
-			invis_first_hit_bonus += value
+			# EXPONENTIAL SCALING: Multiply movement speed by constant per tier
+			invis_movement_speed_mult *= GameConfig.UPGRADE_MULTIPLIERS["ability_speed"]
+			print("  → Invis movement speed ×%.2f (multiplier now: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_speed"], invis_movement_speed_mult])
 
 		# ==============================
 		# SYNERGIES

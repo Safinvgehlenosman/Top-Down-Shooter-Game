@@ -1398,6 +1398,7 @@ func _get_room_nodes_in_group(group_name: String) -> Array:
 
 func _spawn_chest_at_enemy_position(position: Vector2) -> void:
 	"""Spawn a weighted random chest at the enemy's death position. In themed rooms, always spawn gold chest."""
+	print("[CHEST] Spawning chest at position: ", position)
 	var chest_scene: PackedScene = null
 	if _is_themed_room(current_level):
 		chest_scene = gold_chest_scene

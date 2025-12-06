@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://dlucnqtwmvs6d"
+
+[deps]
+
+files=["res://data/upgrades_cleaned.text.translation", "res://data/upgrades_cleaned.rarity.translation", "res://data/upgrades_cleaned.price.translation", "res://data/upgrades_cleaned.category.translation", "res://data/upgrades_cleaned.pool.translation", "res://data/upgrades_cleaned.icon.translation", "res://data/upgrades_cleaned.effect.translation", "res://data/upgrades_cleaned.value.translation", "res://data/upgrades_cleaned.requires.translation", "res://data/upgrades_cleaned.requires.translation", "res://data/upgrades_cleaned.enabled.translation", "res://data/upgrades_cleaned.unlock.translation", "res://data/upgrades_cleaned.unlock.translation"]
+
+source_file="res://data/upgrades_cleaned.csv"
+dest_files=["res://data/upgrades_cleaned.text.translation", "res://data/upgrades_cleaned.rarity.translation", "res://data/upgrades_cleaned.price.translation", "res://data/upgrades_cleaned.category.translation", "res://data/upgrades_cleaned.pool.translation", "res://data/upgrades_cleaned.icon.translation", "res://data/upgrades_cleaned.effect.translation", "res://data/upgrades_cleaned.value.translation", "res://data/upgrades_cleaned.requires.translation", "res://data/upgrades_cleaned.requires.translation", "res://data/upgrades_cleaned.enabled.translation", "res://data/upgrades_cleaned.unlock.translation", "res://data/upgrades_cleaned.unlock.translation"]
+
+[params]
+
+compress=true
+delimiter=0
