@@ -1,7 +1,8 @@
-[gd_scene load_steps=13 format=3 uid="uid://dxcqijbcprgnd"]
+[gd_scene load_steps=14 format=3 uid="uid://dxcqijbcprgnd"]
 
 [ext_resource type="Script" uid="uid://bn0417mbctyd3" path="res://scripts/ui/shop_ui.gd" id="1_18xnp"]
 [ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="1_oixfk"]
+[ext_resource type="Texture2D" uid="uid://dq3aj3rtwcpyw" path="res://assets/Affinity/shopbackground.png" id="2_y4j81"]
 [ext_resource type="Texture2D" uid="uid://q2cw8tfoeiga" path="res://assets/Affinity/coins.png" id="4_0yw5g"]
 [ext_resource type="PackedScene" uid="uid://755tjml7mgfa" path="res://scenes/upgrade_card.tscn" id="4_crtus"]
 [ext_resource type="AudioStream" uid="uid://s21q2vmi6db6" path="res://assets/Audios/CoinCollect.wav" id="4_s287r"]
@@ -16,6 +17,24 @@
 [node name="ShopUI" type="CanvasLayer" groups=["shop"]]
 process_mode = 3
 script = ExtResource("1_18xnp")
+
+[node name="Background" type="Control" parent="."]
+z_index = -10
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TextureRect" type="TextureRect" parent="Background"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_y4j81")
 
 [node name="ColorRect" type="ColorRect" parent="."]
 visible = false
@@ -40,9 +59,9 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -128.0
-offset_top = 19.0
+offset_top = 13.0
 offset_right = 128.0
-offset_bottom = 83.00006
+offset_bottom = 77.00006
 grow_horizontal = 2
 theme_override_fonts/font = ExtResource("1_oixfk")
 theme_override_font_sizes/font_size = 64
@@ -55,10 +74,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -452.0
-offset_top = 56.0
-offset_right = 704.0
-offset_bottom = 56.0
+offset_left = -444.0
+offset_top = 67.00003
+offset_right = 712.0
+offset_bottom = 67.00003
 grow_horizontal = 2
 grow_vertical = 2
 scale = Vector2(0.75, 0.75)
@@ -125,17 +144,17 @@ bus = &"SFX"
 
 [node name="ContinueButton" type="Button" parent="Panel"]
 layout_mode = 1
-anchors_preset = 7
+anchors_preset = 8
 anchor_left = 0.5
-anchor_top = 1.0
+anchor_top = 0.5
 anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -106.0
-offset_top = -90.0
-offset_right = 94.0
-offset_bottom = -40.0
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = 251.0
+offset_right = 100.0
+offset_bottom = 301.0
 grow_horizontal = 2
-grow_vertical = 0
+grow_vertical = 2
 theme_override_fonts/font = ExtResource("1_oixfk")
 text = "CONTINUE"
 
