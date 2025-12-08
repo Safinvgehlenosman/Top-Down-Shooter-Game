@@ -245,7 +245,7 @@ func show_alt_weapon_fuel(weapon_id: String, max_fuel: float, current_fuel: floa
 	
 	# Range and step
 	ammo_bar.min_value = 0.0
-	ammo_bar.max_value = max_fuel
+	ammo_bar.max_value = max_fuel  # Already includes alt_fuel_max_bonus from GameState
 	if is_continuous:
 		ammo_bar.step = max_fuel / 100.0
 	else:

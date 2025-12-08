@@ -113,13 +113,13 @@ func _initialize_fuel_for_weapon() -> void:
 	fuel_mode = config.get("mode", "clip")
 	var base_max_fuel: float = config.get("max_fuel", 10.0)
 	
-	# Apply weapon-specific magazine size multipliers
+	# Apply weapon-specific magazine size multipliers and general upgrade bonus
 	if current_alt == GameState.AltWeaponType.SHOTGUN:
-		max_fuel = base_max_fuel * GameState.shotgun_mag_mult
+		max_fuel = base_max_fuel * GameState.shotgun_mag_mult + GameState.alt_fuel_max_bonus
 	elif current_alt == GameState.AltWeaponType.SNIPER:
-		max_fuel = base_max_fuel * GameState.sniper_mag_mult
+		max_fuel = base_max_fuel * GameState.sniper_mag_mult + GameState.alt_fuel_max_bonus
 	else:
-		max_fuel = base_max_fuel
+		max_fuel = base_max_fuel + GameState.alt_fuel_max_bonus
 	
 	fuel_reload_delay = config.get("reload_delay", 0.5)
 	

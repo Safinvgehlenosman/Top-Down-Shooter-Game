@@ -171,6 +171,19 @@ func set_ability(new_ability: int) -> void:
 
 var max_health: int = 0
 var health: int = 0
+# --- General upgrade stat aggregation ---
+var move_speed_mult: float = 1.0
+var max_hp_mult: float = 1.0
+var damage_taken_mult: float = 1.0
+var regen_per_second: float = 0.0
+var coin_gain_mult: float = 1.0
+var berserker_threshold: float = 0.0
+var berserker_damage_mult: float = 1.0
+var combustion_active: bool = false
+var death_explosion_radius: float = 0.0
+var death_explosion_damage_mult: float = 0.0
+var shop_price_mult: float = 1.0
+var alt_fuel_max_bonus: int = 0
 
 # --- RUNTIME STATS (MODIFIED BY UPGRADES) --------------------------
 var fire_rate: float = 0.0
@@ -350,6 +363,45 @@ func start_new_run() -> void:
 	max_health = GameConfig.player_max_health
 	set_health(max_health)  # Use setter to emit signal
 
+	# --- AGGREGATE GENERAL UPGRADE EFFECTS ---
+	move_speed_mult = 1.0
+	max_hp_mult = 1.0
+	damage_taken_mult = 1.0
+	regen_per_second = 0.0
+	coin_gain_mult = 1.0
+	berserker_threshold = 0.0
+	berserker_damage_mult = 1.0
+	combustion_active = false
+	death_explosion_radius = 0.0
+	death_explosion_damage_mult = 0.0
+	shop_price_mult = 1.0
+	alt_fuel_max_bonus = 0
+
+	for upgrade in UpgradesDB.get_enabled():
+		if not has_upgrade(upgrade.get("id", "")):
+			continue
+		move_speed_mult *= float(upgrade.get("move_speed_mult", 1.0))
+		max_hp_mult *= float(upgrade.get("max_hp_mult", 1.0))
+		damage_taken_mult *= float(upgrade.get("damage_taken_mult", 1.0))
+		regen_per_second += float(upgrade.get("regen_per_second", 0.0))
+		coin_gain_mult *= float(upgrade.get("coin_gain_mult", 1.0))
+		shop_price_mult *= float(upgrade.get("shop_price_mult", 1.0))
+		alt_fuel_max_bonus += int(upgrade.get("alt_fuel_max_bonus", 0))
+		if upgrade.has("berserker_threshold"):
+			berserker_threshold = float(upgrade.get("berserker_threshold", 0.0))
+		if upgrade.has("berserker_damage_mult"):
+			berserker_damage_mult = float(upgrade.get("berserker_damage_mult", 1.0))
+		if upgrade.get("effect", "") == "combustion":
+			combustion_active = true
+			death_explosion_radius = float(upgrade.get("death_explosion_radius", 0.0))
+			death_explosion_damage_mult = float(upgrade.get("death_explosion_damage_mult", 0.0))
+
+	# Apply multipliers to base stats
+	max_health = int(round(GameConfig.player_max_health * max_hp_mult))
+	set_health(max_health)
+	move_speed_base = GameConfig.player_move_speed
+	move_speed = move_speed_base * move_speed_mult
+
 	# Reset fire stats
 	fire_rate_base = GameConfig.player_fire_rate
 	fire_rate = GameConfig.player_fire_rate
@@ -362,28 +414,28 @@ func start_new_run() -> void:
 
 	primary_burst_count = 1
 	primary_extra_burst = 0
-	
+    
 	# Reset piercing and homing
 	primary_pierce_mult = 1.0
 	primary_pierce = 0
-	
+    
 	# Reset shuriken chainshot
 	shuriken_chain_count_mult = 1.0
 	shuriken_chain_radius_mult = 1.0
 	shuriken_speed_chain_mult = 1.0
 	shuriken_blade_split_chance = 0.0
-	
+    
 	# Reset turret accuracy and homing
 	turret_accuracy_mult = 1.0
 	turret_homing_angle_deg = 0.0
 	turret_homing_turn_speed = 0.0
 	turret_damage_mult = 1.0
-	
+    
 	# Reset shotgun multipliers
 	shotgun_damage_mult = 1.0
 	shotgun_fire_rate_mult = 1.0
 	shotgun_mag_mult = 1.0
-	
+    
 	# Reset sniper multipliers
 	sniper_damage_mult = 1.0
 	sniper_fire_rate_mult = 1.0
@@ -435,13 +487,13 @@ func start_new_run() -> void:
 	coins            = 0
 	player_invisible = false
 	upgrade_purchase_counts.clear()
-	
+    
 	# Reset chaos challenge state
 	active_chaos_challenge = ""
 	chaos_challenge_progress = 0
 	chaos_challenge_completed = false
 	original_max_health = 0
-	
+    
 	# Reset chaos challenge flags
 	coin_pickups_disabled = false
 	primary_fire_disabled = false
@@ -451,7 +503,7 @@ func start_new_run() -> void:
 	ability_cooldown_left = 0.0
 	ability_active_left = 0.0
 	ability_bubble_duration_bonus = 0.0
-	
+    
 	# Reset ability stat bonuses
 	shield_duration = 3.0
 	shield_cooldown_mult = 1.0
@@ -661,6 +713,24 @@ func apply_upgrade(upgrade_id: String) -> void:
 
 	# Apply the upgrade effect
 	match effect:
+		# === NEW GENERAL UPGRADE EFFECTS ===
+		"move_speed_mult":
+			move_speed_mult *= float(upgrade.get("move_speed_mult", 1.0))
+		"max_hp_mult":
+			max_hp_mult *= float(upgrade.get("max_hp_mult", 1.0))
+		"damage_taken_mult":
+			damage_taken_mult *= float(upgrade.get("damage_taken_mult", 1.0))
+		"regen_per_second":
+			regen_per_second += float(upgrade.get("regen_per_second", 0.0))
+		"coin_gain_mult":
+			coin_gain_mult *= float(upgrade.get("coin_gain_mult", 1.0))
+		"shop_price_mult":
+			shop_price_mult *= float(upgrade.get("shop_price_mult", 1.0))
+		"alt_fuel_max_bonus":
+			alt_fuel_max_bonus += int(upgrade.get("alt_fuel_max_bonus", 0))
+		"berserker":
+			berserker_threshold = float(upgrade.get("berserker_threshold", 0.0))
+			berserker_damage_mult = float(upgrade.get("berserker_damage_mult", 1.0))
 		# ==============================
 		# CORE / GENERAL EFFECTS
 		# ==============================

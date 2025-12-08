@@ -46,7 +46,19 @@ const UPGRADE_DEFS: Array = [
 	{"id": "grenade_unlock", "text": "Unlock Grenades", "rarity": Rarity.COMMON, "price": 400, "category": "generic", "pool": "shop", "icon_path": "", "effect": "none", "value": 0, "requires_weapon": "none", "requires_ability": "", "enabled": true, "unlock_weapon": "grenade", "unlock_ability": ""},
 	{"id": "shuriken_unlock", "text": "Unlock Shuriken", "rarity": Rarity.COMMON, "price": 300, "category": "generic", "pool": "shop", "icon_path": "", "effect": "none", "value": 0, "requires_weapon": "none", "requires_ability": "", "enabled": true, "unlock_weapon": "shuriken", "unlock_ability": ""},
 	{"id": "turret_unlock", "text": "Unlock Turret", "rarity": Rarity.COMMON, "price": 350, "category": "generic", "pool": "shop", "icon_path": "", "effect": "none", "value": 0, "requires_weapon": "none", "requires_ability": "", "enabled": true, "unlock_weapon": "turret", "unlock_ability": ""},
-	# ... (add all other upgrades from upgrades_cleaned.csv here, preserving all fields)
+	# ...existing code...
+	# --- NEW GENERAL UPGRADES ---
+	{"id": "general_move_speed_1", "text": "Swift Feet I (+10% Move Speed)", "rarity": Rarity.UNCOMMON, "price": 120, "category": "general", "pool": "shop", "icon_path": "", "effect": "move_speed_mult", "move_speed_mult": 1.10, "enabled": true},
+	{"id": "general_move_speed_2", "text": "Swift Feet II (+20% Move Speed)", "rarity": Rarity.RARE, "price": 220, "category": "general", "pool": "shop", "icon_path": "", "effect": "move_speed_mult", "move_speed_mult": 1.20, "enabled": true},
+	{"id": "general_max_hp_1", "text": "Hardened Body (+10% Max HP)", "rarity": Rarity.COMMON, "price": 100, "category": "general", "pool": "shop", "icon_path": "", "effect": "max_hp_mult", "max_hp_mult": 1.10, "enabled": true},
+	{"id": "general_damage_reduction_1", "text": "Thick Skin (10% Damage Reduction)", "rarity": Rarity.RARE, "price": 250, "category": "general", "pool": "shop", "icon_path": "", "effect": "damage_taken_mult", "damage_taken_mult": 0.9, "enabled": true},
+	{"id": "general_regen_1", "text": "Regeneration I (1 HP / 20s)", "rarity": Rarity.UNCOMMON, "price": 140, "category": "general", "pool": "shop", "icon_path": "", "effect": "regen_per_second", "regen_per_second": 0.05, "enabled": true},
+	{"id": "general_regen_2", "text": "Regeneration II (1 HP / 12s)", "rarity": Rarity.RARE, "price": 210, "category": "general", "pool": "shop", "icon_path": "", "effect": "regen_per_second", "regen_per_second": 0.08, "enabled": true},
+	{"id": "general_coin_gain_1", "text": "Wealth Booster (+30% Coins)", "rarity": Rarity.EPIC, "price": 400, "category": "economy", "pool": "shop", "icon_path": "", "effect": "coin_gain_mult", "coin_gain_mult": 1.3, "enabled": true},
+	{"id": "general_berserker_1", "text": "Berserker (+30% Damage ≤ 50% HP)", "rarity": Rarity.EPIC, "price": 420, "category": "general_combat", "pool": "shop", "icon_path": "", "effect": "berserker", "berserker_threshold": 0.5, "berserker_damage_mult": 1.3, "enabled": true},
+	{"id": "general_combustion_1", "text": "Combustion (Enemies Explode on Death)", "rarity": Rarity.EPIC, "price": 450, "category": "general_combat", "pool": "shop", "icon_path": "", "effect": "combustion", "death_explosion_radius": 48, "death_explosion_damage_mult": 0.3, "enabled": true},
+	{"id": "general_shop_discount_1", "text": "Shop Discount (15% Cheaper)", "rarity": Rarity.RARE, "price": 250, "category": "economy", "pool": "shop", "icon_path": "", "effect": "shop_price_mult", "shop_price_mult": 0.85, "enabled": true},
+	{"id": "general_extended_mag_1", "text": "Extended Magazine (+1 Alt Weapon Fuel)", "rarity": Rarity.UNCOMMON, "price": 160, "category": "general", "pool": "shop", "icon_path": "", "effect": "alt_fuel_max_bonus", "alt_fuel_max_bonus": 1, "enabled": true},
 ]
 
 # -------------------------------------------------------------------
