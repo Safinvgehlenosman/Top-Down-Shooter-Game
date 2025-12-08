@@ -235,6 +235,8 @@ func _update_aim_direction(delta: float) -> void:
 	var vec := aim_cursor_pos - global_position
 	if vec.length() > 0.001:
 		aim_dir = vec.normalized()
+	else:
+		aim_dir = Vector2.RIGHT
 
 func _process_aim() -> void:
 	# Flip player sprite

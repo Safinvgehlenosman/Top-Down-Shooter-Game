@@ -9,8 +9,9 @@ extends Node
 @export var player_invincible_time: float = 0.3
 @export var player_max_ammo: int = 6             # ammo stays as-is
 
-@export_category("Bullet / Weapons")
-@export var bullet_speed: float = 500.0
+
+# --- PRIMARY BULLET BASE SPEED ---
+const PRIMARY_BULLET_BASE_SPEED := 500.0
 @export var bullet_base_damage: int = 10         # ⬅ was 1
 
 @export_category("Slime")

@@ -256,6 +256,17 @@ var grenades_radius_mult: float = 1.0
 # Ability bonuses
 var dash_distance_bonus_percent: float = 1.0  # Multiplicative base
 
+
+# --- PRIMARY WEAPON UPGRADE STATS ---
+var primary_damage_mult: float = 1.0
+var primary_fire_rate_mult: float = 1.0
+var primary_bullet_speed_mult: float = 1.0
+var primary_crit_chance: float = 0.0
+var primary_crit_mult: float = 1.0
+var primary_stationary_damage_mult: float = 1.0
+var primary_burst_count_add: int = 0
+var primary_burst_delay: float = 0.0
+
 # Primary bullet size (this one can stay multiplicative as it's visual only)
 var primary_bullet_size_bonus_percent: float = 0.0
 
@@ -377,7 +388,22 @@ func start_new_run() -> void:
 	shop_price_mult = 1.0
 	alt_fuel_max_bonus = 0
 
+	# --- PRIMARY WEAPON UPGRADE DEFAULTS ---
+	primary_damage_mult = 1.0
+	primary_fire_rate_mult = 1.0
+	primary_bullet_speed_mult = 1.0
+	primary_crit_chance = 0.0
+	primary_crit_mult = 1.0
+	primary_stationary_damage_mult = 1.0
+	primary_burst_count_add = 0
+	primary_burst_delay = 0.0
+
 	for upgrade in UpgradesDB.get_enabled():
+		if not has_upgrade(upgrade.get("id", "")):
+			continue
+		var speed_mult := float(upgrade.get("primary_bullet_speed_mult", 1.0))
+		if speed_mult > 0.0:
+			primary_bullet_speed_mult *= speed_mult
 		if not has_upgrade(upgrade.get("id", "")):
 			continue
 		move_speed_mult *= float(upgrade.get("move_speed_mult", 1.0))
@@ -395,6 +421,17 @@ func start_new_run() -> void:
 			combustion_active = true
 			death_explosion_radius = float(upgrade.get("death_explosion_radius", 0.0))
 			death_explosion_damage_mult = float(upgrade.get("death_explosion_damage_mult", 0.0))
+
+		# --- PRIMARY WEAPON UPGRADE AGGREGATION ---
+		primary_damage_mult *= float(upgrade.get("primary_damage_mult", 1.0))
+		primary_fire_rate_mult *= float(upgrade.get("primary_fire_rate_mult", 1.0))
+		primary_bullet_speed_mult *= float(upgrade.get("primary_bullet_speed_mult", 1.0))
+		primary_crit_chance += float(upgrade.get("primary_crit_chance_add", 0.0))
+		primary_crit_mult *= float(upgrade.get("primary_crit_mult", 1.0))
+		primary_stationary_damage_mult *= float(upgrade.get("primary_stationary_damage_mult", 1.0))
+		primary_burst_count_add += int(upgrade.get("primary_burst_count_add", 0))
+		# If multiple burst delay upgrades exist, use the max value
+		primary_burst_delay = max(primary_burst_delay, float(upgrade.get("primary_burst_delay", 0.0)))
 
 	# Apply multipliers to base stats
 	max_health = int(round(GameConfig.player_max_health * max_hp_mult))
