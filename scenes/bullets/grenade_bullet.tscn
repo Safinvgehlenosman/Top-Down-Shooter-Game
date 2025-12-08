@@ -34,6 +34,12 @@ material = ExtResource("4_ipw4c")
 texture = ExtResource("2_tulee")
 region_rect = Rect2(104, 104, 16, 16)
 
+[node name="RadiusIndicator" type="Sprite2D" parent="."]
+texture = SubResource("GradientTexture2D_l5glv")
+modulate = Color(1, 0, 0, 0.3)
+z_index = -1
+visible = false
+
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_y25gk")
 

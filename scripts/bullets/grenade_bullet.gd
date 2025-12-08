@@ -23,6 +23,7 @@ extends CharacterBody2D
 
 # optional explosion VFX scene (AnimatedSprite2D/CPUParticles2D etc.)
 @export var explosion_fx_scene: PackedScene
+@export var wall_collision_mask: int = 2 # Set to your wall layer mask
 
 var direction: Vector2 = Vector2.ZERO
 var speed: float = 0.0
@@ -42,6 +43,18 @@ var exploded: bool = false
 @onready var sfx_explode: AudioStreamPlayer2D = $SFX_Explode
 @onready var light: PointLight2D = $PointLight2D   # <- light to hide on explode
 
+@onready var radius_indicator: Sprite2D = $RadiusIndicator
+@onready var tween: Tween = null
+
+# Helper to get final explosion radius
+func _get_explosion_radius() -> float:
+	var mult := 1.0
+	if Engine.has_singleton("GameState"):
+		mult = GameState.grenades_radius_mult
+	var radius = default_explosion_radius * mult
+	# print("[GRENADE] Explosion radius=%.1f (mult=%.2f)" % [radius, mult])
+	return radius
+
 
 func _ready() -> void:
 	add_to_group("player_bullet")
@@ -56,6 +69,12 @@ func _ready() -> void:
 	grenade_velocity = direction.normalized() * speed
 	fuse_left = fuse_time
 	sprite.modulate = Color(1, 1, 1)
+
+	_update_radius_indicator()
+	if radius_indicator:
+		radius_indicator.visible = false
+
+	tween = create_tween()
 
 
 func _process(delta: float) -> void:
@@ -83,6 +102,8 @@ func _process(delta: float) -> void:
 		flash_timer = 0.0
 		flash_on = not flash_on
 		sprite.modulate = Color(1, 0.3, 0.3) if flash_on else Color(1, 1, 1)
+		if radius_indicator:
+			radius_indicator.modulate = Color(1, 0, 0, 0.7) if flash_on else Color(1, 0, 0, 0.3)
 
 
 func _physics_process(delta: float) -> void:
@@ -104,6 +125,26 @@ func _physics_process(delta: float) -> void:
 		if grenade_velocity.length() < min_speed_before_stop:
 			grenade_velocity = Vector2.ZERO
 
+		# Show radius indicator when stopped
+		if radius_indicator:
+			radius_indicator.visible = (grenade_velocity.length() < 10)
+			if radius_indicator.visible and tween and not tween.is_running():
+				tween.tween_property(radius_indicator, "modulate:a", 0.3, 0.25).from(0.0)
+				tween.play()
+
+
+func _update_radius_indicator() -> void:
+	if not radius_indicator or not radius_indicator.texture:
+		return
+
+	var radius := _get_explosion_radius()
+	var radius_scale := radius / default_explosion_radius
+	radius_indicator.scale = Vector2.ONE * radius_scale
+
+	# Optionally pulse effect
+	if tween and radius_indicator.visible:
+		tween.tween_property(radius_indicator, "scale", Vector2.ONE * (radius_scale * 1.05), 0.3).from(Vector2.ONE * radius_scale).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT).set_loops()
+
 
 func _explode() -> void:
 	if exploded:
@@ -117,6 +158,8 @@ func _explode() -> void:
 		sprite.visible = false
 	if light:
 		light.visible = false   # hide grenade light instantly
+	if radius_indicator:
+		radius_indicator.visible = false
 
 	# 🔊 play explosion SFX
 	if sfx_explode:
@@ -133,23 +176,29 @@ func _explode() -> void:
 	if cam and cam.has_method("shake"):
 		cam.shake(cam_shake_strength, cam_shake_duration)
 
-	# 💣 radial damage + knockback on enemies
+	# 💣 radial damage + knockback on enemies with LOS check
 	var enemies := get_tree().get_nodes_in_group("enemy")
+	var space_state := get_world_2d().direct_space_state
 	for e in enemies:
-		if not (e is Node2D):
+		if not (e is Node2D) or not e.is_inside_tree():
 			continue
-
 		var to_enemy: Vector2 = e.global_position - global_position
 		var dist := to_enemy.length()
-		if dist <= explosion_radius:
-			if e.has_method("take_damage"):
-				e.take_damage(damage)
-
-			if e.has_method("apply_knockback"):
-				e.apply_knockback(global_position, explosion_knockback)
-			elif dist > 0.0 and "velocity" in e:
-				var dir := to_enemy.normalized()
-				e.velocity += dir * explosion_knockback
+		if dist <= _get_explosion_radius():
+			var params := PhysicsRayQueryParameters2D.create(global_position, e.global_position)
+			params.collision_mask = wall_collision_mask
+			var result = space_state.intersect_ray(params)
+			if result.is_empty() or (result.has("collider") and result.collider == e):
+				# LOS is clear
+				if e.has_method("take_damage"):
+					e.take_damage(damage)
+				if e.has_method("apply_knockback"):
+					e.apply_knockback(global_position, explosion_knockback)
+				elif dist > 0.0 and "velocity" in e:
+					var dir := to_enemy.normalized()
+					e.velocity += dir * explosion_knockback
+			# else:
+			#     print("[GRENADE] Blocked by wall between explosion and %s" % e.name)
 
 	# 💥 PLAYER DAMAGE + KNOCKBACK (half damage)
 	var player := get_tree().get_first_node_in_group("player") as Node2D
@@ -157,7 +206,7 @@ func _explode() -> void:
 		var to_player := player.global_position - global_position
 		var p_dist := to_player.length()
 
-		if p_dist <= explosion_radius:
+		if p_dist <= _get_explosion_radius():
 			# Half damage to player
 			if player.has_method("take_damage"):
 				player.take_damage(int(damage * 0.5))

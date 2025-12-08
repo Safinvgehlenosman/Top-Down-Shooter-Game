@@ -24,8 +24,10 @@ rarity_outline_textures = Array[Texture2D]([ExtResource("6_33rkj"), ExtResource(
 rarity = 3
 
 [node name="VisualRoot" type="Control" parent="."]
+anchors_preset = 0
 
 [node name="PriceArea" type="HBoxContainer" parent="VisualRoot"]
+layout_mode = 0
 offset_left = 5.0
 offset_top = 6.0
 offset_right = 45.0
@@ -37,11 +39,13 @@ layout_mode = 2
 
 [node name="PriceLabel" type="Label" parent="VisualRoot/PriceArea/TextureRect"]
 layout_mode = 0
-offset_left = 498.0
-offset_top = 154.0
-offset_right = 544.0
-offset_bottom = 170.0
+offset_left = 495.0
+offset_top = 146.0
+offset_right = 560.0
+offset_bottom = 177.0
 theme_override_fonts/font = ExtResource("2_igsks")
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="CoinIcon" type="TextureRect" parent="VisualRoot/PriceArea/TextureRect"]
 layout_mode = 0
@@ -53,6 +57,7 @@ texture = ExtResource("3_33rkj")
 expand_mode = 2
 
 [node name="Icon" type="TextureRect" parent="VisualRoot"]
+layout_mode = 0
 offset_left = 22.0
 offset_top = 146.0
 offset_right = 68.2
@@ -62,6 +67,7 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="Label" type="Label" parent="VisualRoot"]
+layout_mode = 0
 offset_left = 85.0
 offset_top = 137.0
 offset_right = 489.0
@@ -75,6 +81,7 @@ autowrap_mode = 3
 modulate = Color(1, 1, 1, 0)
 self_modulate = Color(1, 1, 1, 0)
 z_index = 10
+layout_mode = 0
 offset_left = 9.0
 offset_top = 131.0
 offset_right = 576.0
@@ -88,6 +95,7 @@ bus = &"SFX"
 
 [node name="Outline" type="TextureRect" parent="VisualRoot"]
 z_index = -1
+layout_mode = 0
 offset_right = 5844.9995
 offset_bottom = 3339.9998
 scale = Vector2(0.1, 0.1)
@@ -95,3 +103,4 @@ mouse_filter = 2
 texture = ExtResource("6_33rkj")
 
 [node name="HoverArea" type="Control" parent="VisualRoot"]
+anchors_preset = 0

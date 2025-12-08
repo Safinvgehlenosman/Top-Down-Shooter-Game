@@ -234,6 +234,7 @@ var sniper_charge_bonus_percent: float = 0.0
 var flamethrower_burn_bonus_percent: float = 1.0  # Multiplicative base
 
 # Grenade bonuses are applied directly to ALT_WEAPON_DATA
+var grenades_radius_mult: float = 1.0
 
 # Shuriken bonuses are applied directly to ALT_WEAPON_DATA
 
@@ -400,6 +401,7 @@ func start_new_run() -> void:
 	flamethrower_burn_bonus_percent = 1.0  # Multiplicative base
 
 	# Grenade bonuses reset in ALT_WEAPON_DATA
+	grenades_radius_mult = 1.0
 
 	# Shuriken bonuses reset in ALT_WEAPON_DATA
 
@@ -862,10 +864,11 @@ func apply_upgrade(upgrade_id: String) -> void:
 		# ==============================
 		"grenades_radius":
 			# EXPONENTIAL SCALING: Multiply explosion radius by constant per tier
+			grenades_radius_mult *= GameConfig.UPGRADE_MULTIPLIERS["grenade_radius"]
 			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE):
 				var old_radius: float = ALT_WEAPON_DATA[AltWeaponType.GRENADE]["explosion_radius"]
 				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["explosion_radius"] *= GameConfig.UPGRADE_MULTIPLIERS["grenade_radius"]
-				print("  → Grenade radius ×%.2f (%.1f → %.1f)" % [GameConfig.UPGRADE_MULTIPLIERS["grenade_radius"], old_radius, ALT_WEAPON_DATA[AltWeaponType.GRENADE]["explosion_radius"]])
+				print("  → Grenade radius ×%.2f (%.1f → %.1f) [multiplier now: %.2f]" % [GameConfig.UPGRADE_MULTIPLIERS["grenade_radius"], old_radius, ALT_WEAPON_DATA[AltWeaponType.GRENADE]["explosion_radius"], grenades_radius_mult])
 
 		"grenades_damage":
 			# EXPONENTIAL SCALING: Multiply damage by constant per tier
