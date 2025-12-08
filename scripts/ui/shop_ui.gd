@@ -125,9 +125,9 @@ func _on_card_hovered(hovered_card: Control, is_hovered: bool) -> void:
 
 func _calculate_upgrade_price(upgrade: Dictionary) -> int:
 	"""Return price from upgrade data (loaded from CSV), reduced by 15%."""
-	var base_price = upgrade.get("price", 50)  # Default to 50 if no price specified
-	# Apply 15% discount to all base prices
-	return int(base_price * 0.85)
+	var base_price = upgrade.get("price", 50)
+	var final_price = base_price * GameState.shop_price_mult
+	return int(final_price)
 
 
 func _setup_cards() -> void:
@@ -200,6 +200,8 @@ func _roll_shop_offers() -> Array:
     
 	# Get enabled shop upgrades only
 	var all_upgrades: Array = UpgradesDB.filter_by_pool("shop")
+	# Remove combustion upgrade explicitly
+	all_upgrades = all_upgrades.filter(func(up): return up.get("id", "") != "general_combustion_1")
     
 	# Filter by loadout requirements if possible
 	var equipped_weapon := _get_equipped_weapon_name()

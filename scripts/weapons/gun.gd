@@ -28,6 +28,7 @@ var max_fuel: float = 0.0
 var fuel_reload_rate: float = 0.0
 var fuel_reload_delay: float = 0.0
 var fuel_drain_per_shot: float = 1.0
+var time_since_last_shot: float = 0.0
 var fuel_drain_per_second: float = 0.0  # for flamethrower
 var fuel_regen_per_second: float = 0.0  # for flamethrower
 var fuel_mode: String = "clip"          # "clip" or "continuous"
@@ -126,7 +127,7 @@ func _initialize_fuel_for_weapon() -> void:
 	if fuel_mode == "clip":
 		fuel_reload_rate = config.get("reload_rate", 5.0)
 		shots_per_bar = config.get("shots_per_bar", 10)
-		fuel_drain_per_shot = max_fuel / float(shots_per_bar)
+		fuel_drain_per_shot = 1.0
 		fuel = max_fuel  # Start with full fuel
 		is_reloading = false
 		reload_timer = 0.0
@@ -187,10 +188,10 @@ func _update_fuel(delta: float) -> void:
 
 
 func _update_clip_fuel(delta: float) -> void:
-	"""Reload logic for clip-based weapons."""
-	if fuel <= 0.0:
-		start_reload()
-
+	if not is_reloading and fuel < max_fuel:
+		time_since_last_shot += delta
+		if time_since_last_shot >= fuel_reload_delay:
+			start_reload()
 	if is_reloading:
 		reload_timer += delta
 		if reload_timer >= fuel_reload_delay:
@@ -199,6 +200,7 @@ func _update_clip_fuel(delta: float) -> void:
 				fuel = max_fuel
 				is_reloading = false
 				reload_timer = 0.0
+				time_since_last_shot = 0.0
 
 func start_reload() -> void:
 	if is_reloading:
@@ -294,7 +296,7 @@ func handle_primary_fire(is_pressed: bool, aim_dir: Vector2) -> void:
 	# If burst upgrade active, spawn second bullet slightly behind
 	if GameState.has_burst_shot:
 		var burst_bullet = BulletScene_DEFAULT.instantiate()
-		burst_bullet.global_position = muzzle.global_position - (aim_dir * 15.0)
+		burst_bullet.global_position = muzzle.global_position + (aim_dir * 15.0)
 		burst_bullet.direction = aim_dir
 		burst_bullet.damage = roundi(final_damage)
 		burst_bullet.scale = burst_bullet.scale * Vector2(size_mult, size_mult)
@@ -422,6 +424,7 @@ func _handle_flamethrower_fire(aim_pos: Vector2) -> void:
 func _fire_weapon(data: Dictionary, aim_pos: Vector2, weapon_type: int) -> void:
 	# Block reload during burst/multishot
 	is_firing_burst = true
+	time_since_last_shot = 0.0
 	# Consume fuel instead of ammo
 	if not GameState.debug_infinite_ammo:
 		fuel -= fuel_drain_per_shot

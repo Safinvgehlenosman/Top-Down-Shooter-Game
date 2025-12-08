@@ -70,6 +70,8 @@ const UPGRADE_DEFS: Array = [
 	{"id": "general_combustion_1", "text": "Combustion (Enemies Explode on Death)", "rarity": Rarity.EPIC, "price": 450, "category": "general_combat", "pool": "shop", "icon_path": "", "effect": "combustion", "death_explosion_radius": 48, "death_explosion_damage_mult": 0.3, "enabled": true},
 	{"id": "general_shop_discount_1", "text": "Shop Discount (15% Cheaper)", "rarity": Rarity.RARE, "price": 250, "category": "economy", "pool": "shop", "icon_path": "", "effect": "shop_price_mult", "shop_price_mult": 0.85, "enabled": true},
 	{"id": "general_extended_mag_1", "text": "Extended Magazine (+1 Alt Weapon Fuel)", "rarity": Rarity.UNCOMMON, "price": 160, "category": "general", "pool": "shop", "icon_path": "", "effect": "alt_fuel_max_bonus", "alt_fuel_max_bonus": 1, "enabled": true},
+	{"id": "general_combustion_1", "text": "Combustion (Enemies Explode on Death)", "rarity": Rarity.EPIC, "price": 450, "category": "general_combat", "pool": "shop", "icon_path": "", "effect": "combustion", "death_explosion_radius": 48, "death_explosion_damage_mult": 0.3, "enabled": false},
+	{"id": "general_extended_mag_1", "text": "Extended Magazine (+1 Alt Weapon Fuel)", "rarity": Rarity.UNCOMMON, "price": 160, "category": "general", "pool": "shop", "icon_path": "", "effect": "alt_fuel_max_bonus", "alt_fuel_max_bonus": 1, "enabled": false},
 ]
 
 # -------------------------------------------------------------------

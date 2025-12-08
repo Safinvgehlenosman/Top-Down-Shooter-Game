@@ -15,6 +15,7 @@ var sniper_pierce_bonus: int = 0
 var sniper_charge_bonus_percent: float = 0.0
 var flamethrower_burn_bonus_percent: float = 1.0
 var grenades_radius_mult: float = 1.0
+## REMOVED: All complex alt weapon, pierce, burst, combustion, and generic fuel bonus mechanics
 var dash_distance_bonus_percent: float = 1.0
 # --- RUNTIME AND UPGRADE STATS (for upgrades system) ---
 var move_speed_base: float = 0.0
@@ -26,6 +27,7 @@ var primary_damage_base: float = 1.0
 var primary_damage_bonus: float = 0.0
 var primary_damage: float = 1.0
 var primary_burst_count: int = 1
+## REMOVED: All complex alt weapon, pierce, burst, combustion, and generic fuel bonus mechanics
 var primary_extra_burst: int = 0
 var primary_pierce_mult: float = 1.0
 var primary_pierce: int = 0
@@ -33,6 +35,7 @@ var shuriken_chain_count_mult: float = 1.0
 var shuriken_chain_radius_mult: float = 1.0
 var shuriken_speed_chain_mult: float = 1.0
 var shuriken_blade_split_chance: float = 0.0
+## REMOVED: All passive upgrades except move_speed_mult, max_hp_mult, damage_taken_mult, regen_per_second, coin_gain_mult
 var turret_accuracy_mult: float = 1.0
 var turret_homing_angle_deg: float = 0.0
 var turret_homing_turn_speed: float = 0.0
@@ -45,6 +48,7 @@ var primary_bullet_speed_mult: float = 1.0
 var has_burst_shot: bool = false  # Epic upgrade - spawns second bullet offset behind first
 var primary_crit_chance: float = 0.0
 var primary_crit_mult: float = 1.0
+	# REMOVED: berserker, combustion, alt_fuel_max_bonus, shop_price_mult
 var primary_stationary_damage_mult: float = 1.0
 var primary_burst_count_add: int = 0
 
@@ -53,6 +57,7 @@ var primary_burst_count_add: int = 0
 ##  Global run data (HP, ammo, coins, alt weapon, flags, etc.)
 ##  All upgrade *definitions* now live in Upgrades_DB.gd.
 ##
+	# REMOVED: shop_price_mult, alt_fuel_max_bonus
 
 # -------------------------------------------------------------------
 # SIGNALS
@@ -553,7 +558,9 @@ func change_health(delta: int) -> void:
 
 
 func add_coins(delta: int) -> void:
-	# --- PASSIVE UPGRADE: Coin Gain Multiplier ---
+	if coin_pickups_disabled:
+		coins_changed.emit(coins)
+		return
 	var gain := int(round(delta * coin_gain_mult))
 	coins = max(coins + gain, 0)
 	coins_changed.emit(coins)

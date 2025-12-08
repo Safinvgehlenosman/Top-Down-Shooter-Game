@@ -125,8 +125,6 @@ func _on_body_entered(body: Node2D) -> void:
 
 			coin_value = 0
 		
-		GameState.add_coins(coin_value)
-		
 		# Spawn coin number popup
 		_spawn_coin_number(coin_value)
 
