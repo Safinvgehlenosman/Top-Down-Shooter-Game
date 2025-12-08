@@ -52,7 +52,7 @@ func _get_explosion_radius() -> float:
 	if Engine.has_singleton("GameState"):
 		mult = GameState.grenades_radius_mult
 	var radius = default_explosion_radius * mult
-	# print("[GRENADE] Explosion radius=%.1f (mult=%.2f)" % [radius, mult])
+	print("[GRENADE] Explosion radius=%.1f (mult=%.2f)" % [radius, mult])
 	return radius
 
 
@@ -136,11 +136,11 @@ func _physics_process(delta: float) -> void:
 func _update_radius_indicator() -> void:
 	if not radius_indicator or not radius_indicator.texture:
 		return
-
 	var radius := _get_explosion_radius()
-	var radius_scale := radius / default_explosion_radius
+	var tex_size := radius_indicator.texture.get_width() / 2.0
+	var radius_scale := radius / tex_size
+	print("[GRENADE] Indicator scale=%.2f (radius=%.1f, tex_size=%.1f)" % [radius_scale, radius, tex_size])
 	radius_indicator.scale = Vector2.ONE * radius_scale
-
 	# Optionally pulse effect
 	if tween and radius_indicator.visible:
 		tween.tween_property(radius_indicator, "scale", Vector2.ONE * (radius_scale * 1.05), 0.3).from(Vector2.ONE * radius_scale).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT).set_loops()

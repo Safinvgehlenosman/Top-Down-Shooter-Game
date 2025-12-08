@@ -137,7 +137,7 @@ func _generate_loot() -> Array:
 			loot.append_array(_get_random_upgrades_by_rarity(UpgradesDB.Rarity.RARE, 3, used_upgrade_bases))
 			loot.append_array(_get_random_upgrades_by_rarity(UpgradesDB.Rarity.EPIC, 1, used_upgrade_bases))
 	
-	print("[Chest] Initial upgrades generated: ", loot.size())
+	print("[Chest] Built chest pool with %d upgrades" % loot.size())
 	
 	# ⭐ SAFETY: If we couldn't get 5 upgrades, fill with any valid upgrade
 	if loot.size() < target_count:

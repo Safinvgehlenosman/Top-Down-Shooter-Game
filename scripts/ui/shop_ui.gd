@@ -197,21 +197,21 @@ func _roll_shop_offers() -> Array:
 		current_level = gm.current_level
 
 	var rarity_weights := _get_rarity_weights_for_level(current_level)
-	
+    
 	# Get enabled shop upgrades only
 	var all_upgrades: Array = UpgradesDB.filter_by_pool("shop")
-	
+    
 	# Filter by loadout requirements if possible
 	var equipped_weapon := _get_equipped_weapon_name()
 	var equipped_ability := _get_equipped_ability_name()
-	
+    
 	var loadout_filtered := []
 	for upgrade in all_upgrades:
 		if UpgradesDB.is_upgrade_available_for_loadout(upgrade, equipped_weapon, equipped_ability):
 			loadout_filtered.append(upgrade)
-	
+    
 	all_upgrades = loadout_filtered
-	print("[Shop] Found %d candidate upgrades in 'shop' pool" % all_upgrades.size())
+	print("[Shop] Built shop pool with %d upgrades" % all_upgrades.size())
 
 	var max_cards = min(5, cards_container.get_child_count())
 
@@ -223,7 +223,7 @@ func _roll_shop_offers() -> Array:
 		if candidates.is_empty():
 			break
 		candidates.shuffle()
-		
+        
 		# Pick first candidate (already filtered by _filter_upgrades to exclude taken bases)
 		var chosen: Dictionary = candidates[0]
 		result.append(chosen)
