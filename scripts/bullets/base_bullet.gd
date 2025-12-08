@@ -1,6 +1,6 @@
 extends Area2D
 
-@export var speed: float  = GameConfig.bullet_speed
+@export var speed: float  = GameConfig.PRIMARY_BULLET_BASE_SPEED # fallback default, set by gun.gd
 @export var damage: int   = GameConfig.bullet_base_damage
 
 @export var target_group: StringName = "enemy"

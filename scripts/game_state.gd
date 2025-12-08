@@ -261,6 +261,7 @@ var dash_distance_bonus_percent: float = 1.0  # Multiplicative base
 var primary_damage_mult: float = 1.0
 var primary_fire_rate_mult: float = 1.0
 var primary_bullet_speed_mult: float = 1.0
+var has_burst_shot: bool = false  # Burst shot upgrade (epic upgrade that spawns second bullet)
 var primary_crit_chance: float = 0.0
 var primary_crit_mult: float = 1.0
 var primary_stationary_damage_mult: float = 1.0
@@ -1215,6 +1216,43 @@ func apply_upgrade(upgrade_id: String) -> void:
 
 		_:
 			push_warning("[GameState] Unhandled upgrade effect: '%s' (id: %s)" % [effect, upgrade_id])
+
+	# ==============================
+	# RECALCULATE FINAL STATS FROM MULTIPLIERS
+	# ==============================
+	# Apply all multipliers to base stats to get final runtime values
+	var old_max_health = max_health
+	max_health = int(round(GameConfig.player_max_health * max_hp_mult))
+    
+	# If max HP increased, also increase current HP proportionally
+	if max_health > old_max_health:
+		var hp_percent = float(health) / float(old_max_health) if old_max_health > 0 else 1.0
+		health = int(round(max_health * hp_percent))
+	elif health > max_health:
+		health = max_health
+    
+	move_speed = GameConfig.player_move_speed * move_speed_mult
+	fire_rate = GameConfig.player_fire_rate * primary_fire_rate_mult
+    
+	# Force sync player stats immediately
+	var player := get_tree().get_first_node_in_group("player")
+	if player:
+		if player.has_method("sync_from_gamestate"):
+			player.sync_from_gamestate()
+		elif player.has_method("sync_player_stats"):
+			player.sync_player_stats()
+    
+	# Force sync gun stats immediately  
+	if player and player.has_node("Gun"):
+		var gun = player.get_node("Gun")
+		if gun and gun.has_method("init_from_state"):
+			gun.init_from_state()
+    
+	print("[GameState] Applied upgrade '%s' - Stats updated!" % upgrade_id)
+	print("  Final move_speed: %.1f (mult: %.2f)" % [move_speed, move_speed_mult])
+	print("  Final max_health: %d (mult: %.2f)" % [max_health, max_hp_mult])
+	print("  Final fire_rate: %.3f (mult: %.2f)" % [fire_rate, primary_fire_rate_mult])
+	print("  Final primary_damage_mult: %.2f" % primary_damage_mult)
 
 	# After changing numbers, broadcast signals so UI and systems can refresh
 	# Record acquisition (used to prevent re-offering non-stackables)

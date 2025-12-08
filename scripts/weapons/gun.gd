@@ -278,31 +278,27 @@ func handle_primary_fire(is_pressed: bool, aim_dir: Vector2) -> void:
 	if randf() < GameState.primary_crit_chance:
 		final_damage *= GameState.primary_crit_mult
 
-	# 4) BURST LOGIC
-	var burst := 1 + GameState.primary_burst_count_add
-	var burst_delay := GameState.primary_burst_delay
-	var spread_deg := 6.0
-	var base_dir := aim_dir.normalized()
-	for i in range(burst):
-		var angle := 0.0
-		if burst > 1:
-			angle = deg_to_rad(-spread_deg * 0.5 + spread_deg * (float(i) / max(1, burst - 1)))
-		var shot_dir := base_dir.rotated(angle)
+	# 4) PRIMARY BULLET SPAWN (no burst loop)
+	var bullet = BulletScene_DEFAULT.instantiate()
+	bullet.global_position = muzzle.global_position
+	bullet.direction = aim_dir
+	bullet.damage = roundi(final_damage)
+	var size_mult := float(GameState.primary_bullet_size_multiplier)
+	bullet.scale = bullet.scale * Vector2(size_mult, size_mult)
+	var base_speed := GameConfig.PRIMARY_BULLET_BASE_SPEED
+	var final_speed := base_speed * GameState.primary_bullet_speed_mult
+	bullet.speed = final_speed
+	get_tree().current_scene.add_child(bullet)
 
-		# 5) BULLET SPAWNING
-		var bullet = BulletScene_DEFAULT.instantiate()
-		bullet.global_position = muzzle.global_position
-		bullet.direction = shot_dir
-		bullet.damage = roundi(final_damage)
-		var size_mult := float(GameState.primary_bullet_size_multiplier)
-		bullet.scale = bullet.scale * Vector2(size_mult, size_mult)
-		var base_speed := GameConfig.PRIMARY_BULLET_BASE_SPEED
-		var final_speed := base_speed * GameState.primary_bullet_speed_mult
-		bullet.speed = final_speed
-		get_tree().current_scene.add_child(bullet)
-
-		if burst > 1 and i < burst - 1 and burst_delay > 0.0:
-			await get_tree().create_timer(burst_delay).timeout
+	# If burst upgrade active, spawn second bullet slightly behind
+	if GameState.has_burst_shot:
+		var burst_bullet = BulletScene_DEFAULT.instantiate()
+		burst_bullet.global_position = muzzle.global_position - (aim_dir * 15.0)
+		burst_bullet.direction = aim_dir
+		burst_bullet.damage = roundi(final_damage)
+		burst_bullet.scale = burst_bullet.scale * Vector2(size_mult, size_mult)
+		burst_bullet.speed = final_speed
+		get_tree().current_scene.add_child(burst_bullet)
 
 	# 6) FIRE RATE / COOLDOWN
 	if GameState.debug_laser_mode:
@@ -312,7 +308,7 @@ func handle_primary_fire(is_pressed: bool, aim_dir: Vector2) -> void:
 		if GameState.fire_rate <= 0.0:
 			GameState.fire_rate = GameConfig.player_fire_rate
 		var fire_rate_multiplier := 1.0 + GameState.fire_rate_bonus_percent
-		var cooldown := max(GameState.fire_rate / fire_rate_multiplier, 0.01)
+		var cooldown = max(GameState.fire_rate / fire_rate_multiplier, 0.01)
 		fire_timer = cooldown
 
 	# 7) AUDIO
@@ -398,25 +394,6 @@ func _handle_flamethrower_fire(aim_pos: Vector2) -> void:
 
 	var base_dir := (aim_pos - muzzle.global_position).normalized()
 
-	for i in range(burst):
-		var angle := (start_offset + i) * spread_rad
-		var shot_dir := aim_dir.normalized().rotated(angle)
-
-		var bullet := BulletScene_DEFAULT.instantiate()
-		bullet.global_position = muzzle.global_position
-		bullet.direction = shot_dir
-		bullet.damage = roundi(final_damage)
-		var m := float(GameState.primary_bullet_size_multiplier)
-		bullet.scale = bullet.scale * Vector2(m, m)
-		var base_speed := GameConfig.PRIMARY_BULLET_BASE_SPEED
-		var final_speed := base_speed * GameState.primary_bullet_speed_mult
-		bullet.speed = final_speed
-		print("DEBUG primary bullet speed: ", final_speed)
-		get_tree().current_scene.add_child(bullet)
-		# If burst, delay next shot
-		if burst > 1 and i < burst - 1 and burst_delay > 0.0:
-			await get_tree().create_timer(burst_delay).timeout
-		get_tree().current_scene.add_child(bullet)
 
 	# Drain fuel for continuous mode
 	if not GameState.debug_infinite_ammo:
