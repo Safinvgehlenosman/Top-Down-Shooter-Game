@@ -126,15 +126,30 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	_update_crosshair()
 
+
 func _physics_process(delta: float) -> void:
 	if is_dead:
 		return
+
+	# --- PASSIVE UPGRADE: Regeneration ---
+	if GameState.regen_per_second > 0.0 and health < max_health:
+		var regen_amount := GameState.regen_per_second * delta
+		# Accumulate fractional regen, only heal when >= 1
+		if not self.has_meta("regen_accum"):
+			self.set_meta("regen_accum", 0.0)
+		var accum = self.get_meta("regen_accum") + regen_amount
+		if accum >= 1.0:
+			var heal_amt := int(accum)
+			accum -= heal_amt
+			if health_component and health_component.has_method("heal"):
+				health_component.heal(heal_amt)
+		self.set_meta("regen_accum", accum)
 
 	_update_timers(delta)
 	_process_movement(delta)
 	_update_aim_direction(delta)
 	_process_aim()
-	
+    
 	gun.update_timers(delta)
 
 	var is_shooting := Input.is_action_pressed("shoot")

@@ -1,4 +1,52 @@
+
 extends Node
+# --- ALT WEAPON, SHOTGUN, SNIPER, FLAMETHROWER, GRENADE, DASH STATS ---
+var shotgun_damage_mult: float = 1.0
+var shotgun_fire_rate_mult: float = 1.0
+var shotgun_mag_mult: float = 1.0
+var shotgun_spread_bonus_percent: float = 0.0
+var shotgun_knockback_bonus_percent: float = 0.0
+var sniper_damage_mult: float = 1.0
+var sniper_fire_rate_mult: float = 1.0
+var sniper_mag_mult: float = 1.0
+var sniper_burst_count: int = 1
+var sniper_damage_bonus_percent: float = 0.0
+var sniper_pierce_bonus: int = 0
+var sniper_charge_bonus_percent: float = 0.0
+var flamethrower_burn_bonus_percent: float = 1.0
+var grenades_radius_mult: float = 1.0
+var dash_distance_bonus_percent: float = 1.0
+# --- RUNTIME AND UPGRADE STATS (for upgrades system) ---
+var move_speed_base: float = 0.0
+var move_speed: float = 0.0
+var fire_rate_base: float = 0.0
+var fire_rate_bonus_percent: float = 0.0
+var shotgun_pellets_bonus: int = 0
+var primary_damage_base: float = 1.0
+var primary_damage_bonus: float = 0.0
+var primary_damage: float = 1.0
+var primary_burst_count: int = 1
+var primary_extra_burst: int = 0
+var primary_pierce_mult: float = 1.0
+var primary_pierce: int = 0
+var shuriken_chain_count_mult: float = 1.0
+var shuriken_chain_radius_mult: float = 1.0
+var shuriken_speed_chain_mult: float = 1.0
+var shuriken_blade_split_chance: float = 0.0
+var turret_accuracy_mult: float = 1.0
+var turret_homing_angle_deg: float = 0.0
+var turret_homing_turn_speed: float = 0.0
+var turret_damage_mult: float = 1.0
+
+# --- PRIMARY WEAPON UPGRADE STATS ---
+var primary_damage_mult: float = 1.0
+var primary_fire_rate_mult: float = 1.0
+var primary_bullet_speed_mult: float = 1.0
+var has_burst_shot: bool = false  # Epic upgrade - spawns second bullet offset behind first
+var primary_crit_chance: float = 0.0
+var primary_crit_mult: float = 1.0
+var primary_stationary_damage_mult: float = 1.0
+var primary_burst_count_add: int = 0
 
 ##
 ##  GameState.gd
@@ -189,83 +237,11 @@ var alt_fuel_max_bonus: int = 0
 var fire_rate: float = 0.0
 var shotgun_pellets: int = 0
 
-# Movement speed
-var move_speed: float = 0.0
-var move_speed_base: float = 0.0
-var move_speed_bonus_percent: float = 0.0
 
-# Primary weapon stats
-var primary_damage: float = 1.0         # 🔥 This is a MULTIPLIER (1.0 = 100%)
-var primary_damage_base: float = 1.0
-var primary_damage_bonus: float = 0.0
-
-# Visual scaling for primary bullets (applied at spawn)
-var primary_bullet_size_multiplier: float = 1.0
-
-# Fire rate (cooldown) base + additive percent bonus (reduces cooldown)
-var fire_rate_base: float = 0.0
-var fire_rate_bonus_percent: float = 0.0
-var primary_burst_count: int = 1
-var primary_extra_burst: int = 0  # Sequential burst: +1 bullet per shot with delay (stackable)
-
-# Piercing Rounds upgrade
-var primary_pierce_mult: float = 1.0
-var primary_pierce: int = 0
-
-# Shuriken Chainshot + Blade Split upgrades
-var shuriken_chain_count_mult: float = 1.0
-var shuriken_chain_radius_mult: float = 1.0
-var shuriken_speed_chain_mult: float = 1.0
-var shuriken_blade_split_chance: float = 0.0
-
-# Turret upgrades - accuracy and homing
-var turret_accuracy_mult: float = 1.0
-var turret_homing_angle_deg: float = 0.0
-var turret_homing_turn_speed: float = 0.0
-var turret_damage_mult: float = 1.0
-
-# Shotgun upgrades - exponential multipliers
-var shotgun_damage_mult: float = 1.0
-var shotgun_fire_rate_mult: float = 1.0
-var shotgun_mag_mult: float = 1.0
-
-# Sniper upgrades - exponential multipliers
-var sniper_damage_mult: float = 1.0
-var sniper_fire_rate_mult: float = 1.0
-var sniper_mag_mult: float = 1.0
-var sniper_burst_count: int = 1
-
-# --- Per-line / weapon bonuses (populated by upgrades) ----
-var shotgun_pellets_bonus: int = 0
-var shotgun_spread_bonus_percent: float = 0.0
-var shotgun_knockback_bonus_percent: float = 0.0
-
-var sniper_damage_bonus_percent: float = 0.0
-var sniper_pierce_bonus: int = 0
-var sniper_charge_bonus_percent: float = 0.0
-
-var flamethrower_burn_bonus_percent: float = 1.0  # Multiplicative base
-
-# Grenade bonuses are applied directly to ALT_WEAPON_DATA
-var grenades_radius_mult: float = 1.0
-
-# Shuriken bonuses are applied directly to ALT_WEAPON_DATA
-
-# Turret bonuses are applied directly to ALT_WEAPON_DATA
-
-# Ability bonuses
-var dash_distance_bonus_percent: float = 1.0  # Multiplicative base
+		# Ability unlocks
 
 
-# --- PRIMARY WEAPON UPGRADE STATS ---
-var primary_damage_mult: float = 1.0
-var primary_fire_rate_mult: float = 1.0
-var primary_bullet_speed_mult: float = 1.0
-var has_burst_shot: bool = false  # Burst shot upgrade (epic upgrade that spawns second bullet)
-var primary_crit_chance: float = 0.0
-var primary_crit_mult: float = 1.0
-var primary_stationary_damage_mult: float = 1.0
-var primary_burst_count_add: int = 0
+
 var primary_burst_delay: float = 0.0
 
 # Primary bullet size (this one can stay multiplicative as it's visual only)
@@ -390,9 +366,11 @@ func start_new_run() -> void:
 	alt_fuel_max_bonus = 0
 
 	# --- PRIMARY WEAPON UPGRADE DEFAULTS ---
+
 	primary_damage_mult = 1.0
 	primary_fire_rate_mult = 1.0
 	primary_bullet_speed_mult = 1.0
+	has_burst_shot = false
 	primary_crit_chance = 0.0
 	primary_crit_mult = 1.0
 	primary_stationary_damage_mult = 1.0
@@ -442,7 +420,7 @@ func start_new_run() -> void:
 
 	# Reset fire stats
 	fire_rate_base = GameConfig.player_fire_rate
-	fire_rate = GameConfig.player_fire_rate
+	fire_rate = GameConfig.player_fire_rate / primary_fire_rate_mult
 	fire_rate_bonus_percent = 0.0
 	shotgun_pellets = GameConfig.alt_fire_bullet_count
 	shotgun_pellets_bonus = 0
@@ -452,28 +430,28 @@ func start_new_run() -> void:
 
 	primary_burst_count = 1
 	primary_extra_burst = 0
-    
+	
 	# Reset piercing and homing
 	primary_pierce_mult = 1.0
 	primary_pierce = 0
-    
+	
 	# Reset shuriken chainshot
 	shuriken_chain_count_mult = 1.0
 	shuriken_chain_radius_mult = 1.0
 	shuriken_speed_chain_mult = 1.0
 	shuriken_blade_split_chance = 0.0
-    
+	
 	# Reset turret accuracy and homing
 	turret_accuracy_mult = 1.0
 	turret_homing_angle_deg = 0.0
 	turret_homing_turn_speed = 0.0
 	turret_damage_mult = 1.0
-    
+	
 	# Reset shotgun multipliers
 	shotgun_damage_mult = 1.0
 	shotgun_fire_rate_mult = 1.0
 	shotgun_mag_mult = 1.0
-    
+	
 	# Reset sniper multipliers
 	sniper_damage_mult = 1.0
 	sniper_fire_rate_mult = 1.0
@@ -525,13 +503,13 @@ func start_new_run() -> void:
 	coins            = 0
 	player_invisible = false
 	upgrade_purchase_counts.clear()
-    
+	
 	# Reset chaos challenge state
 	active_chaos_challenge = ""
 	chaos_challenge_progress = 0
 	chaos_challenge_completed = false
 	original_max_health = 0
-    
+	
 	# Reset chaos challenge flags
 	coin_pickups_disabled = false
 	primary_fire_disabled = false
@@ -541,7 +519,7 @@ func start_new_run() -> void:
 	ability_cooldown_left = 0.0
 	ability_active_left = 0.0
 	ability_bubble_duration_bonus = 0.0
-    
+	
 	# Reset ability stat bonuses
 	shield_duration = 3.0
 	shield_cooldown_mult = 1.0
@@ -573,8 +551,11 @@ func change_health(delta: int) -> void:
 # COINS
 # -------------------------------------------------------------------
 
+
 func add_coins(delta: int) -> void:
-	coins = max(coins + delta, 0)
+	# --- PASSIVE UPGRADE: Coin Gain Multiplier ---
+	var gain := int(round(delta * coin_gain_mult))
+	coins = max(coins + gain, 0)
 	coins_changed.emit(coins)
 
 func can_afford(cost: int) -> bool:
@@ -664,10 +645,13 @@ func record_upgrade_purchase(upgrade_id: String) -> void:
 func apply_upgrade(upgrade_id: String) -> void:
 
 	# Load upgrade from CSV database
+	print("[UPGRADE DEBUG] ========================================")
+	print("[UPGRADE DEBUG] Applying upgrade: %s" % upgrade_id)
 	var upgrade := UpgradesDB.get_by_id(upgrade_id)
 	if upgrade.is_empty():
 		push_warning("[GameState] Unknown upgrade: %s" % upgrade_id)
 		return
+	print("[UPGRADE DEBUG] Upgrade data: %s" % str(upgrade))
 
 	# Prevent re-applying non-stackable upgrades
 	var stackable := bool(upgrade.get("stackable", true))
@@ -751,50 +735,157 @@ func apply_upgrade(upgrade_id: String) -> void:
 
 	# Apply the upgrade effect
 	match effect:
-		# === NEW GENERAL UPGRADE EFFECTS ===
+		"primary_burst_shot":
+			has_burst_shot = true
+			print("[UPGRADE DEBUG] primary_burst_shot:")
+			print("  Burst shot enabled! (spawns 2nd bullet behind first)")
 		"move_speed_mult":
-			move_speed_mult *= float(upgrade.get("move_speed_mult", 1.0))
+			var old_mult = move_speed_mult
+			var upgrade_mult = float(upgrade.get("move_speed_mult", 1.0))
+			move_speed_mult *= upgrade_mult
+			print("[UPGRADE DEBUG] move_speed_mult:")
+			print("  Old multiplier: %.2f" % old_mult)
+			print("  Upgrade multiplier: %.2f" % upgrade_mult)
+			print("  New multiplier: %.2f" % move_speed_mult)
 		"max_hp_mult":
-			max_hp_mult *= float(upgrade.get("max_hp_mult", 1.0))
+			var old_mult = max_hp_mult
+			var upgrade_mult = float(upgrade.get("max_hp_mult", 1.0))
+			max_hp_mult *= upgrade_mult
+			print("[UPGRADE DEBUG] max_hp_mult:")
+			print("  Old multiplier: %.2f" % old_mult)
+			print("  Upgrade multiplier: %.2f" % upgrade_mult)
+			print("  New multiplier: %.2f" % max_hp_mult)
 		"damage_taken_mult":
-			damage_taken_mult *= float(upgrade.get("damage_taken_mult", 1.0))
+			var old_mult = damage_taken_mult
+			var upgrade_mult = float(upgrade.get("damage_taken_mult", 1.0))
+			damage_taken_mult *= upgrade_mult
+			print("[UPGRADE DEBUG] damage_taken_mult:")
+			print("  Old multiplier: %.2f" % old_mult)
+			print("  Upgrade multiplier: %.2f" % upgrade_mult)
+			print("  New multiplier: %.2f" % damage_taken_mult)
 		"regen_per_second":
-			regen_per_second += float(upgrade.get("regen_per_second", 0.0))
+			var old_regen = regen_per_second
+			var upgrade_regen = float(upgrade.get("regen_per_second", 0.0))
+			regen_per_second += upgrade_regen
+			print("[UPGRADE DEBUG] regen_per_second:")
+			print("  Old value: %.3f" % old_regen)
+			print("  Upgrade value: %.3f" % upgrade_regen)
+			print("  New value: %.3f" % regen_per_second)
 		"coin_gain_mult":
-			coin_gain_mult *= float(upgrade.get("coin_gain_mult", 1.0))
-		"shop_price_mult":
-			shop_price_mult *= float(upgrade.get("shop_price_mult", 1.0))
-		"alt_fuel_max_bonus":
-			alt_fuel_max_bonus += int(upgrade.get("alt_fuel_max_bonus", 0))
+			var old_mult = coin_gain_mult
+			var upgrade_mult = float(upgrade.get("coin_gain_mult", 1.0))
+			coin_gain_mult *= upgrade_mult
+			print("[UPGRADE DEBUG] coin_gain_mult:")
+			print("  Old multiplier: %.2f" % old_mult)
+			print("  Upgrade multiplier: %.2f" % upgrade_mult)
+			print("  New multiplier: %.2f" % coin_gain_mult)
 		"berserker":
-			berserker_threshold = float(upgrade.get("berserker_threshold", 0.0))
-			berserker_damage_mult = float(upgrade.get("berserker_damage_mult", 1.0))
-		# ==============================
-		# CORE / GENERAL EFFECTS
-		# ==============================
-		"max_hp":
-			var inc := int(value)
-			max_health += inc
-			health += inc  # Also increase current health
-			emit_signal("health_changed", health, max_health)
-			
-			# Force update player's HealthComponent
-			var player := get_tree().get_first_node_in_group("player")
-			if player and player.has_node("Health"):
-				var health_component = player.get_node("Health")
-				if health_component:
-					health_component.max_health = max_health
-					health_component.health = health
-
-
-		"hp_refill":
-			set_health(max_health)
-
-		"ability_cooldown":
-			ability_cooldown_mult *= (1.0 + value)
-
-		# ==============================
-		# WEAPON / ABILITY UNLOCKS (LEGACY EFFECT-BASED)
+			var old_thresh = berserker_threshold
+			var old_mult = berserker_damage_mult
+			var new_thresh = float(upgrade.get("berserker_threshold", 0.5))
+			var new_mult = float(upgrade.get("berserker_damage_mult", 1.0))
+			berserker_threshold = new_thresh
+			berserker_damage_mult = new_mult
+			print("[UPGRADE DEBUG] berserker:")
+			print("  Old threshold: %.2f, Old mult: %.2f" % [old_thresh, old_mult])
+			print("  New threshold: %.2f, New mult: %.2f" % [new_thresh, new_mult])
+		"combustion":
+			var old_radius = death_explosion_radius
+			var old_mult = death_explosion_damage_mult
+			var new_radius = int(upgrade.get("death_explosion_radius", 0))
+			var new_mult = float(upgrade.get("death_explosion_damage_mult", 0.0))
+			death_explosion_radius = new_radius
+			death_explosion_damage_mult = new_mult
+			print("[UPGRADE DEBUG] combustion:")
+			print("  Old radius: %d, Old mult: %.2f" % [old_radius, old_mult])
+			print("  New radius: %d, New mult: %.2f" % [new_radius, new_mult])
+		"shop_price_mult":
+			var old_mult = shop_price_mult
+			var upgrade_mult = float(upgrade.get("shop_price_mult", 1.0))
+			shop_price_mult *= upgrade_mult
+			print("[UPGRADE DEBUG] shop_price_mult:")
+			print("  Old multiplier: %.2f" % old_mult)
+			print("  Upgrade multiplier: %.2f" % upgrade_mult)
+			print("  New multiplier: %.2f" % shop_price_mult)
+		"alt_fuel_max_bonus":
+			var old_bonus = alt_fuel_max_bonus
+			var upgrade_bonus = int(upgrade.get("alt_fuel_max_bonus", 0))
+			alt_fuel_max_bonus += upgrade_bonus
+			print("[UPGRADE DEBUG] alt_fuel_max_bonus:")
+			print("  Old bonus: %d" % old_bonus)
+			print("  Upgrade bonus: %d" % upgrade_bonus)
+			print("  New bonus: %d" % alt_fuel_max_bonus)
+		"primary_damage_mult":
+			var old_mult = primary_damage_mult
+			var upgrade_mult = float(upgrade.get("primary_damage_mult", 1.0))
+			primary_damage_mult *= upgrade_mult
+			print("[UPGRADE DEBUG] primary_damage_mult:")
+			print("  Old multiplier: %.2f" % old_mult)
+			print("  Upgrade multiplier: %.2f" % upgrade_mult)
+			print("  New multiplier: %.2f" % primary_damage_mult)
+		"primary_fire_rate_mult":
+			var old_mult = primary_fire_rate_mult
+			var upgrade_mult = float(upgrade.get("primary_fire_rate_mult", 1.0))
+			primary_fire_rate_mult *= upgrade_mult
+			print("[UPGRADE DEBUG] primary_fire_rate_mult:")
+			print("  Old multiplier: %.2f" % old_mult)
+			print("  Upgrade multiplier: %.2f" % upgrade_mult)
+			print("  New multiplier: %.2f" % primary_fire_rate_mult)
+		"primary_bullet_speed_mult":
+			var old_mult = primary_bullet_speed_mult
+			var upgrade_mult = float(upgrade.get("primary_bullet_speed_mult", 1.0))
+			primary_bullet_speed_mult *= upgrade_mult
+			print("[UPGRADE DEBUG] primary_bullet_speed_mult:")
+			print("  Old multiplier: %.2f" % old_mult)
+			print("  Upgrade multiplier: %.2f" % upgrade_mult)
+			print("  New multiplier: %.2f" % primary_bullet_speed_mult)
+		"primary_crit":
+			var old_crit_chance = primary_crit_chance
+			var old_crit_mult = primary_crit_mult
+			primary_crit_chance += float(upgrade.get("primary_crit_chance_add", 0.0))
+			primary_crit_mult *= float(upgrade.get("primary_crit_mult", 1.0))
+			print("[UPGRADE DEBUG] primary_crit:")
+			print("  Old crit chance: %.2f%%" % (old_crit_chance * 100.0))
+			print("  Old crit mult: %.2fx" % old_crit_mult)
+			print("  New crit chance: %.2f%%" % (primary_crit_chance * 100.0))
+			print("  New crit mult: %.2fx" % primary_crit_mult)
+		"primary_focused_fire":
+			var old_damage = primary_damage_mult
+			var old_fire_rate = primary_fire_rate_mult
+			primary_damage_mult *= float(upgrade.get("primary_damage_mult", 1.0))
+			primary_fire_rate_mult *= float(upgrade.get("primary_fire_rate_mult", 1.0))
+			print("[UPGRADE DEBUG] primary_focused_fire:")
+			print("  Damage: %.2fx -> %.2fx" % [old_damage, primary_damage_mult])
+			print("  Fire rate: %.2fx -> %.2fx" % [old_fire_rate, primary_fire_rate_mult])
+		"primary_hair_trigger":
+			var old_damage = primary_damage_mult
+			var old_fire_rate = primary_fire_rate_mult
+			primary_damage_mult *= float(upgrade.get("primary_damage_mult", 1.0))
+			primary_fire_rate_mult *= float(upgrade.get("primary_fire_rate_mult", 1.0))
+			print("[UPGRADE DEBUG] primary_hair_trigger:")
+			print("  Damage: %.2fx -> %.2fx" % [old_damage, primary_damage_mult])
+			print("  Fire rate: %.2fx -> %.2fx" % [old_fire_rate, primary_fire_rate_mult])
+		"primary_stationary_damage":
+			var old_mult = primary_stationary_damage_mult
+			primary_stationary_damage_mult *= float(upgrade.get("primary_stationary_damage", 1.0))
+			print("[UPGRADE DEBUG] primary_stationary_damage:")
+			print("  Old: %.2fx, New: %.2fx" % [old_mult, primary_stationary_damage_mult])
+		"primary_bullet_speed":
+			var old_mult = primary_bullet_speed_mult
+			primary_bullet_speed_mult *= float(upgrade.get("primary_bullet_speed", 1.0))
+			print("[UPGRADE DEBUG] primary_bullet_speed:")
+			print("  Old: %.2fx, New: %.2fx" % [old_mult, primary_bullet_speed_mult])
+		"primary_extra_burst":
+			var old_count = primary_burst_count_add
+			var old_delay = primary_burst_delay
+			var upg_count = int(upgrade.get("primary_burst_count_add", 0))
+			var upg_delay = float(upgrade.get("primary_burst_delay", 0.0))
+			primary_burst_count_add += upg_count
+			primary_burst_delay = max(primary_burst_delay, upg_delay)
+			print("[UPGRADE DEBUG] primary_extra_burst:")
+			print("  Old count: %d, Old delay: %.3f" % [old_count, old_delay])
+			print("  Upgrade count: %d, Upgrade delay: %.3f" % [upg_count, upg_delay])
+			print("  New count: %d, New delay: %.3f" % [primary_burst_count_add, primary_burst_delay])
 		# ==============================
 		# These are the old hardcoded unlock effects
 		# They set the unlock flag AND auto-equip for backwards compatibility
@@ -839,19 +930,26 @@ func apply_upgrade(upgrade_id: String) -> void:
 			unlocked_invis = true
 			set_ability(AbilityType.INVIS)
 
+
 		# ==============================
-		# PRIMARY WEAPON EFFECTS
+		# PRIMARY WEAPON EFFECTS (FIXED: Only modify multiplier variables)
 		# ==============================
 		"primary_damage":
-			# EXPONENTIAL SCALING: Multiply damage by constant per tier
-			primary_damage *= GameConfig.UPGRADE_MULTIPLIERS["damage"]
-			print("  → Primary damage ×%.2f (total now: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["damage"], primary_damage])
+			var old_mult = primary_damage_mult
+			primary_damage_mult *= GameConfig.UPGRADE_MULTIPLIERS["damage"]
+			print("  → Primary damage mult: %.2fx → %.2fx" % [old_mult, primary_damage_mult])
 
 		"primary_fire_rate":
-			# EXPONENTIAL SCALING: Multiply cooldown by constant per tier (reduces cooldown)
-			fire_rate *= GameConfig.UPGRADE_MULTIPLIERS["fire_rate"]
-			fire_rate = max(0.05, fire_rate)  # Hard floor at 0.05s
-			print("  → Fire rate ×%.2f (cooldown now: %.3fs)" % [GameConfig.UPGRADE_MULTIPLIERS["fire_rate"], fire_rate])
+			var old_mult = primary_fire_rate_mult
+			var upg_mult = 1.0
+			if upgrade.has("primary_fire_rate_mult"):
+				upg_mult = float(upgrade.get("primary_fire_rate_mult", 1.0))
+			elif upgrade.has("primary_fire_rate"):
+				upg_mult = float(upgrade.get("primary_fire_rate", 1.0))
+			else:
+				upg_mult = GameConfig.UPGRADE_MULTIPLIERS["fire_rate"]
+			primary_fire_rate_mult *= upg_mult
+			print("  → Fire rate mult: %.2fx → %.2fx" % [old_mult, primary_fire_rate_mult])
 
 		"primary_extra_burst":
 			# Stackable: adds +1 sequential bullet per upgrade
@@ -1223,17 +1321,17 @@ func apply_upgrade(upgrade_id: String) -> void:
 	# Apply all multipliers to base stats to get final runtime values
 	var old_max_health = max_health
 	max_health = int(round(GameConfig.player_max_health * max_hp_mult))
-    
+	
 	# If max HP increased, also increase current HP proportionally
 	if max_health > old_max_health:
 		var hp_percent = float(health) / float(old_max_health) if old_max_health > 0 else 1.0
 		health = int(round(max_health * hp_percent))
 	elif health > max_health:
 		health = max_health
-    
+	
 	move_speed = GameConfig.player_move_speed * move_speed_mult
-	fire_rate = GameConfig.player_fire_rate * primary_fire_rate_mult
-    
+	fire_rate = GameConfig.player_fire_rate / primary_fire_rate_mult
+	
 	# Force sync player stats immediately
 	var player := get_tree().get_first_node_in_group("player")
 	if player:
@@ -1241,18 +1339,20 @@ func apply_upgrade(upgrade_id: String) -> void:
 			player.sync_from_gamestate()
 		elif player.has_method("sync_player_stats"):
 			player.sync_player_stats()
-    
+	
 	# Force sync gun stats immediately  
 	if player and player.has_node("Gun"):
 		var gun = player.get_node("Gun")
 		if gun and gun.has_method("init_from_state"):
 			gun.init_from_state()
-    
+	
+
 	print("[GameState] Applied upgrade '%s' - Stats updated!" % upgrade_id)
 	print("  Final move_speed: %.1f (mult: %.2f)" % [move_speed, move_speed_mult])
 	print("  Final max_health: %d (mult: %.2f)" % [max_health, max_hp_mult])
 	print("  Final fire_rate: %.3f (mult: %.2f)" % [fire_rate, primary_fire_rate_mult])
 	print("  Final primary_damage_mult: %.2f" % primary_damage_mult)
+	print("  Regen/sec: %.2f, Coin Mult: %.2f, Dmg Taken Mult: %.2f, Berserker: %.2f @ %.2f%% HP, Combustion: %s" % [regen_per_second, coin_gain_mult, damage_taken_mult, berserker_damage_mult, berserker_threshold * 100.0, str(combustion_active)])
 
 	# After changing numbers, broadcast signals so UI and systems can refresh
 	# Record acquisition (used to prevent re-offering non-stackables)
@@ -1474,4 +1574,3 @@ func _calculate_theoretical_dps() -> float:
 	var base_bullet_damage = GameConfig.bullet_base_damage * primary_damage
 	var shots_per_second = 1.0 / fire_rate
 	return base_bullet_damage * shots_per_second * primary_burst_count
-

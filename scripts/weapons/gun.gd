@@ -283,7 +283,8 @@ func handle_primary_fire(is_pressed: bool, aim_dir: Vector2) -> void:
 	bullet.global_position = muzzle.global_position
 	bullet.direction = aim_dir
 	bullet.damage = roundi(final_damage)
-	var size_mult := float(GameState.primary_bullet_size_multiplier)
+	# Calculate bullet size multiplier from percent bonus
+	var size_mult := 1.0 + (GameState.primary_bullet_size_bonus_percent / 100.0)
 	bullet.scale = bullet.scale * Vector2(size_mult, size_mult)
 	var base_speed := GameConfig.PRIMARY_BULLET_BASE_SPEED
 	var final_speed := base_speed * GameState.primary_bullet_speed_mult
