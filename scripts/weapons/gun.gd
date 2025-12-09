@@ -26,6 +26,7 @@ var weapon_id: String = ""
 var ammo: int = 0
 var max_ammo: int = 0
 var reload_delay: float = 0.0
+var reload_rate: float = 8.0  # Rounds per second when reloading
 var time_since_last_shot: float = 0.0
 var ammo_mode: String = "clip"
 var shots_per_bar: int = 0
@@ -99,6 +100,7 @@ func _initialize_ammo_for_weapon() -> void:
 	var config: Dictionary = GameConfig.WEAPON_FUEL_CONFIG[weapon_id]
 	ammo_mode = config.get("mode", "clip")
 	reload_delay = config.get("reload_delay", 0.5)
+	reload_rate = config.get("reload_rate", 8.0)
 	var base_max: int = int(config.get("max_fuel", 10))
 	if current_alt == GameState.AltWeaponType.SHOTGUN:
 		max_ammo = int(base_max * GameState.shotgun_mag_mult) + GameState.alt_fuel_max_bonus
@@ -156,19 +158,25 @@ func _update_ammo(delta: float) -> void:
 
 
 func _update_clip_ammo(delta: float) -> void:
-	if ammo <= 0:
-		start_reload()
-	if not is_reloading and ammo < max_ammo:
-		time_since_last_shot += delta
-		if time_since_last_shot >= reload_delay:
+		# Always use gradual reload, even when empty
+		if ammo <= 0 and not is_reloading:
 			start_reload()
-	if is_reloading:
-		reload_timer += delta
-		if reload_timer >= reload_delay:
-			ammo = max_ammo
-			is_reloading = false
-			reload_timer = 0.0
-			time_since_last_shot = 0.0
+		# Auto-reload after 5 seconds if partially depleted
+		if not is_reloading and ammo > 0 and ammo < max_ammo:
+			time_since_last_shot += delta
+			if time_since_last_shot >= 2.0:
+				start_reload()
+		# Gradual reload: add 1 ammo at a time based on reload_rate
+		if is_reloading:
+			reload_timer += delta
+			var time_per_round: float = 1.0 / reload_rate
+			if reload_timer >= time_per_round:
+				ammo += 1
+				reload_timer = 0.0
+				if ammo >= max_ammo:
+					ammo = max_ammo
+					is_reloading = false
+					time_since_last_shot = 0.0
 
 func start_reload() -> void:
 	if is_reloading:

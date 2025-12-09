@@ -74,34 +74,34 @@ func _ready() -> void:
 # -------------------------------------------------------------------
 # NOTE: Primary weapon is excluded (infinite ammo)
 const WEAPON_FUEL_CONFIG := {
-	"shotgun": {
-		"max_fuel": 8.0,
-		"shots_per_bar": 8,
-		"reload_rate": 6.0,   # units per second when reloading
-		"reload_delay": 0.5,   # seconds after last shot before reload starts
-		"mode": "clip"         # clip-based: regen only when empty
-	},
-	"sniper": {
-		"max_fuel": 4.0,
-		"shots_per_bar": 4,
-		"reload_rate": 3.0,
-		"reload_delay": 0.8,
-		"mode": "clip"
-	},
-	"grenade": {
-		"max_fuel": 3.0,
-		"shots_per_bar": 3,
-		"reload_rate": 2.0,
-		"reload_delay": 1.0,
-		"mode": "clip"
-	},
-	"shuriken": {
-		"max_fuel": 10.0,
-		"shots_per_bar": 10,
-		"reload_rate": 12.0,
-		"reload_delay": 0.2,
-		"mode": "clip"
-	},
+	   "shotgun": {
+		   "max_fuel": 8.0,
+		   "shots_per_bar": 8,
+		   "reload_rate": 6.0,   # units per second when reloading
+		   "reload_delay": 5.0,   # seconds after last shot before reload starts
+		   "mode": "clip"         # clip-based: regen only when empty
+	   },
+	   "sniper": {
+		   "max_fuel": 4.0,
+		   "shots_per_bar": 4,
+		   "reload_rate": 3.0,
+		   "reload_delay": 5.0,
+		   "mode": "clip"
+	   },
+	   "grenade": {
+		   "max_fuel": 3.0,
+		   "shots_per_bar": 3,
+		   "reload_rate": 2.0,
+		   "reload_delay": 5.0,
+		   "mode": "clip"
+	   },
+	   "shuriken": {
+		   "max_fuel": 10.0,
+		   "shots_per_bar": 10,
+		   "reload_rate": 12.0,
+		   "reload_delay": 5.0,
+		   "mode": "clip"
+	   },
 	# NOTE: Turret excluded - infinite alt-fire, no fuel system
 	"flamethrower": {
 		"max_fuel": 100.0,
