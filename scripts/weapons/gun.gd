@@ -20,19 +20,15 @@ var empty_sound_cooldown: float = 0.0
 var alt_weapon: int = GameState.AltWeaponType.NONE
 
 # -------------------------------------------------------------------
-# FUEL SYSTEM (for all alt weapons, primary excluded)
+# AMMO SYSTEM (for all alt weapons, primary excluded)
 # -------------------------------------------------------------------
 var weapon_id: String = ""
-var fuel: float = 0.0
-var max_fuel: float = 0.0
-var fuel_reload_rate: float = 0.0
-var fuel_reload_delay: float = 0.0
-var fuel_drain_per_shot: float = 1.0
+var ammo: int = 0
+var max_ammo: int = 0
+var reload_delay: float = 0.0
 var time_since_last_shot: float = 0.0
-var fuel_drain_per_second: float = 0.0  # for flamethrower
-var fuel_regen_per_second: float = 0.0  # for flamethrower
-var fuel_mode: String = "clip"          # "clip" or "continuous"
-var shots_per_bar: int = 0              # for UI display (clip mode)
+var ammo_mode: String = "clip"
+var shots_per_bar: int = 0
 var reload_timer: float = 0.0
 var is_reloading: bool = false
 var is_overheated: bool = false  # for flamethrower
@@ -43,7 +39,7 @@ var is_firing_burst: bool = false  # for burst/multishot lockout
 func _ready() -> void:
 	# Connect to weapon changes
 	GameState.alt_weapon_changed.connect(_on_alt_weapon_changed)
-	_initialize_fuel_for_weapon()
+	_initialize_ammo_for_weapon()
 
 
 func _input(event):
@@ -59,86 +55,64 @@ func manual_reload() -> void:
 		return
 	if is_firing_burst or is_firing_flame:
 		return
-	if fuel_mode == "clip":
-		if fuel >= max_fuel:
+	if ammo_mode == "clip":
+		if ammo >= max_ammo:
 			return
 		start_reload()
-	elif fuel_mode == "continuous":
-		if fuel >= max_fuel:
+	elif ammo_mode == "continuous":
+		if ammo >= max_ammo:
 			return
-		# Flamethrower: instant refill
-		fuel = max_fuel
+		ammo = max_ammo
 		is_overheated = false
 		is_reloading = false
 		reload_timer = 0.0
 		_notify_ui_fuel_changed()
-		# Optional: play reload animation/sound here
 		if sprite.has_method("play") and sprite.has_animation("reload"):
 			sprite.play("reload")
 
 
 func _on_alt_weapon_changed(_new_weapon: int) -> void:
-	"""Reinitialize fuel when weapon changes."""
-	_initialize_fuel_for_weapon()
+	"""Reinitialize ammo when weapon changes."""
+	_initialize_ammo_for_weapon()
 
 
 func init_from_state() -> void:
 	fire_rate = GameState.fire_rate
-	_initialize_fuel_for_weapon()
+	_initialize_ammo_for_weapon()
 
 
-func _initialize_fuel_for_weapon() -> void:
-	"""Initialize fuel system based on current alt weapon."""
+func _initialize_ammo_for_weapon() -> void:
 	var current_alt: int = GameState.alt_weapon
-	
-	# Hide UI for NONE or TURRET
 	if current_alt == GameState.AltWeaponType.NONE or current_alt == GameState.AltWeaponType.TURRET:
 		weapon_id = ""
-		fuel = 0.0
-		max_fuel = 0.0
-		# Hide fuel bar (deferred to ensure UI exists)
+		ammo = 0
+		max_ammo = 0
 		call_deferred("_hide_fuel_ui")
 		return
-	
 	var data: Dictionary = GameState.ALT_WEAPON_DATA.get(current_alt, {})
 	weapon_id = data.get("id", "")
-	
 	if weapon_id == "" or not GameConfig.WEAPON_FUEL_CONFIG.has(weapon_id):
-		fuel = 0.0
-		max_fuel = 0.0
-		# Hide fuel bar (deferred to ensure UI exists)
+		ammo = 0
+		max_ammo = 0
 		call_deferred("_hide_fuel_ui")
 		return
-	
 	var config: Dictionary = GameConfig.WEAPON_FUEL_CONFIG[weapon_id]
-	fuel_mode = config.get("mode", "clip")
-	var base_max_fuel: float = config.get("max_fuel", 10.0)
-	
-	# Apply weapon-specific magazine size multipliers and general upgrade bonus
+	ammo_mode = config.get("mode", "clip")
+	reload_delay = config.get("reload_delay", 0.5)
+	var base_max: int = int(config.get("max_fuel", 10))
 	if current_alt == GameState.AltWeaponType.SHOTGUN:
-		max_fuel = base_max_fuel * GameState.shotgun_mag_mult + GameState.alt_fuel_max_bonus
+		max_ammo = int(base_max * GameState.shotgun_mag_mult) + GameState.alt_fuel_max_bonus
 	elif current_alt == GameState.AltWeaponType.SNIPER:
-		max_fuel = base_max_fuel * GameState.sniper_mag_mult + GameState.alt_fuel_max_bonus
+		max_ammo = int(base_max * GameState.sniper_mag_mult) + GameState.alt_fuel_max_bonus
 	else:
-		max_fuel = base_max_fuel + GameState.alt_fuel_max_bonus
-	
-	fuel_reload_delay = config.get("reload_delay", 0.5)
-	
-	if fuel_mode == "clip":
-		fuel_reload_rate = config.get("reload_rate", 5.0)
-		shots_per_bar = config.get("shots_per_bar", 10)
-		fuel_drain_per_shot = 1.0
-		fuel = max_fuel  # Start with full fuel
+		max_ammo = base_max + GameState.alt_fuel_max_bonus
+	if ammo_mode == "clip":
+		ammo = max_ammo
 		is_reloading = false
 		reload_timer = 0.0
-	elif fuel_mode == "continuous":
-		shots_per_bar = 0  # Not used for continuous mode
-		fuel_drain_per_second = config.get("drain_per_second", 25.0)
-		fuel_regen_per_second = config.get("regen_per_second", 20.0)
-		fuel = max_fuel  # Start with full fuel
+	elif ammo_mode == "continuous":
+		ammo = max_ammo
 		is_overheated = false
-	
-	# Notify UI
 	_notify_ui_fuel_changed()
 
 
@@ -157,50 +131,45 @@ func _notify_ui_fuel_changed() -> void:
 		return
 	var ui = get_tree().get_first_node_in_group("ui")
 	if ui and ui.has_method("show_alt_weapon_fuel"):
-		var is_continuous := (fuel_mode == "continuous")
-		ui.show_alt_weapon_fuel(weapon_id, max_fuel, fuel, shots_per_bar, is_continuous)
+		var is_continuous := (ammo_mode == "continuous")
+		ui.show_alt_weapon_fuel(weapon_id, max_ammo, ammo, shots_per_bar, is_continuous)
 
 
 func can_fire_alt() -> bool:
-	"""Check if alt weapon has enough fuel to fire."""
-	if fuel_mode == "clip":
-		return fuel >= fuel_drain_per_shot and not is_reloading
-	elif fuel_mode == "continuous":
-		return fuel > 0.0 and not is_overheated
+	if ammo_mode == "clip":
+		return ammo > 0 and not is_reloading
+	elif ammo_mode == "continuous":
+		return ammo > 0 and not is_overheated
 	return false
 
 
-func _update_fuel(delta: float) -> void:
-	"""Update fuel regeneration/reload logic."""
-	if weapon_id == "" or max_fuel <= 0.0:
+func _update_ammo(delta: float) -> void:
+	if weapon_id == "" or max_ammo <= 0:
 		return
-	
-	if fuel_mode == "clip":
-		_update_clip_fuel(delta)
-	elif fuel_mode == "continuous":
-		_update_continuous_fuel(delta)
-	
-	# Notify UI every frame
+	if ammo_mode == "clip":
+		_update_clip_ammo(delta)
+	elif ammo_mode == "continuous":
+		_update_continuous_ammo(delta)
 	var ui = get_tree().get_first_node_in_group("ui")
 	if ui and ui.has_method("update_alt_weapon_fuel"):
-		ui.update_alt_weapon_fuel(fuel)
+		ui.update_alt_weapon_fuel(ammo)
 
 
 
-func _update_clip_fuel(delta: float) -> void:
-	if not is_reloading and fuel < max_fuel:
+func _update_clip_ammo(delta: float) -> void:
+	if ammo <= 0:
+		start_reload()
+	if not is_reloading and ammo < max_ammo:
 		time_since_last_shot += delta
-		if time_since_last_shot >= fuel_reload_delay:
+		if time_since_last_shot >= reload_delay:
 			start_reload()
 	if is_reloading:
 		reload_timer += delta
-		if reload_timer >= fuel_reload_delay:
-			fuel += fuel_reload_rate * delta
-			if fuel >= max_fuel:
-				fuel = max_fuel
-				is_reloading = false
-				reload_timer = 0.0
-				time_since_last_shot = 0.0
+		if reload_timer >= reload_delay:
+			ammo = max_ammo
+			is_reloading = false
+			reload_timer = 0.0
+			time_since_last_shot = 0.0
 
 func start_reload() -> void:
 	if is_reloading:
@@ -212,18 +181,15 @@ func start_reload() -> void:
 		sprite.play("reload")
 
 
-func _update_continuous_fuel(delta: float) -> void:
-	"""Regen logic for continuous weapons (flamethrower)."""
+func _update_continuous_ammo(delta: float) -> void:
 	if is_firing_flame:
-		# Fuel is drained in handle_alt_fire for flamethrower
 		pass
 	else:
-		# Regenerate when not firing
-		fuel += fuel_regen_per_second * delta
-		if fuel >= max_fuel:
-			fuel = max_fuel
-		# Clear overheat when fuel regenerates enough
-		if is_overheated and fuel >= max_fuel * 0.25:
+		var regen_rate: int = 20
+		ammo += int(regen_rate * delta)
+		if ammo >= max_ammo:
+			ammo = max_ammo
+		if is_overheated and ammo >= int(max_ammo * 0.25):
 			is_overheated = false
 
 
@@ -241,8 +207,8 @@ func update_timers(delta: float) -> void:
 	if empty_sound_cooldown > 0.0:
 		empty_sound_cooldown -= dt
 	
-	# Update fuel system
-	_update_fuel(dt)
+	# Update ammo system
+	_update_ammo(dt)
 
 
 func add_ammo(_amount: int) -> void:
@@ -398,12 +364,12 @@ func _handle_flamethrower_fire(aim_pos: Vector2) -> void:
 	var base_dir := (aim_pos - muzzle.global_position).normalized()
 
 
-	# Drain fuel for continuous mode
+	# Drain ammo for continuous mode
 	if not GameState.debug_infinite_ammo:
-		var drain = fuel_drain_per_second * get_process_delta_time()
-		fuel -= drain
-		if fuel <= 0.0:
-			fuel = 0.0
+		var drain_rate: int = 25
+		ammo -= int(drain_rate * get_process_delta_time())
+		if ammo <= 0:
+			ammo = 0
 			is_overheated = true
 			is_firing_flame = false
 
@@ -425,11 +391,11 @@ func _fire_weapon(data: Dictionary, aim_pos: Vector2, weapon_type: int) -> void:
 	# Block reload during burst/multishot
 	is_firing_burst = true
 	time_since_last_shot = 0.0
-	# Consume fuel instead of ammo
+	# Consume ammo
 	if not GameState.debug_infinite_ammo:
-		fuel -= fuel_drain_per_shot
-		if fuel < 0.0:
-			fuel = 0.0
+		ammo -= 1
+		if ammo < 0:
+			ammo = 0
 
 	var bullet_scene: PackedScene = data["bullet_scene"]
 	var bullet_speed: float = data["bullet_speed"]
