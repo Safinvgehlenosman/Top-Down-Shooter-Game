@@ -126,13 +126,14 @@ func _hide_fuel_ui() -> void:
 
 
 func _notify_ui_fuel_changed() -> void:
-	"""Tell UI to update fuel bar."""
+	"""Tell UI to update ammo bar."""
 	if not is_inside_tree():
 		return
 	var ui = get_tree().get_first_node_in_group("ui")
 	if ui and ui.has_method("show_alt_weapon_fuel"):
 		var is_continuous := (ammo_mode == "continuous")
-		ui.show_alt_weapon_fuel(weapon_id, max_ammo, ammo, shots_per_bar, is_continuous)
+		var shots_for_ui := max_ammo if ammo_mode == "clip" else 100
+		ui.show_alt_weapon_fuel(weapon_id, float(max_ammo), float(ammo), shots_for_ui, is_continuous)
 
 
 func can_fire_alt() -> bool:
@@ -150,9 +151,7 @@ func _update_ammo(delta: float) -> void:
 		_update_clip_ammo(delta)
 	elif ammo_mode == "continuous":
 		_update_continuous_ammo(delta)
-	var ui = get_tree().get_first_node_in_group("ui")
-	if ui and ui.has_method("update_alt_weapon_fuel"):
-		ui.update_alt_weapon_fuel(ammo)
+	_notify_ui_fuel_changed()
 
 
 
