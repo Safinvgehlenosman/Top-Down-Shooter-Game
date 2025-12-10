@@ -1,9 +1,15 @@
-[gd_scene load_steps=6 format=3 uid="uid://dv8w4r5bwomco"]
+[gd_scene load_steps=13 format=3 uid="uid://dv8w4r5bwomco"]
 
 [ext_resource type="Script" uid="uid://cwmceg8v4sax2" path="res://scripts/ui/start_screen.gd" id="1_he1sj"]
 [ext_resource type="FontFile" uid="uid://4xsaqwwtj2c1" path="res://assets/Fonts/PixelOperator8.ttf" id="1_o7i0r"]
 [ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="2_he1sj"]
 [ext_resource type="Shader" uid="uid://dvsnojk5qp2bx" path="res://shaders/main.gdshader" id="4_r2jwc"]
+[ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="6_ecdxc"]
+[ext_resource type="Texture2D" uid="uid://dsok60txc11jj" path="res://assets/purpleslime.png" id="6_ka6nf"]
+[ext_resource type="Texture2D" uid="uid://buu0qihcmu4d0" path="res://assets/Separated/Slime.png" id="6_ws7p0"]
+[ext_resource type="Texture2D" uid="uid://h8v2n05n2ryy" path="res://assets/fireslime.png" id="7_ws7p0"]
+[ext_resource type="Shader" uid="uid://cgmteokvsd2g4" path="res://shaders/vignette.gdshader" id="9_ws7p0"]
+[ext_resource type="PackedScene" uid="uid://bgtvbwcrfprtm" path="res://scenes/rooms/main_screen_background.tscn" id="10_ecdxc"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_hm208"]
 shader = ExtResource("4_r2jwc")
@@ -15,51 +21,51 @@ shader_parameter/vignette_strength = 0.4
 shader_parameter/vignette_radius = 0.9
 shader_parameter/vignette_softness = 0.35
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ecdxc"]
+shader = ExtResource("9_ws7p0")
+shader_parameter/radius = 0.358000017005
+shader_parameter/softness = 1.0
+shader_parameter/intensity = 0.9250000439375
+shader_parameter/color = Color(0, 0, 0, 1)
+
 [node name="StartScreen" type="CanvasLayer" groups=["pause"]]
 process_mode = 3
 layer = 0
 script = ExtResource("1_he1sj")
 button_paths = Array[NodePath]([NodePath("StartButton"), NodePath("QuitButton")])
 
-[node name="ColorRect" type="ColorRect" parent="."]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.11764706, 0.11764706, 0.11764706, 1)
-
 [node name="StartButton" type="Button" parent="."]
 process_mode = 3
-anchors_preset = 8
+anchors_preset = 5
 anchor_left = 0.5
-anchor_top = 0.5
 anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -51.0
-offset_top = -12.0
-offset_right = 51.0
-offset_bottom = 12.0
+offset_left = -131.0
+offset_top = 348.0
+offset_right = 130.28503
+offset_bottom = 408.04498
 grow_horizontal = 2
-grow_vertical = 2
 theme_override_fonts/font = ExtResource("1_o7i0r")
 text = "Start"
 
 [node name="QuitButton" type="Button" parent="."]
 process_mode = 3
-offset_left = 546.0
-offset_top = 352.34
-offset_right = 604.0
-offset_bottom = 376.34
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -131.0
+offset_top = 422.0
+offset_right = 130.28503
+offset_bottom = 482.045
+grow_horizontal = 2
 theme_override_fonts/font = ExtResource("1_o7i0r")
 text = "Quit"
 
 [node name="FullscreenButton" type="Button" parent="."]
 process_mode = 3
-offset_left = 996.0
-offset_top = 604.0
-offset_right = 1136.0
-offset_bottom = 628.0
+offset_left = 994.0
+offset_top = 21.0
+offset_right = 1134.0
+offset_bottom = 45.0
 theme_override_fonts/font = ExtResource("1_o7i0r")
 text = "Fullscreen"
 
@@ -67,25 +73,25 @@ text = "Fullscreen"
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -232.0
-offset_top = 236.01
-offset_right = 232.0
-offset_bottom = 300.0103
+offset_left = -332.0
+offset_top = 86.0
+offset_right = 332.0
+offset_bottom = 150.00032
 grow_horizontal = 2
 size_flags_horizontal = 0
 size_flags_vertical = 0
+theme_override_colors/font_color = Color(0, 1, 0.20392157, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8666667)
 theme_override_fonts/font = ExtResource("2_he1sj")
 theme_override_font_sizes/font_size = 64
-text = "START MENU"
+text = "SLIME SPREE"
 horizontal_alignment = 1
 
 [node name="VHSLayer" type="CanvasLayer" parent="."]
 process_mode = 3
-visible = false
 
 [node name="VHSOverlay" type="ColorRect" parent="VHSLayer"]
 process_mode = 3
-visible = false
 material = SubResource("ShaderMaterial_hm208")
 anchors_preset = 15
 anchor_right = 1.0
@@ -94,3 +100,51 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 color = Color(1, 1, 1, 0)
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(860.00006, 569.00006)
+rotation = 0.14579165
+scale = Vector2(20, 20)
+texture = ExtResource("6_ws7p0")
+region_enabled = true
+region_rect = Rect2(10, 12, 12, 9)
+
+[node name="Sprite2D4" type="Sprite2D" parent="."]
+position = Vector2(159, 432.99997)
+rotation = -0.0673296
+scale = Vector2(30, 30)
+texture = ExtResource("6_ecdxc")
+region_enabled = true
+region_rect = Rect2(12, 8, 11, 16)
+
+[node name="Sprite2D2" type="Sprite2D" parent="."]
+z_index = -1
+position = Vector2(1074, 567)
+rotation = 0.041655168
+scale = Vector2(22.5, 22.5)
+texture = ExtResource("7_ws7p0")
+region_enabled = true
+region_rect = Rect2(138, 12, 12, 9)
+
+[node name="Sprite2D3" type="Sprite2D" parent="."]
+z_index = -2
+position = Vector2(1021, 424)
+rotation = 0.06891273
+scale = Vector2(25, 25)
+texture = ExtResource("6_ka6nf")
+region_enabled = true
+region_rect = Rect2(138, 12, 12, 9)
+
+[node name="ColorRect" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_ecdxc")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="RoomBLANK" parent="." instance=ExtResource("10_ecdxc")]
+z_index = -4096
+position = Vector2(-26, -129)
+scale = Vector2(3, 3)
