@@ -1,18 +1,13 @@
 extends CanvasLayer
 
+
+# Updated node paths to match new structure
 @onready var start_button: Button = $StartButton
 @onready var quit_button: Button = $QuitButton
 @onready var fullscreen_button: Button = $FullscreenButton
 
 @export var button_paths: Array[NodePath] = []
 
-@onready var bg_room: Node2D = $RoomBLANK
-
-@export var pan_speed: float = 20.0      # how fast it moves
-@export var pan_range: float = 150.0     # how far left/right from the start position
-
-var _base_x: float
-var _dir: float = 1.0
 
 var buttons: Array[Button] = []
 var focused_index: int = 0
@@ -28,15 +23,14 @@ func _ready() -> void:
 	start_button.grab_focus()
 	_setup_menu_buttons()
 
-	_base_x = bg_room.position.x
+	var video_player = get_node_or_null("VideoStreamPlayer")
+	if video_player:
+		var video_path = "res://assets/videos/Timeline 1.webm"
+		var video_stream = load(video_path)
+		if video_stream:
+			video_player.stream = video_stream
+			video_player.play()
 
-func _process(delta: float) -> void:
-	bg_room.position.x += _dir * pan_speed * delta
-
-	if bg_room.position.x > _base_x + pan_range:
-		_dir = -1.0
-	elif bg_room.position.x < _base_x - pan_range:
-		_dir = 1.0
 
 
 func _setup_menu_buttons() -> void:

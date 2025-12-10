@@ -88,6 +88,7 @@ func _ready() -> void:
 	GameState.alt_weapon_changed.connect(func(_new_weapon): sync_from_gamestate())
 
 	var design_max_health: int = GameConfig.player_max_health
+
 	var _design_max_ammo: int   = GameConfig.player_max_ammo
 	var design_fire_rate: float = GameConfig.player_fire_rate
 	var design_pellets: int    = GameConfig.alt_fire_bullet_count
