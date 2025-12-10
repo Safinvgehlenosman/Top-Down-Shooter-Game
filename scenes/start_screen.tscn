@@ -39,30 +39,15 @@ process_mode = 3
 [node name="StartScreen" type="CanvasLayer" parent="."]
 script = ExtResource("1_he1sj")
 
-[node name="FullscreenButton" type="Button" parent="StartScreen"]
-process_mode = 3
-offset_left = 121.0
-offset_top = 420.00003
-offset_right = 382.0
-offset_bottom = 511.42847
-scale = Vector2(0.35, 0.35)
-theme_override_fonts/font = ExtResource("1_o7i0r")
-text = "Fullscreen"
-script = ExtResource("3_xfy2r")
-
-[node name="Button" type="Sprite2D" parent="StartScreen/FullscreenButton"]
-position = Vector2(134, 42)
-texture = ExtResource("5_xfy2r")
-
 [node name="StartButton" type="Button" parent="StartScreen"]
 process_mode = 3
 self_modulate = Color(1, 1, 1, 0)
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -455.0
+offset_left = -521.0
 offset_top = 359.0
-offset_right = -193.71497
+offset_right = -259.71497
 offset_bottom = 450.42847
 grow_horizontal = 2
 scale = Vector2(0.35, 0.35)
@@ -75,14 +60,35 @@ script = ExtResource("3_xfy2r")
 position = Vector2(134, 42)
 texture = ExtResource("3_qls88")
 
+[node name="FullscreenButton" type="Button" parent="StartScreen"]
+process_mode = 3
+self_modulate = Color(1, 1, 1, 0)
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -521.0
+offset_top = 421.0
+offset_right = -259.71497
+offset_bottom = 512.42847
+grow_horizontal = 2
+scale = Vector2(0.35, 0.35)
+theme_override_colors/font_color = Color(0.8745098, 0.8745098, 0.8745098, 1)
+theme_override_fonts/font = ExtResource("1_o7i0r")
+text = "Start"
+script = ExtResource("3_xfy2r")
+
+[node name="Button" type="Sprite2D" parent="StartScreen/FullscreenButton"]
+position = Vector2(134, 42)
+texture = ExtResource("5_xfy2r")
+
 [node name="QuitButton" type="Button" parent="StartScreen"]
 process_mode = 3
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -456.0
+offset_left = -522.0
 offset_top = 544.00006
-offset_right = -194.71497
+offset_right = -260.71497
 offset_bottom = 632.5716
 grow_horizontal = 2
 scale = Vector2(0.35, 0.35)
@@ -99,9 +105,9 @@ process_mode = 3
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -455.0
+offset_left = -521.0
 offset_top = 481.00006
-offset_right = -193.71497
+offset_right = -259.71497
 offset_bottom = 569.5716
 grow_horizontal = 2
 scale = Vector2(0.35, 0.35)
