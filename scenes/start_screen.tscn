@@ -1,14 +1,17 @@
-[gd_scene load_steps=13 format=3 uid="uid://dv8w4r5bwomco"]
+[gd_scene load_steps=16 format=3 uid="uid://dv8w4r5bwomco"]
 
 [ext_resource type="Script" uid="uid://cwmceg8v4sax2" path="res://scripts/ui/start_screen.gd" id="1_he1sj"]
 [ext_resource type="FontFile" uid="uid://4xsaqwwtj2c1" path="res://assets/Fonts/PixelOperator8.ttf" id="1_o7i0r"]
 [ext_resource type="VideoStream" uid="uid://bkeupbbf8m6gi" path="res://assets/videos/Timeline-1.ogv" id="2_ecdxc"]
-[ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="2_he1sj"]
+[ext_resource type="Texture2D" uid="uid://ba2gou83x7ndo" path="res://assets/Affinity/STARTbutton.png" id="3_qls88"]
+[ext_resource type="Texture2D" uid="uid://be8cka83qpakq" path="res://assets/Affinity/QUITBUTTON.png" id="4_bdg0b"]
 [ext_resource type="Shader" uid="uid://dvsnojk5qp2bx" path="res://shaders/main.gdshader" id="4_r2jwc"]
+[ext_resource type="Texture2D" uid="uid://bgdl4dx2jbnh0" path="res://assets/Affinity/FULLSCREENBUTTON.png" id="5_xfy2r"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="6_ecdxc"]
 [ext_resource type="Texture2D" uid="uid://dsok60txc11jj" path="res://assets/purpleslime.png" id="6_ka6nf"]
 [ext_resource type="Texture2D" uid="uid://buu0qihcmu4d0" path="res://assets/Separated/Slime.png" id="6_ws7p0"]
 [ext_resource type="Texture2D" uid="uid://h8v2n05n2ryy" path="res://assets/fireslime.png" id="7_ws7p0"]
+[ext_resource type="Texture2D" uid="uid://bpau4n40hr5si" path="res://assets/Affinity/TITLE.png" id="9_ecdxc"]
 [ext_resource type="Shader" uid="uid://cgmteokvsd2g4" path="res://shaders/vignette.gdshader" id="9_ws7p0"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_hm208"]
@@ -36,56 +39,55 @@ script = ExtResource("1_he1sj")
 
 [node name="StartButton" type="Button" parent="StartScreen"]
 process_mode = 3
+self_modulate = Color(1, 1, 1, 0)
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -131.0
-offset_top = 348.0
-offset_right = 130.28503
-offset_bottom = 408.04498
+offset_left = -480.0
+offset_top = 282.0
+offset_right = -218.71497
+offset_bottom = 342.04498
 grow_horizontal = 2
+scale = Vector2(0.75, 0.75)
+theme_override_colors/font_color = Color(0.8745098, 0.8745098, 0.8745098, 1)
 theme_override_fonts/font = ExtResource("1_o7i0r")
 text = "Start"
+
+[node name="Button" type="Sprite2D" parent="StartScreen/StartButton"]
+position = Vector2(134, 42)
+texture = ExtResource("3_qls88")
 
 [node name="QuitButton" type="Button" parent="StartScreen"]
 process_mode = 3
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -131.0
-offset_top = 497.0
-offset_right = 130.28503
-offset_bottom = 557.04504
+offset_left = -480.0
+offset_top = 481.0
+offset_right = -218.71497
+offset_bottom = 541.04504
 grow_horizontal = 2
+scale = Vector2(0.75, 0.75)
 theme_override_fonts/font = ExtResource("1_o7i0r")
 text = "Quit"
 
+[node name="Button" type="Sprite2D" parent="StartScreen/QuitButton"]
+position = Vector2(134, 42)
+texture = ExtResource("4_bdg0b")
+
 [node name="FullscreenButton" type="Button" parent="StartScreen"]
 process_mode = 3
-offset_left = 445.0
-offset_top = 423.0
-offset_right = 706.0
-offset_bottom = 483.0
+offset_left = 96.0
+offset_top = 386.0
+offset_right = 357.0
+offset_bottom = 446.0
+scale = Vector2(0.75, 0.75)
 theme_override_fonts/font = ExtResource("1_o7i0r")
 text = "Fullscreen"
 
-[node name="TitleLabel" type="Label" parent="StartScreen"]
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -332.0
-offset_top = 86.0
-offset_right = 332.0
-offset_bottom = 150.00032
-grow_horizontal = 2
-size_flags_horizontal = 0
-size_flags_vertical = 0
-theme_override_colors/font_color = Color(0, 1, 0.20392157, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8666667)
-theme_override_fonts/font = ExtResource("2_he1sj")
-theme_override_font_sizes/font_size = 64
-text = "SLIME SPREE"
-horizontal_alignment = 1
+[node name="Button" type="Sprite2D" parent="StartScreen/FullscreenButton"]
+position = Vector2(134, 42)
+texture = ExtResource("5_xfy2r")
 
 [node name="VHSLayer" type="CanvasLayer" parent="StartScreen"]
 process_mode = 3
@@ -110,7 +112,8 @@ region_enabled = true
 region_rect = Rect2(10, 12, 12, 9)
 
 [node name="Sprite2D4" type="Sprite2D" parent="StartScreen"]
-position = Vector2(159, 432.99997)
+visible = false
+position = Vector2(417, 452)
 rotation = -0.0673296
 scale = Vector2(29.999998, 29.999998)
 texture = ExtResource("6_ecdxc")
@@ -143,6 +146,19 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+
+[node name="TextureRect" type="TextureRect" parent="StartScreen"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -765.0
+offset_top = -64.99999
+offset_right = 1155.0
+offset_bottom = 1015.0
+grow_horizontal = 2
+scale = Vector2(0.8, 0.8)
+mouse_filter = 2
+texture = ExtResource("9_ecdxc")
 
 [node name="VideoStreamPlayer" type="VideoStreamPlayer" parent="."]
 z_index = 1
