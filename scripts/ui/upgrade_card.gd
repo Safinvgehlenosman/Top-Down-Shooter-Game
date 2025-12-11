@@ -1,8 +1,14 @@
 extends Control
 
+
 # --- POLISH ANIMATIONS ---
 # set_hovered(is_hovered): Smooth scale/"lift" animation using SceneTreeTween. Only one hover tween runs at a time.
 # play_intro(delay): Sequential fade/slide-in animation for shop opening. Only one intro tween runs at a time.
+
+# --- HOVER EFFECT CONFIG ---
+@export var hover_scale: float = 1.05 # Adjust as needed for cards (0.93 = 93% size on hover)
+@export var hover_tween_duration: float = 0.10
+var _base_scale := Vector2.ONE
 
 var intro_base_position: Vector2 = Vector2.ZERO
 var intro_tween: Tween = null
@@ -76,23 +82,15 @@ const RARITY_COLORS := {
 }
 
 func _ready() -> void:
-	# Get optional ColorRect from VisualRoot
+	# Get optional ColorRect from VisualRoot (make available for whole function)
 	var color_rect = visual_root.get_node_or_null("ColorRect")
+	# Remember original scale
+	_base_scale = visual_root.scale
 
-	if buy_button and not buy_button.pressed.is_connected(_on_buy_pressed):
-		buy_button.pressed.connect(_on_buy_pressed)
-	if buy_button:
-		buy_button.mouse_filter = Control.MOUSE_FILTER_STOP
-	# Connect hover signals to root node
-	mouse_entered.connect(func(): set_hovered(true))
-	mouse_exited.connect(func(): set_hovered(false))
-	# Set VisualRoot pivot to center
-	# VisualRoot is Node2D in this scene
-	if visual_root and visual_root is Control:
-		visual_root.pivot_offset = Vector2(visual_root.size.x / 2, visual_root.size.y / 2)
-	
+	# ...existing code...
+
 	# Node2D has no mouse_filter; skip this for Node2D visual_root
-	
+
 	# Create a Panel for rounded corners background
 	if color_rect and not background_panel:
 		background_panel = Panel.new()
@@ -100,7 +98,7 @@ func _ready() -> void:
 		background_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		background_panel.position = Vector2.ZERO
 		background_panel.size = color_rect.size
-		
+
 		# Create StyleBox for rounded corners
 		var style = StyleBoxFlat.new()
 		style.bg_color = Color(0.2, 0.2, 0.2, 0.3)  # Default color (will be updated in refresh)
@@ -109,22 +107,31 @@ func _ready() -> void:
 		style.corner_radius_bottom_left = 10
 		style.corner_radius_bottom_right = 10
 		background_panel.add_theme_stylebox_override("panel", style)
-		
+
 		# Add panel to visual_root before ColorRect (lower z-index)
 		visual_root.add_child(background_panel)
 		visual_root.move_child(background_panel, 0)
-		
+
 		# Hide the ColorRect since we're using Panel now
 		color_rect.visible = false
-	
-	# IMPORTANT: Keep root card scale at Vector2.ONE always
-	scale = Vector2.ONE
-	
-	
-	# Update outline texture and material based on rarity
-	_apply_rarity_visuals()
 
-	_refresh()
+	if buy_button and not buy_button.pressed.is_connected(_on_buy_pressed):
+		buy_button.pressed.connect(_on_buy_pressed)
+	if buy_button:
+		buy_button.mouse_filter = Control.MOUSE_FILTER_STOP
+	# Connect hover signals to root node
+	mouse_entered.connect(func(): set_hovered(true))
+	mouse_exited.connect(func(): set_hovered(false))
+	# Set VisualRoot pivot to center (for scaling from center)
+	if visual_root and visual_root is Control:
+		visual_root.pivot_offset = visual_root.size * 0.5
+		# Ensure pivot stays centered if size changes (e.g. responsive UI)
+		visual_root.size_changed.connect(_on_visual_root_size_changed)
+
+
+func _on_visual_root_size_changed() -> void:
+	if visual_root and visual_root is Control:
+		visual_root.pivot_offset = visual_root.size * 0.5
 
 
 func set_slot_scale(mult: float) -> void:
@@ -135,20 +142,18 @@ func set_slot_scale(mult: float) -> void:
 func set_hovered(is_hovered: bool) -> void:
 	if not visual_root:
 		return
-	# Smooth scale/"lift" animation for hover
-	if not visual_root:
-		return
-	var existing_tween = get_meta("hover_tween", null)
-	if existing_tween and existing_tween is Tween:
-		existing_tween.kill()
-	var hover_tween = create_tween()
-	set_meta("hover_tween", hover_tween)
+	# Kill any existing hover tween
+	if has_meta("hover_tween"):
+		var old_tween = get_meta("hover_tween")
+		if old_tween and old_tween is Tween:
+			old_tween.kill()
+		set_meta("hover_tween", null)
+	var t = create_tween()
+	set_meta("hover_tween", t)
 	if is_hovered:
-		hover_tween.tween_property(visual_root, "scale", Vector2(1.05, 1.05), 0.1).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-		hover_tween.tween_property(visual_root, "position:y", intro_base_position.y - 6, 0.1).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		t.tween_property(visual_root, "scale", Vector2.ONE * hover_scale, hover_tween_duration)
 	else:
-		hover_tween.tween_property(visual_root, "scale", Vector2.ONE, 0.1).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-		hover_tween.tween_property(visual_root, "position:y", intro_base_position.y, 0.1).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		t.tween_property(visual_root, "scale", _base_scale, hover_tween_duration)
 
 
 func setup(data: Dictionary) -> void:
@@ -288,12 +293,12 @@ func _update_button_state() -> void:
 	var unlock_blocked := false
 	if upgrade_id.begins_with("unlock_"):
 		# Weapon unlocks - block if player already has ANY weapon
-		if upgrade_id in ["unlock_shotgun", "unlock_sniper", "unlock_turret", "unlock_flamethrower", "unlock_shuriken", "unlock_grenade"]:
+		if upgrade_id in ["unlock_shotgun", "unlock_sniper", "unlock_turret", "unlock_shuriken"]:
 			if GameState.alt_weapon != GameState.AltWeaponType.NONE:
 				unlock_blocked = true
 		
 		# Ability unlocks - block if player already has ANY ability
-		elif upgrade_id in ["unlock_dash", "unlock_slowmo", "unlock_bubble", "unlock_invis"]:
+		elif upgrade_id in ["unlock_dash", "unlock_invis"]:
 			if GameState.ability != GameState.AbilityType.NONE:
 				unlock_blocked = true
 

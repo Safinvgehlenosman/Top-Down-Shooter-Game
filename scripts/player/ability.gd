@@ -90,21 +90,17 @@ func _process_ability_input() -> void:
 
 
 func _start_ability() -> void:
-	var ability = GameState.ability
-	var data: Dictionary = GameState.ABILITY_DATA.get(ability, {})
-	if data.is_empty():
-		return
+		var ability = GameState.ability
+		var data: Dictionary = GameState.ABILITY_DATA.get(ability, {})
+		if data.is_empty():
+			return
 
-	var ability_type: String = data.get("type", "")
-	match ability_type:
-		"dash":
-			_start_dash(data)
-		"slowmo":
-			_start_slowmo(data)
-		"bubble":
-			_start_bubble(data)
-		"invis":
-			_start_invis(data)
+		var ability_type: String = data.get("type", "")
+		match ability_type:
+			"dash":
+				_start_dash(data)
+			"invis":
+				_start_invis(data)
 
 
 func _start_invis(data: Dictionary) -> void:
@@ -151,46 +147,6 @@ func _start_invis(data: Dictionary) -> void:
 			enemy.aggro = false
 
 
-func _start_bubble(data: Dictionary) -> void:
-	if ShieldBubbleScene == null:
-		return
-
-	# Base duration from config
-	var base_duration: float = data.get("duration", 3.0)
-
-	# Apply bubble duration bonuses: multiplicative percent + additive seconds
-	var percent_bonus: float = 0.0
-	if "bubble_duration_bonus_percent" in GameState:
-		percent_bonus = GameState.bubble_duration_bonus_percent
-	var flat_bonus: float = 0.0
-	if "bubble_duration_bonus_seconds" in GameState:
-		flat_bonus = GameState.bubble_duration_bonus_seconds
-	# legacy compatibility: include older field if present
-	if "ability_bubble_duration_bonus" in GameState:
-		flat_bonus += GameState.ability_bubble_duration_bonus
-
-	var duration: float = base_duration * (1.0 + percent_bonus) + flat_bonus
-
-	var base_cooldown: float = data.get("cooldown", 12.0)
-
-	# ✅ Apply cooldown multiplier
-	var multiplier: float = 1.0
-	if "ability_cooldown_mult" in GameState:
-		multiplier = GameState.ability_cooldown_mult
-	var actual_cooldown: float = base_cooldown * multiplier
-
-	# ✅ Store in GameState
-	GameState.ability_active_left = duration
-	GameState.ability_cooldown_left = actual_cooldown
-
-	var bubble := ShieldBubbleScene.instantiate()
-	bubble.global_position = player.global_position
-
-	if bubble.has_method("setup"):
-		bubble.setup(duration)
-
-	get_tree().current_scene.add_child(bubble)
-	active_bubble = bubble
 
 
 func _start_dash(data: Dictionary) -> void:
@@ -229,44 +185,9 @@ func _start_dash(data: Dictionary) -> void:
 	is_dashing = true
 	dash_ghost_timer = 0.0
 
-	# ⭐ DASH + GRENADE SYNERGY: Spawn grenades when dashing
-	if GameState.has_dash_grenade_synergy:
-		_spawn_dash_grenades()
+		   # ...existing code...
 
 
-func _spawn_dash_grenades() -> void:
-	"""Spawn grenades in a line along the dash direction (synergy effect)."""
-	if GrenadeBulletScene == null:
-		return
-	
-	var grenade_count: int = GameState.dash_grenade_synergy_grenades
-	if grenade_count <= 0:
-		return
-	
-	# Get grenade data from GameState
-	var grenade_data: Dictionary = GameState.ALT_WEAPON_DATA.get(GameState.AltWeaponType.GRENADE, {})
-	var bullet_speed: float = grenade_data.get("bullet_speed", 500.0)
-	var damage: float = grenade_data.get("damage", 40.0)
-	var explosion_radius: float = grenade_data.get("explosion_radius", 80.0)
-	
-	# Spawn grenades in a line along the dash direction
-	var spacing: float = 40.0  # Distance between grenades
-	var start_offset: float = -((grenade_count - 1) * spacing) / 2.0  # Center the line
-	
-	for i in range(grenade_count):
-		var offset := start_offset + (i * spacing)
-		var spawn_pos := player.global_position + (dash_dir * offset)
-		
-		var grenade = GrenadeBulletScene.instantiate()
-		grenade.global_position = spawn_pos
-		grenade.direction = dash_dir
-		grenade.speed = bullet_speed * 0.5  # Same multiplier as gun uses
-		grenade.damage = damage
-		
-		if "explosion_radius" in grenade:
-			grenade.explosion_radius = explosion_radius
-		
-		get_tree().current_scene.add_child(grenade)
 
 
 func _spawn_dash_ghost() -> void:
@@ -282,39 +203,6 @@ func _spawn_dash_ghost() -> void:
 		ghost.setup_from_player(animated_sprite)
 
 
-func _start_slowmo(data: Dictionary) -> void:
-	if slowmo_running:
-		return
-
-	var base_duration: float = data.get("duration", 3.0)
-	var base_cooldown: float = data.get("cooldown", 30.0)
-	var factor: float = data.get("factor", 0.3)
-	# Apply additional slowmo time from upgrades (flat seconds)
-	var duration: float = base_duration
-	if "slowmo_time_bonus_seconds" in GameState:
-		duration += GameState.slowmo_time_bonus_seconds
-
-	# Apply cooldown multiplier
-	var multiplier: float = 1.0
-	if "ability_cooldown_mult" in GameState:
-		multiplier = GameState.ability_cooldown_mult
-	var actual_cooldown: float = base_cooldown * multiplier
-
-	# Store in GameState
-	GameState.ability_active_left = duration
-	GameState.ability_cooldown_left = actual_cooldown
-
-	slowmo_running = true
-
-	# Don't use Engine.time_scale - slow enemies individually instead
-	var enemies = get_tree().get_nodes_in_group("enemy")
-	for enemy in enemies:
-		if enemy.has_method("set_time_scale"):
-			enemy.set_time_scale(factor)
-	
-	# ⭐ SYNERGY 4: Fire turret 360° burst when slowmo activates
-	if GameState.has_turret_slowmo_sprinkler_synergy:
-		_fire_turret_sprinkler_burst()
 
 
 func _end_ability() -> void:

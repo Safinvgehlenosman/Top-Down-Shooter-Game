@@ -317,8 +317,6 @@ func _get_weapon_name(weapon_type: int) -> String:
 	match weapon_type:
 		GameState.AltWeaponType.SHOTGUN: return "shotgun"
 		GameState.AltWeaponType.SNIPER: return "sniper"
-		GameState.AltWeaponType.FLAMETHROWER: return "flamethrower"
-		GameState.AltWeaponType.GRENADE: return "grenade"
 		GameState.AltWeaponType.SHURIKEN: return "shuriken"
 		GameState.AltWeaponType.TURRET: return "turret"
 		_: return ""
@@ -327,8 +325,6 @@ func _get_ability_name(ability_type: int) -> String:
 	"""Convert ability enum to lowercase string name."""
 	match ability_type:
 		GameState.AbilityType.DASH: return "dash"
-		GameState.AbilityType.SLOWMO: return "slowmo"
-		GameState.AbilityType.BUBBLE: return "bubble"
 		GameState.AbilityType.INVIS: return "invis"
 		_: return ""
 

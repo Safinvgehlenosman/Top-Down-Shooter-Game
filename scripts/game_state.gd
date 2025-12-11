@@ -1096,9 +1096,8 @@ func apply_upgrade(upgrade_id: String) -> void:
 	
 	# Force sync gun stats immediately  
 	if player and player.has_node("Gun"):
-		var gun = player.get_node("Gun")
-		if gun and gun.has_method("init_from_state"):
-			gun.init_from_state()
+		var _gun = player.get_node("Gun")
+		# Removed call to gun.init_from_state() (function does not exist)
 	
 
 	print("[GameState] Applied upgrade '%s' - Stats updated!" % upgrade_id)

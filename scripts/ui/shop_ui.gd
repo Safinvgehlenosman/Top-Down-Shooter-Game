@@ -6,18 +6,15 @@ extends CanvasLayer
 ##
 
 # Use GameState enums directly
+
 const ALT_WEAPON_NONE = GameState.AltWeaponType.NONE
 const ALT_WEAPON_SHOTGUN = GameState.AltWeaponType.SHOTGUN
 const ALT_WEAPON_SNIPER = GameState.AltWeaponType.SNIPER
 const ALT_WEAPON_TURRET = GameState.AltWeaponType.TURRET
-const ALT_WEAPON_FLAMETHROWER = GameState.AltWeaponType.FLAMETHROWER
 const ALT_WEAPON_SHURIKEN = GameState.AltWeaponType.SHURIKEN
-const ALT_WEAPON_GRENADE = GameState.AltWeaponType.GRENADE
 
 const ABILITY_NONE = GameState.AbilityType.NONE
 const ABILITY_DASH = GameState.AbilityType.DASH
-const ABILITY_SLOWMO = GameState.AbilityType.SLOWMO
-const ABILITY_BUBBLE = GameState.AbilityType.BUBBLE
 const ABILITY_INVIS = GameState.AbilityType.INVIS
 
 # Helper: derive base upgrade id (so only one rarity per type appears)
@@ -126,7 +123,7 @@ func _on_card_hovered(hovered_card: Control, is_hovered: bool) -> void:
 func _calculate_upgrade_price(upgrade: Dictionary) -> int:
 	"""Return price from upgrade data (loaded from CSV), reduced by 15%."""
 	var base_price = upgrade.get("price", 50)
-	var final_price = base_price * GameState.shop_price_mult
+	var final_price = base_price * 1.0 # shop_price_mult removed
 	return int(final_price)
 
 
@@ -197,21 +194,21 @@ func _roll_shop_offers() -> Array:
 		current_level = gm.current_level
 
 	var rarity_weights := _get_rarity_weights_for_level(current_level)
-    
+	
 	# Get enabled shop upgrades only
 	var all_upgrades: Array = UpgradesDB.filter_by_pool("shop")
 	# Remove combustion upgrade explicitly
 	all_upgrades = all_upgrades.filter(func(up): return up.get("id", "") != "general_combustion_1")
-    
+	
 	# Filter by loadout requirements if possible
 	var equipped_weapon := _get_equipped_weapon_name()
 	var equipped_ability := _get_equipped_ability_name()
-    
+	
 	var loadout_filtered := []
 	for upgrade in all_upgrades:
 		if UpgradesDB.is_upgrade_available_for_loadout(upgrade, equipped_weapon, equipped_ability):
 			loadout_filtered.append(upgrade)
-    
+	
 	all_upgrades = loadout_filtered
 	print("[Shop] Built shop pool with %d upgrades" % all_upgrades.size())
 
@@ -225,7 +222,7 @@ func _roll_shop_offers() -> Array:
 		if candidates.is_empty():
 			break
 		candidates.shuffle()
-        
+		
 		# Pick first candidate (already filtered by _filter_upgrades to exclude taken bases)
 		var chosen: Dictionary = candidates[0]
 		result.append(chosen)
@@ -243,8 +240,6 @@ func _get_equipped_weapon_name() -> String:
 	match GameState.alt_weapon:
 		GameState.AltWeaponType.SHOTGUN: return "shotgun"
 		GameState.AltWeaponType.SNIPER: return "sniper"
-		GameState.AltWeaponType.FLAMETHROWER: return "flamethrower"
-		GameState.AltWeaponType.GRENADE: return "grenade"
 		GameState.AltWeaponType.SHURIKEN: return "shuriken"
 		GameState.AltWeaponType.TURRET: return "turret"
 		_: return ""
@@ -256,8 +251,6 @@ func _get_equipped_ability_name() -> String:
 	
 	match GameState.ability:
 		GameState.AbilityType.DASH: return "dash"
-		GameState.AbilityType.SLOWMO: return "slowmo"
-		GameState.AbilityType.BUBBLE: return "bubble"  # Note: CSV uses 'shield' as alias
 		GameState.AbilityType.INVIS: return "invis"
 		_: return ""
 
@@ -454,9 +447,6 @@ func _upgrade_meets_requirements(u: Dictionary) -> bool:
 		var equipped_ability := _get_equipped_ability_name()
 		var required_ability: String = u["requires_ability"]
 		
-		# Handle 'shield' as alias for 'bubble'
-		if required_ability == "shield":
-			required_ability = "bubble"
 		
 		# "none" means this upgrade only appears when NO ability is equipped
 		if required_ability == "none":

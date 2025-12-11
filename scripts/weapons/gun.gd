@@ -32,15 +32,12 @@ var ammo_mode: String = "clip"
 var shots_per_bar: int = 0
 var reload_timer: float = 0.0
 var is_reloading: bool = false
-var is_overheated: bool = false  # for flamethrower
-var is_firing_flame: bool = false  # track flamethrower firing state
+var is_overheated: bool = false
+var is_firing_flame: bool = false
 var is_firing_burst: bool = false  # for burst/multishot lockout
-
-
 func _ready() -> void:
 	# Connect to weapon changes
 	GameState.alt_weapon_changed.connect(_on_alt_weapon_changed)
-	_initialize_ammo_for_weapon()
 
 
 func _input(event):
@@ -68,56 +65,11 @@ func manual_reload() -> void:
 		is_reloading = false
 		reload_timer = 0.0
 		_notify_ui_fuel_changed()
-		if sprite.has_method("play") and sprite.has_animation("reload"):
-			sprite.play("reload")
+		sprite.play("reload")
 
 
 func _on_alt_weapon_changed(_new_weapon: int) -> void:
 	"""Reinitialize ammo when weapon changes."""
-	_initialize_ammo_for_weapon()
-
-
-func init_from_state() -> void:
-	fire_rate = GameState.fire_rate
-	_initialize_ammo_for_weapon()
-
-
-func _initialize_ammo_for_weapon() -> void:
-	var current_alt: int = GameState.alt_weapon
-	if current_alt == GameState.AltWeaponType.NONE or current_alt == GameState.AltWeaponType.TURRET:
-		weapon_id = ""
-		ammo = 0
-		max_ammo = 0
-		call_deferred("_hide_fuel_ui")
-		return
-	var data: Dictionary = GameState.ALT_WEAPON_DATA.get(current_alt, {})
-	weapon_id = data.get("id", "")
-	if weapon_id == "" or not GameConfig.WEAPON_FUEL_CONFIG.has(weapon_id):
-		ammo = 0
-		max_ammo = 0
-		call_deferred("_hide_fuel_ui")
-		return
-	var config: Dictionary = GameConfig.WEAPON_FUEL_CONFIG[weapon_id]
-	ammo_mode = config.get("mode", "clip")
-	reload_delay = config.get("reload_delay", 0.5)
-	reload_rate = config.get("reload_rate", 8.0)
-	var base_max: int = int(config.get("max_fuel", 10))
-	if current_alt == GameState.AltWeaponType.SHOTGUN:
-		max_ammo = int(base_max * GameState.shotgun_mag_mult) + GameState.alt_fuel_max_bonus
-	elif current_alt == GameState.AltWeaponType.SNIPER:
-		max_ammo = int(base_max * GameState.sniper_mag_mult) + GameState.alt_fuel_max_bonus
-	else:
-		max_ammo = base_max + GameState.alt_fuel_max_bonus
-	if ammo_mode == "clip":
-		ammo = max_ammo
-		is_reloading = false
-		reload_timer = 0.0
-	elif ammo_mode == "continuous":
-		ammo = max_ammo
-		is_overheated = false
-	_notify_ui_fuel_changed()
-
-
 func _hide_fuel_ui() -> void:
 	"""Helper to hide fuel UI (called deferred)."""
 	if not is_inside_tree():
@@ -294,22 +246,17 @@ func handle_primary_fire(is_pressed: bool, aim_dir: Vector2) -> void:
 
 
 # --------------------------------------------------------------------
-# ALT FIRE (SHOTGUN / SNIPER / FLAMETHROWER)
+# ALT FIRE (SHOTGUN / SNIPER)
 # --------------------------------------------------------------------
 
 func handle_alt_fire(is_pressed: bool, aim_pos: Vector2) -> void:
 	if not is_pressed:
-		is_firing_flame = false  # Release flamethrower
 		return
 
 	var current_alt: int = GameState.alt_weapon
 
 	if current_alt == GameState.AltWeaponType.NONE \
 	or current_alt == GameState.AltWeaponType.TURRET:
-		return
-
-	if current_alt == GameState.AltWeaponType.FLAMETHROWER:
-		_handle_flamethrower_fire(aim_pos)
 		return
 
 	if alt_fire_cooldown_timer > 0.0:
@@ -327,70 +274,19 @@ func handle_alt_fire(is_pressed: bool, aim_pos: Vector2) -> void:
 		return
 
 	var base_cooldown: float = data.get("cooldown", 1.0)
-	
+
 	# Apply weapon-specific fire rate multipliers
 	if current_alt == GameState.AltWeaponType.SHOTGUN:
 		base_cooldown *= GameState.shotgun_fire_rate_mult
 	elif current_alt == GameState.AltWeaponType.SNIPER:
 		base_cooldown *= GameState.sniper_fire_rate_mult
-	
+
 	alt_fire_cooldown_timer = base_cooldown
 	_fire_weapon(data, aim_pos, current_alt)
 
 
 # --------------------------------------------------------------------
-# FLAMETHROWER LOGIC
-# --------------------------------------------------------------------
-
-func _handle_flamethrower_fire(aim_pos: Vector2) -> void:
-	# Check fuel for continuous mode
-	if not can_fire_alt() and not GameState.debug_infinite_ammo:
-		is_firing_flame = false
-		if sfx_empty and empty_sound_cooldown <= 0.0:
-			sfx_empty.play()
-			empty_sound_cooldown = 0.5
-		return
-	
-	is_firing_flame = true  # Mark as firing
-
-	var data: Dictionary = GameState.ALT_WEAPON_DATA.get(GameState.AltWeaponType.FLAMETHROWER, {})
-	if data.is_empty():
-		return
-
-	var bullet_scene: PackedScene = data["bullet_scene"]
-	var _bullet_speed: float = data.get("bullet_speed", 50.0)
-
-	var spread_deg: float = data.get("spread_degrees", 35.0)
-	var spread_rad: float = deg_to_rad(spread_deg)
-	var pellets: int = data.get("pellets", 3)
-
-	var damage: float = data.get("damage", 0.0)
-	var recoil_strength: float = data.get("recoil", 0.0)
-	var base_lifetime: float = data.get("flame_lifetime", 0.35)
-
-	var base_dir := (aim_pos - muzzle.global_position).normalized()
-
-
-	# Drain ammo for continuous mode
-	if not GameState.debug_infinite_ammo:
-		var drain_rate: int = 25
-		ammo -= int(drain_rate * get_process_delta_time())
-		if ammo <= 0:
-			ammo = 0
-			is_overheated = true
-			is_firing_flame = false
-
-	# Flamethrower: higher pitch, quieter (it shoots often)
-	if sfx_shoot:
-		sfx_shoot.pitch_scale = randf_range(1.3, 1.5)  # High pitched spitting sound
-		sfx_shoot.volume_db = -8.0  # Quieter to not be overwhelming
-		sfx_shoot.play()
-
-	emit_signal("recoil_requested", -base_dir, recoil_strength)
-
-
-# --------------------------------------------------------------------
-# GENERIC ALT FIRE (SHOTGUN / SNIPER / GRENADE / SHURIKEN)
+# GENERIC ALT FIRE (SHOTGUN / SNIPER / SHURIKEN)
 # --------------------------------------------------------------------
 
 
@@ -466,23 +362,15 @@ func _fire_weapon(data: Dictionary, aim_pos: Vector2, weapon_type: int) -> void:
 			GameState.AltWeaponType.SHOTGUN:
 				sfx_shoot.pitch_scale = 0.85  # Slightly lower, punchier
 				sfx_shoot.volume_db = 2.0     # Louder
-			
 			GameState.AltWeaponType.SNIPER:
 				sfx_shoot.pitch_scale = 0.7   # Deep, powerful
 				sfx_shoot.volume_db = 3.0     # Even louder
-			
-			GameState.AltWeaponType.GRENADE:
-				sfx_shoot.pitch_scale = 0.6   # Deep bass thump
-				sfx_shoot.volume_db = 1.0
-			
 			GameState.AltWeaponType.SHURIKEN:
 				sfx_shoot.pitch_scale = 1.4   # High pitched slice
 				sfx_shoot.volume_db = -2.0    # Quieter, subtle
-			
 			_:
 				sfx_shoot.pitch_scale = 1.0
 				sfx_shoot.volume_db = 0.0
-		
 		sfx_shoot.play()
 
 	emit_signal("recoil_requested", -base_dir, recoil_strength)

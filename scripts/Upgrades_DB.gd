@@ -23,16 +23,12 @@ enum Rarity {
 const ALT_WEAPON_NONE := 0
 const ALT_WEAPON_SHOTGUN := 1
 const ALT_WEAPON_SNIPER := 2
-const ALT_WEAPON_FLAMETHROWER := 3
-const ALT_WEAPON_GRENADE := 4
-const ALT_WEAPON_SHURIKEN := 5
-const ALT_WEAPON_TURRET := 6
+const ALT_WEAPON_SHURIKEN := 3
+const ALT_WEAPON_TURRET := 4
 
 const ABILITY_NONE := 0
 const ABILITY_DASH := 1
-const ABILITY_SLOWMO := 2
-const ABILITY_BUBBLE := 3
-const ABILITY_INVIS := 4
+const ABILITY_INVIS := 2
 
 var ALL_UPGRADES: Array = []
 
@@ -40,11 +36,10 @@ var ALL_UPGRADES: Array = []
 # STATIC UPGRADE DATA (formerly loaded from CSV)
 # -------------------------------------------------------------------
 const UPGRADE_DEFS: Array = [
-		{"id": "primary_burst_shot", "text": "Twinshot Burst (2 Bullets Per Shot)", "rarity": Rarity.EPIC, "price": 600, "category": "primary", "pool": "shop", "icon_path": "", "effect": "primary_burst_shot", "enabled": true},
+	{"id": "primary_burst_shot", "text": "Twinshot Burst (2 Bullets Per Shot)", "rarity": Rarity.EPIC, "price": 600, "category": "primary", "pool": "shop", "icon_path": "", "effect": "primary_burst_shot", "enabled": true},
 	{"id": "shotgun_unlock", "text": "Unlock Shotgun", "rarity": Rarity.COMMON, "price": 300, "category": "generic", "pool": "shop", "icon_path": "", "effect": "none", "value": 0, "requires_weapon": "none", "requires_ability": "", "enabled": true, "unlock_weapon": "shotgun", "unlock_ability": ""},
 	{"id": "sniper_unlock", "text": "Unlock Sniper", "rarity": Rarity.COMMON, "price": 350, "category": "generic", "pool": "shop", "icon_path": "", "effect": "none", "value": 0, "requires_weapon": "none", "requires_ability": "", "enabled": true, "unlock_weapon": "sniper", "unlock_ability": ""},
-	{"id": "flamethrower_unlock", "text": "Unlock Flamethrower", "rarity": Rarity.COMMON, "price": 300, "category": "generic", "pool": "shop", "icon_path": "", "effect": "none", "value": 0, "requires_weapon": "none", "requires_ability": "", "enabled": true, "unlock_weapon": "flamethrower", "unlock_ability": ""},
-	{"id": "grenade_unlock", "text": "Unlock Grenades", "rarity": Rarity.COMMON, "price": 400, "category": "generic", "pool": "shop", "icon_path": "", "effect": "none", "value": 0, "requires_weapon": "none", "requires_ability": "", "enabled": true, "unlock_weapon": "grenade", "unlock_ability": ""},
+	# flamethrower_unlock and grenade_unlock removed
 	{"id": "shuriken_unlock", "text": "Unlock Shuriken", "rarity": Rarity.COMMON, "price": 300, "category": "generic", "pool": "shop", "icon_path": "", "effect": "none", "value": 0, "requires_weapon": "none", "requires_ability": "", "enabled": true, "unlock_weapon": "shuriken", "unlock_ability": ""},
 	{"id": "turret_unlock", "text": "Unlock Turret", "rarity": Rarity.COMMON, "price": 350, "category": "generic", "pool": "shop", "icon_path": "", "effect": "none", "value": 0, "requires_weapon": "none", "requires_ability": "", "enabled": true, "unlock_weapon": "turret", "unlock_ability": ""},
 	# ...existing code...
@@ -53,7 +48,6 @@ const UPGRADE_DEFS: Array = [
 	{"id": "primary_firerate_up_1", "text": "Rapid Trigger (+20% Primary Fire Rate)", "rarity": Rarity.UNCOMMON, "price": 180, "category": "primary", "pool": "shop", "icon_path": "", "effect": "primary_fire_rate", "primary_fire_rate": 1.20, "enabled": true},
 	{"id": "primary_focused_fire", "text": "Focused Fire (+40% Damage, -20% Fire Rate)", "rarity": Rarity.RARE, "price": 320, "category": "primary", "pool": "shop", "icon_path": "", "effect": "primary_focused_fire", "primary_damage_mult": 1.40, "primary_fire_rate_mult": 0.80, "enabled": true},
 	{"id": "primary_hair_trigger", "text": "Hair Trigger (+40% Fire Rate, -20% Damage)", "rarity": Rarity.RARE, "price": 320, "category": "primary", "pool": "shop", "icon_path": "", "effect": "primary_hair_trigger", "primary_fire_rate_mult": 1.40, "primary_damage_mult": 0.80, "enabled": true},
-	{"id": "primary_barrel_speed", "text": "Reinforced Barrel (Bullets Travel Faster)", "rarity": Rarity.EPIC, "price": 500, "category": "primary", "pool": "shop", "icon_path": "", "effect": "primary_bullet_speed", "primary_bullet_speed": 1.30, "enabled": true},
 	{"id": "primary_kill_shot", "text": "Kill Shot (10% Crit Chance, 2.5x Crit)", "rarity": Rarity.RARE, "price": 400, "category": "primary", "pool": "shop", "icon_path": "", "effect": "primary_crit", "primary_crit_chance_add": 0.10, "primary_crit_mult": 2.50, "enabled": true},
 	{"id": "primary_weak_spotter", "text": "Weak Spotter (+5% Crit, 2x Crit)", "rarity": Rarity.RARE, "price": 350, "category": "primary", "pool": "shop", "icon_path": "", "effect": "primary_crit", "primary_crit_chance_add": 0.05, "primary_crit_mult": 2.00, "enabled": true},
 	{"id": "primary_steady_aim", "text": "Steady Aim (+30% Damage While Stationary)", "rarity": Rarity.RARE, "price": 340, "category": "primary", "pool": "shop", "icon_path": "", "effect": "primary_stationary_damage", "primary_stationary_damage": 1.30, "enabled": true},
@@ -65,13 +59,6 @@ const UPGRADE_DEFS: Array = [
 	{"id": "general_damage_reduction_1", "text": "Thick Skin (10% Damage Reduction)", "rarity": Rarity.RARE, "price": 250, "category": "general", "pool": "shop", "icon_path": "", "effect": "damage_taken_mult", "damage_taken_mult": 0.9, "enabled": true},
 	{"id": "general_regen_1", "text": "Regeneration I (1 HP / 20s)", "rarity": Rarity.UNCOMMON, "price": 140, "category": "general", "pool": "shop", "icon_path": "", "effect": "regen_per_second", "regen_per_second": 0.05, "enabled": true},
 	{"id": "general_regen_2", "text": "Regeneration II (1 HP / 12s)", "rarity": Rarity.RARE, "price": 210, "category": "general", "pool": "shop", "icon_path": "", "effect": "regen_per_second", "regen_per_second": 0.08, "enabled": true},
-	{"id": "general_coin_gain_1", "text": "Wealth Booster (+30% Coins)", "rarity": Rarity.EPIC, "price": 400, "category": "economy", "pool": "shop", "icon_path": "", "effect": "coin_gain_mult", "coin_gain_mult": 1.3, "enabled": true},
-	{"id": "general_berserker_1", "text": "Berserker (+30% Damage ≤ 50% HP)", "rarity": Rarity.EPIC, "price": 420, "category": "general_combat", "pool": "shop", "icon_path": "", "effect": "berserker", "berserker_threshold": 0.5, "berserker_damage_mult": 1.3, "enabled": true},
-	{"id": "general_combustion_1", "text": "Combustion (Enemies Explode on Death)", "rarity": Rarity.EPIC, "price": 450, "category": "general_combat", "pool": "shop", "icon_path": "", "effect": "combustion", "death_explosion_radius": 48, "death_explosion_damage_mult": 0.3, "enabled": true},
-	{"id": "general_shop_discount_1", "text": "Shop Discount (15% Cheaper)", "rarity": Rarity.RARE, "price": 250, "category": "economy", "pool": "shop", "icon_path": "", "effect": "shop_price_mult", "shop_price_mult": 0.85, "enabled": true},
-	{"id": "general_extended_mag_1", "text": "Extended Magazine (+1 Alt Weapon Fuel)", "rarity": Rarity.UNCOMMON, "price": 160, "category": "general", "pool": "shop", "icon_path": "", "effect": "alt_fuel_max_bonus", "alt_fuel_max_bonus": 1, "enabled": true},
-	{"id": "general_combustion_1", "text": "Combustion (Enemies Explode on Death)", "rarity": Rarity.EPIC, "price": 450, "category": "general_combat", "pool": "shop", "icon_path": "", "effect": "combustion", "death_explosion_radius": 48, "death_explosion_damage_mult": 0.3, "enabled": false},
-	{"id": "general_extended_mag_1", "text": "Extended Magazine (+1 Alt Weapon Fuel)", "rarity": Rarity.UNCOMMON, "price": 160, "category": "general", "pool": "shop", "icon_path": "", "effect": "alt_fuel_max_bonus", "alt_fuel_max_bonus": 1, "enabled": false},
 ]
 
 # -------------------------------------------------------------------
@@ -199,10 +186,6 @@ func is_upgrade_available_for_loadout(upgrade: Dictionary, equipped_weapon: Stri
 	
 	var requires_ability: String = upgrade.get("requires_ability", "")
 	if requires_ability != "":
-		# Handle 'shield' as alias for 'bubble'
-		if requires_ability == "shield":
-			requires_ability = "bubble"
-		
 		# "none" means this upgrade only appears when NO ability is equipped
 		if requires_ability == "none":
 			if equipped_ability != "":
@@ -216,11 +199,6 @@ func is_upgrade_available_for_loadout(upgrade: Dictionary, equipped_weapon: Stri
 					var ability_name = _get_ability_name_from_type(ability_type)
 					var normalized_required = _normalize_string(requires_ability)
 					var normalized_ability = _normalize_string(ability_name)
-					
-					# Handle "shield" alias for "bubble"
-					if normalized_required == "shield":
-						normalized_required = "bubble"
-					
 					if normalized_required == normalized_ability:
 						has_required_ability = true
 						break
@@ -230,7 +208,7 @@ func is_upgrade_available_for_loadout(upgrade: Dictionary, equipped_weapon: Stri
 				# Non-synergy: check equipped ability
 				if _normalize_string(requires_ability) != _normalize_string(equipped_ability):
 					return false
-				return false
+		return false
 	
 	return true
 
@@ -239,18 +217,14 @@ func _get_weapon_name_from_type(weapon_type: int) -> String:
 	match weapon_type:
 		1: return "shotgun"  # ALT_WEAPON_SHOTGUN
 		2: return "sniper"
-		3: return "flamethrower"
-		4: return "grenade"
-		5: return "shuriken"
-		6: return "turret"
+		3: return "shuriken"
+		4: return "turret"
 		_: return ""
 
 func _get_ability_name_from_type(ability_type: int) -> String:
 	match ability_type:
 		1: return "dash"  # ABILITY_DASH
-		2: return "slowmo"
-		3: return "bubble"
-		4: return "invis"
+		2: return "invis"
 		_: return ""
 
 # -------------------------------------------------------------------
@@ -276,9 +250,8 @@ func _sync_player_after_upgrade() -> void:
 	if player and player.has_method("sync_from_gamestate"):
 		player.sync_from_gamestate()
 
-	var gun_node = null
+	var _gun_node = null
 	if player and player.has_node("Gun"):
-		gun_node = player.get_node("Gun")
+		_gun_node = player.get_node("Gun")
 	
-	if gun_node and gun_node.has_method("init_from_state"):
-		gun_node.init_from_state()
+	# Removed call to gun_node.init_from_state() (function does not exist)

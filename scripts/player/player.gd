@@ -68,7 +68,7 @@ func _ready() -> void:
 	knockback_duration = GameConfig.player_knockback_duration
 	invincible_time    = GameConfig.player_invincible_time
 	
-	gun.init_from_state()
+	# gun.init_from_state() removed (function does not exist)
 	gun.connect("recoil_requested", _on_gun_recoil_requested)
 
 	# --- HealthComponent wiring ---
@@ -150,7 +150,7 @@ func _physics_process(delta: float) -> void:
 	_process_movement(delta)
 	_update_aim_direction(delta)
 	_process_aim()
-    
+	
 	gun.update_timers(delta)
 
 	var is_shooting := Input.is_action_pressed("shoot")

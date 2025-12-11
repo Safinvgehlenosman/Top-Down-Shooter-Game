@@ -179,7 +179,7 @@ func _on_debug_text_changed(new_text: String) -> void:
 		autocomplete_list.hide()
 
 func _get_weapon_suggestions(partial: String) -> Array:
-	var weapons = ["shotgun", "sniper", "flamethrower", "grenade", "shuriken", "turret", "none"]
+	var weapons = ["shotgun", "sniper", "shuriken", "turret", "none"]
 	if partial == "":
 		return weapons
 	var filtered: Array = []
@@ -189,7 +189,7 @@ func _get_weapon_suggestions(partial: String) -> Array:
 	return filtered
 
 func _get_ability_suggestions(partial: String) -> Array:
-	var abilities = ["dash", "slowmo", "bubble", "invis", "none"]
+	var abilities = ["dash", "invis", "none"]
 	if partial == "":
 		return abilities
 	var filtered: Array = []
@@ -313,13 +313,7 @@ func _cmd_weapon(parts: Array) -> void:
 			GameState.unlocked_sniper = true
 			GameState.set_alt_weapon(GameState.AltWeaponType.SNIPER)
 
-		"flamethrower", "flame":
-			GameState.unlocked_flamethrower = true
-			GameState.set_alt_weapon(GameState.AltWeaponType.FLAMETHROWER)
 
-		"grenade":
-			GameState.unlocked_grenade = true
-			GameState.set_alt_weapon(GameState.AltWeaponType.GRENADE)
 
 		"shuriken":
 			GameState.unlocked_shuriken = true
@@ -351,13 +345,7 @@ func _cmd_ability(parts: Array) -> void:
 			GameState.unlocked_dash = true
 			GameState.set_ability(GameState.AbilityType.DASH)
 
-		"slowmo", "bullet_time", "time":
-			GameState.unlocked_slowmo = true
-			GameState.set_ability(GameState.AbilityType.SLOWMO)
 
-		"bubble", "shield":
-			GameState.unlocked_bubble = true
-			GameState.set_ability(GameState.AbilityType.BUBBLE)
 
 		"invis":
 			GameState.unlocked_invis = true
@@ -449,7 +437,7 @@ func _cmd_help() -> void:
 
 	print("level <num>                - Jump to level (e.g., level 15)")
 	print("weapon <name> [ammo]       - Equip weapon, optional ammo override (e.g., weapon shotgun 10)")
-	print("ability <name>             - Equip ability (dash, slowmo, bubble, invis, none)")
+	print("ability <name>             - Equip ability (dash, invis, none)")
 	print("upgrade <id> [count]       - Add upgrade 1 or N times (e.g., upgrade primary_damage_common 10)")
 	print("coins <amount>             - Set coins (e.g., coins 999)")
 	print("health <amount>            - Set health (e.g., health 50)")

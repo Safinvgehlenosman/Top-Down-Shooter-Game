@@ -18,23 +18,19 @@ enum Rarity {
 const ALT_WEAPON_NONE := 0
 const ALT_WEAPON_SHOTGUN := 1
 const ALT_WEAPON_SNIPER := 2
-const ALT_WEAPON_FLAMETHROWER := 3
-const ALT_WEAPON_GRENADE := 4
-const ALT_WEAPON_SHURIKEN := 5
-const ALT_WEAPON_TURRET := 6
+const ALT_WEAPON_SHURIKEN := 3
+const ALT_WEAPON_TURRET := 4
 
 # ✅ THESE MUST MATCH GameState.AbilityType ENUM EXACTLY
 const ABILITY_NONE := 0
 const ABILITY_DASH := 1
-const ABILITY_SLOWMO := 2
-const ABILITY_BUBBLE := 3
-const ABILITY_INVIS := 4
+const ABILITY_INVIS := 2
 
 # -------------------------------------------------------------------
 # MASTER UPGRADE LIST - NOW LOADED FROM CSV
 # -------------------------------------------------------------------
 
-var ALL_UPGRADES: Array = _load_upgrades_from_csv("res://data/upgrades.csv")
+static var ALL_UPGRADES: Array = _load_upgrades_from_csv("res://data/upgrades.csv")
 
 # -------------------------------------------------------------------
 # CSV LOADING HELPERS
@@ -71,20 +67,12 @@ static func _parse_int_const(value_str: String) -> int:
 			return ALT_WEAPON_SHOTGUN
 		"ALT_WEAPON_SNIPER":
 			return ALT_WEAPON_SNIPER
-		"ALT_WEAPON_FLAMETHROWER":
-			return ALT_WEAPON_FLAMETHROWER
-		"ALT_WEAPON_GRENADE":
-			return ALT_WEAPON_GRENADE
 		"ALT_WEAPON_SHURIKEN":
 			return ALT_WEAPON_SHURIKEN
 		"ALT_WEAPON_TURRET":
 			return ALT_WEAPON_TURRET
 		"ABILITY_DASH":
 			return ABILITY_DASH
-		"ABILITY_SLOWMO":
-			return ABILITY_SLOWMO
-		"ABILITY_BUBBLE":
-			return ABILITY_BUBBLE
 		"ABILITY_INVIS":
 			return ABILITY_INVIS
 		_:
@@ -295,9 +283,8 @@ static func _sync_player_after_upgrade() -> void:
 	if player and player.has_method("sync_from_gamestate"):
 		player.sync_from_gamestate()
 
-	var gun_node = null
+	var _gun_node = null
 	if player and player.has_node("Gun"):
-		gun_node = player.get_node("Gun")
+		_gun_node = player.get_node("Gun")
 	
-	if gun_node and gun_node.has_method("init_from_state"):
-		gun_node.init_from_state()
+	# Removed call to gun_node.init_from_state() (function does not exist)
