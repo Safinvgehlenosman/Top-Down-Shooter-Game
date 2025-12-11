@@ -1091,9 +1091,17 @@ func _die_after_sound() -> void:
 func _spawn_loot() -> void:
 	# Enemies always drop coins
 	if CoinScene:
-		var coin := CoinScene.instantiate()
-		coin.global_position = global_position
-		get_tree().current_scene.add_child(coin)
+		var coin_count := 5 if is_alpha else 1
+		for i in range(coin_count):
+			var coin := CoinScene.instantiate()
+			# Spread coins slightly for alphas
+			if is_alpha:
+				var angle = randf() * TAU
+				var dist = randf_range(0, 12)
+				coin.global_position = global_position + Vector2(cos(angle), sin(angle)) * dist
+			else:
+				coin.global_position = global_position
+			get_tree().current_scene.add_child(coin)
 
 
 # --- CONTACT DAMAGE ------------------------------------------------

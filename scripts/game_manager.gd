@@ -822,15 +822,12 @@ func _spawn_enemies_over_time(enemy_list: Array, spawn_points: Array[Node2D], du
 	print("[SPAWN] Staggered spawn complete: %d enemies over %.1fs" % [spawned_enemies.size(), duration])
 	
 	# --- ALPHA VARIANT SPAWNING ---
-	if not has_spawned_alpha_this_level and not spawned_enemies.is_empty():
+	if not spawned_enemies.is_empty():
 		for enemy in spawned_enemies:
 			if not is_instance_valid(enemy) or not enemy.has_method("make_alpha"):
 				continue
 			if randf() < 0.05:
-				if enemy.has_method("make_alpha"):
-					enemy.make_alpha()
-					has_spawned_alpha_this_level = true
-					break
+				enemy.make_alpha()
 	
 	# --- CHAOS CHEST DROPPER MARKING ---
 	# Only mark chaos chest droppers (normal chests use kill-index system)
