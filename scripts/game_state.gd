@@ -1,6 +1,5 @@
 
 extends Node
-# --- ALT WEAPON, SHOTGUN, SNIPER, FLAMETHROWER, GRENADE, DASH STATS ---
 var shotgun_damage_mult: float = 1.0
 var shotgun_fire_rate_mult: float = 1.0
 var shotgun_mag_mult: float = 1.0
@@ -13,9 +12,6 @@ var sniper_burst_count: int = 1
 var sniper_damage_bonus_percent: float = 0.0
 var sniper_pierce_bonus: int = 0
 var sniper_charge_bonus_percent: float = 0.0
-var flamethrower_burn_bonus_percent: float = 1.0
-var grenades_radius_mult: float = 1.0
-## REMOVED: All complex alt weapon, pierce, burst, combustion, and generic fuel bonus mechanics
 var dash_distance_bonus_percent: float = 1.0
 # --- RUNTIME AND UPGRADE STATS (for upgrades system) ---
 var move_speed_base: float = 0.0
@@ -76,103 +72,69 @@ enum AltWeaponType {
 	NONE,
 	SHOTGUN,
 	SNIPER,
-	FLAMETHROWER,
-	GRENADE,
 	SHURIKEN,
 	TURRET,
 }
 
-# These preloads are only used for alt-fire bullets.
 const BulletScene_SHOTGUN := preload("res://scenes/bullets/shotgun_bullet.tscn")
 const BulletScene_SNIPER  := preload("res://scenes/bullets/sniper_bullet.tscn")
-const BulletScene_GRENADE := preload("res://scenes/bullets/grenade_bullet.tscn")
 const BulletScene_SHURIKEN := preload("res://scenes/bullets/shuriken_bullet.tscn")
-const BulletScene_FLAME    := preload("res://scenes/bullets/flamethrower_bullet.tscn")
 const BulletScene_TURRET    := preload("res://scenes/bullets/turret_bullet.tscn")
 
 # Core config for each alt weapon
 # Use `var` so runtime code can mutate per-run values when upgrades apply.
 var ALT_WEAPON_DATA := {
-	AltWeaponType.SHOTGUN: {
-		"id": "shotgun",
-		"bullet_scene": BulletScene_SHOTGUN,
-		"bullet_speed": 900.0,
-		"pellets": 6,
-		"spread_degrees": 18.0,
-		"damage": 10.0,
-		"recoil": 140.0,
-		"ammo_cost": 1,
-		"cooldown": 0.7,
-		"bounces": 0,
-		"explosion_radius": 0.0,
-	},
+   AltWeaponType.SHOTGUN: {
+	   "id": "shotgun",
+	   "bullet_scene": BulletScene_SHOTGUN,
+	   "bullet_speed": 900.0,
+	   "pellets": 6,
+	   "spread_degrees": 18.0,
+	   "damage": 10.0,
+	   "recoil": 140.0,
+	   "ammo_cost": 1,
+	   "cooldown": 0.7,
+	   "bounces": 0,
+	   "explosion_radius": 0.0,
+   },
 
-	AltWeaponType.SNIPER: {
-		"id": "sniper",
-		"bullet_scene": BulletScene_SNIPER,
-		"bullet_speed": 1400.0,
-		"pellets": 1,
-		"spread_degrees": 0.0,
-		"damage": 35.0,
-		"recoil": 220.0,
-		"ammo_cost": 1,
-		"cooldown": 1.2,
-		"bounces": 0,
-		"explosion_radius": 0.0,
-	},
+   AltWeaponType.SNIPER: {
+	   "id": "sniper",
+	   "bullet_scene": BulletScene_SNIPER,
+	   "bullet_speed": 1400.0,
+	   "pellets": 1,
+	   "spread_degrees": 0.0,
+	   "damage": 35.0,
+	   "recoil": 220.0,
+	   "ammo_cost": 1,
+	   "cooldown": 1.2,
+	   "bounces": 0,
+	   "explosion_radius": 0.0,
+   },
 
-	AltWeaponType.FLAMETHROWER: {
-		"id": "flamethrower",
-		"bullet_scene": BulletScene_FLAME,
-		"bullet_speed": 220.0,
-		"pellets": 3,
-		"spread_degrees": 35.0,
-		"damage": 4.0,
-		"recoil": 25.0,
-		"ammo_cost": 1,
-		"cooldown": 0.0,
-		"flame_lifetime": 0.25,
-		"bounces": 0,
-		"explosion_radius": 0.0,
-	},
+   AltWeaponType.SHURIKEN: {
+	   "id": "shuriken",
+	   "bullet_scene": BulletScene_SHURIKEN,
+	   "bullet_speed": 480.0,
+	   "pellets": 1,
+	   "spread_degrees": 0.0,
+	   "damage": 12.0,
+	   "recoil": 60.0,
+	   "ammo_cost": 1,
+	   "cooldown": 0.45,
+	   "bounces": 3,
+	   "explosion_radius": 0.0,
+   },
 
-	AltWeaponType.GRENADE: {
-		"id": "grenade",
-		"bullet_scene": BulletScene_GRENADE,
-		"bullet_speed": 500.0,
-		"pellets": 1,
-		"spread_degrees": 30.0, # Fixed per-pellet separation (not total arc)
-		"damage": 40.0,
-		"recoil": 90.0,
-		"ammo_cost": 1,
-		"cooldown": 2.2,
-		"bounces": 0,
-		"explosion_radius": 96.0,
-	},
-
-	AltWeaponType.SHURIKEN: {
-		"id": "shuriken",
-		"bullet_scene": BulletScene_SHURIKEN,
-		"bullet_speed": 480.0,
-		"pellets": 1,
-		"spread_degrees": 0.0,
-		"damage": 12.0,
-		"recoil": 60.0,
-		"ammo_cost": 1,
-		"cooldown": 0.45,
-		"bounces": 3,
-		"explosion_radius": 0.0,
-	},
-
-	AltWeaponType.TURRET: {
-	"id": "turret",
-	"bullet_scene": BulletScene_TURRET,
-	"bullet_speed": 135.0,  # Reduced to 60% of 225
-	"damage": 7.0,  # Increased from 1.0
-	"fire_rate": 1.2,  # Slower base fire rate (was 0.8)
-	"range": 220.0,
-	"spread_degrees": 10.0,  # Base inaccuracy spread
-	},
+   AltWeaponType.TURRET: {
+   "id": "turret",
+   "bullet_scene": BulletScene_TURRET,
+   "bullet_speed": 135.0,  # Reduced to 60% of 225
+   "damage": 7.0,  # Increased from 1.0
+   "fire_rate": 1.2,  # Slower base fire rate (was 0.8)
+   "range": 220.0,
+   "spread_degrees": 10.0,  # Base inaccuracy spread
+   },
 }
 
 # Current alt weapon for this run
@@ -182,7 +144,7 @@ var alt_weapon: int = AltWeaponType.NONE
 # ABILITIES
 # -------------------------------------------------------------------
 
-enum AbilityType { NONE, DASH, SLOWMO, BUBBLE, INVIS }
+enum AbilityType { NONE, DASH, INVIS }
 
 var ability: AbilityType = AbilityType.NONE
 var ability_cooldown_left: float = 0.0
@@ -190,28 +152,17 @@ var ability_active_left: float = 0.0
 var ability_cooldown_mult: float = 1.0
 
 const ABILITY_DATA := {
-	AbilityType.DASH: {
-		"type": "dash",
-		"duration": 0.12,
-		"distance": 220.0,
-		"cooldown": 5.0,
-	},
-	AbilityType.SLOWMO: {
-		"type": "slowmo",
-		"duration": 3.0,
-		"cooldown": 30.0,
-		"factor": 0.3,
-	},
-	AbilityType.BUBBLE: {
-		"type": "bubble",
-		"duration": 3.0,
-		"cooldown": 12.0,
-	},
-	AbilityType.INVIS: {
-		"type": "invis",
-		"duration": 3.0,
-		"cooldown": 18.0,
-	},
+   AbilityType.DASH: {
+	   "type": "dash",
+	   "duration": 0.12,
+	   "distance": 220.0,
+	   "cooldown": 5.0,
+   },
+   AbilityType.INVIS: {
+	   "type": "invis",
+	   "duration": 3.0,
+	   "cooldown": 18.0,
+   },
 }
 
 func set_ability(new_ability: int) -> void:
@@ -229,13 +180,11 @@ var move_speed_mult: float = 1.0
 var max_hp_mult: float = 1.0
 var damage_taken_mult: float = 1.0
 var regen_per_second: float = 0.0
-var coin_gain_mult: float = 1.0
-var berserker_threshold: float = 0.0
-var berserker_damage_mult: float = 1.0
+ 
 var combustion_active: bool = false
 var death_explosion_radius: float = 0.0
 var death_explosion_damage_mult: float = 0.0
-var shop_price_mult: float = 1.0
+ 
 var alt_fuel_max_bonus: int = 0
 
 # --- RUNTIME STATS (MODIFIED BY UPGRADES) --------------------------
@@ -361,13 +310,11 @@ func start_new_run() -> void:
 	max_hp_mult = 1.0
 	damage_taken_mult = 1.0
 	regen_per_second = 0.0
-	coin_gain_mult = 1.0
-	berserker_threshold = 0.0
-	berserker_damage_mult = 1.0
+	# coin_gain_mult, berserker_threshold, berserker_damage_mult removed
 	combustion_active = false
 	death_explosion_radius = 0.0
 	death_explosion_damage_mult = 0.0
-	shop_price_mult = 1.0
+	# shop_price_mult removed
 	alt_fuel_max_bonus = 0
 
 	# --- PRIMARY WEAPON UPGRADE DEFAULTS ---
@@ -394,13 +341,9 @@ func start_new_run() -> void:
 		max_hp_mult *= float(upgrade.get("max_hp_mult", 1.0))
 		damage_taken_mult *= float(upgrade.get("damage_taken_mult", 1.0))
 		regen_per_second += float(upgrade.get("regen_per_second", 0.0))
-		coin_gain_mult *= float(upgrade.get("coin_gain_mult", 1.0))
-		shop_price_mult *= float(upgrade.get("shop_price_mult", 1.0))
+		# coin_gain_mult, shop_price_mult removed
 		alt_fuel_max_bonus += int(upgrade.get("alt_fuel_max_bonus", 0))
-		if upgrade.has("berserker_threshold"):
-			berserker_threshold = float(upgrade.get("berserker_threshold", 0.0))
-		if upgrade.has("berserker_damage_mult"):
-			berserker_damage_mult = float(upgrade.get("berserker_damage_mult", 1.0))
+		   # berserker upgrades removed
 		if upgrade.get("effect", "") == "combustion":
 			combustion_active = true
 			death_explosion_radius = float(upgrade.get("death_explosion_radius", 0.0))
@@ -471,68 +414,25 @@ func start_new_run() -> void:
 	sniper_pierce_bonus = 0
 	sniper_charge_bonus_percent = 0.0
 
-	flamethrower_burn_bonus_percent = 1.0  # Multiplicative base
-
-	# Grenade bonuses reset in ALT_WEAPON_DATA
-	grenades_radius_mult = 1.0
 
 	# Shuriken bonuses reset in ALT_WEAPON_DATA
-
 	# Turret bonuses reset in ALT_WEAPON_DATA
-
 	dash_distance_bonus_percent = 1.0  # Multiplicative base
 	invis_duration = 3.0  # Reset to base
 	invis_duration_mult = 1.0
 	invis_movement_speed_mult = 1.0
-	invis_movement_speed_mult = 1.0  # Reset to base
-
-	# reset synergies
-	synergy_flamethrower_bubble_unlocked = false
-	synergy_grenade_dash_unlocked = false
-	synergy_shuriken_slowmo_unlocked = false
-	synergy_sniper_invis_unlocked = false
-	synergy_turret_bubble_unlocked = false
-
-	# reset synergy effects
-	dash_grenade_synergy_grenades = 0
-	has_dash_grenade_synergy = false
-
-	# ⭐ Reset all synergy upgrades
-	has_invis_shuriken_synergy = false
-	has_sniper_wallpierce_synergy = false
-	has_fireshield_synergy = false
-	has_turret_slowmo_sprinkler_synergy = false
-	has_shotgun_dash_autofire_synergy = false
-	has_shuriken_bubble_nova_synergy = false
 
 	coins            = 0
 	player_invisible = false
 	upgrade_purchase_counts.clear()
 	
-	# Reset chaos challenge state
-	active_chaos_challenge = ""
-	chaos_challenge_progress = 0
-	chaos_challenge_completed = false
-	original_max_health = 0
-	
-	# Reset chaos challenge flags
-	coin_pickups_disabled = false
-	primary_fire_disabled = false
+
 
 	alt_weapon       = AltWeaponType.NONE
 	ability          = AbilityType.NONE
 	ability_cooldown_left = 0.0
 	ability_active_left = 0.0
-	ability_bubble_duration_bonus = 0.0
-	
-	# Reset ability stat bonuses
-	shield_duration = 3.0
-	shield_cooldown_mult = 1.0
-	shield_radius_bonus = 1.0  # Multiplicative base
-	slowmo_duration = 1.5
-	slowmo_cooldown_mult = 1.0
-	slowmo_time_scale = 0.3
-	slowmo_radius = 1.0  # Multiplicative base
+
 
 	debug_laser_mode     = false
 	debug_infinite_ammo  = false
@@ -561,7 +461,7 @@ func add_coins(delta: int) -> void:
 	if coin_pickups_disabled:
 		coins_changed.emit(coins)
 		return
-	var gain := int(round(delta * coin_gain_mult))
+	var gain := int(round(delta))
 	coins = max(coins + gain, 0)
 	coins_changed.emit(coins)
 
@@ -690,13 +590,7 @@ func apply_upgrade(upgrade_id: String) -> void:
 					unlocked_sniper = true
 					set_alt_weapon(AltWeaponType.SNIPER)
 
-				"flamethrower":
-					unlocked_flamethrower = true
-					set_alt_weapon(AltWeaponType.FLAMETHROWER)
 
-				"grenade":
-					unlocked_grenade = true
-					set_alt_weapon(AltWeaponType.GRENADE)
 
 				"shuriken":
 					unlocked_shuriken = true
@@ -725,13 +619,7 @@ func apply_upgrade(upgrade_id: String) -> void:
 					unlocked_dash = true
 					set_ability(AbilityType.DASH)
 
-				"slowmo":
-					unlocked_slowmo = true
-					set_ability(AbilityType.SLOWMO)
 
-				"bubble":
-					unlocked_bubble = true
-					set_ability(AbilityType.BUBBLE)
 
 				"invis":
 					unlocked_invis = true
@@ -778,50 +666,7 @@ func apply_upgrade(upgrade_id: String) -> void:
 			print("  Old value: %.3f" % old_regen)
 			print("  Upgrade value: %.3f" % upgrade_regen)
 			print("  New value: %.3f" % regen_per_second)
-		"coin_gain_mult":
-			var old_mult = coin_gain_mult
-			var upgrade_mult = float(upgrade.get("coin_gain_mult", 1.0))
-			coin_gain_mult *= upgrade_mult
-			print("[UPGRADE DEBUG] coin_gain_mult:")
-			print("  Old multiplier: %.2f" % old_mult)
-			print("  Upgrade multiplier: %.2f" % upgrade_mult)
-			print("  New multiplier: %.2f" % coin_gain_mult)
-		"berserker":
-			var old_thresh = berserker_threshold
-			var old_mult = berserker_damage_mult
-			var new_thresh = float(upgrade.get("berserker_threshold", 0.5))
-			var new_mult = float(upgrade.get("berserker_damage_mult", 1.0))
-			berserker_threshold = new_thresh
-			berserker_damage_mult = new_mult
-			print("[UPGRADE DEBUG] berserker:")
-			print("  Old threshold: %.2f, Old mult: %.2f" % [old_thresh, old_mult])
-			print("  New threshold: %.2f, New mult: %.2f" % [new_thresh, new_mult])
-		"combustion":
-			var old_radius = death_explosion_radius
-			var old_mult = death_explosion_damage_mult
-			var new_radius = int(upgrade.get("death_explosion_radius", 0))
-			var new_mult = float(upgrade.get("death_explosion_damage_mult", 0.0))
-			death_explosion_radius = new_radius
-			death_explosion_damage_mult = new_mult
-			print("[UPGRADE DEBUG] combustion:")
-			print("  Old radius: %d, Old mult: %.2f" % [old_radius, old_mult])
-			print("  New radius: %d, New mult: %.2f" % [new_radius, new_mult])
-		"shop_price_mult":
-			var old_mult = shop_price_mult
-			var upgrade_mult = float(upgrade.get("shop_price_mult", 1.0))
-			shop_price_mult *= upgrade_mult
-			print("[UPGRADE DEBUG] shop_price_mult:")
-			print("  Old multiplier: %.2f" % old_mult)
-			print("  Upgrade multiplier: %.2f" % upgrade_mult)
-			print("  New multiplier: %.2f" % shop_price_mult)
-		"alt_fuel_max_bonus":
-			var old_bonus = alt_fuel_max_bonus
-			var upgrade_bonus = int(upgrade.get("alt_fuel_max_bonus", 0))
-			alt_fuel_max_bonus += upgrade_bonus
-			print("[UPGRADE DEBUG] alt_fuel_max_bonus:")
-			print("  Old bonus: %d" % old_bonus)
-			print("  Upgrade bonus: %d" % upgrade_bonus)
-			print("  New bonus: %d" % alt_fuel_max_bonus)
+
 		"primary_damage_mult":
 			var old_mult = primary_damage_mult
 			var upgrade_mult = float(upgrade.get("primary_damage_mult", 1.0))
@@ -892,8 +737,9 @@ func apply_upgrade(upgrade_id: String) -> void:
 			print("[UPGRADE DEBUG] primary_extra_burst:")
 			print("  Old count: %d, Old delay: %.3f" % [old_count, old_delay])
 			print("  Upgrade count: %d, Upgrade delay: %.3f" % [upg_count, upg_delay])
+
 			print("  New count: %d, New delay: %.3f" % [primary_burst_count_add, primary_burst_delay])
-		# ==============================
+			# ==============================
 		# These are the old hardcoded unlock effects
 		# They set the unlock flag AND auto-equip for backwards compatibility
 		"unlock_shotgun":
@@ -908,30 +754,14 @@ func apply_upgrade(upgrade_id: String) -> void:
 			unlocked_turret = true
 			set_alt_weapon(AltWeaponType.TURRET)
 
-		"unlock_flamethrower":
-			unlocked_flamethrower = true
-			set_alt_weapon(AltWeaponType.FLAMETHROWER)
-
 		"unlock_shuriken":
 			unlocked_shuriken = true
 			set_alt_weapon(AltWeaponType.SHURIKEN)
-
-		"unlock_grenade":
-			unlocked_grenade = true
-			set_alt_weapon(AltWeaponType.GRENADE)
 
 		# Ability unlocks
 		"unlock_dash":
 			unlocked_dash = true
 			set_ability(AbilityType.DASH)
-
-		"unlock_slowmo":
-			unlocked_slowmo = true
-			set_ability(AbilityType.SLOWMO)
-
-		"unlock_bubble":
-			unlocked_bubble = true
-			set_ability(AbilityType.BUBBLE)
 
 		"unlock_invis":
 			unlocked_invis = true
@@ -1050,60 +880,6 @@ func apply_upgrade(upgrade_id: String) -> void:
 			sniper_mag_mult *= GameConfig.UPGRADE_MULTIPLIERS["sniper_mag"]
 			print("  → Sniper mag size ×%.2f (total mult: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["sniper_mag"], sniper_mag_mult])
 
-		# ==============================
-		# FLAMETHROWER EFFECTS
-		# ==============================
-		"flamethrower_burn_damage":
-			# EXPONENTIAL SCALING: Track as multiplier for burn damage
-			flamethrower_burn_bonus_percent *= GameConfig.UPGRADE_MULTIPLIERS["burn_damage"]
-			print("  → Flamethrower burn ×%.2f (multiplier now: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["burn_damage"], flamethrower_burn_bonus_percent])
-
-		"flamethrower_cone_size":
-			# EXPONENTIAL SCALING: Multiply cone damage by constant per tier
-			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER):
-				var old_damage: float = ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["damage"]
-				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["damage"] *= 1.18  # 18% larger cone per tier
-				print("  → Flamethrower cone ×1.18 (damage: %.1f → %.1f)" % [old_damage, ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["damage"]])
-
-		"flamethrower_duration":
-			# EXPONENTIAL SCALING: Multiply flame lifetime by constant per tier
-			if ALT_WEAPON_DATA.has(AltWeaponType.FLAMETHROWER):
-				var old_lifetime: float = ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"]
-				ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"] *= GameConfig.UPGRADE_MULTIPLIERS["ability_duration"]
-				print("  → Flamethrower duration ×%.2f (%.2fs → %.2fs)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_duration"], old_lifetime, ALT_WEAPON_DATA[AltWeaponType.FLAMETHROWER]["flame_lifetime"]])
-
-		# ==============================
-		# GRENADES EFFECTS
-		# ==============================
-		"grenades_radius":
-			# EXPONENTIAL SCALING: Multiply explosion radius by constant per tier
-			grenades_radius_mult *= GameConfig.UPGRADE_MULTIPLIERS["grenade_radius"]
-			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE):
-				var old_radius: float = ALT_WEAPON_DATA[AltWeaponType.GRENADE]["explosion_radius"]
-				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["explosion_radius"] *= GameConfig.UPGRADE_MULTIPLIERS["grenade_radius"]
-				print("  → Grenade radius ×%.2f (%.1f → %.1f) [multiplier now: %.2f]" % [GameConfig.UPGRADE_MULTIPLIERS["grenade_radius"], old_radius, ALT_WEAPON_DATA[AltWeaponType.GRENADE]["explosion_radius"], grenades_radius_mult])
-
-		"grenades_damage":
-			# EXPONENTIAL SCALING: Multiply damage by constant per tier
-			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE):
-				var old_damage: float = ALT_WEAPON_DATA[AltWeaponType.GRENADE]["damage"]
-				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["damage"] *= GameConfig.UPGRADE_MULTIPLIERS["damage"]
-				print("  → Grenade damage ×%.2f (%.1f → %.1f)" % [GameConfig.UPGRADE_MULTIPLIERS["damage"], old_damage, ALT_WEAPON_DATA[AltWeaponType.GRENADE]["damage"]])
-
-		"grenades_cooldown":
-			# EXPONENTIAL SCALING: Multiply cooldown by constant per tier (reduces cooldown)
-			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE):
-				var old_cooldown: float = ALT_WEAPON_DATA[AltWeaponType.GRENADE]["cooldown"]
-				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["cooldown"] *= GameConfig.UPGRADE_MULTIPLIERS["fire_rate"]
-				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["cooldown"] = max(0.5, ALT_WEAPON_DATA[AltWeaponType.GRENADE]["cooldown"])
-				print("  → Grenade cooldown ×%.2f (%.2fs → %.2fs)" % [GameConfig.UPGRADE_MULTIPLIERS["fire_rate"], old_cooldown, ALT_WEAPON_DATA[AltWeaponType.GRENADE]["cooldown"]])
-
-		"grenades_frag_count":
-			# EXPONENTIAL SCALING: Multiply fragment count by constant per tier
-			if ALT_WEAPON_DATA.has(AltWeaponType.GRENADE):
-				var old_pellets: int = ALT_WEAPON_DATA[AltWeaponType.GRENADE]["pellets"]
-				ALT_WEAPON_DATA[AltWeaponType.GRENADE]["pellets"] = max(1, int(round(old_pellets * GameConfig.UPGRADE_MULTIPLIERS["grenade_fragments"])))
-				print("  → Grenade fragments ×%.2f (%d → %d)" % [GameConfig.UPGRADE_MULTIPLIERS["grenade_fragments"], old_pellets, ALT_WEAPON_DATA[AltWeaponType.GRENADE]["pellets"]])
 
 		# ==============================
 		# SHURIKEN EFFECTS
@@ -1214,36 +990,7 @@ func apply_upgrade(upgrade_id: String) -> void:
 			print("  → Dash cooldown ×%.2f (multiplier now: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_cooldown"], ability_cooldown_mult])
 
 		# ==============================
-		# SHIELD ABILITY EFFECTS========
-		# SHIELD ABILITY EFFECTS
-		# ==============================
-		"shield_duration":
-			# EXPONENTIAL SCALING: Multiply duration by constant per tier
-			shield_duration *= GameConfig.UPGRADE_MULTIPLIERS["ability_duration"]
-			print("  → Shield duration ×%.2f (now: %.2fs)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_duration"], shield_duration])
 
-		"shield_cooldown":
-			# EXPONENTIAL SCALING: Multiply cooldown reduction per tier
-			shield_cooldown_mult *= GameConfig.UPGRADE_MULTIPLIERS["ability_cooldown"]
-			print("  → Shield cooldown ×%.2f (multiplier now: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_cooldown"], shield_cooldown_mult])
-
-		"shield_radius":
-			# EXPONENTIAL SCALING: Multiply radius multiplier per tier
-			shield_radius_bonus *= GameConfig.UPGRADE_MULTIPLIERS["ability_radius"]
-			print("  → Shield radius ×%.2f (multiplier now: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_radius"], shield_radius_bonus])
-
-		# ==============================
-		# SLOWMO ABILITY EFFECTS
-		# ==============================
-		"slowmo_duration":
-			# EXPONENTIAL SCALING: Multiply duration by constant per tier
-			slowmo_duration *= GameConfig.UPGRADE_MULTIPLIERS["ability_duration"]
-			print("  → Slowmo duration ×%.2f (now: %.2fs)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_duration"], slowmo_duration])
-
-		"slowmo_cooldown":
-			# EXPONENTIAL SCALING: Multiply cooldown reduction per tier
-			slowmo_cooldown_mult *= GameConfig.UPGRADE_MULTIPLIERS["ability_cooldown"]
-			print("  → Slowmo cooldown ×%.2f (multiplier now: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_cooldown"], slowmo_cooldown_mult])
 
 		"slowmo_time_scale":
 			# EXPONENTIAL SCALING: Multiply time scale (slower = stronger effect)
@@ -1359,7 +1106,7 @@ func apply_upgrade(upgrade_id: String) -> void:
 	print("  Final max_health: %d (mult: %.2f)" % [max_health, max_hp_mult])
 	print("  Final fire_rate: %.3f (mult: %.2f)" % [fire_rate, primary_fire_rate_mult])
 	print("  Final primary_damage_mult: %.2f" % primary_damage_mult)
-	print("  Regen/sec: %.2f, Coin Mult: %.2f, Dmg Taken Mult: %.2f, Berserker: %.2f @ %.2f%% HP, Combustion: %s" % [regen_per_second, coin_gain_mult, damage_taken_mult, berserker_damage_mult, berserker_threshold * 100.0, str(combustion_active)])
+	print("  Regen/sec: %.2f, Dmg Taken Mult: %.2f, Combustion: %s" % [regen_per_second, damage_taken_mult, str(combustion_active)])
 
 	# After changing numbers, broadcast signals so UI and systems can refresh
 	# Record acquisition (used to prevent re-offering non-stackables)
@@ -1377,8 +1124,7 @@ func is_weapon_unlocked(weapon_type: int) -> bool:
 	match weapon_type:
 		AltWeaponType.SHOTGUN: return unlocked_shotgun
 		AltWeaponType.SNIPER: return unlocked_sniper
-		AltWeaponType.FLAMETHROWER: return unlocked_flamethrower
-		AltWeaponType.GRENADE: return unlocked_grenade
+		# FLAMETHROWER and GRENADE removed
 		AltWeaponType.SHURIKEN: return unlocked_shuriken
 		AltWeaponType.TURRET: return unlocked_turret
 		AltWeaponType.NONE: return true  # NONE is always available
@@ -1388,8 +1134,7 @@ func is_ability_unlocked(ability_type: int) -> bool:
 	"""Check if an ability type is unlocked."""
 	match ability_type:
 		AbilityType.DASH: return unlocked_dash
-		AbilityType.SLOWMO: return unlocked_slowmo
-		AbilityType.BUBBLE: return unlocked_bubble
+		# SLOWMO and BUBBLE removed
 		AbilityType.INVIS: return unlocked_invis
 		AbilityType.NONE: return true  # NONE is always available
 		_: return false
@@ -1399,8 +1144,7 @@ func get_unlocked_weapons() -> Array:
 	var unlocked := []
 	if unlocked_shotgun: unlocked.append(AltWeaponType.SHOTGUN)
 	if unlocked_sniper: unlocked.append(AltWeaponType.SNIPER)
-	if unlocked_flamethrower: unlocked.append(AltWeaponType.FLAMETHROWER)
-	if unlocked_grenade: unlocked.append(AltWeaponType.GRENADE)
+	# FLAMETHROWER and GRENADE removed
 	if unlocked_shuriken: unlocked.append(AltWeaponType.SHURIKEN)
 	if unlocked_turret: unlocked.append(AltWeaponType.TURRET)
 	return unlocked
@@ -1409,8 +1153,7 @@ func get_unlocked_abilities() -> Array:
 	"""Returns an array of ability type enums that are currently unlocked."""
 	var unlocked := []
 	if unlocked_dash: unlocked.append(AbilityType.DASH)
-	if unlocked_slowmo: unlocked.append(AbilityType.SLOWMO)
-	if unlocked_bubble: unlocked.append(AbilityType.BUBBLE)
+	# SLOWMO and BUBBLE removed
 	if unlocked_invis: unlocked.append(AbilityType.INVIS)
 	return unlocked
 
