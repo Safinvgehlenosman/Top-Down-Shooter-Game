@@ -50,6 +50,11 @@ func _ready() -> void:
 		if not buy_button.pressed.is_connected(_on_buy_pressed):
 			buy_button.pressed.connect(_on_buy_pressed)
 
+	if Engine.has_singleton("GameState"):
+		var gs = Engine.get_singleton("GameState")
+		if gs.has_signal("coins_changed"):
+			gs.connect("coins_changed", Callable(self, "_on_coins_changed"))
+
 func _on_hover() -> void:
 	var center = Vector2(1, 1)
 	var offset = center * (hover_scale - 1.0)
@@ -94,6 +99,7 @@ func setup(data: Dictionary) -> void:
 	
 	_refresh()
 	_apply_rarity_visuals()
+	_update_price_color()
 
 func _get_dynamic_text() -> String:
 	if upgrade_id == "max_hp_plus_1":
@@ -119,6 +125,7 @@ func _refresh() -> void:
 		if price > 0:
 			# Always show just the price number
 			price_label.text = str(price)
+			_update_price_color()
 			
 			# Set color based on affordability
 			if GameState.coins >= price:
@@ -147,22 +154,27 @@ func flash_price_increase() -> void:
 	"""Call this when price increases to show yellow flash with arrow."""
 	if not price_label or price <= base_price:
 		return
-	
+
 	# Kill any running price tween
 	if price_tween and price_tween.is_running():
 		price_tween.kill()
-	
+
 	# Show yellow with arrow
 	price_label.text = str(price) + " ↑"
 	price_label.modulate = Color(1.0, 0.8, 0.2)
-	
-	# Create tween: wait 1 second, then fade to white and remove arrow
+
+	# Create tween: wait, then fade to correct color based on affordability
 	price_tween = create_tween()
 	price_tween.tween_interval(0.3)
-	price_tween.tween_property(price_label, "modulate", Color.WHITE, 0.3)
+
+	# Determine final color based on affordability
+	var final_color = Color.WHITE if GameState.coins >= price else Color(1.0, 0.3, 0.3)
+	price_tween.tween_property(price_label, "modulate", final_color, 0.3)
+
 	price_tween.tween_callback(func():
 		if price_label:
 			price_label.text = str(price)
+			_update_price_color()
 	)
 
 func _update_button_state() -> void:
@@ -226,6 +238,7 @@ func _on_buy_pressed() -> void:
 		flash_price_increase()
 	else:
 		_refresh()
+	_update_price_color()
 
 func _create_tooltip(upgrade: Dictionary) -> void:
 	tooltip_label = Label.new()
@@ -289,3 +302,12 @@ func _apply_rarity_visuals() -> void:
 func set_rarity(new_rarity: UpgradesDB.Rarity) -> void:
 	rarity = new_rarity
 	_apply_rarity_visuals()
+
+func _update_price_color():
+	if not price_label:
+		return
+	var affordable := (upgrade_id != "") and (GameState.coins >= price)
+	price_label.modulate = Color.WHITE if affordable else Color(1, 0.3, 0.3)
+
+func _on_coins_changed():
+	_update_price_color()
