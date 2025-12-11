@@ -60,12 +60,12 @@ var active_chest: Node2D = null  # Reference to the chest that opened this shop
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	
+
 	# Connect to GameState signals
 	var gs = GameState
 	gs.connect("coins_changed", Callable(self, "_on_coins_changed"))
 	gs.connect("health_changed", Callable(self, "_on_health_changed"))
-	
+
 	# Always start hidden
 	if ability_progress_bar:
 		ability_progress_bar.visible = false
@@ -74,15 +74,32 @@ func _ready() -> void:
 	_refresh_from_state_full()
 
 	continue_button.pressed.connect(_on_continue_pressed)
-	
+
 	# Initialize all cards to non-hovered state
 	await get_tree().process_frame
 	for card in cards_container.get_children():
 		if card.has_method("set_hovered"):
 			card.set_hovered(false)
 
+	# Debug: Monitor Panel mouse filter changes
+	if has_node("Panel"):
+		var panel = $Panel
+		print("[SHOP UI] Panel mouse_filter at ready: ", panel.mouse_filter)
+		# Force it to PASS
+		panel.mouse_filter = Control.MOUSE_FILTER_PASS
+		print("[SHOP UI] Forced Panel mouse_filter to PASS (1)")
+		# Monitor it every frame to catch changes
+		set_process(true)
+
 
 func _process(_delta: float) -> void:
+	# Debug: Check Panel mouse filter every frame
+	if has_node("Panel"):
+		var panel = $Panel
+		if panel.mouse_filter != Control.MOUSE_FILTER_PASS:
+			print("[SHOP UI] ⚠️ Panel mouse_filter changed to: ", panel.mouse_filter, " - FORCING BACK TO PASS")
+			panel.mouse_filter = Control.MOUSE_FILTER_PASS
+
 	# Update displays continuously
 	_update_hp_from_state()
 	_update_ability_bar()
@@ -174,7 +191,7 @@ func _setup_cards() -> void:
 			card.purchased.connect(_on_card_purchased)
 		
 		# Connect hover events
-		_setup_card_hover_events(card)
+		# Hover events removed as they are broken
 		
 		used_positions.append(position)
 	
@@ -562,26 +579,12 @@ func _update_ability_bar() -> void:
 			ability_label.visible = false
 		return
 	
-	# Get BASE cooldown
-	var base_cd: float = data.get("cooldown", 0.0)
-	if base_cd <= 0.0:
-		ability_progress_bar.visible = false
-		if ability_label:
-			ability_label.visible = false
-		return
-	
 	# Apply cooldown multiplier (from upgrades)
+	var base_cd: float = data.get("cooldown", 0.0)
 	var multiplier: float = 1.0
 	if "ability_cooldown_mult" in GameState:
 		multiplier = GameState.ability_cooldown_mult
-	
-	# Actual cooldown after upgrades
 	var actual_max_cd: float = base_cd * multiplier
-	
-	# Show the bar (ability is unlocked)
-	ability_progress_bar.visible = true
-	
-	# Bar fills as cooldown recovers
 	ability_progress_bar.max_value = actual_max_cd
 	var cd_left: float = GameState.ability_cooldown_left
 	var bar_value: float = actual_max_cd - cd_left

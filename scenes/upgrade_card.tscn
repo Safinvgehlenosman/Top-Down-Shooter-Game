@@ -15,9 +15,12 @@
 [node name="UpgradeCard" type="Control"]
 process_mode = 3
 layout_mode = 3
-anchors_preset = 0
-offset_right = 224.0
-offset_bottom = 235.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(328.15, 144.47)
 mouse_filter = 1
 script = ExtResource("1_0hv3p")
 rarity_outline_textures = Array[Texture2D]([ExtResource("6_33rkj"), ExtResource("3_feudy"), ExtResource("4_dvncl"), ExtResource("5_acdrt"), ExtResource("6_sa0xp"), ExtResource("7_dvncl")])
@@ -25,6 +28,10 @@ rarity = 3
 
 [node name="VisualRoot" type="Control" parent="."]
 anchors_preset = 0
+offset_left = 54.0
+offset_top = -20.0
+offset_right = 54.0
+offset_bottom = -20.0
 
 [node name="PriceArea" type="HBoxContainer" parent="VisualRoot"]
 layout_mode = 0
