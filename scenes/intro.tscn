@@ -1,9 +1,10 @@
-[gd_scene load_steps=101 format=3 uid="uid://btcojwer2m1mu"]
+[gd_scene load_steps=102 format=3 uid="uid://btcojwer2m1mu"]
 
 [ext_resource type="Script" uid="uid://c0wobo4m4j8a8" path="res://scenes/intro.gd" id="1_4bx60"]
 [ext_resource type="Texture2D" uid="uid://dyq5aevpme1pw" path="res://assets/Affinity/LogoAnimation.png" id="2_i2l1n"]
 [ext_resource type="Texture2D" uid="uid://bpau4n40hr5si" path="res://assets/Affinity/TITLE.png" id="2_wfs7u"]
 [ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="3_wfs7u"]
+[ext_resource type="AudioStream" uid="uid://6jgtwphqqvnt" path="res://assets/Audios/SlimeLand.wav" id="5_wfs7u"]
 
 [sub_resource type="Animation" id="Animation_es01l"]
 resource_name = "show_intro"
@@ -705,3 +706,7 @@ offset_right = 667.0
 offset_bottom = 408.0
 theme_override_fonts/font = ExtResource("3_wfs7u")
 text = "Made by Safin"
+
+[node name="SFX_Squish" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("5_wfs7u")
+bus = &"SFX"

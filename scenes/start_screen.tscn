@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=3 uid="uid://dv8w4r5bwomco"]
+[gd_scene load_steps=21 format=3 uid="uid://dv8w4r5bwomco"]
 
 [ext_resource type="Script" uid="uid://cwmceg8v4sax2" path="res://scripts/ui/start_screen.gd" id="1_he1sj"]
 [ext_resource type="FontFile" uid="uid://4xsaqwwtj2c1" path="res://assets/Fonts/PixelOperator8.ttf" id="1_o7i0r"]
@@ -8,6 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://ccgpjao68jxd8" path="res://assets/slimebuttondesign.png" id="4_lt4el"]
 [ext_resource type="Shader" uid="uid://dvsnojk5qp2bx" path="res://shaders/main.gdshader" id="4_r2jwc"]
 [ext_resource type="Texture2D" uid="uid://bgdl4dx2jbnh0" path="res://assets/Affinity/FULLSCREENBUTTON.png" id="5_xfy2r"]
+[ext_resource type="AudioStream" uid="uid://6jgtwphqqvnt" path="res://assets/Audios/SlimeLand.wav" id="6_2banv"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="6_ecdxc"]
 [ext_resource type="Texture2D" uid="uid://dsok60txc11jj" path="res://assets/purpleslime.png" id="6_ka6nf"]
 [ext_resource type="Texture2D" uid="uid://b527becyoc3o5" path="res://assets/Affinity/STATSBUTTON.png" id="6_lt4el"]
@@ -74,6 +75,10 @@ grow_vertical = 2
 scale = Vector2(0.5, 0.5)
 texture = ExtResource("4_lt4el")
 
+[node name="SFX_Squish" type="AudioStreamPlayer" parent="StartScreen/StartButton"]
+stream = ExtResource("6_2banv")
+bus = &"SFX"
+
 [node name="FullscreenButton" type="Button" parent="StartScreen"]
 process_mode = 3
 self_modulate = Color(1, 1, 1, 0)
@@ -102,6 +107,10 @@ grow_horizontal = 2
 grow_vertical = 2
 scale = Vector2(0.5, 0.5)
 texture = ExtResource("5_xfy2r")
+
+[node name="SFX_Squish" type="AudioStreamPlayer" parent="StartScreen/FullscreenButton"]
+stream = ExtResource("6_2banv")
+bus = &"SFX"
 
 [node name="StatsButton" type="Button" parent="StartScreen"]
 process_mode = 3
@@ -132,6 +141,10 @@ grow_vertical = 2
 scale = Vector2(0.5, 0.5)
 texture = ExtResource("6_lt4el")
 
+[node name="SFX_Squish" type="AudioStreamPlayer" parent="StartScreen/StatsButton"]
+stream = ExtResource("6_2banv")
+bus = &"SFX"
+
 [node name="QuitButton" type="Button" parent="StartScreen"]
 process_mode = 3
 self_modulate = Color(1, 1, 1, 0)
@@ -160,6 +173,10 @@ grow_horizontal = 2
 grow_vertical = 2
 scale = Vector2(0.5, 0.5)
 texture = ExtResource("4_bdg0b")
+
+[node name="SFX_Squish" type="AudioStreamPlayer" parent="StartScreen/QuitButton"]
+stream = ExtResource("6_2banv")
+bus = &"SFX"
 
 [node name="VHSLayer" type="CanvasLayer" parent="StartScreen"]
 process_mode = 3

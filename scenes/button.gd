@@ -14,6 +14,8 @@ func _ready() -> void:
 	# Make sure we get the signals (or connect them in the editor)
 	mouse_entered.connect(_on_mouse_entered)
 	mouse_exited.connect(_on_mouse_exited)
+	if not pressed.is_connected(_on_mouse_clicked):
+		pressed.connect(_on_mouse_clicked)
 
 func _on_mouse_entered() -> void:
 	var t := create_tween()
@@ -26,5 +28,7 @@ func _on_mouse_exited() -> void:
 func _on_mouse_clicked() -> void:
 	var sfx = get_node_or_null("SFX_Squish")
 	if sfx:
+		print("[Button] SFX_Squish found, playing sound.")
 		sfx.play()
-	emit_signal("pressed")
+	else:
+		print("[Button] SFX_Squish NOT found!")

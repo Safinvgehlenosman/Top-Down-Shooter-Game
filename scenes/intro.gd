@@ -4,9 +4,13 @@ extends Node2D
 @onready var label: Label = $Label
 @onready var background: Sprite2D = $Background
 @onready var fade_out: ColorRect = $FadeOut
+@onready var sfx_squish: AudioStreamPlayer = $SFX_Squish
 
 var _finished := false
 var _skipped := false
+var _sfx_cooldown := 0.0
+
+const SFX_COOLDOWN := 10.25
 
 func _ready() -> void:
 	# FadeOut starts fully black (covers background)
@@ -25,7 +29,15 @@ func _input(event: InputEvent) -> void:
 	if _finished or _skipped:
 		return
 	if event.is_pressed():
+		if _sfx_cooldown <= 0.0:
+			if sfx_squish:
+				sfx_squish.play()
+			_sfx_cooldown = SFX_COOLDOWN
 		_skip_to_end()
+
+func _process(delta: float) -> void:
+	if _sfx_cooldown > 0.0:
+		_sfx_cooldown -= delta
 
 func _skip_to_end() -> void:
 	_skipped = true
