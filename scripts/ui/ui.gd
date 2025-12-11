@@ -34,7 +34,10 @@ var is_in_hub: bool = true  # Start as true, game_manager will set to false when
 func _ready() -> void:
 	# Add to 'ui' group so gun.gd can find us
 	add_to_group("ui")
-	
+
+	# ⭐ CRITICAL: Don't process when paused (so we don't interfere with PauseScreen)
+	process_mode = Node.PROCESS_MODE_PAUSABLE
+
 	var gs = GameState
 
 	# connect UI to gamestate
@@ -47,11 +50,11 @@ func _ready() -> void:
 	# hide ability bar by default
 	if ability_progress_bar:
 		ability_progress_bar.visible = false
-	
+
 	# hide chaos pact indicator by default
 	if chaos_pact_indicator:
 		chaos_pact_indicator.visible = false
-	
+
 	# Hide door arrow by default
 	if door_arrow_root:
 		door_arrow_root.visible = false
@@ -66,7 +69,7 @@ func _ready() -> void:
 
 	# Connect to alt weapon changes
 	GameState.alt_weapon_changed.connect(_on_alt_weapon_changed)
-	
+
 	# Get player reference
 	player = get_tree().get_first_node_in_group("player")
 
@@ -411,44 +414,54 @@ func _update_chaos_pact_indicator() -> void:
 # --------------------------------------------------------------------
 
 func set_in_hub(is_in_hub_mode: bool) -> void:
-	"""Toggle hub mode - hides/shows in-run UI elements."""
+	print("=== UI set_in_hub() ===")
+	print("is_in_hub_mode: ", is_in_hub_mode)
 	is_in_hub = is_in_hub_mode
 
 	# Clear door arrow when entering hub
 	if is_in_hub:
+		print("Clearing exit_door and hiding door_arrow_root")
 		exit_door = null
 		if door_arrow_root:
 			door_arrow_root.visible = false
-	
+
 	# FORCE hide ammo container when entering hub
 	if is_in_hub_mode and ammo_container:
+		print("Hiding ammo_container")
 		ammo_container.visible = false
 
 	# Hide in-run UI when in hub, show them during runs
 	var show_ui = not is_in_hub_mode
+	print("show_ui: ", show_ui)
 	var hp_bar = get_node_or_null("PlayerInfo/HPFill")
 	if hp_bar:
 		hp_bar.visible = show_ui
-	
+		print("  - HPFill visible: ", hp_bar.visible)
+
 	var hp_container = get_node_or_null("PlayerInfo")
 	if hp_container:
 		hp_container.visible = show_ui
-	
+		print("  - PlayerInfo visible: ", hp_container.visible)
+
 	var ability_bar = get_node_or_null("PlayerInfo/AbilityProgressBar")
 	if ability_bar:
 		ability_bar.visible = show_ui and GameState.ability != ABILITY_NONE
-	
+		print("  - AbilityProgressBar visible: ", ability_bar.visible)
+
 	var ammo_ui = get_node_or_null("UI/Ammo")
 	if ammo_ui:
 		ammo_ui.visible = show_ui
-	
+		print("  - UI/Ammo visible: ", ammo_ui.visible)
+
 	var coin_ui = get_node_or_null("Coins")
 	if coin_ui:
 		coin_ui.visible = show_ui
-	
+		print("  - Coins visible: ", coin_ui.visible)
+
 	var level_ui = get_node_or_null("Level")
 	if level_ui:
 		level_ui.visible = show_ui
-	
+		print("  - Level visible: ", level_ui.visible)
+
 	# Keep chaos pact indicator visible if active (even in hub)
 	# It's already handled by _update_chaos_pact_indicator()

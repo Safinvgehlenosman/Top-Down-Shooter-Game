@@ -1,6 +1,6 @@
 extends Button
 
-@export var hover_scale := 0.37
+@export var hover_scale := 1.05
 @export var tween_duration := 0.08
 
 var _base_scale := Vector2.ONE

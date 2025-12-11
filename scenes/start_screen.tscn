@@ -41,64 +41,51 @@ script = ExtResource("1_he1sj")
 
 [node name="StartButton" type="Button" parent="StartScreen"]
 process_mode = 3
-self_modulate = Color(1, 1, 1, 0)
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -521.0
-offset_top = 359.0
-offset_right = -259.71497
-offset_bottom = 450.42847
+offset_top = 354.0
+offset_right = -246.0
+offset_bottom = 404.0
 grow_horizontal = 2
-scale = Vector2(0.35, 0.35)
 theme_override_colors/font_color = Color(0.8745098, 0.8745098, 0.8745098, 1)
 theme_override_fonts/font = ExtResource("1_o7i0r")
 text = "Start"
 script = ExtResource("3_xfy2r")
 
-[node name="Button" type="Sprite2D" parent="StartScreen/StartButton"]
-position = Vector2(134, 42)
+[node name="TextureRect" type="TextureRect" parent="StartScreen/StartButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 texture = ExtResource("3_qls88")
 
 [node name="FullscreenButton" type="Button" parent="StartScreen"]
 process_mode = 3
-self_modulate = Color(1, 1, 1, 0)
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -521.0
-offset_top = 421.0
-offset_right = -259.71497
-offset_bottom = 512.42847
+offset_top = 416.0
+offset_right = -246.0
+offset_bottom = 466.0
 grow_horizontal = 2
-scale = Vector2(0.35, 0.35)
 theme_override_colors/font_color = Color(0.8745098, 0.8745098, 0.8745098, 1)
 theme_override_fonts/font = ExtResource("1_o7i0r")
-text = "Start"
+text = "fullscreen"
 script = ExtResource("3_xfy2r")
 
-[node name="Button" type="Sprite2D" parent="StartScreen/FullscreenButton"]
-position = Vector2(134, 42)
-texture = ExtResource("5_xfy2r")
-
-[node name="QuitButton" type="Button" parent="StartScreen"]
-process_mode = 3
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -522.0
-offset_top = 544.00006
-offset_right = -260.71497
-offset_bottom = 632.5716
+[node name="TextureRect" type="TextureRect" parent="StartScreen/FullscreenButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
-scale = Vector2(0.35, 0.35)
-theme_override_fonts/font = ExtResource("1_o7i0r")
-text = "Quit"
-script = ExtResource("3_xfy2r")
-
-[node name="Button" type="Sprite2D" parent="StartScreen/QuitButton"]
-position = Vector2(134, 42)
-texture = ExtResource("4_bdg0b")
+grow_vertical = 2
+texture = ExtResource("5_xfy2r")
 
 [node name="StatsButton" type="Button" parent="StartScreen"]
 process_mode = 3
@@ -107,17 +94,44 @@ anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -521.0
 offset_top = 481.00006
-offset_right = -259.71497
-offset_bottom = 569.5716
+offset_right = -246.0
+offset_bottom = 531.00006
 grow_horizontal = 2
-scale = Vector2(0.35, 0.35)
+theme_override_fonts/font = ExtResource("1_o7i0r")
+text = "Statistics"
+script = ExtResource("3_xfy2r")
+
+[node name="TextureRect" type="TextureRect" parent="StartScreen/StatsButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("6_lt4el")
+
+[node name="QuitButton" type="Button" parent="StartScreen"]
+process_mode = 3
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -522.0
+offset_top = 544.00006
+offset_right = -247.0
+offset_bottom = 594.00006
+grow_horizontal = 2
 theme_override_fonts/font = ExtResource("1_o7i0r")
 text = "Quit"
 script = ExtResource("3_xfy2r")
 
-[node name="Button" type="Sprite2D" parent="StartScreen/StatsButton"]
-position = Vector2(134, 42)
-texture = ExtResource("6_lt4el")
+[node name="TextureRect" type="TextureRect" parent="StartScreen/QuitButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("4_bdg0b")
 
 [node name="VHSLayer" type="CanvasLayer" parent="StartScreen"]
 process_mode = 3
@@ -181,12 +195,12 @@ mouse_filter = 2
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -765.0
-offset_top = -64.99999
-offset_right = 1155.0
-offset_bottom = 1015.0
+offset_left = -680.0
+offset_top = -55.0
+offset_right = 1240.0
+offset_bottom = 1025.0
 grow_horizontal = 2
-scale = Vector2(0.8, 0.8)
+scale = Vector2(0.7, 0.7)
 mouse_filter = 2
 texture = ExtResource("9_ecdxc")
 

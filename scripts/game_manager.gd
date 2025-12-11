@@ -195,7 +195,7 @@ var exit_door: Area2D
 var door_open: bool = false
 
 @onready var restart_button: Button = $"../UI/PauseScreen/RestartButton"
-@onready var death_restart_button: Button = $"../UI/DeathScreen/Content/RestartButton"
+@onready var death_restart_button: Button = $"../UI/DeathScreen/RestartButton"
 
 # 🔁 Track last used room index so we don't repeat it
 var last_room_index: int = -1
@@ -1723,11 +1723,17 @@ func on_player_died() -> void:
 func _show_death_screen_after_timer(timer: SceneTreeTimer) -> void:
 	await timer.timeout
 
-	Engine.time_scale = 0.0
+	# Reset time scale
+	Engine.time_scale = 1.0  # ← RESET TO NORMAL!
+
+	# Pause the tree instead
+	get_tree().paused = true  # ← USE PAUSE, NOT TIMESCALE!
 
 	if death_screen:
 		death_screen.visible = true
-		if death_restart_button:
+		if death_screen.has_method("show_death_screen"):
+			death_screen.show_death_screen()  # ← Call the proper method!
+		elif death_restart_button:
 			death_restart_button.grab_focus()
 
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)

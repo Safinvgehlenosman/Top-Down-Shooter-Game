@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3 uid="uid://c7fcp73v6wu5d"]
+[gd_scene load_steps=35 format=3 uid="uid://c7fcp73v6wu5d"]
 
 [ext_resource type="Script" uid="uid://b7yr6kx17nvlm" path="res://scripts/ui/ui.gd" id="1_qsv74"]
 [ext_resource type="Script" uid="uid://bun2ukfdgaq3m" path="res://scripts/ui/screen_flash.gd" id="2_7dvkv"]
@@ -20,7 +20,26 @@
 [ext_resource type="Texture2D" uid="uid://cbw2m6t388jw0" path="res://assets/Affinity/hpbar.png" id="8_h1mc3"]
 [ext_resource type="PackedScene" uid="uid://bngmwso5qhlyx" path="res://scenes/vhs_layer.tscn" id="11_vdcm2"]
 [ext_resource type="Texture2D" uid="uid://bmabpmaugk40l" path="res://assets/Affinity/chaospact.png" id="15_h1mc3"]
+[ext_resource type="Script" uid="uid://cj3kifwr8j22y" path="res://scenes/button.gd" id="19_ukrhx"]
+[ext_resource type="Texture2D" uid="uid://df8xpnll1ling" path="res://assets/Affinity/CONTINUEBUTTON.png" id="20_ukrhx"]
+[ext_resource type="Texture2D" uid="uid://bgdl4dx2jbnh0" path="res://assets/Affinity/FULLSCREENBUTTON.png" id="21_fsl8s"]
 [ext_resource type="Texture2D" uid="uid://3g07t4ytrolp" path="res://assets/Affinity/arrow.png" id="21_ycmcx"]
+[ext_resource type="Texture2D" uid="uid://s5nb030brv5o" path="res://assets/Affinity/RESTARTBUTTON.png" id="22_5ls34"]
+[ext_resource type="Texture2D" uid="uid://be8cka83qpakq" path="res://assets/Affinity/QUITBUTTON.png" id="23_6bb67"]
+[ext_resource type="Texture2D" uid="uid://buu0qihcmu4d0" path="res://assets/Separated/Slime.png" id="25_y6fpy"]
+[ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="26_phcun"]
+[ext_resource type="Texture2D" uid="uid://h8v2n05n2ryy" path="res://assets/fireslime.png" id="27_7crvc"]
+[ext_resource type="Texture2D" uid="uid://dsok60txc11jj" path="res://assets/purpleslime.png" id="28_wibvp"]
+[ext_resource type="Texture2D" uid="uid://btvt2khhedmpg" path="res://assets/Affinity/Youdied.png" id="29_ukrhx"]
+[ext_resource type="Shader" uid="uid://cgmteokvsd2g4" path="res://shaders/vignette.gdshader" id="29_ymt3a"]
+[ext_resource type="Texture2D" uid="uid://dhy2mkk0ojya7" path="res://assets/Affinity/PAUSEMENU.png" id="30_fsl8s"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_gng4c"]
+shader = ExtResource("29_ymt3a")
+shader_parameter/radius = 0.13200000627
+shader_parameter/softness = 1.0
+shader_parameter/intensity = 2.0
+shader_parameter/color = Color(0, 0, 0, 0.59607846)
 
 [node name="UI" type="CanvasLayer" groups=["ui"]]
 script = ExtResource("1_qsv74")
@@ -168,108 +187,276 @@ grow_vertical = 2
 color = Color(0.05490196, 1, 0, 0)
 script = ExtResource("3_vdcm2")
 
-[node name="DeathScreen" type="CanvasLayer" parent="."]
+[node name="DeathScreen" type="CanvasLayer" parent="." groups=["death_screen"]]
 layer = 20
 visible = false
 script = ExtResource("4_6rmj2")
-button_paths = Array[NodePath]([NodePath("Content/RestartButton"), NodePath("Content/QuitButton")])
 
-[node name="ColorRect" type="ColorRect" parent="DeathScreen"]
+[node name="RestartButton" type="Button" parent="DeathScreen"]
+process_mode = 3
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -521.0
+offset_top = 481.00006
+offset_right = -246.0
+offset_bottom = 531.00006
+grow_horizontal = 2
+theme_override_fonts/font = ExtResource("6_qsv74")
+text = "Statistics"
+script = ExtResource("19_ukrhx")
+
+[node name="TextureRect" type="TextureRect" parent="DeathScreen/RestartButton"]
+layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.11858138, 0.11858138, 0.11858138, 1)
+texture = ExtResource("22_5ls34")
 
-[node name="Content" type="VBoxContainer" parent="DeathScreen"]
-anchors_preset = 8
+[node name="QuitButton" type="Button" parent="DeathScreen"]
+process_mode = 3
+anchors_preset = 5
 anchor_left = 0.5
-anchor_top = 0.5
 anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -232.0
-offset_top = -32.0
-offset_right = 232.0
-offset_bottom = 32.0
+offset_left = -522.0
+offset_top = 544.00006
+offset_right = -247.0
+offset_bottom = 594.00006
 grow_horizontal = 2
-grow_vertical = 2
-
-[node name="TitleLabel" type="Label" parent="DeathScreen/Content"]
-layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 0
-theme_override_fonts/font = ExtResource("5_vsj0x")
-theme_override_font_sizes/font_size = 64
-text = "YOU DIED"
-
-[node name="RestartButton" type="Button" parent="DeathScreen/Content"]
-process_mode = 3
-layout_mode = 2
-theme_override_fonts/font = ExtResource("6_qsv74")
-text = "Restart"
-
-[node name="QuitButton" type="Button" parent="DeathScreen/Content"]
-process_mode = 3
-layout_mode = 2
 theme_override_fonts/font = ExtResource("6_qsv74")
 text = "Quit"
+script = ExtResource("19_ukrhx")
+
+[node name="TextureRect" type="TextureRect" parent="DeathScreen/QuitButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("23_6bb67")
+
+[node name="Sprite2D" type="Sprite2D" parent="DeathScreen"]
+position = Vector2(860.00006, 569.00006)
+rotation = 0.14579165
+scale = Vector2(20, 20)
+texture = ExtResource("25_y6fpy")
+region_enabled = true
+region_rect = Rect2(10, 12, 12, 9)
+
+[node name="Sprite2D4" type="Sprite2D" parent="DeathScreen"]
+visible = false
+position = Vector2(417, 452)
+rotation = -0.0673296
+scale = Vector2(29.999998, 29.999998)
+texture = ExtResource("26_phcun")
+region_enabled = true
+region_rect = Rect2(12, 8, 11, 16)
+
+[node name="Sprite2D2" type="Sprite2D" parent="DeathScreen"]
+z_index = -1
+position = Vector2(1074, 567)
+rotation = 0.04165517
+scale = Vector2(22.5, 22.5)
+texture = ExtResource("27_7crvc")
+region_enabled = true
+region_rect = Rect2(138, 12, 12, 9)
+
+[node name="Sprite2D3" type="Sprite2D" parent="DeathScreen"]
+z_index = -2
+position = Vector2(1021, 424)
+rotation = 0.06891273
+scale = Vector2(25, 25)
+texture = ExtResource("28_wibvp")
+region_enabled = true
+region_rect = Rect2(138, 12, 12, 9)
+
+[node name="ColorRect" type="ColorRect" parent="DeathScreen"]
+material = SubResource("ShaderMaterial_gng4c")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TextureRect" type="TextureRect" parent="DeathScreen"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -536.0
+offset_top = 63.999996
+offset_right = 979.0
+offset_bottom = 239.0
+grow_horizontal = 2
+scale = Vector2(0.7, 0.7)
+mouse_filter = 2
+texture = ExtResource("29_ukrhx")
+
+[node name="VHSLayer" parent="DeathScreen" instance=ExtResource("11_vdcm2")]
+visible = false
 
 [node name="PauseScreen" type="CanvasLayer" parent="." groups=["pause"]]
 process_mode = 3
 layer = 10
 visible = false
 script = ExtResource("7_h1mc3")
-button_paths = Array[NodePath]([NodePath("RestartButton"), NodePath("QuitButton")])
 
-[node name="ColorRect" type="ColorRect" parent="PauseScreen"]
+[node name="ContinueButton" type="Button" parent="PauseScreen"]
+process_mode = 3
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -521.0
+offset_top = 354.0
+offset_right = -246.0
+offset_bottom = 404.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.8745098, 0.8745098, 0.8745098, 1)
+theme_override_fonts/font = ExtResource("6_qsv74")
+text = "Start"
+script = ExtResource("19_ukrhx")
+
+[node name="TextureRect" type="TextureRect" parent="PauseScreen/ContinueButton"]
+layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.11764706, 0.11764706, 0.11764706, 1)
+texture = ExtResource("20_ukrhx")
 
-[node name="RestartButton" type="Button" parent="PauseScreen"]
+[node name="FullscreenButton" type="Button" parent="PauseScreen"]
 process_mode = 3
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -51.0
-offset_top = -12.0
-offset_right = 51.0
-offset_bottom = 12.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_fonts/font = ExtResource("6_qsv74")
-text = "Restart"
-
-[node name="QuitButton" type="Button" parent="PauseScreen"]
-process_mode = 3
-offset_left = 546.0
-offset_top = 352.34
-offset_right = 604.0
-offset_bottom = 376.34
-theme_override_fonts/font = ExtResource("6_qsv74")
-text = "Quit"
-
-[node name="TitleLabel" type="Label" parent="PauseScreen"]
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -232.0
-offset_top = 236.01
-offset_right = 232.0
-offset_bottom = 300.0103
+offset_left = -521.0
+offset_top = 416.0
+offset_right = -246.0
+offset_bottom = 466.0
 grow_horizontal = 2
-size_flags_horizontal = 0
-size_flags_vertical = 0
-theme_override_fonts/font = ExtResource("5_vsj0x")
-theme_override_font_sizes/font_size = 64
-text = "PAUSED"
-horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.8745098, 0.8745098, 0.8745098, 1)
+theme_override_fonts/font = ExtResource("6_qsv74")
+text = "fullscreen"
+script = ExtResource("19_ukrhx")
+
+[node name="TextureRect" type="TextureRect" parent="PauseScreen/FullscreenButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("21_fsl8s")
+
+[node name="RestartButton" type="Button" parent="PauseScreen"]
+process_mode = 3
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -521.0
+offset_top = 481.00006
+offset_right = -246.0
+offset_bottom = 531.00006
+grow_horizontal = 2
+theme_override_fonts/font = ExtResource("6_qsv74")
+text = "Statistics"
+script = ExtResource("19_ukrhx")
+
+[node name="TextureRect" type="TextureRect" parent="PauseScreen/RestartButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("22_5ls34")
+
+[node name="QuitButton" type="Button" parent="PauseScreen"]
+process_mode = 3
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -522.0
+offset_top = 544.00006
+offset_right = -247.0
+offset_bottom = 594.00006
+grow_horizontal = 2
+theme_override_fonts/font = ExtResource("6_qsv74")
+text = "Quit"
+script = ExtResource("19_ukrhx")
+
+[node name="TextureRect" type="TextureRect" parent="PauseScreen/QuitButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("23_6bb67")
+
+[node name="Sprite2D" type="Sprite2D" parent="PauseScreen"]
+position = Vector2(860.00006, 569.00006)
+rotation = 0.14579165
+scale = Vector2(20, 20)
+texture = ExtResource("25_y6fpy")
+region_enabled = true
+region_rect = Rect2(10, 12, 12, 9)
+
+[node name="Sprite2D4" type="Sprite2D" parent="PauseScreen"]
+visible = false
+position = Vector2(417, 452)
+rotation = -0.0673296
+scale = Vector2(29.999998, 29.999998)
+texture = ExtResource("26_phcun")
+region_enabled = true
+region_rect = Rect2(12, 8, 11, 16)
+
+[node name="Sprite2D2" type="Sprite2D" parent="PauseScreen"]
+z_index = -1
+position = Vector2(1074, 567)
+rotation = 0.04165517
+scale = Vector2(22.5, 22.5)
+texture = ExtResource("27_7crvc")
+region_enabled = true
+region_rect = Rect2(138, 12, 12, 9)
+
+[node name="Sprite2D3" type="Sprite2D" parent="PauseScreen"]
+z_index = -2
+position = Vector2(1021, 424)
+rotation = 0.06891273
+scale = Vector2(25, 25)
+texture = ExtResource("28_wibvp")
+region_enabled = true
+region_rect = Rect2(138, 12, 12, 9)
+
+[node name="ColorRect" type="ColorRect" parent="PauseScreen"]
+material = SubResource("ShaderMaterial_gng4c")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TextureRect" type="TextureRect" parent="PauseScreen"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -536.0
+offset_top = 63.999996
+offset_right = 979.0
+offset_bottom = 239.0
+grow_horizontal = 2
+scale = Vector2(0.7, 0.7)
+mouse_filter = 2
+texture = ExtResource("30_fsl8s")
+
+[node name="VHSLayer" parent="PauseScreen" instance=ExtResource("11_vdcm2")]
+visible = false
 
 [node name="VHSLayer" parent="." instance=ExtResource("11_vdcm2")]
 
@@ -312,6 +499,3 @@ offset_bottom = 158.0
 grow_horizontal = 2
 grow_vertical = 2
 texture = ExtResource("21_ycmcx")
-
-[connection signal="pressed" from="DeathScreen/Content/RestartButton" to="DeathScreen" method="_on_restart_button_pressed"]
-[connection signal="pressed" from="DeathScreen/Content/QuitButton" to="DeathScreen" method="_on_quit_button_pressed"]
