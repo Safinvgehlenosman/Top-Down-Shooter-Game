@@ -26,6 +26,7 @@ var original_position: Vector2 = Vector2.ZERO
 var tooltip_label: Label = null
 var is_chaos_card: bool = false
 var background_panel: Panel = null
+var price_tween: Tween = null
 
 const NON_SCALING_PRICE_UPGRADES := {"hp_refill": true, "ammo_refill": true}
 const RARITY_COLORS := {
@@ -50,7 +51,7 @@ func _ready() -> void:
 			buy_button.pressed.connect(_on_buy_pressed)
 
 func _on_hover() -> void:
-	var center = Vector2(1, 1)  # Adjusted Y from 117.5 to 125
+	var center = Vector2(1, 1)
 	var offset = center * (hover_scale - 1.0)
 	
 	var tween = create_tween()
@@ -116,12 +117,14 @@ func _refresh() -> void:
 	if price_label:
 		price_label.visible = (price > 0)
 		if price > 0:
-			if price > base_price:
-				price_label.text = str(price) + " ↑"
-				price_label.modulate = Color(1.0, 0.8, 0.2)
-			else:
-				price_label.text = str(price)
+			# Always show just the price number
+			price_label.text = str(price)
+			
+			# Set color based on affordability
+			if GameState.coins >= price:
 				price_label.modulate = Color.WHITE
+			else:
+				price_label.modulate = Color(1.0, 0.3, 0.3)  # Red if can't afford
 	
 	if coin_icon:
 		coin_icon.visible = (price > 0)
@@ -139,6 +142,28 @@ func _refresh() -> void:
 			style.bg_color = color
 	
 	_update_button_state()
+
+func flash_price_increase() -> void:
+	"""Call this when price increases to show yellow flash with arrow."""
+	if not price_label or price <= base_price:
+		return
+	
+	# Kill any running price tween
+	if price_tween and price_tween.is_running():
+		price_tween.kill()
+	
+	# Show yellow with arrow
+	price_label.text = str(price) + " ↑"
+	price_label.modulate = Color(1.0, 0.8, 0.2)
+	
+	# Create tween: wait 1 second, then fade to white and remove arrow
+	price_tween = create_tween()
+	price_tween.tween_interval(0.3)
+	price_tween.tween_property(price_label, "modulate", Color.WHITE, 0.3)
+	price_tween.tween_callback(func():
+		if price_label:
+			price_label.text = str(price)
+	)
 
 func _update_button_state() -> void:
 	if not buy_button:
@@ -178,6 +203,8 @@ func _on_buy_pressed() -> void:
 	if upgrade_id == "" or GameState.coins < price:
 		return
 	
+	var old_price = price
+	
 	if not GameState.spend_coins(price):
 		return
 	
@@ -190,7 +217,15 @@ func _on_buy_pressed() -> void:
 		sfx_collect.play()
 	
 	emit_signal("purchased")
-	_refresh()
+	
+	# Recalculate price after purchase
+	price = GameState.get_upgrade_price(upgrade_id, base_price) if not NON_SCALING_PRICE_UPGRADES.has(upgrade_id) else base_price
+	
+	# If price increased, flash it
+	if price > old_price:
+		flash_price_increase()
+	else:
+		_refresh()
 
 func _create_tooltip(upgrade: Dictionary) -> void:
 	tooltip_label = Label.new()

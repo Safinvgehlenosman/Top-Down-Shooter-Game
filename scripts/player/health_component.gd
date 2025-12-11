@@ -175,10 +175,6 @@ func _apply_damage(amount: float, ignore_invincibility: bool) -> void:
 		amount *= GameState.damage_taken_mult
 
 	# --- PASSIVE UPGRADE: Berserker ---
-	if is_damage and use_gamestate and GameState.berserker_threshold > 0.0 and GameState.berserker_damage_mult > 1.0:
-		var hp_percent := float(health) / float(max_health)
-		if hp_percent <= GameState.berserker_threshold:
-			amount /= GameState.berserker_damage_mult
 
 	if is_damage:
 		# God mode only matters for the player
@@ -195,7 +191,7 @@ func _apply_damage(amount: float, ignore_invincibility: bool) -> void:
 			owner.get_node("SFX_Hurt").play()
 
 		emit_signal("damaged", int(amount))
-        
+		
 		# Spawn damage number (unless disabled via meta tag)
 		if not get_meta("skip_damage_numbers", false):
 			_spawn_damage_number(int(amount))

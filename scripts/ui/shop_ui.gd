@@ -612,15 +612,20 @@ func _on_card_purchased() -> void:
 	
 	_refresh_from_state_full()
 	# Refresh all cards to update prices and dynamic text
+	var purchased_card_id = null
+	# Find the purchased card (the one with disabled button after purchase)
+	for card in cards_container.get_children():
+		if card.visible and card.has_method("setup") and card.buy_button and card.buy_button.disabled:
+			purchased_card_id = card.upgrade_id
+			break
 	for card in cards_container.get_children():
 		if card.visible and card.has_method("setup"):
-			# Get the upgrade data again and refresh
 			var upgrade_data := UpgradesDB.get_by_id(card.upgrade_id)
 			if not upgrade_data.is_empty():
-				# Duplicate and apply calculated price
 				var upgrade_copy = upgrade_data.duplicate()
 				var calculated_price = _calculate_upgrade_price(upgrade_copy)
 				upgrade_copy["price"] = calculated_price
+				var flash = (card.upgrade_id == purchased_card_id)
 				card.setup(upgrade_copy)
 	_update_card_button_states()
 
