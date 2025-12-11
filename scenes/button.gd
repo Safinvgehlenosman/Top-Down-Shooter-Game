@@ -1,6 +1,6 @@
 extends Button
 
-@export var hover_scale := 1.05
+@export var hover_scale := 1.4
 @export var tween_duration := 0.08
 
 var _base_scale := Vector2.ONE
@@ -22,3 +22,9 @@ func _on_mouse_entered() -> void:
 func _on_mouse_exited() -> void:
 	var t := create_tween()
 	t.tween_property(self, "scale", _base_scale, tween_duration)
+
+func _on_mouse_clicked() -> void:
+	var sfx = get_node_or_null("SFX_Squish")
+	if sfx:
+		sfx.play()
+	emit_signal("pressed")

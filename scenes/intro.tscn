@@ -1,7 +1,8 @@
-[gd_scene load_steps=100 format=3 uid="uid://btcojwer2m1mu"]
+[gd_scene load_steps=101 format=3 uid="uid://btcojwer2m1mu"]
 
 [ext_resource type="Script" uid="uid://c0wobo4m4j8a8" path="res://scenes/intro.gd" id="1_4bx60"]
 [ext_resource type="Texture2D" uid="uid://dyq5aevpme1pw" path="res://assets/Affinity/LogoAnimation.png" id="2_i2l1n"]
+[ext_resource type="Texture2D" uid="uid://bpau4n40hr5si" path="res://assets/Affinity/TITLE.png" id="2_wfs7u"]
 [ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="3_wfs7u"]
 
 [sub_resource type="Animation" id="Animation_es01l"]
@@ -679,15 +680,15 @@ modulate = Color(0, 0, 0, 1)
 offset_right = 1152.0
 offset_bottom = 649.0
 
-[node name="Background" type="ColorRect" parent="."]
-modulate = Color(0, 0, 0, 1)
-offset_right = 1152.0
-offset_bottom = 649.0
-
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
 libraries = {
 &"": SubResource("AnimationLibrary_0naf5")
 }
+
+[node name="Background" type="Sprite2D" parent="."]
+position = Vector2(581, 310)
+scale = Vector2(1.1552083, 1.1740742)
+texture = ExtResource("2_wfs7u")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(576, 304)

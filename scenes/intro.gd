@@ -2,18 +2,13 @@ extends Node2D
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var label: Label = $Label
-@onready var background: ColorRect = $Background
+@onready var background: Sprite2D = $Background
 @onready var fade_out: ColorRect = $FadeOut
 
 var _finished := false
 var _skipped := false
 
 func _ready() -> void:
-	# Background stays black always
-	background.position = Vector2.ZERO
-	background.size = get_viewport_rect().size
-	background.color = Color(0, 0, 0, 1.0)
-	
 	# FadeOut starts fully black (covers background)
 	fade_out.position = Vector2.ZERO
 	fade_out.size = get_viewport_rect().size

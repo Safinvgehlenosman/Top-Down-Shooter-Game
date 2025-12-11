@@ -1,4 +1,4 @@
-[gd_scene load_steps=35 format=3 uid="uid://c7fcp73v6wu5d"]
+[gd_scene load_steps=39 format=3 uid="uid://c7fcp73v6wu5d"]
 
 [ext_resource type="Script" uid="uid://b7yr6kx17nvlm" path="res://scripts/ui/ui.gd" id="1_qsv74"]
 [ext_resource type="Script" uid="uid://bun2ukfdgaq3m" path="res://scripts/ui/screen_flash.gd" id="2_7dvkv"]
@@ -23,16 +23,20 @@
 [ext_resource type="Script" uid="uid://cj3kifwr8j22y" path="res://scenes/button.gd" id="19_ukrhx"]
 [ext_resource type="Texture2D" uid="uid://df8xpnll1ling" path="res://assets/Affinity/CONTINUEBUTTON.png" id="20_ukrhx"]
 [ext_resource type="Texture2D" uid="uid://bgdl4dx2jbnh0" path="res://assets/Affinity/FULLSCREENBUTTON.png" id="21_fsl8s"]
+[ext_resource type="Texture2D" uid="uid://brflkgxc2wxdb" path="res://assets/blueslime.png" id="21_x4rqp"]
 [ext_resource type="Texture2D" uid="uid://3g07t4ytrolp" path="res://assets/Affinity/arrow.png" id="21_ycmcx"]
 [ext_resource type="Texture2D" uid="uid://s5nb030brv5o" path="res://assets/Affinity/RESTARTBUTTON.png" id="22_5ls34"]
+[ext_resource type="Texture2D" uid="uid://bphraonej5m30" path="res://assets/iceslime.png" id="22_6bb67"]
 [ext_resource type="Texture2D" uid="uid://be8cka83qpakq" path="res://assets/Affinity/QUITBUTTON.png" id="23_6bb67"]
-[ext_resource type="Texture2D" uid="uid://buu0qihcmu4d0" path="res://assets/Separated/Slime.png" id="25_y6fpy"]
+[ext_resource type="Texture2D" uid="uid://csw36agbxaibb" path="res://assets/ghostslime.png" id="23_mgb8n"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="26_phcun"]
-[ext_resource type="Texture2D" uid="uid://h8v2n05n2ryy" path="res://assets/fireslime.png" id="27_7crvc"]
 [ext_resource type="Texture2D" uid="uid://dsok60txc11jj" path="res://assets/purpleslime.png" id="28_wibvp"]
 [ext_resource type="Texture2D" uid="uid://btvt2khhedmpg" path="res://assets/Affinity/Youdied.png" id="29_ukrhx"]
+[ext_resource type="AudioStream" uid="uid://6jgtwphqqvnt" path="res://assets/Audios/SlimeLand.wav" id="29_x4rqp"]
 [ext_resource type="Shader" uid="uid://cgmteokvsd2g4" path="res://shaders/vignette.gdshader" id="29_ymt3a"]
 [ext_resource type="Texture2D" uid="uid://dhy2mkk0ojya7" path="res://assets/Affinity/PAUSEMENU.png" id="30_fsl8s"]
+[ext_resource type="Texture2D" uid="uid://dq6e5td6ibnp4" path="res://assets/redlime.png" id="32_fsl8s"]
+[ext_resource type="Texture2D" uid="uid://xyta8eli1ed" path="res://assets/poisonslime.png" id="33_x4rqp"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_gng4c"]
 shader = ExtResource("29_ymt3a")
@@ -242,25 +246,16 @@ texture = ExtResource("23_6bb67")
 position = Vector2(860.00006, 569.00006)
 rotation = 0.14579165
 scale = Vector2(20, 20)
-texture = ExtResource("25_y6fpy")
+texture = ExtResource("21_x4rqp")
 region_enabled = true
-region_rect = Rect2(10, 12, 12, 9)
-
-[node name="Sprite2D4" type="Sprite2D" parent="DeathScreen"]
-visible = false
-position = Vector2(417, 452)
-rotation = -0.0673296
-scale = Vector2(29.999998, 29.999998)
-texture = ExtResource("26_phcun")
-region_enabled = true
-region_rect = Rect2(12, 8, 11, 16)
+region_rect = Rect2(138, 11, 12, 10)
 
 [node name="Sprite2D2" type="Sprite2D" parent="DeathScreen"]
 z_index = -1
 position = Vector2(1074, 567)
 rotation = 0.04165517
 scale = Vector2(22.5, 22.5)
-texture = ExtResource("27_7crvc")
+texture = ExtResource("22_6bb67")
 region_enabled = true
 region_rect = Rect2(138, 12, 12, 9)
 
@@ -269,7 +264,7 @@ z_index = -2
 position = Vector2(1021, 424)
 rotation = 0.06891273
 scale = Vector2(25, 25)
-texture = ExtResource("28_wibvp")
+texture = ExtResource("23_mgb8n")
 region_enabled = true
 region_rect = Rect2(138, 12, 12, 9)
 
@@ -328,6 +323,10 @@ grow_horizontal = 2
 grow_vertical = 2
 texture = ExtResource("20_ukrhx")
 
+[node name="SFX_Squish" type="AudioStreamPlayer" parent="PauseScreen/ContinueButton"]
+stream = ExtResource("29_x4rqp")
+bus = &"SFX"
+
 [node name="FullscreenButton" type="Button" parent="PauseScreen"]
 process_mode = 3
 anchors_preset = 5
@@ -352,6 +351,10 @@ grow_horizontal = 2
 grow_vertical = 2
 texture = ExtResource("21_fsl8s")
 
+[node name="SFX_Squish" type="AudioStreamPlayer" parent="PauseScreen/FullscreenButton"]
+stream = ExtResource("29_x4rqp")
+bus = &"SFX"
+
 [node name="RestartButton" type="Button" parent="PauseScreen"]
 process_mode = 3
 anchors_preset = 5
@@ -374,6 +377,10 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 texture = ExtResource("22_5ls34")
+
+[node name="SFX_Squish" type="AudioStreamPlayer" parent="PauseScreen/RestartButton"]
+stream = ExtResource("29_x4rqp")
+bus = &"SFX"
 
 [node name="QuitButton" type="Button" parent="PauseScreen"]
 process_mode = 3
@@ -398,13 +405,17 @@ grow_horizontal = 2
 grow_vertical = 2
 texture = ExtResource("23_6bb67")
 
+[node name="SFX_Squish" type="AudioStreamPlayer" parent="PauseScreen/QuitButton"]
+stream = ExtResource("29_x4rqp")
+bus = &"SFX"
+
 [node name="Sprite2D" type="Sprite2D" parent="PauseScreen"]
 position = Vector2(860.00006, 569.00006)
 rotation = 0.14579165
 scale = Vector2(20, 20)
-texture = ExtResource("25_y6fpy")
+texture = ExtResource("28_wibvp")
 region_enabled = true
-region_rect = Rect2(10, 12, 12, 9)
+region_rect = Rect2(138, 12, 12, 9)
 
 [node name="Sprite2D4" type="Sprite2D" parent="PauseScreen"]
 visible = false
@@ -416,20 +427,19 @@ region_enabled = true
 region_rect = Rect2(12, 8, 11, 16)
 
 [node name="Sprite2D2" type="Sprite2D" parent="PauseScreen"]
-z_index = -1
-position = Vector2(1074, 567)
+position = Vector2(1064.0001, 559.99994)
 rotation = 0.04165517
 scale = Vector2(22.5, 22.5)
-texture = ExtResource("27_7crvc")
+texture = ExtResource("32_fsl8s")
 region_enabled = true
-region_rect = Rect2(138, 12, 12, 9)
+region_rect = Rect2(138, 10, 12, 11)
 
 [node name="Sprite2D3" type="Sprite2D" parent="PauseScreen"]
 z_index = -2
 position = Vector2(1021, 424)
 rotation = 0.06891273
 scale = Vector2(25, 25)
-texture = ExtResource("28_wibvp")
+texture = ExtResource("33_x4rqp")
 region_enabled = true
 region_rect = Rect2(138, 12, 12, 9)
 
