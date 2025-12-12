@@ -32,6 +32,7 @@ var active_bubble: Node2D = null
 var invis_running: bool = false
 var original_player_modulate: Color = Color.WHITE
 var original_gun_modulate: Color = Color.WHITE
+var _invis_debug_timer: float = 0.0
 
 const AbilityType = GameState.AbilityType
 
@@ -61,6 +62,13 @@ func _physics_process(delta: float) -> void:
 		GameState.ability_active_left = max(GameState.ability_active_left - delta, 0.0)
 		if GameState.ability_active_left <= 0.0:
 			_end_ability()
+
+	# Debug: detect excessively long invis timers (avoid spam)
+	if invis_running:
+		_invis_debug_timer = max(_invis_debug_timer - delta, 0.0)
+		if (GameState.ability_active_left > 20.0 or (GameState.ability_active_left != GameState.ability_active_left) or (GameState.ability_active_left == INF or GameState.ability_active_left == -INF)) and _invis_debug_timer <= 0.0:
+			print("[INVIS DEBUG] active_left=", GameState.ability_active_left)
+			_invis_debug_timer = 1.0
 
 	# Invis ambush timer handling (transient damage window after invis ends)
 	if "invis_ambush_active" in GameState and GameState.invis_ambush_active:
@@ -117,12 +125,22 @@ func _start_invis(data: Dictionary) -> void:
 	if invis_running:
 		return
 
-	var duration: float = data.get("duration", 3.0)
+	var base_duration: float = data.get("duration", 3.0)
+	var duration: float = base_duration
 	var base_cooldown: float = data.get("cooldown", 18.0)
 
 	# Apply invis duration multipliers from GameState
 	if "invis_duration_mult" in GameState:
 		duration = duration * GameState.invis_duration_mult
+
+	# Sanitise duration: guard against NaN/Inf and clamp to reasonable max
+	if (duration != duration) or (duration == INF or duration == -INF):
+		duration = base_duration
+		print("[INVIS DEBUG] sanitized invalid duration ->", duration)
+
+	# Clamp duration to prevent infinite-feeling invis (hard cap)
+	duration = clamp(duration, 0.1, 15.0)
+	print("[INVIS DEBUG] base=", base_duration, " mult=", GameState.invis_duration_mult, " final=", duration)
 
 	# Gunslinger: halves duration but prevents shooting from breaking invis
 	if "invis_gunslinger_enabled" in GameState and GameState.invis_gunslinger_enabled:

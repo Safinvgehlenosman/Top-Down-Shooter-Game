@@ -199,18 +199,19 @@ func flash_price_increase() -> void:
 func _update_button_state() -> void:
 	if not buy_button:
 		return
-	
+
 	var affordable := (upgrade_id != "") and (GameState.coins >= price)
 	var owned_block := false
 	var unlock_blocked := false
-	
+	var stackable := true
+
 	if upgrade_id != "":
 		var u := UpgradesDB.get_by_id(upgrade_id)
 		if not u.is_empty():
-			var stackable := bool(u.get("stackable", true))
+			stackable = bool(u.get("stackable", true))
 			if not stackable and GameState.has_upgrade(upgrade_id):
 				owned_block = true
-	
+
 	if upgrade_id.begins_with("unlock_"):
 		if upgrade_id in ["unlock_shotgun", "unlock_sniper", "unlock_turret", "unlock_shuriken"]:
 			if GameState.alt_weapon != GameState.AltWeaponType.NONE:
@@ -218,9 +219,10 @@ func _update_button_state() -> void:
 		elif upgrade_id in ["unlock_dash", "unlock_invis"]:
 			if GameState.ability != GameState.AbilityType.NONE:
 				unlock_blocked = true
-	
+
 	buy_button.disabled = not affordable or owned_block or unlock_blocked
-	
+
+	# Preserve permanent greys for unlocks/owned non-stackable items
 	if unlock_blocked:
 		modulate = Color(0.5, 0.5, 0.5, 0.7)
 		if desc_label:
@@ -233,6 +235,28 @@ func _update_button_state() -> void:
 			modulate = Color(0.6, 0.6, 0.6, 0.8)
 	else:
 		modulate = Color.WHITE
+
+	# ALWAYS update price label color for non-owned / purchasable cards.
+	# Respect active price flash so we don't stomp it.
+	if price_label:
+		var flash_active = false
+		if price_label.has_meta("price_flash_active"):
+			flash_active = bool(price_label.get_meta("price_flash_active"))
+		if not flash_active:
+			# Skip affordability color changes for permanently owned/unlock cards
+			var owned := GameState.has_upgrade(upgrade_id)
+			var skip_price_update := false
+			if (is_unlock_card and owned) or (owned and not stackable):
+				skip_price_update = true
+			if not skip_price_update:
+				if GameState.coins < price:
+					price_label.modulate = Color(1, 0.2, 0.2)
+				else:
+					# Affordable: if price is above base, use the existing "expensive" yellow, else white
+					if price > base_price:
+						price_label.modulate = Color(1.0, 0.8, 0.2)
+					else:
+						price_label.modulate = Color.WHITE
 
 func _on_buy_pressed() -> void:
 	if upgrade_id == "" or GameState.coins < price:

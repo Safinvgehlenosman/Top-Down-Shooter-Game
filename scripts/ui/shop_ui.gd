@@ -241,15 +241,18 @@ func _roll_shop_offers() -> Array:
 	var max_cards = min(5, cards_container.get_child_count())
 
 	# ---- NEW: Separate unlock selection phase (choose at most one unlock) ----
-	# Build explicit unlock pools from the master pool
+	# Build explicit unlock pools from the master pool.
+	# Include explicit unlock entries and ability-category upgrades as ability candidates.
 	var weapon_unlocks := []
 	var ability_unlocks := []
 	for u in all_upgrades:
-		if _is_unlock(u):
-			if str(u.get("unlock_weapon", "")).strip_edges() != "":
-				weapon_unlocks.append(u)
-			elif str(u.get("unlock_ability", "")).strip_edges() != "" or str(u.get("category", "")).strip_edges().to_lower() == "ability":
-				ability_unlocks.append(u)
+		var unlock_weapon_str := str(u.get("unlock_weapon", "")).strip_edges()
+		var unlock_ability_str := str(u.get("unlock_ability", "")).strip_edges()
+		var category_str := str(u.get("category", "")).strip_edges().to_lower()
+		if unlock_weapon_str != "":
+			weapon_unlocks.append(u)
+		elif unlock_ability_str != "" or category_str == "ability":
+			ability_unlocks.append(u)
 
 	# Respect requirements and ownership: filter pools
 	weapon_unlocks = _filter_upgrades(weapon_unlocks, null, [], {})

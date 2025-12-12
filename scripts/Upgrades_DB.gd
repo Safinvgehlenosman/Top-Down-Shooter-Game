@@ -255,7 +255,6 @@ func is_upgrade_available_for_loadout(upgrade: Dictionary, equipped_weapon: Stri
 				# Non-synergy: check equipped ability
 				if _normalize_string(requires_ability) != _normalize_string(equipped_ability):
 					return false
-		return false
 	
 	return true
 

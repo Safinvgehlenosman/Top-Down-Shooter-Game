@@ -841,8 +841,14 @@ func apply_upgrade(upgrade_id: String) -> void:
 			print("  New multiplier: %.2f" % primary_fire_rate_mult)
 		"invis_duration_mult":
 			var old_inv = invis_duration_mult
-			invis_duration_mult *= value
-			print("[UPGRADE DEBUG] invis_duration_mult: %.2f -> %.2f" % [old_inv, invis_duration_mult])
+			# Prefer explicit field on upgrade definitions, fallback to generic `value` field
+			var up_mult = float(upgrade.get("invis_duration_mult", value if value != 0.0 else 1.0))
+			invis_duration_mult *= up_mult
+			# Guard against non-finite values and cap multiplier to +100% (max ×2.0)
+			if (invis_duration_mult != invis_duration_mult) or (invis_duration_mult == INF or invis_duration_mult == -INF):
+				invis_duration_mult = 1.0
+			invis_duration_mult = clamp(invis_duration_mult, 0.1, 2.0)
+			print("[UPGRADE DEBUG] invis_duration_mult: %.2f -> %.2f (applied %.2f)" % [old_inv, invis_duration_mult, up_mult])
 		"invis_ambush":
 			# Enable ambush and set parameters if provided on the upgrade
 			invis_ambush_enabled = true
