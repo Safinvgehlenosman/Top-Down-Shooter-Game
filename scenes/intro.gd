@@ -10,7 +10,7 @@ var _finished := false
 var _skipped := false
 var _sfx_cooldown := 0.0
 
-const SFX_COOLDOWN := 10.25
+const SFX_COOLDOWN := 0.25
 
 func _ready() -> void:
 	# FadeOut starts fully black (covers background)

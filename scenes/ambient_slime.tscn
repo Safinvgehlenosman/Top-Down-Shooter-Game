@@ -1,0 +1,29 @@
+[gd_scene load_steps=10 format=3 uid="uid://dom0kpqf65hmc"]
+
+[ext_resource type="Script" uid="uid://t3ifdc7qhm6f" path="res://scripts/ui/ambient_slime.gd" id="1"]
+[ext_resource type="SpriteFrames" uid="uid://dic58rr2f4dyk" path="res://scenes/slimes/green_slime_ambient.tres" id="2_vy0lk"]
+[ext_resource type="AudioStream" uid="uid://dl8r8jnncqnmf" path="res://assets/Audios/Hurt.wav" id="3_g7ii3"]
+[ext_resource type="SpriteFrames" uid="uid://dqfle51s4msby" path="res://scenes/slimes/yellow_slime_ambient.tres" id="3_t2whf"]
+[ext_resource type="SpriteFrames" uid="uid://4kjqavpkqaru" path="res://scenes/slimes/white_slime_ambient.tres" id="4_ygvno"]
+[ext_resource type="SpriteFrames" uid="uid://cashi27ffsifj" path="res://scenes/slimes/poison_slime_ambient.tres" id="5_wgw1j"]
+[ext_resource type="SpriteFrames" uid="uid://cn20g0flvk6mk" path="res://scenes/slimes/ice_slime_ambient.tres" id="6_wgw1j"]
+[ext_resource type="SpriteFrames" uid="uid://myiai8dyb5sj" path="res://scenes/slimes/fire_slime_ambient.tres" id="7_i762t"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_vy0lk"]
+
+[node name="AmbientSlime" type="Node2D"]
+script = ExtResource("1")
+slime_sprites = Array[SpriteFrames]([ExtResource("7_i762t"), ExtResource("6_wgw1j"), ExtResource("5_wgw1j"), ExtResource("4_ygvno"), ExtResource("3_t2whf"), ExtResource("2_vy0lk")])
+
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+sprite_frames = ExtResource("2_vy0lk")
+animation = &"death"
+
+[node name="ClickArea" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ClickArea"]
+shape = SubResource("CircleShape2D_vy0lk")
+
+[node name="SFX_Squish" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("3_g7ii3")
+bus = &"SFX"

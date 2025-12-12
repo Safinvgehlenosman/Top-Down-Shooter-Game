@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://cwmceg8v4sax2" path="res://scripts/ui/start_screen.gd" id="1_he1sj"]
 [ext_resource type="FontFile" uid="uid://4xsaqwwtj2c1" path="res://assets/Fonts/PixelOperator8.ttf" id="1_o7i0r"]
-[ext_resource type="VideoStream" uid="uid://bkeupbbf8m6gi" path="res://assets/videos/Timeline-1.ogv" id="2_ecdxc"]
+[ext_resource type="PackedScene" uid="uid://dom0kpqf65hmc" path="res://scenes/ambient_slime.tscn" id="2_2banv"]
 [ext_resource type="Script" uid="uid://cj3kifwr8j22y" path="res://scenes/button.gd" id="3_xfy2r"]
 [ext_resource type="Texture2D" uid="uid://be8cka83qpakq" path="res://assets/Affinity/QUITBUTTON.png" id="4_bdg0b"]
 [ext_resource type="Texture2D" uid="uid://ccgpjao68jxd8" path="res://assets/slimebuttondesign.png" id="4_lt4el"]
@@ -41,11 +41,7 @@ process_mode = 3
 
 [node name="StartScreen" type="CanvasLayer" parent="."]
 script = ExtResource("1_he1sj")
-
-[node name="TextureRect" type="Sprite2D" parent="StartScreen"]
-position = Vector2(600, 392)
-scale = Vector2(1.0229167, 0.9407408)
-texture = ExtResource("9_ecdxc")
+ambient_slime_scene = ExtResource("2_2banv")
 
 [node name="StartButton" type="Button" parent="StartScreen"]
 process_mode = 3
@@ -54,9 +50,9 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -143.99997
-offset_top = 320.0
+offset_top = 272.0
 offset_right = 131.0
-offset_bottom = 370.0
+offset_bottom = 322.0
 grow_horizontal = 2
 scale = Vector2(1.2, 1.2)
 theme_override_fonts/font = ExtResource("1_o7i0r")
@@ -86,9 +82,9 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -143.99997
-offset_top = 400.0
+offset_top = 352.0
 offset_right = 131.0
-offset_bottom = 450.0
+offset_bottom = 402.0
 grow_horizontal = 2
 scale = Vector2(1.2, 1.2)
 theme_override_colors/font_color = Color(0.8745098, 0.8745098, 0.8745098, 1)
@@ -119,9 +115,9 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -144.0
-offset_top = 480.0
+offset_top = 432.0
 offset_right = 131.0
-offset_bottom = 530.0
+offset_bottom = 482.0
 grow_horizontal = 2
 scale = Vector2(1.2, 1.2)
 theme_override_fonts/font = ExtResource("1_o7i0r")
@@ -152,9 +148,9 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -143.99997
-offset_top = 560.0
+offset_top = 512.0
 offset_right = 131.0
-offset_bottom = 610.0
+offset_bottom = 562.0
 grow_horizontal = 2
 scale = Vector2(1.2, 1.2)
 theme_override_fonts/font = ExtResource("1_o7i0r")
@@ -299,19 +295,20 @@ theme_override_fonts/font = ExtResource("16_2banv")
 theme_override_font_sizes/font_size = 96
 text = "EE"
 
-[node name="VideoStreamPlayer" type="VideoStreamPlayer" parent="."]
-z_index = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -312.0
-offset_top = -168.0
-offset_right = 1608.0
-offset_bottom = 912.0
-grow_horizontal = 2
-grow_vertical = 2
-stream = ExtResource("2_ecdxc")
-volume_db = -80.0
-speed_scale = 0.65
-autoplay = true
-loop = true
+[node name="SlimeContainer" type="Node2D" parent="StartScreen"]
+
+[node name="KillCounter" type="Label" parent="StartScreen"]
+visible = false
+offset_left = 16.0
+offset_top = 592.0
+offset_right = 208.0
+offset_bottom = 663.0
+theme_override_fonts/font = ExtResource("16_2banv")
+theme_override_font_sizes/font_size = 32
+text = "0"
+
+[node name="TextureRect" type="Sprite2D" parent="."]
+z_index = -4096
+position = Vector2(600, 392)
+scale = Vector2(1.0229167, 0.9407408)
+texture = ExtResource("9_ecdxc")
