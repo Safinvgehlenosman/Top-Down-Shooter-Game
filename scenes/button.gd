@@ -1,6 +1,6 @@
 extends Button
 
-@export var hover_scale := 1.4
+@export var hover_scale := 1.3
 @export var tween_duration := 0.08
 
 var _base_scale := Vector2.ONE
@@ -8,9 +8,16 @@ var _base_scale := Vector2.ONE
 func _ready() -> void:
 	# Remember original scale
 	_base_scale = scale
+
+	# Debug: print button name, size, pivot_offset, and _base_scale
+	print("[Button Debug] Name:", name)
+	print("[Button Debug] Size:", size)
+
 	# IMPORTANT: make it scale from the center, not top-left
 	pivot_offset = size * 0.5
-	
+	print("[Button Debug] Calculated pivot_offset:", pivot_offset)
+	print("[Button Debug] _base_scale:", _base_scale)
+
 	# Make sure we get the signals (or connect them in the editor)
 	mouse_entered.connect(_on_mouse_entered)
 	mouse_exited.connect(_on_mouse_exited)

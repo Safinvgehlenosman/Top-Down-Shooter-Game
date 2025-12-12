@@ -40,60 +40,43 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	spawn_timer -= delta
 	if spawn_timer <= 0:
-		print("⏰ Spawn timer triggered!")
 		_spawn_ambient_slime()
 		_schedule_next_spawn()
 
 func _schedule_next_spawn() -> void:
 	spawn_timer = randf_range(min_spawn_interval, max_spawn_interval)
-	print("📅 Next spawn in: ", spawn_timer, " seconds")
 
 func _spawn_ambient_slime() -> void:
-	print("🎯 Attempting to spawn slime...")
 	
 	if not ambient_slime_scene:
-		print("❌ No ambient_slime_scene assigned!")
 		return
 	
 	var slime = ambient_slime_scene.instantiate()
-	print("🔍 Checking slime BEFORE adding to scene:")
-	print("   Slime children count: ", slime.get_child_count())
 	for i in range(slime.get_child_count()):
 		var child = slime.get_child(i)
-		print("   Child ", i, ": ", child.name, " (", child.get_class(), ")")
-	print("✅ Slime instantiated: ", slime)
 	
 	# Get the current scene (the actual game world, not the CanvasLayer)
 	var current_scene = get_tree().current_scene
 	if current_scene:
 		current_scene.add_child(slime)
 		slime.z_index = 5  # In front of background, behind UI text
-		print("✅ Added to current_scene, z_index: 5")
 	else:
 		# Fallback: add to root
 		get_tree().root.add_child(slime)
 		slime.z_index = 5
-		print("✅ Added to root, z_index: 5")
-	print("🔍 Checking slime AFTER adding to scene:")
-	print("   Slime children count: ", slime.get_child_count())
 	for i in range(slime.get_child_count()):
 		var child = slime.get_child(i)
-		print("   Child ", i, ": ", child.name, " (", child.get_class(), ")")
 	
 	# Connect kill signal
 	if slime.has_signal("slime_killed"):
 		slime.slime_killed.connect(_on_menu_slime_killed)
-		print("✅ Connected slime_killed signal")
-	else:
-		print("❌ Slime doesn't have slime_killed signal!")
+
 
 func _on_menu_slime_killed() -> void:
-	print("🎉 Menu slime killed! Total kills: ", menu_kills + 1)
 	menu_kills += 1
 	
 	if menu_kills >= 5:
 		kill_counter.visible = true
-		print("🏆 Kill counter now visible!")
 	
 	kill_counter.text = str(menu_kills)
 

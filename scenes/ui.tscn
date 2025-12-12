@@ -1,4 +1,4 @@
-[gd_scene load_steps=39 format=3 uid="uid://c7fcp73v6wu5d"]
+[gd_scene load_steps=40 format=3 uid="uid://c7fcp73v6wu5d"]
 
 [ext_resource type="Script" uid="uid://b7yr6kx17nvlm" path="res://scripts/ui/ui.gd" id="1_qsv74"]
 [ext_resource type="Script" uid="uid://bun2ukfdgaq3m" path="res://scripts/ui/screen_flash.gd" id="2_7dvkv"]
@@ -30,6 +30,7 @@
 [ext_resource type="Texture2D" uid="uid://be8cka83qpakq" path="res://assets/Affinity/QUITBUTTON.png" id="23_6bb67"]
 [ext_resource type="Texture2D" uid="uid://csw36agbxaibb" path="res://assets/ghostslime.png" id="23_mgb8n"]
 [ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="26_phcun"]
+[ext_resource type="Script" uid="uid://5kgbprvd506u" path="res://scenes/title.gd" id="27_6bb67"]
 [ext_resource type="Texture2D" uid="uid://dsok60txc11jj" path="res://assets/purpleslime.png" id="28_wibvp"]
 [ext_resource type="Texture2D" uid="uid://btvt2khhedmpg" path="res://assets/Affinity/Youdied.png" id="29_ukrhx"]
 [ext_resource type="AudioStream" uid="uid://6jgtwphqqvnt" path="res://assets/Audios/SlimeLand.wav" id="29_x4rqp"]
@@ -198,6 +199,7 @@ script = ExtResource("4_6rmj2")
 
 [node name="RestartButton" type="Button" parent="DeathScreen"]
 process_mode = 3
+self_modulate = Color(1, 1, 1, 0)
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
@@ -206,6 +208,7 @@ offset_top = 481.00006
 offset_right = -246.0
 offset_bottom = 531.00006
 grow_horizontal = 2
+scale = Vector2(1.2, 1.2)
 theme_override_fonts/font = ExtResource("6_qsv74")
 text = "Statistics"
 script = ExtResource("19_ukrhx")
@@ -215,12 +218,18 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 2.0
+offset_top = -1.000061
+offset_right = 277.0
+offset_bottom = 48.99994
 grow_horizontal = 2
 grow_vertical = 2
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("22_5ls34")
 
 [node name="QuitButton" type="Button" parent="DeathScreen"]
 process_mode = 3
+self_modulate = Color(1, 1, 1, 0)
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
@@ -229,6 +238,7 @@ offset_top = 544.00006
 offset_right = -247.0
 offset_bottom = 594.00006
 grow_horizontal = 2
+scale = Vector2(1.2, 1.2)
 theme_override_fonts/font = ExtResource("6_qsv74")
 text = "Quit"
 script = ExtResource("19_ukrhx")
@@ -238,8 +248,13 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 2.0
+offset_top = -1.000061
+offset_right = 277.0
+offset_bottom = 48.99994
 grow_horizontal = 2
 grow_vertical = 2
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("23_6bb67")
 
 [node name="Sprite2D" type="Sprite2D" parent="DeathScreen"]
@@ -278,6 +293,7 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="TextureRect" type="TextureRect" parent="DeathScreen"]
+visible = false
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
@@ -293,6 +309,64 @@ texture = ExtResource("29_ukrhx")
 [node name="VHSLayer" parent="DeathScreen" instance=ExtResource("11_vdcm2")]
 visible = false
 
+[node name="Title" type="Node2D" parent="DeathScreen"]
+position = Vector2(360, 56)
+script = ExtResource("27_6bb67")
+
+[node name="SL" type="Label" parent="DeathScreen/Title"]
+modulate = Color(0.36078432, 0, 0.5921569, 1)
+texture_filter = 1
+offset_left = -120.0
+offset_top = 8.0
+offset_right = 72.0
+offset_bottom = 104.0
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.19215687)
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 5
+theme_override_fonts/font = ExtResource("5_vsj0x")
+theme_override_font_sizes/font_size = 96
+text = "Y"
+
+[node name="IME" type="Label" parent="DeathScreen/Title"]
+texture_filter = 1
+offset_left = -32.0
+offset_top = 8.0
+offset_right = 244.0
+offset_bottom = 104.0
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.19215687)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 5
+theme_override_fonts/font = ExtResource("5_vsj0x")
+theme_override_font_sizes/font_size = 96
+text = "OU"
+
+[node name="SPR" type="Label" parent="DeathScreen/Title"]
+modulate = Color(0, 0.85490197, 0.8901961, 1)
+texture_filter = 1
+offset_left = 208.0
+offset_top = 8.000008
+offset_right = 496.0
+offset_bottom = 104.00001
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.19215687)
+theme_override_constants/shadow_outline_size = 5
+theme_override_fonts/font = ExtResource("5_vsj0x")
+theme_override_font_sizes/font_size = 96
+text = "DI"
+
+[node name="EE" type="Label" parent="DeathScreen/Title"]
+modulate = Color(1, 0.34901962, 0, 1)
+texture_filter = 1
+offset_left = 360.0
+offset_top = 8.0
+offset_right = 552.0
+offset_bottom = 104.00001
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.19215687)
+theme_override_constants/shadow_outline_size = 5
+theme_override_fonts/font = ExtResource("5_vsj0x")
+theme_override_font_sizes/font_size = 96
+text = "ED"
+
 [node name="PauseScreen" type="CanvasLayer" parent="." groups=["pause"]]
 process_mode = 3
 layer = 10
@@ -301,6 +375,8 @@ script = ExtResource("7_h1mc3")
 
 [node name="ContinueButton" type="Button" parent="PauseScreen"]
 process_mode = 3
+visible = false
+self_modulate = Color(1, 1, 1, 0)
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
@@ -309,6 +385,7 @@ offset_top = 354.0
 offset_right = -246.0
 offset_bottom = 404.0
 grow_horizontal = 2
+scale = Vector2(1.2, 1.2)
 theme_override_colors/font_color = Color(0.8745098, 0.8745098, 0.8745098, 1)
 theme_override_fonts/font = ExtResource("6_qsv74")
 text = "Start"
@@ -319,8 +396,13 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 1.0
+offset_top = -2.0
+offset_right = 276.0
+offset_bottom = 48.0
 grow_horizontal = 2
 grow_vertical = 2
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("20_ukrhx")
 
 [node name="SFX_Squish" type="AudioStreamPlayer" parent="PauseScreen/ContinueButton"]
@@ -329,6 +411,7 @@ bus = &"SFX"
 
 [node name="FullscreenButton" type="Button" parent="PauseScreen"]
 process_mode = 3
+self_modulate = Color(1, 1, 1, 0)
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
@@ -337,6 +420,7 @@ offset_top = 416.0
 offset_right = -246.0
 offset_bottom = 466.0
 grow_horizontal = 2
+scale = Vector2(1.2, 1.2)
 theme_override_colors/font_color = Color(0.8745098, 0.8745098, 0.8745098, 1)
 theme_override_fonts/font = ExtResource("6_qsv74")
 text = "fullscreen"
@@ -347,8 +431,12 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 1.0
+offset_right = 276.0
+offset_bottom = 50.0
 grow_horizontal = 2
 grow_vertical = 2
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("21_fsl8s")
 
 [node name="SFX_Squish" type="AudioStreamPlayer" parent="PauseScreen/FullscreenButton"]
@@ -357,6 +445,7 @@ bus = &"SFX"
 
 [node name="RestartButton" type="Button" parent="PauseScreen"]
 process_mode = 3
+self_modulate = Color(1, 1, 1, 0)
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
@@ -365,6 +454,7 @@ offset_top = 481.00006
 offset_right = -246.0
 offset_bottom = 531.00006
 grow_horizontal = 2
+scale = Vector2(1.2, 1.2)
 theme_override_fonts/font = ExtResource("6_qsv74")
 text = "Statistics"
 script = ExtResource("19_ukrhx")
@@ -374,8 +464,13 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 1.0
+offset_top = -2.0
+offset_right = 276.0
+offset_bottom = 48.0
 grow_horizontal = 2
 grow_vertical = 2
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("22_5ls34")
 
 [node name="SFX_Squish" type="AudioStreamPlayer" parent="PauseScreen/RestartButton"]
@@ -384,6 +479,7 @@ bus = &"SFX"
 
 [node name="QuitButton" type="Button" parent="PauseScreen"]
 process_mode = 3
+self_modulate = Color(1, 1, 1, 0)
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
@@ -392,6 +488,7 @@ offset_top = 544.00006
 offset_right = -247.0
 offset_bottom = 594.00006
 grow_horizontal = 2
+scale = Vector2(1.2, 1.2)
 theme_override_fonts/font = ExtResource("6_qsv74")
 text = "Quit"
 script = ExtResource("19_ukrhx")
@@ -401,8 +498,13 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 2.0
+offset_top = -6.1035156e-05
+offset_right = 277.0
+offset_bottom = 49.99994
 grow_horizontal = 2
 grow_vertical = 2
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("23_6bb67")
 
 [node name="SFX_Squish" type="AudioStreamPlayer" parent="PauseScreen/QuitButton"]
@@ -453,6 +555,7 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="TextureRect" type="TextureRect" parent="PauseScreen"]
+visible = false
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
@@ -467,6 +570,64 @@ texture = ExtResource("30_fsl8s")
 
 [node name="VHSLayer" parent="PauseScreen" instance=ExtResource("11_vdcm2")]
 visible = false
+
+[node name="Title" type="Node2D" parent="PauseScreen"]
+position = Vector2(360, 56)
+script = ExtResource("27_6bb67")
+
+[node name="SL" type="Label" parent="PauseScreen/Title"]
+modulate = Color(0.36078432, 0, 0.5921569, 1)
+texture_filter = 1
+offset_left = -248.0
+offset_top = 8.0
+offset_right = -56.0
+offset_bottom = 104.0
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.19215687)
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 5
+theme_override_fonts/font = ExtResource("5_vsj0x")
+theme_override_font_sizes/font_size = 96
+text = "PA"
+
+[node name="IME" type="Label" parent="PauseScreen/Title"]
+texture_filter = 1
+offset_left = -56.0
+offset_top = 8.0
+offset_right = 232.0
+offset_bottom = 104.0
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.19215687)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 5
+theme_override_fonts/font = ExtResource("5_vsj0x")
+theme_override_font_sizes/font_size = 96
+text = "USE"
+
+[node name="SPR" type="Label" parent="PauseScreen/Title"]
+modulate = Color(0, 0.85490197, 0.8901961, 1)
+texture_filter = 1
+offset_left = 264.0
+offset_top = 8.000008
+offset_right = 552.0
+offset_bottom = 104.00001
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.19215687)
+theme_override_constants/shadow_outline_size = 5
+theme_override_fonts/font = ExtResource("5_vsj0x")
+theme_override_font_sizes/font_size = 96
+text = "ME"
+
+[node name="EE" type="Label" parent="PauseScreen/Title"]
+modulate = Color(1, 0.34901962, 0, 1)
+texture_filter = 1
+offset_left = 464.0
+offset_top = 8.0
+offset_right = 656.0
+offset_bottom = 104.00001
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.19215687)
+theme_override_constants/shadow_outline_size = 5
+theme_override_fonts/font = ExtResource("5_vsj0x")
+theme_override_font_sizes/font_size = 96
+text = "NU"
 
 [node name="VHSLayer" parent="." instance=ExtResource("11_vdcm2")]
 
