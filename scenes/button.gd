@@ -10,13 +10,9 @@ func _ready() -> void:
 	_base_scale = scale
 
 	# Debug: print button name, size, pivot_offset, and _base_scale
-	print("[Button Debug] Name:", name)
-	print("[Button Debug] Size:", size)
 
 	# IMPORTANT: make it scale from the center, not top-left
 	pivot_offset = size * 0.5
-	print("[Button Debug] Calculated pivot_offset:", pivot_offset)
-	print("[Button Debug] _base_scale:", _base_scale)
 
 	# Make sure we get the signals (or connect them in the editor)
 	mouse_entered.connect(_on_mouse_entered)
@@ -35,7 +31,5 @@ func _on_mouse_exited() -> void:
 func _on_mouse_clicked() -> void:
 	var sfx = get_node_or_null("SFX_Squish")
 	if sfx:
-		print("[Button] SFX_Squish found, playing sound.")
 		sfx.play()
-	else:
-		print("[Button] SFX_Squish NOT found!")
+

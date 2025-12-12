@@ -1,5 +1,7 @@
 extends Node
 
+
+
 signal damaged(amount: int)
 signal healed(amount: int)
 signal died
@@ -59,6 +61,7 @@ var poison_damage_accumulator: float = 0.0
 
 
 func _ready() -> void:
+		# Regen upgrades removed
 	if use_gamestate:
 		max_health = GameState.max_health
 		health = GameState.health
@@ -89,6 +92,7 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+		# Regen removed
 	if invincible_timer > 0.0:
 		invincible_timer -= delta
 

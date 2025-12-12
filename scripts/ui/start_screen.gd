@@ -21,9 +21,7 @@ func _ready() -> void:
 	quit_button.pressed.connect(_on_quit_button_pressed)
 	fullscreen_button.pressed.connect(_on_fullscreen_button_pressed)
 	_schedule_next_spawn()
-	
-	print("🎬 StartScreen ready!")
-	print("   Ambient scene assigned: ", ambient_slime_scene != null)
+
 	
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	start_button.grab_focus()

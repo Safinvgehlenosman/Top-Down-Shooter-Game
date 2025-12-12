@@ -36,7 +36,7 @@ var ALL_UPGRADES: Array = []
 # STATIC UPGRADE DATA (formerly loaded from CSV)
 # -------------------------------------------------------------------
 const UPGRADE_DEFS: Array = [
-	{"id": "primary_burst_shot", "text": "Twinshot Burst (2 Bullets Per Shot)", "rarity": Rarity.EPIC, "price": 600, "category": "primary", "pool": "shop", "icon_path": "", "effect": "primary_burst_shot", "enabled": true},
+	# REMOVED: primary_burst_shot (Twinshot Burst)
 	{"id": "shotgun_unlock", "text": "Unlock Shotgun", "rarity": Rarity.COMMON, "price": 300, "category": "generic", "pool": "shop", "icon_path": "", "effect": "none", "value": 0, "requires_weapon": "none", "requires_ability": "", "enabled": true, "unlock_weapon": "shotgun", "unlock_ability": ""},
 	{"id": "sniper_unlock", "text": "Unlock Sniper", "rarity": Rarity.COMMON, "price": 350, "category": "generic", "pool": "shop", "icon_path": "", "effect": "none", "value": 0, "requires_weapon": "none", "requires_ability": "", "enabled": true, "unlock_weapon": "sniper", "unlock_ability": ""},
 	# flamethrower_unlock and grenade_unlock removed
@@ -51,14 +51,14 @@ const UPGRADE_DEFS: Array = [
 	{"id": "primary_kill_shot", "text": "Kill Shot (10% Crit Chance, 2.5x Crit)", "rarity": Rarity.RARE, "price": 400, "category": "primary", "pool": "shop", "icon_path": "", "effect": "primary_crit", "primary_crit_chance_add": 0.10, "primary_crit_mult": 2.50, "enabled": true},
 	{"id": "primary_weak_spotter", "text": "Weak Spotter (+5% Crit, 2x Crit)", "rarity": Rarity.RARE, "price": 350, "category": "primary", "pool": "shop", "icon_path": "", "effect": "primary_crit", "primary_crit_chance_add": 0.05, "primary_crit_mult": 2.00, "enabled": true},
 	{"id": "primary_steady_aim", "text": "Steady Aim (+30% Damage While Stationary)", "rarity": Rarity.RARE, "price": 340, "category": "primary", "pool": "shop", "icon_path": "", "effect": "primary_stationary_damage", "primary_stationary_damage": 1.30, "enabled": true},
-	{"id": "primary_twinshot_burst", "text": "Twinshot Burst (+1 Bullet, 0.06s Delay)", "rarity": Rarity.EPIC, "price": 600, "category": "primary", "pool": "shop", "icon_path": "", "effect": "primary_extra_burst", "primary_burst_count_add": 1, "primary_burst_delay": 0.06, "enabled": true},
+	{"id": "primary_trailing_shot", "text": "Trailing Shot", "rarity": Rarity.EPIC, "price": 600, "category": "primary", "pool": "shop", "icon_path": "", "effect": "primary_trailing_shot", "enabled": true, "stackable": true, "description": "Fires one additional projectile that trails slightly behind your main shot. Stackable."},
+	# REMOVED: primary_twinshot_burst
 	# --- NEW GENERAL UPGRADES ---
 	{"id": "general_move_speed_1", "text": "Swift Feet I (+10% Move Speed)", "rarity": Rarity.UNCOMMON, "price": 120, "category": "general", "pool": "shop", "icon_path": "", "effect": "move_speed_mult", "move_speed_mult": 1.10, "enabled": true},
 	{"id": "general_move_speed_2", "text": "Swift Feet II (+20% Move Speed)", "rarity": Rarity.RARE, "price": 220, "category": "general", "pool": "shop", "icon_path": "", "effect": "move_speed_mult", "move_speed_mult": 1.20, "enabled": true},
 	{"id": "general_max_hp_1", "text": "Hardened Body (+10% Max HP)", "rarity": Rarity.COMMON, "price": 100, "category": "general", "pool": "shop", "icon_path": "", "effect": "max_hp_mult", "max_hp_mult": 1.10, "enabled": true},
 	{"id": "general_damage_reduction_1", "text": "Thick Skin (10% Damage Reduction)", "rarity": Rarity.RARE, "price": 250, "category": "general", "pool": "shop", "icon_path": "", "effect": "damage_taken_mult", "damage_taken_mult": 0.9, "enabled": true},
-	{"id": "general_regen_1", "text": "Regeneration I (1 HP / 20s)", "rarity": Rarity.UNCOMMON, "price": 140, "category": "general", "pool": "shop", "icon_path": "", "effect": "regen_per_second", "regen_per_second": 0.05, "enabled": true},
-	{"id": "general_regen_2", "text": "Regeneration II (1 HP / 12s)", "rarity": Rarity.RARE, "price": 210, "category": "general", "pool": "shop", "icon_path": "", "effect": "regen_per_second", "regen_per_second": 0.08, "enabled": true},
+	# Regen upgrades removed
 ]
 
 # -------------------------------------------------------------------

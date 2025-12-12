@@ -86,10 +86,14 @@ func _on_restart_pressed() -> void:
 		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 		_show_main_ui()
 
-		print("Starting new run...")
+		# Debugging: Log new run initialization
+		print("[DEBUG] Restart pressed. Initializing new run...")
+
+		# Start a new run
 		GameState.start_new_run()
 
-		print("Changing scene...")
+		# Debugging: Log scene change
+		print("[DEBUG] Changing to level 1 scene...")
 		get_tree().change_scene_to_file("res://scenes/level_1.tscn")
 		print("=== RESTART PRESSED END ===")
 

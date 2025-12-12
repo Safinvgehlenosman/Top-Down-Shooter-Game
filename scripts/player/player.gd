@@ -132,19 +132,7 @@ func _physics_process(delta: float) -> void:
 	if is_dead:
 		return
 
-	# --- PASSIVE UPGRADE: Regeneration ---
-	if GameState.regen_per_second > 0.0 and health < max_health:
-		var regen_amount := GameState.regen_per_second * delta
-		# Accumulate fractional regen, only heal when >= 1
-		if not self.has_meta("regen_accum"):
-			self.set_meta("regen_accum", 0.0)
-		var accum = self.get_meta("regen_accum") + regen_amount
-		if accum >= 1.0:
-			var heal_amt := int(accum)
-			accum -= heal_amt
-			if health_component and health_component.has_method("heal"):
-				health_component.heal(heal_amt)
-		self.set_meta("regen_accum", accum)
+    # Regeneration removed
 
 	_update_timers(delta)
 	_process_movement(delta)

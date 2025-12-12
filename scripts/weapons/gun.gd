@@ -188,6 +188,8 @@ func handle_primary_fire(is_pressed: bool, aim_dir: Vector2) -> void:
 	if not GameState.debug_laser_mode and fire_timer > 0.0:
 		return
 
+	# firing state (no debug prints)
+
 	# 2) DAMAGE & STEADY AIM
 	var base_damage: float = GameConfig.bullet_base_damage
 	var final_damage: float = base_damage * GameState.primary_damage_mult
@@ -205,30 +207,44 @@ func handle_primary_fire(is_pressed: bool, aim_dir: Vector2) -> void:
 	if randf() < GameState.primary_crit_chance:
 		final_damage *= GameState.primary_crit_mult
 
-	# 4) PRIMARY BULLET SPAWN (no burst loop)
-	var bullet = BulletScene_DEFAULT.instantiate()
-	bullet.global_position = muzzle.global_position
-	bullet.direction = aim_dir
-	bullet.damage = roundi(final_damage)
-	# Calculate bullet size multiplier from percent bonus
-	var size_mult := 1.0 + (GameState.primary_bullet_size_bonus_percent / 100.0)
-	bullet.scale = bullet.scale * Vector2(size_mult, size_mult)
-	var base_speed := GameConfig.PRIMARY_BULLET_BASE_SPEED
-	var final_speed := base_speed * GameState.primary_bullet_speed_mult
-	bullet.speed = final_speed
-	get_tree().current_scene.add_child(bullet)
+	# 4) PRIMARY BULLET SPAWN
+	var shots: int = max(1, int(GameState.primary_burst_count))
+	# small total spread in degrees for multi-shot (keeps behaviour close to single-shot)
+	var total_spread_deg: float = 6.0
+	var size_mult: float = 1.0 + (GameState.primary_bullet_size_bonus_percent / 100.0)
+	var base_speed: float = GameConfig.PRIMARY_BULLET_BASE_SPEED
+	var final_speed: float = base_speed * GameState.primary_bullet_speed_mult
 
-	# If burst upgrade active, spawn second bullet slightly behind
-	if GameState.has_burst_shot:
-		var burst_bullet = BulletScene_DEFAULT.instantiate()
-		burst_bullet.global_position = muzzle.global_position + (aim_dir * 15.0)
-		burst_bullet.direction = aim_dir
-		burst_bullet.damage = roundi(final_damage)
-		burst_bullet.scale = burst_bullet.scale * Vector2(size_mult, size_mult)
-		burst_bullet.speed = final_speed
-		get_tree().current_scene.add_child(burst_bullet)
+	for s in range(shots):
+		var angle_offset := 0.0
+		if shots > 1:
+			var spread_rad: float = deg_to_rad(total_spread_deg)
+			angle_offset = (float(s) - float(shots - 1) / 2.0) * (spread_rad / max(1, shots - 1))
+		var dir := aim_dir.rotated(angle_offset)
 
-	# 6) FIRE RATE / COOLDOWN
+		var bullet = BulletScene_DEFAULT.instantiate()
+		bullet.global_position = muzzle.global_position
+		bullet.direction = dir
+		bullet.damage = roundi(final_damage)
+		bullet.scale = bullet.scale * Vector2(size_mult, size_mult)
+		bullet.speed = final_speed
+		get_tree().current_scene.add_child(bullet)
+
+		# Trailing Shot Epic Upgrade: fires +1 trailing projectile per stack, each with a small delay
+		var trailing_shot_stacks := 0
+		if GameState.has_method("get_upgrade_stack_count"):
+			trailing_shot_stacks = GameState.get_upgrade_stack_count("primary_trailing_shot")
+		if trailing_shot_stacks > 0:
+			print("[TRAILING DEBUG] trailing_shot_stacks=%d" % trailing_shot_stacks)
+		if trailing_shot_stacks > 0:
+			for i in range(trailing_shot_stacks):
+				# Use equal spacing so trailing bullets follow tightly behind each other
+				var step_delay := 0.02
+				var delay := float(i + 1) * step_delay
+				print("[TRAILING DEBUG] scheduling trailing projectile (delay=%.3f)" % delay)
+				call_deferred("_spawn_trailing_projectile", dir, final_damage, size_mult, final_speed, delay)
+
+	# 6) FIRE RATE / COOLDOWN (set immediately on primary shot)
 	if GameState.debug_laser_mode:
 		fire_timer = 0.0
 		final_damage = 9999.0
@@ -239,10 +255,27 @@ func handle_primary_fire(is_pressed: bool, aim_dir: Vector2) -> void:
 		var cooldown = max(GameState.fire_rate / fire_rate_multiplier, 0.01)
 		fire_timer = cooldown
 
-	# 7) AUDIO
+	# Cooldown set
+
+	# 7) AUDIO (primary shot)
 	if sfx_shoot:
+		sfx_shoot.volume_db = 0.0
 		sfx_shoot.pitch_scale = 1.0
 		sfx_shoot.play()
+
+
+func _spawn_trailing_projectile(aim_dir: Vector2, final_damage: float, size_mult: float, final_speed: float, delay: float) -> void:
+	await get_tree().create_timer(delay).timeout
+	print("[TRAILING DEBUG] spawning trailing projectile after %.3fs" % delay)
+	var trailing_bullet = BulletScene_DEFAULT.instantiate()
+	trailing_bullet.global_position = muzzle.global_position
+	trailing_bullet.direction = aim_dir
+	trailing_bullet.damage = roundi(final_damage)
+	trailing_bullet.scale = trailing_bullet.scale * Vector2(size_mult, size_mult)
+	trailing_bullet.speed = final_speed
+	get_tree().current_scene.add_child(trailing_bullet)
+
+	# (remove cooldown/audio here; primary shot handles cooldown/audio)
 
 
 # --------------------------------------------------------------------
