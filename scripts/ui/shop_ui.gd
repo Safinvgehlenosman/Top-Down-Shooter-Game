@@ -436,6 +436,73 @@ func _filter_upgrades(all_upgrades: Array, wanted_rarity: Variant, taken_ids: Ar
 		var base_id := _get_base_upgrade_id(u)
 		if taken_bases.has(base_id):
 			continue
+
+		# EXTRA SAFETY: Explicitly block ability/weapon upgrades unless the player
+		# either has the required item equipped or has it unlocked. This guards
+		# against any upstream filtering bypasses.
+		var req_weapon_str: String = str(u.get("requires_weapon", "")).strip_edges().to_lower()
+		# default to true for items without a weapon requirement
+		var weapon_ok := true
+		if req_weapon_str != "":
+			weapon_ok = false
+			# Equipped match
+			if req_weapon_str == _get_equipped_weapon_name():
+				weapon_ok = true
+			# Unlocked match
+			match req_weapon_str:
+				"shotgun": weapon_ok = weapon_ok or GameState.unlocked_shotgun
+				"sniper": weapon_ok = weapon_ok or GameState.unlocked_sniper
+				"shuriken": weapon_ok = weapon_ok or GameState.unlocked_shuriken
+				"turret": weapon_ok = weapon_ok or GameState.unlocked_turret
+				_:
+					pass
+			if not weapon_ok:
+				continue
+
+		var req_ability_str: String = str(u.get("requires_ability", "")).strip_edges().to_lower()
+		# default to true for items without an ability requirement
+		var ability_ok := true
+		if req_ability_str != "":
+			ability_ok = false
+			# Equipped match
+			if req_ability_str == _get_equipped_ability_name():
+				ability_ok = true
+			# Unlocked match
+			match req_ability_str:
+				"dash": ability_ok = ability_ok or GameState.unlocked_dash
+				"invis": ability_ok = ability_ok or GameState.unlocked_invis
+				_:
+					pass
+			if not ability_ok:
+				continue
+
+			# Temporary debug: log why ability/weapon-restricted upgrades are included/excluded
+			if req_weapon_str != "" or req_ability_str != "":
+				print("[SHOP DEBUG] Candidate: %s | requires_weapon=%s | requires_ability=%s | passes_requirements=%s | weapon_ok=%s | ability_ok=%s" % [u.get("id", ""), req_weapon_str, req_ability_str, str(_upgrade_meets_requirements(u)), str(weapon_ok), str(ability_ok)])
+
+		# Additional safety: Some ability upgrades don't include an explicit
+		# `requires_ability` field (e.g. `dash_distance_up_1`). For upgrades
+		# categorized as `ability`, infer the required ability from the id or
+		# effect and ensure that ability is unlocked or equipped.
+		var category_str: String = str(u.get("category", "")).strip_edges().to_lower()
+		if category_str == "ability":
+			var inferred_req: String = ""
+			var uid: String = str(u.get("id", "")).strip_edges().to_lower()
+			var eff: String = str(u.get("effect", "")).strip_edges().to_lower()
+			if uid.begins_with("dash") or eff.begins_with("dash"):
+				inferred_req = "dash"
+			elif uid.begins_with("invis") or eff.begins_with("invis"):
+				inferred_req = "invis"
+			if inferred_req != "":
+				var equipped_ok3 := (inferred_req == _get_equipped_ability_name())
+				var unlocked_ok3 := false
+				match inferred_req:
+					"dash": unlocked_ok3 = GameState.unlocked_dash
+					"invis": unlocked_ok3 = GameState.unlocked_invis
+					_:
+						pass
+				if not (equipped_ok3 or unlocked_ok3):
+					continue
 		res.append(u)
 		
 		# Debug when synergy passes all filters
@@ -455,10 +522,22 @@ func _upgrade_meets_requirements(u: Dictionary) -> bool:
 			if equipped_weapon != "":
 				return false
 		else:
-			# Specific weapon required
-			if required_weapon != equipped_weapon:
+			# Specific weapon required: allow if either equipped OR the weapon is unlocked
+			var normalized_required := UpgradesDB._normalize_string(required_weapon)
+			var equipped_ok := (normalized_required == UpgradesDB._normalize_string(equipped_weapon))
+			var unlocked_ok := false
+			# Check unlocked weapons via GameState helper
+			match normalized_required:
+				"shotgun": unlocked_ok = GameState.unlocked_shotgun
+				"sniper": unlocked_ok = GameState.unlocked_sniper
+				"shuriken": unlocked_ok = GameState.unlocked_shuriken
+				"turret": unlocked_ok = GameState.unlocked_turret
+				_:
+					unlocked_ok = false
+
+			if not (equipped_ok or unlocked_ok):
 				if u.get("rarity", 0) == UpgradesDB.Rarity.SYNERGY:
-					print("[SYNERGY DEBUG] %s requires weapon '%s' but equipped is '%s' - FAILED" % [u.get("id", ""), required_weapon, equipped_weapon])
+					print("[SYNERGY DEBUG] %s requires weapon '%s' but equipped is '%s' and not unlocked - FAILED" % [u.get("id", ""), required_weapon, equipped_weapon])
 				return false
 			else:
 				if u.get("rarity", 0) == UpgradesDB.Rarity.SYNERGY:
@@ -474,10 +553,19 @@ func _upgrade_meets_requirements(u: Dictionary) -> bool:
 			if equipped_ability != "":
 				return false
 		else:
-			# Specific ability required
-			if required_ability != equipped_ability:
+			# Specific ability required: allow if either equipped OR the ability is unlocked
+			var normalized_req_ability := UpgradesDB._normalize_string(required_ability)
+			var equipped_ok2 := (normalized_req_ability == UpgradesDB._normalize_string(equipped_ability))
+			var unlocked_ok2 := false
+			match normalized_req_ability:
+				"dash": unlocked_ok2 = GameState.unlocked_dash
+				"invis": unlocked_ok2 = GameState.unlocked_invis
+				_:
+					unlocked_ok2 = false
+
+			if not (equipped_ok2 or unlocked_ok2):
 				if u.get("rarity", 0) == UpgradesDB.Rarity.SYNERGY:
-					print("[SYNERGY DEBUG] %s requires ability '%s' (original: '%s') but equipped is '%s' - FAILED" % [u.get("id", ""), required_ability, u["requires_ability"], equipped_ability])
+					print("[SYNERGY DEBUG] %s requires ability '%s' (original: '%s') but equipped is '%s' and not unlocked - FAILED" % [u.get("id", ""), required_ability, u["requires_ability"], equipped_ability])
 				return false
 			else:
 				if u.get("rarity", 0) == UpgradesDB.Rarity.SYNERGY:
@@ -689,6 +777,34 @@ func _animate_cards_in() -> void:
 			
 			var tween := create_tween()
 			tween.tween_property(visual_root, "modulate:a", 1.0, 0.3).set_delay(group["delay"])
+
+
+func _input(event: InputEvent) -> void:
+	# If shop is visible, consume `ui_cancel` to close shop instead of opening pause
+	if not visible:
+		return
+	if event.is_action_pressed("ui_cancel"):
+		if is_chest_mode:
+			# Close chest (unpause and restore UI)
+			_close_chest_mode()
+		else:
+			# Close normal shop: hide UI and reset cards
+			_reset_all_cards()
+			visible = false
+			Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+			var coin_ui = get_node_or_null("Coins")
+			if coin_ui:
+				coin_ui.visible = true
+			var hp_ui = get_node_or_null("PlayerInfo")
+			if hp_ui:
+				hp_ui.visible = true
+			var ammo_ui = get_node_or_null("Ammo")
+			if ammo_ui:
+				ammo_ui.visible = true
+			var level_ui = get_node_or_null("Level")
+			if level_ui:
+				level_ui.visible = true
+		get_viewport().set_input_as_handled()
 
 
 # -------------------------------------------------------------------

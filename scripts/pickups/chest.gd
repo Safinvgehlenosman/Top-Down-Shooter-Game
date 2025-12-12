@@ -287,18 +287,36 @@ func _meets_requirements(upgrade: Dictionary) -> bool:
 	if requires_weapon != "":
 		var current_weapon: int = GameState.alt_weapon
 		var current_weapon_name := _get_weapon_name(current_weapon)
-		
+
+		# Allow if either currently equipped OR the weapon is unlocked
 		if requires_weapon != current_weapon_name:
-			return false
+			var unlocked_ok := false
+			match requires_weapon:
+				"shotgun": unlocked_ok = GameState.unlocked_shotgun
+				"sniper": unlocked_ok = GameState.unlocked_sniper
+				"shuriken": unlocked_ok = GameState.unlocked_shuriken
+				"turret": unlocked_ok = GameState.unlocked_turret
+				_:
+					unlocked_ok = false
+			if not unlocked_ok:
+				return false
 	
 	# Ability requirements (CSV stores as lowercase string like "dash")
 	var requires_ability: String = upgrade.get("requires_ability", "").strip_edges().to_lower()
 	if requires_ability != "":
 		var current_ability: int = GameState.ability
 		var current_ability_name := _get_ability_name(current_ability)
-		
+
+		# Allow if either currently equipped OR the ability is unlocked
 		if requires_ability != current_ability_name:
-			return false
+			var unlocked_ok2 := false
+			match requires_ability:
+				"dash": unlocked_ok2 = GameState.unlocked_dash
+				"invis": unlocked_ok2 = GameState.unlocked_invis
+				_:
+					unlocked_ok2 = false
+			if not unlocked_ok2:
+				return false
 	
 	# Ammo weapon requirement
 	if upgrade.get("requires_ammo_weapon", false):
