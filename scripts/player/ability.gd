@@ -17,6 +17,9 @@ const GrenadeBulletScene := preload("res://scenes/bullets/grenade_bullet.tscn")
 var is_dashing: bool = false
 var dash_dir: Vector2 = Vector2.ZERO
 var dash_speed: float = 0.0
+var dash_start_pos: Vector2 = Vector2.ZERO
+var dash_travel_distance: float = 0.0
+var _original_collision_mask: int = 0
 
 var slowmo_running: bool = false
 var base_speed: float = 0.0
@@ -162,13 +165,23 @@ func _start_dash(data: Dictionary) -> void:
 
 	dash_dir = input_dir.normalized()
 
+	# Store dash start position for phase validation
+	dash_start_pos = player.global_position
+
 	var duration: float = data.get("duration", 0.12)
 	var base_distance: float = data.get("distance", 220.0)
 	var distance: float = base_distance
 	if "dash_distance_bonus_percent" in GameState:
 		# EXPONENTIAL SCALING: dash_distance_bonus_percent is now a multiplier (starts at 1.0)
 		distance = base_distance * GameState.dash_distance_bonus_percent
+	dash_travel_distance = distance
 	dash_speed = distance / max(duration, 0.01)
+
+	# Grant invulnerability for the dash duration (i-frames are now standard)
+	var health_comp = player.get_node_or_null("Health")
+	if health_comp and health_comp.has_method("grant_spawn_invincibility"):
+		health_comp.grant_spawn_invincibility(duration)
+	print("[DASH] start: distance=%.1f, duration=%.3f, i-frames applied" % [distance, duration])
 
 	var base_cooldown: float = data.get("cooldown", 5.0)
 
@@ -184,6 +197,13 @@ func _start_dash(data: Dictionary) -> void:
 
 	is_dashing = true
 	dash_ghost_timer = 0.0
+
+	# Phase dash: temporarily disable collisions with wall layer (bit 1)
+	if GameState.dash_phase_enabled:
+		_original_collision_mask = int(player.collision_mask)
+		# Clear bit 0 (layer 1) so we don't collide with walls
+		player.collision_mask = int(player.collision_mask) & ~1
+		print("[DASH] phase enabled - wall collisions disabled")
 
 		   # ...existing code...
 
@@ -209,6 +229,35 @@ func _end_ability() -> void:
 	if is_dashing:
 		is_dashing = false
 		dash_speed = 0.0
+
+		# Restore collision mask if phase was active
+		if GameState.dash_phase_enabled:
+			# Validate final position: step backwards along dash_dir until not colliding with wall
+			var space := player.get_world_2d().direct_space_state
+			var params := PhysicsPointQueryParameters2D.new()
+			params.collision_mask = 1  # walls layer
+			params.exclude = [player]
+			var overlapping := space.intersect_point(params)
+			if overlapping.size() > 0:
+				var step := 8.0
+				var max_steps := int(ceil(dash_travel_distance / step))
+				var placed := false
+				for i in range(max_steps + 1):
+					var test_pos := player.global_position - dash_dir * (i * step)
+					params.position = test_pos
+					if space.intersect_point(params).size() == 0:
+						player.global_position = test_pos
+						placed = true
+						break
+				if not placed:
+					# Snap back to start if no valid spot found
+					player.global_position = dash_start_pos
+					print("[DASH] phase end: no valid spot, snapped back to start")
+			else:
+				print("[DASH] phase end: final position valid")
+			# Restore original collision mask
+			player.collision_mask = _original_collision_mask
+			print("[DASH] collisions restored")
 		
 		# ⭐ SYNERGY 5: Auto-fire shotgun on dash end (moved after is_dashing reset)
 		if GameState.has_shotgun_dash_autofire_synergy and GameState.alt_weapon == GameState.AltWeaponType.SHOTGUN:

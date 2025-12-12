@@ -13,6 +13,9 @@ var sniper_damage_bonus_percent: float = 0.0
 var sniper_pierce_bonus: int = 0
 var sniper_charge_bonus_percent: float = 0.0
 var dash_distance_bonus_percent: float = 1.0
+var dash_cooldown_mult: float = 1.0
+var dash_executioner_enabled: bool = false
+var dash_phase_enabled: bool = false
 # --- RUNTIME AND UPGRADE STATS (for upgrades system) ---
 var move_speed_base: float = 0.0
 var move_speed: float = 0.0
@@ -138,7 +141,7 @@ var ALT_WEAPON_DATA := {
    "id": "turret",
    "bullet_scene": BulletScene_TURRET,
    "bullet_speed": 135.0,  # Reduced to 60% of 225
-   "damage": 7.0,  # Increased from 1.0
+	"damage": 5.0,  # base turret damage
    "fire_rate": 1.2,  # Slower base fire rate (was 0.8)
    "range": 220.0,
    "spread_degrees": 10.0,  # Base inaccuracy spread
@@ -495,6 +498,9 @@ func start_new_run() -> void:
 
 	# Abilities
 	dash_distance_bonus_percent = 1.0 # Multiplicative base
+	dash_cooldown_mult = 1.0
+	dash_executioner_enabled = false
+	dash_phase_enabled = false
 	invis_duration = 3.0 # Reset to base
 	invis_duration_mult = 1.0
 	invis_movement_speed_mult = 1.0
@@ -1241,12 +1247,30 @@ func apply_upgrade(upgrade_id: String) -> void:
 		"dash_distance":
 			# EXPONENTIAL SCALING: Multiply distance multiplier per tier
 			dash_distance_bonus_percent *= GameConfig.UPGRADE_MULTIPLIERS["ability_speed"]
-			print("  → Dash distance ×%.2f (multiplier now: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_speed"], dash_distance_bonus_percent])
+			# Clamp max total distance multiplier to 2.0x to avoid level geometry issues
+			dash_distance_bonus_percent = min(dash_distance_bonus_percent, 2.0)
+			print("  → Dash distance ×%.2f (multiplier now: %.2f, clamped 2.0x)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_speed"], dash_distance_bonus_percent])
 
 		"dash_cooldown":
 			# EXPONENTIAL SCALING: Multiply cooldown reduction per tier
 			ability_cooldown_mult *= GameConfig.UPGRADE_MULTIPLIERS["ability_cooldown"]
+			# Also track dash-specific cooldown multiplier (for clarity)
+			dash_cooldown_mult *= GameConfig.UPGRADE_MULTIPLIERS["ability_cooldown"]
 			print("  → Dash cooldown ×%.2f (multiplier now: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_cooldown"], ability_cooldown_mult])
+
+		"dash_executioner":
+			if unlocked_dash:
+				dash_executioner_enabled = true
+				print("[UPGRADE DEBUG] dash_executioner enabled")
+			else:
+				print("[UPGRADE DEBUG] dash_executioner skipped (dash locked)")
+
+		"dash_phase":
+			if unlocked_dash:
+				dash_phase_enabled = true
+				print("[UPGRADE DEBUG] dash_phase enabled")
+			else:
+				print("[UPGRADE DEBUG] dash_phase skipped (dash locked)")
 
 		# ==============================
 

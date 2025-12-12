@@ -1291,6 +1291,13 @@ func _on_enemy_died(enemy: Node2D = null) -> void:
 		_break_all_crates_in_room()
 		_spawn_exit_door()
 
+	# Dash Executioner: refund dash cooldown on kill if enabled
+	if GameState.dash_executioner_enabled and GameState.ability == GameState.AbilityType.DASH:
+		var before_cd := GameState.ability_cooldown_left
+		if before_cd > 0.0:
+			GameState.ability_cooldown_left = max(0.0, before_cd - 0.75)
+			print("[DASH EXEC] refund applied: %.2f -> %.2f" % [before_cd, GameState.ability_cooldown_left])
+
 
 
 
