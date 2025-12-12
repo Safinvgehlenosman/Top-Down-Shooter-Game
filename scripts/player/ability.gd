@@ -62,6 +62,13 @@ func _physics_process(delta: float) -> void:
 		if GameState.ability_active_left <= 0.0:
 			_end_ability()
 
+	# Invis ambush timer handling (transient damage window after invis ends)
+	if "invis_ambush_active" in GameState and GameState.invis_ambush_active:
+		GameState.invis_ambush_time_left = max(GameState.invis_ambush_time_left - delta, 0.0)
+		if GameState.invis_ambush_time_left <= 0.0:
+			GameState.invis_ambush_active = false
+			print("[INVIS] ambush expired")
+
 	# Dash ghosts
 	if is_dashing:
 		dash_ghost_timer -= delta
@@ -113,12 +120,14 @@ func _start_invis(data: Dictionary) -> void:
 	var duration: float = data.get("duration", 3.0)
 	var base_cooldown: float = data.get("cooldown", 18.0)
 
-	# Apply invis duration bonuses (percent + flat seconds)
-	var percent_bonus: float = 0.0
-	if "invis_duration_bonus_percent" in GameState:
-		percent_bonus = GameState.invis_duration_bonus_percent
+	# Apply invis duration multipliers from GameState
+	if "invis_duration_mult" in GameState:
+		duration = duration * GameState.invis_duration_mult
 
-	duration = duration * (1.0 + percent_bonus)
+	# Gunslinger: halves duration but prevents shooting from breaking invis
+	if "invis_gunslinger_enabled" in GameState and GameState.invis_gunslinger_enabled:
+		duration = duration * 0.5
+		print("[INVIS] Gunslinger owned: invis duration halved -> %.2f" % duration)
 
 	# Apply cooldown multiplier from upgrades
 	var multiplier: float = 1.0
@@ -274,6 +283,13 @@ func _end_ability() -> void:
 	if invis_running:
 		invis_running = false
 		GameState.set_player_invisible(false)
+
+		# Activate ambush damage window when invis ends
+		if "invis_ambush_enabled" in GameState and GameState.invis_ambush_enabled:
+			if not GameState.invis_ambush_active:
+				GameState.invis_ambush_active = true
+				GameState.invis_ambush_time_left = GameState.invis_ambush_duration
+				print("[INVIS] Ambush activated: dur=%.2f, dmg_mult=%.2f" % [GameState.invis_ambush_duration, GameState.invis_ambush_damage_mult])
 
 		if is_instance_valid(animated_sprite):
 			animated_sprite.modulate = original_player_modulate

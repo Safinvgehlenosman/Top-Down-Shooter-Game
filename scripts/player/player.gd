@@ -144,14 +144,11 @@ func _physics_process(delta: float) -> void:
 	var is_shooting := Input.is_action_pressed("shoot")
 	var is_alt_fire := Input.is_action_pressed("alt_fire")
 
-	# Disable shooting in hub or while invisible (EXCEPT shuriken synergy)
-	if weapon_enabled and not GameState.player_invisible:
+	# Shooting allowed when weapon is enabled. Shooting while invisible will
+	# break invisibility (handled in gun logic) except for Gunslinger upgrade.
+	if weapon_enabled:
 		gun.handle_primary_fire(is_shooting, aim_dir)
 		gun.handle_alt_fire(is_alt_fire, aim_cursor_pos)
-	elif weapon_enabled and GameState.player_invisible:
-		# ⭐ SYNERGY 1: Allow shuriken shooting while invisible
-		if GameState.has_invis_shuriken_synergy and GameState.alt_weapon == GameState.AltWeaponType.SHURIKEN:
-			gun.handle_alt_fire(is_alt_fire, aim_cursor_pos)
 
 
 func _on_gun_recoil_requested(dir: Vector2, strength: float) -> void:

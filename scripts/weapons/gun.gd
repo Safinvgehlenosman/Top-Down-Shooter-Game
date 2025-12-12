@@ -250,6 +250,25 @@ func handle_primary_fire(is_pressed: bool, aim_dir: Vector2) -> void:
 	if not GameState.debug_laser_mode and fire_timer > 0.0:
 		return
 
+	# If player is invisible, shooting should normally break invis.
+	# Gunslinger upgrade prevents breaking invis on shoot (duration is halved at start instead).
+	if "player_invisible" in GameState and GameState.player_invisible:
+		var pl := get_tree().get_first_node_in_group("player")
+		var gunslinger := false
+		if "invis_gunslinger_enabled" in GameState and GameState.invis_gunslinger_enabled:
+			gunslinger = true
+		if not gunslinger:
+			if pl:
+				var ability_node = pl.get_node_or_null("Ability")
+				if ability_node and ability_node.has_method("_end_ability"):
+					ability_node._end_ability()
+				else:
+					GameState.set_player_invisible(false)
+					GameState.ability_active_left = 0.0
+			print("[INVIS] primary fired: invis broken by shooting")
+		else:
+			print("[INVIS] primary fired: gunslinger prevents breaking invis")
+
 	# firing state (no debug prints)
 
 	# 2) DAMAGE & STEADY AIM
@@ -268,6 +287,11 @@ func handle_primary_fire(is_pressed: bool, aim_dir: Vector2) -> void:
 	# 3) CRIT SYSTEM (PRIMARY ONLY)
 	if randf() < GameState.primary_crit_chance:
 		final_damage *= GameState.primary_crit_mult
+
+	# Apply invis ambush damage window if active
+	if "invis_ambush_active" in GameState and GameState.invis_ambush_active:
+		final_damage *= GameState.invis_ambush_damage_mult
+		print("[INVIS] Ambush active - primary damage multiplied by %.2f" % GameState.invis_ambush_damage_mult)
 
 	# 4) PRIMARY BULLET SPAWN
 	var shots: int = max(1, int(GameState.primary_burst_count))
@@ -368,6 +392,24 @@ func handle_alt_fire(is_pressed: bool, aim_pos: Vector2) -> void:
 	if data.is_empty():
 		return
 
+	# If player is invisible, alt fire should also break invis (unless Gunslinger)
+	if "player_invisible" in GameState and GameState.player_invisible:
+		var pl := get_tree().get_first_node_in_group("player")
+		var gunslinger := false
+		if "invis_gunslinger_enabled" in GameState and GameState.invis_gunslinger_enabled:
+			gunslinger = true
+		if not gunslinger:
+			if pl:
+				var ability_node = pl.get_node_or_null("Ability")
+				if ability_node and ability_node.has_method("_end_ability"):
+					ability_node._end_ability()
+				else:
+					GameState.set_player_invisible(false)
+					GameState.ability_active_left = 0.0
+			print("[INVIS] alt fired: invis broken by shooting")
+		else:
+			print("[INVIS] alt fired: gunslinger prevents breaking invis")
+
 	var base_cooldown: float = data.get("cooldown", 1.0)
 
 	# Apply weapon-specific fire rate multipliers
@@ -414,6 +456,11 @@ func _fire_weapon(data: Dictionary, aim_pos: Vector2, weapon_type: int) -> void:
 		damage *= GameState.sniper_damage_mult
 	elif weapon_type == GameState.AltWeaponType.SHURIKEN:
 		damage *= GameState.shuriken_damage_mult
+
+	# Apply invis ambush damage window if active
+	if "invis_ambush_active" in GameState and GameState.invis_ambush_active:
+		damage *= GameState.invis_ambush_damage_mult
+		print("[INVIS] Ambush active - alt damage multiplied by %.2f" % GameState.invis_ambush_damage_mult)
 
 	var base_dir := (aim_pos - muzzle.global_position).normalized()
 	var start_offset := -float(pellets - 1) / 2.0

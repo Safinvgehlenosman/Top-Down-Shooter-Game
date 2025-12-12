@@ -167,12 +167,12 @@ const ABILITY_DATA := {
 	   "type": "dash",
 	   "duration": 0.12,
 	   "distance": 220.0,
-	   "cooldown": 5.0,
+	   "cooldown": 10.0,
    },
    AbilityType.INVIS: {
 	   "type": "invis",
-	   "duration": 3.0,
-	   "cooldown": 18.0,
+	"duration": 3.0,
+	"cooldown": 10.0,
    },
 }
 
@@ -251,6 +251,13 @@ var slowmo_radius: float = 1.0  # Multiplicative base
 var invis_duration: float = 3.0  # Base duration from ABILITY_DATA
 var invis_duration_mult: float = 1.0  # Multiplicative scaling
 var invis_movement_speed_mult: float = 1.0  # Multiplicative base for movement speed
+# Invisibility ambush / gunslinger runtime flags
+var invis_ambush_enabled: bool = false
+var invis_ambush_duration: float = 0.75
+var invis_ambush_damage_mult: float = 1.5
+var invis_ambush_active: bool = false
+var invis_ambush_time_left: float = 0.0
+var invis_gunslinger_enabled: bool = false
 
 # economy
 var coins: int = 0
@@ -504,6 +511,13 @@ func start_new_run() -> void:
 	invis_duration = 3.0 # Reset to base
 	invis_duration_mult = 1.0
 	invis_movement_speed_mult = 1.0
+	# Invis ambush / gunslinger reset
+	invis_ambush_enabled = false
+	invis_ambush_duration = 0.75
+	invis_ambush_damage_mult = 1.5
+	invis_ambush_active = false
+	invis_ambush_time_left = 0.0
+	invis_gunslinger_enabled = false
 
 	# -----------------------------
 	# RESET RUN ECONOMY / FLAGS
@@ -798,6 +812,26 @@ func apply_upgrade(upgrade_id: String) -> void:
 			print("  Upgrade multiplier: %.2f" % upgrade_mult)
 			print("  New multiplier: %.2f" % primary_damage_mult)
 		"primary_fire_rate_mult":
+			var old_mult = primary_fire_rate_mult
+			var upgrade_mult = float(upgrade.get("primary_fire_rate_mult", 1.0))
+			primary_fire_rate_mult *= upgrade_mult
+			print("[UPGRADE DEBUG] primary_fire_rate_mult:")
+			print("  Old multiplier: %.2f" % old_mult)
+			print("  Upgrade multiplier: %.2f" % upgrade_mult)
+			print("  New multiplier: %.2f" % primary_fire_rate_mult)
+		"invis_duration_mult":
+			var old_inv = invis_duration_mult
+			invis_duration_mult *= value
+			print("[UPGRADE DEBUG] invis_duration_mult: %.2f -> %.2f" % [old_inv, invis_duration_mult])
+		"invis_ambush":
+			# Enable ambush and set parameters if provided on the upgrade
+			invis_ambush_enabled = true
+			invis_ambush_duration = float(upgrade.get("ambush_duration", invis_ambush_duration))
+			invis_ambush_damage_mult = float(upgrade.get("ambush_damage_mult", invis_ambush_damage_mult))
+			print("[UPGRADE DEBUG] invis_ambush applied: dur=%.2f, dmg_mult=%.2f" % [invis_ambush_duration, invis_ambush_damage_mult])
+		"invis_gunslinger":
+			invis_gunslinger_enabled = true
+			print("[UPGRADE DEBUG] invis_gunslinger enabled")
 			var old_mult = primary_fire_rate_mult
 			var upgrade_mult = float(upgrade.get("primary_fire_rate_mult", 1.0))
 			primary_fire_rate_mult *= upgrade_mult
@@ -1257,6 +1291,11 @@ func apply_upgrade(upgrade_id: String) -> void:
 			# Also track dash-specific cooldown multiplier (for clarity)
 			dash_cooldown_mult *= GameConfig.UPGRADE_MULTIPLIERS["ability_cooldown"]
 			print("  → Dash cooldown ×%.2f (multiplier now: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_cooldown"], ability_cooldown_mult])
+
+		"invis_cooldown":
+			# EXPONENTIAL SCALING: invis cooldown reduction per tier (uses global ability cooldown multiplier)
+			ability_cooldown_mult *= GameConfig.UPGRADE_MULTIPLIERS["ability_cooldown"]
+			print("  → Invis cooldown ×%.2f (ability cooldown mult now: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["ability_cooldown"], ability_cooldown_mult])
 
 		"dash_executioner":
 			if unlocked_dash:
