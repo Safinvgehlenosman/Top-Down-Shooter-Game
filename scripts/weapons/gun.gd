@@ -370,6 +370,8 @@ func handle_alt_fire(is_pressed: bool, aim_pos: Vector2) -> void:
 		base_cooldown *= GameState.shotgun_fire_rate_mult
 	elif current_alt == GameState.AltWeaponType.SNIPER:
 		base_cooldown *= GameState.sniper_fire_rate_mult
+	elif current_alt == GameState.AltWeaponType.SHURIKEN:
+		base_cooldown *= GameState.shuriken_fire_rate_mult
 
 	alt_fire_cooldown_timer = base_cooldown
 	_fire_weapon(data, aim_pos, current_alt)
@@ -405,6 +407,8 @@ func _fire_weapon(data: Dictionary, aim_pos: Vector2, weapon_type: int) -> void:
 		damage *= GameState.shotgun_damage_mult
 	elif weapon_type == GameState.AltWeaponType.SNIPER:
 		damage *= GameState.sniper_damage_mult
+	elif weapon_type == GameState.AltWeaponType.SHURIKEN:
+		damage *= GameState.shuriken_damage_mult
 
 	var base_dir := (aim_pos - muzzle.global_position).normalized()
 	var start_offset := -float(pellets - 1) / 2.0
@@ -433,7 +437,7 @@ func _fire_weapon(data: Dictionary, aim_pos: Vector2, weapon_type: int) -> void:
 			# Apply shuriken chainshot upgrades
 			if weapon_type == GameState.AltWeaponType.SHURIKEN:
 				if "chain_count" in bullet:
-					bullet.chain_count = int(GameState.shuriken_chain_count_mult - 1.0)
+					bullet.chain_count = int(GameState.shuriken_chain_count_mult - 1.0) + int(GameState.shuriken_seek_count_bonus)
 					bullet.chain_radius = 300.0 * GameState.shuriken_chain_radius_mult
 					bullet.chain_speed_mult = GameState.shuriken_speed_chain_mult
 					bullet.blade_split_chance = GameState.shuriken_blade_split_chance

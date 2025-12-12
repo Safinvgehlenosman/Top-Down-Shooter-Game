@@ -52,8 +52,10 @@ func _physics_process(delta: float) -> void:
 		if collider and collider.is_in_group("enemy"):
 			# Avoid hitting same enemy immediately after chain
 			if collider in hit_enemies:
-				return  # Skip this collision, already hit this one
-			
+				# Move a bit forward to avoid getting stuck on the same enemy
+				global_position = collision.get_position() + direction * 2.0
+				return
+
 			if collider.has_method("take_damage"):
 				collider.take_damage(damage)
 			
@@ -98,6 +100,9 @@ func _chain_to_next_enemy(last_hit: Node2D) -> void:
 		
 		# Reduce chain count
 		chain_count -= 1
+
+		# Reduce damage for the chained hit (50% each chain)
+		damage = int(max(1, round(float(damage) * 0.5)))
 		
 		print("[CHAIN] Shuriken chaining → target: %s (chains left: %d)" % [next_target.name, chain_count])
 		

@@ -31,6 +31,10 @@ var shuriken_chain_count_mult: float = 1.0
 var shuriken_chain_radius_mult: float = 1.0
 var shuriken_speed_chain_mult: float = 1.0
 var shuriken_blade_split_chance: float = 0.0
+var shuriken_damage_mult: float = 1.0
+var shuriken_fire_rate_mult: float = 1.0
+var shuriken_bounce_bonus: int = 0
+var shuriken_seek_count_bonus: int = 0
 ## REMOVED: All passive upgrades except move_speed_mult, max_hp_mult, damage_taken_mult, regen_per_second, coin_gain_mult
 var turret_accuracy_mult: float = 1.0
 var turret_homing_angle_deg: float = 0.0
@@ -361,6 +365,16 @@ func start_new_run() -> void:
 			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN) and upgrade.has("shotgun_spread_mult"):
 				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["spread_degrees"] *= float(upgrade.get("shotgun_spread_mult", 1.0))
 
+		# --- SHURIKEN (aggregated) ---
+		if unlocked_shuriken:
+			shuriken_damage_mult *= float(upgrade.get("shuriken_damage_mult", 1.0))
+			shuriken_fire_rate_mult *= float(upgrade.get("shuriken_fire_rate_mult", 1.0))
+			shuriken_bounce_bonus += int(upgrade.get("shuriken_bounce_add", 0))
+			shuriken_seek_count_bonus += int(upgrade.get("shuriken_seek_add", 0))
+			# Apply direct bounce add to ALT_WEAPON_DATA if present
+			if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN) and upgrade.has("shuriken_bounce_add"):
+				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bounces"] = max(0, int(ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bounces"] + int(upgrade.get("shuriken_bounce_add", 0))))
+
 			# --- SNIPER (aggregated) ---
 			if unlocked_sniper:
 				sniper_damage_mult *= float(upgrade.get("sniper_damage_mult", 1.0))
@@ -377,6 +391,12 @@ func start_new_run() -> void:
 		print("[UPGRADE DEBUG] Sniper damage mult: %.2f" % sniper_damage_mult)
 		print("[UPGRADE DEBUG] Sniper cooldown mult: %.2f" % sniper_fire_rate_mult)
 		print("[UPGRADE DEBUG] Sniper wall phasing: %s" % str(sniper_wall_phasing))
+
+		# Shuriken aggregated debug
+		print("[UPGRADE DEBUG] Shuriken damage mult: %.2f" % shuriken_damage_mult)
+		print("[UPGRADE DEBUG] Shuriken cooldown mult: %.2f" % shuriken_fire_rate_mult)
+		print("[UPGRADE DEBUG] Shuriken bounce bonus: %d" % shuriken_bounce_bonus)
+		print("[UPGRADE DEBUG] Shuriken seek bonus: %d" % shuriken_seek_count_bonus)
 
 	# -----------------------------
 	# APPLY MULTIPLIERS TO BASE STATS
@@ -413,6 +433,11 @@ func start_new_run() -> void:
 	shuriken_chain_radius_mult = 1.0
 	shuriken_speed_chain_mult = 1.0
 	shuriken_blade_split_chance = 0.0
+	# Reset shuriken runtime multipliers/bonuses
+	shuriken_damage_mult = 1.0
+	shuriken_fire_rate_mult = 1.0
+	shuriken_bounce_bonus = 0
+	shuriken_seek_count_bonus = 0
 
 	# Reset turret accuracy and homing
 	turret_accuracy_mult = 1.0
@@ -1053,6 +1078,44 @@ func apply_upgrade(upgrade_id: String) -> void:
 				var old_speed: float = ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bullet_speed"]
 				ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bullet_speed"] *= GameConfig.UPGRADE_MULTIPLIERS["projectile_speed"]
 				print("  → Shuriken speed ×%.2f (%.1f → %.1f)" % [GameConfig.UPGRADE_MULTIPLIERS["projectile_speed"], old_speed, ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bullet_speed"]])
+
+		"shuriken_damage_mult":
+			if unlocked_shuriken:
+				var old_mult = shuriken_damage_mult
+				shuriken_damage_mult *= float(upgrade.get("shuriken_damage_mult", 1.0))
+				print("[UPGRADE DEBUG] shuriken_damage_mult: %.2fx -> %.2fx" % [old_mult, shuriken_damage_mult])
+			else:
+				print("[UPGRADE DEBUG] shuriken_damage_mult skipped (shuriken locked)")
+
+		"shuriken_fire_rate_mult":
+			if unlocked_shuriken:
+				var old_fr = shuriken_fire_rate_mult
+				shuriken_fire_rate_mult *= float(upgrade.get("shuriken_fire_rate_mult", 1.0))
+				print("[UPGRADE DEBUG] shuriken_fire_rate_mult: %.2fx -> %.2fx" % [old_fr, shuriken_fire_rate_mult])
+			else:
+				print("[UPGRADE DEBUG] shuriken_fire_rate_mult skipped (shuriken locked)")
+
+		"shuriken_bounce_add":
+			if unlocked_shuriken:
+				var add_n = int(upgrade.get("shuriken_bounce_add", 0))
+				shuriken_bounce_bonus += add_n
+				# Apply immediately to ALT_WEAPON_DATA so effect is live mid-run
+				if ALT_WEAPON_DATA.has(AltWeaponType.SHURIKEN):
+					var old_b = int(ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bounces"])
+					ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bounces"] = max(0, old_b + add_n)
+					print("[UPGRADE DEBUG] shuriken_bounce_add: ALT bounces %d -> %d (bonus total: %d)" % [old_b, ALT_WEAPON_DATA[AltWeaponType.SHURIKEN]["bounces"], shuriken_bounce_bonus])
+				else:
+					print("[UPGRADE DEBUG] shuriken_bounce_add: shuriken data missing; bonus stored: %d" % shuriken_bounce_bonus)
+			else:
+				print("[UPGRADE DEBUG] shuriken_bounce_add skipped (shuriken locked)")
+
+		"shuriken_seeking_chain":
+			if unlocked_shuriken:
+				var add_seek = int(upgrade.get("shuriken_seek_add", 0))
+				shuriken_seek_count_bonus += add_seek
+				print("[UPGRADE DEBUG] shuriken_seeking_chain: +%d seeks (total bonus: %d)" % [add_seek, shuriken_seek_count_bonus])
+			else:
+				print("[UPGRADE DEBUG] shuriken_seeking_chain skipped (shuriken locked)")
 
 		"shuriken_pierce":
 			# EXPONENTIAL SCALING: Multiply ricochet damage by constant per tier
