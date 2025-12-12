@@ -8,6 +8,7 @@ var sniper_damage_mult: float = 1.0
 var sniper_fire_rate_mult: float = 1.0
 var sniper_mag_mult: float = 1.0
 var sniper_burst_count: int = 1
+var sniper_wall_phasing: bool = false
 var sniper_damage_bonus_percent: float = 0.0
 var sniper_pierce_bonus: int = 0
 var sniper_charge_bonus_percent: float = 0.0
@@ -360,6 +361,23 @@ func start_new_run() -> void:
 			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN) and upgrade.has("shotgun_spread_mult"):
 				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["spread_degrees"] *= float(upgrade.get("shotgun_spread_mult", 1.0))
 
+			# --- SNIPER (aggregated) ---
+			if unlocked_sniper:
+				sniper_damage_mult *= float(upgrade.get("sniper_damage_mult", 1.0))
+				sniper_fire_rate_mult *= float(upgrade.get("sniper_fire_rate_mult", 1.0))
+				sniper_mag_mult *= float(upgrade.get("sniper_mag_mult", 1.0))
+				# Phasing rounds effect: set flag and apply damage penalty
+				if upgrade.get("effect", "") == "sniper_phasing_rounds":
+					sniper_wall_phasing = true
+					# Apply 50% damage penalty while phasing is active
+					sniper_damage_mult *= 0.5
+					print("[UPGRADE DEBUG] sniper_phasing_rounds aggregated: wall phasing enabled, damage mult applied")
+
+		# Debug: report sniper aggregated values for verification
+		print("[UPGRADE DEBUG] Sniper damage mult: %.2f" % sniper_damage_mult)
+		print("[UPGRADE DEBUG] Sniper cooldown mult: %.2f" % sniper_fire_rate_mult)
+		print("[UPGRADE DEBUG] Sniper wall phasing: %s" % str(sniper_wall_phasing))
+
 	# -----------------------------
 	# APPLY MULTIPLIERS TO BASE STATS
 	# -----------------------------
@@ -414,6 +432,8 @@ func start_new_run() -> void:
 	sniper_fire_rate_mult = 1.0
 	sniper_mag_mult = 1.0
 	sniper_burst_count = 1
+	# Reset sniper phasing flag
+	sniper_wall_phasing = false
 
 	# Reset per-line bonuses
 	shotgun_spread_bonus_percent = 0.0
@@ -874,6 +894,32 @@ func apply_upgrade(upgrade_id: String) -> void:
 			# EXPONENTIAL SCALING: Reduce cooldown by 10% per tier
 			shotgun_fire_rate_mult *= GameConfig.UPGRADE_MULTIPLIERS["shotgun_fire_rate"]
 			print("  → Shotgun fire rate ×%.2f (total mult: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["shotgun_fire_rate"], shotgun_fire_rate_mult])
+
+		"sniper_damage_mult":
+			if unlocked_sniper:
+				var old_mult = sniper_damage_mult
+				sniper_damage_mult *= float(upgrade.get("sniper_damage_mult", 1.0))
+				print("[UPGRADE DEBUG] sniper_damage_mult: %.2fx -> %.2fx" % [old_mult, sniper_damage_mult])
+			else:
+				print("[UPGRADE DEBUG] sniper_damage_mult skipped (sniper locked)")
+
+		"sniper_fire_rate_mult":
+			if unlocked_sniper:
+				var old_fr = sniper_fire_rate_mult
+				sniper_fire_rate_mult *= float(upgrade.get("sniper_fire_rate_mult", 1.0))
+				print("[UPGRADE DEBUG] sniper_fire_rate_mult: %.2fx -> %.2fx" % [old_fr, sniper_fire_rate_mult])
+			else:
+				print("[UPGRADE DEBUG] sniper_fire_rate_mult skipped (sniper locked)")
+
+		"sniper_phasing_rounds":
+			if unlocked_sniper:
+				# Enable wall-phasing and apply a 50% damage penalty
+				sniper_wall_phasing = true
+				var old_mult2 = sniper_damage_mult
+				sniper_damage_mult *= 0.5
+				print("[UPGRADE DEBUG] sniper_phasing_rounds applied: wall phasing=TRUE, damage mult %.2fx -> %.2fx" % [old_mult2, sniper_damage_mult])
+			else:
+				print("[UPGRADE DEBUG] sniper_phasing_rounds skipped (sniper locked)")
 		
 		"shotgun_damage_mult":
 			if unlocked_shotgun:
