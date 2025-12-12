@@ -90,7 +90,7 @@ var ALT_WEAPON_DATA := {
 	   "bullet_speed": 900.0,
 	   "pellets": 6,
 	   "spread_degrees": 18.0,
-	   "damage": 10.0,
+	   "damage": 4.0,
 	   "recoil": 140.0,
 	   "ammo_cost": 1,
 	   "cooldown": 0.7,
@@ -348,6 +348,17 @@ func start_new_run() -> void:
 		primary_stationary_damage_mult *= float(upgrade.get("primary_stationary_damage_mult", 1.0))
 		primary_burst_count_add += int(upgrade.get("primary_burst_count_add", 0))
 		primary_burst_delay = max(primary_burst_delay, float(upgrade.get("primary_burst_delay", 0.0)))
+
+		# --- SHOTGUN (aggregated) ---
+		if unlocked_shotgun:
+			# explicit multiplier fields (if present on upgrade def) will be applied
+			shotgun_damage_mult *= float(upgrade.get("shotgun_damage_mult", 1.0))
+			shotgun_fire_rate_mult *= float(upgrade.get("shotgun_fire_rate_mult", 1.0))
+			shotgun_mag_mult *= float(upgrade.get("shotgun_mag_mult", 1.0))
+			shotgun_pellets_bonus += int(upgrade.get("shotgun_pellets_add", 0))
+			# direct spread multiplier if provided
+			if ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN) and upgrade.has("shotgun_spread_mult"):
+				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["spread_degrees"] *= float(upgrade.get("shotgun_spread_mult", 1.0))
 
 	# -----------------------------
 	# APPLY MULTIPLIERS TO BASE STATS
@@ -863,6 +874,39 @@ func apply_upgrade(upgrade_id: String) -> void:
 			# EXPONENTIAL SCALING: Reduce cooldown by 10% per tier
 			shotgun_fire_rate_mult *= GameConfig.UPGRADE_MULTIPLIERS["shotgun_fire_rate"]
 			print("  → Shotgun fire rate ×%.2f (total mult: %.2f)" % [GameConfig.UPGRADE_MULTIPLIERS["shotgun_fire_rate"], shotgun_fire_rate_mult])
+		
+		"shotgun_damage_mult":
+			if unlocked_shotgun:
+				var old_mult = shotgun_damage_mult
+				shotgun_damage_mult *= float(upgrade.get("shotgun_damage_mult", 1.0))
+				print("[UPGRADE DEBUG] shotgun_damage_mult: %.2fx -> %.2fx" % [old_mult, shotgun_damage_mult])
+			else:
+				print("[UPGRADE DEBUG] shotgun_damage_mult skipped (shotgun locked)")
+
+		"shotgun_fire_rate_mult":
+			if unlocked_shotgun:
+				var old_fr = shotgun_fire_rate_mult
+				shotgun_fire_rate_mult *= float(upgrade.get("shotgun_fire_rate_mult", 1.0))
+				print("[UPGRADE DEBUG] shotgun_fire_rate_mult: %.2fx -> %.2fx" % [old_fr, shotgun_fire_rate_mult])
+			else:
+				print("[UPGRADE DEBUG] shotgun_fire_rate_mult skipped (shotgun locked)")
+
+		"shotgun_spread_mult":
+			if unlocked_shotgun and ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN):
+				var old_spread = ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["spread_degrees"]
+				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["spread_degrees"] *= float(upgrade.get("shotgun_spread_mult", 1.0))
+				print("[UPGRADE DEBUG] shotgun_spread_mult: %.2f° -> %.2f°" % [old_spread, ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["spread_degrees"]])
+			else:
+				print("[UPGRADE DEBUG] shotgun_spread_mult skipped (shotgun locked or data missing)")
+
+		"shotgun_extra_pellet":
+			if unlocked_shotgun and ALT_WEAPON_DATA.has(AltWeaponType.SHOTGUN):
+				var old_p = ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["pellets"]
+				var add_n = int(upgrade.get("shotgun_pellets_add", 0))
+				ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["pellets"] = max(1, old_p + add_n)
+				print("[UPGRADE DEBUG] shotgun_extra_pellet: pellets %d -> %d" % [old_p, ALT_WEAPON_DATA[AltWeaponType.SHOTGUN]["pellets"]])
+			else:
+				print("[UPGRADE DEBUG] shotgun_extra_pellet skipped (shotgun locked or data missing)")
 		
 		"shotgun_mag":
 			# EXPONENTIAL SCALING: Increase magazine size by 20% per tier

@@ -69,7 +69,64 @@ func manual_reload() -> void:
 
 
 func _on_alt_weapon_changed(_new_weapon: int) -> void:
-	"""Reinitialize ammo when weapon changes."""
+	"""Reinitialize ammo when weapon changes.
+	Initializes `weapon_id`, `max_ammo`, `ammo`, `ammo_mode`, reload values
+	and notifies UI. Minimal and local change to fix missing UI / empty-sfx issue.
+	"""
+	alt_weapon = int(_new_weapon)
+	# Hide UI if no alt weapon
+	if alt_weapon == GameState.AltWeaponType.NONE:
+		weapon_id = ""
+		max_ammo = 0
+		ammo = 0
+		ammo_mode = "clip"
+		is_reloading = false
+		is_overheated = false
+		_notify_ui_fuel_changed()
+		call_deferred("_hide_fuel_ui")
+		print("[ALT DEBUG] Alt weapon set to NONE - fuel UI hidden")
+		return
+
+	# Read alt weapon data (pellets, damage, cooldown, etc.)
+	var data: Dictionary = GameState.ALT_WEAPON_DATA.get(alt_weapon, {})
+	if data.is_empty():
+		# No data — treat as none
+		weapon_id = ""
+		max_ammo = 0
+		ammo = 0
+		_notify_ui_fuel_changed()
+		print("[ALT DEBUG] ALT_WEAPON_DATA missing for id %s" % str(alt_weapon))
+		return
+
+	weapon_id = str(data.get("id", ""))
+	# Default ammo/fuel settings come from GameConfig.WEAPON_FUEL_CONFIG when present
+	var cfg = {}
+	if GameConfig.WEAPON_FUEL_CONFIG.has(weapon_id):
+		cfg = GameConfig.WEAPON_FUEL_CONFIG[weapon_id]
+
+	# Mode: clip or continuous
+	ammo_mode = str(cfg.get("mode", "clip")) if cfg != {} else "clip"
+
+	# Max ammo: prefer config.max_fuel, fallback to integer 1
+	var cfg_max = cfg.get("max_fuel", 0) if cfg != {} else 0
+	if ammo_mode == "clip":
+		max_ammo = int(round(float(cfg_max))) if cfg_max > 0 else int(round(float(data.get("ammo_cost", 1))))
+	else:
+		max_ammo = int(round(float(cfg_max))) if cfg_max > 0 else 100
+
+	# Other params
+	reload_rate = float(cfg.get("reload_rate", data.get("reload_rate", reload_rate))) if cfg != {} else float(data.get("reload_rate", reload_rate))
+	reload_delay = float(cfg.get("reload_delay", 5.0)) if cfg != {} else float(data.get("reload_delay", 5.0))
+	shots_per_bar = int(cfg.get("shots_per_bar", data.get("shots_per_bar", 0))) if cfg != {} else int(data.get("shots_per_bar", 0))
+
+	# Initialize runtime ammo to full
+	ammo = max_ammo
+	is_reloading = false
+	is_overheated = false
+	reload_timer = 0.0
+	time_since_last_shot = 0.0
+	print("[ALT DEBUG] Alt weapon changed -> %s | mode=%s max_ammo=%d" % [weapon_id, ammo_mode, max_ammo])
+	_notify_ui_fuel_changed()
 func _hide_fuel_ui() -> void:
 	"""Helper to hide fuel UI (called deferred)."""
 	if not is_inside_tree():
