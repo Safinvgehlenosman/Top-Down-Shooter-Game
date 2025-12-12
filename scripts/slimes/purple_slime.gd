@@ -87,6 +87,9 @@ func _shoot_at_player() -> void:
 	proj.speed = projectile_speed
 	proj.target_group = "player"
 
+	# DEBUG: report final projectile speed used
+	print("[PURPLE SLIME] spawning projectile with speed=%.2f" % proj.speed)
+
 	# Scale damage based on level (+10% per level)
 	if "damage" in proj:
 		var game_manager = get_tree().get_first_node_in_group("game_manager")

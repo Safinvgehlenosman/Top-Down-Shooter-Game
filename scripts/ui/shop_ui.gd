@@ -529,7 +529,9 @@ func flash_coin_label_red() -> void:
 		return
 	
 	# Kill any existing tween
-	var existing_tween = coin_label.get_meta("flash_tween", null)
+	var existing_tween = null
+	if coin_label.has_meta("flash_tween"):
+		existing_tween = coin_label.get_meta("flash_tween")
 	if existing_tween and existing_tween is Tween:
 		existing_tween.kill()
 	

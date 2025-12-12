@@ -27,6 +27,7 @@ var tooltip_label: Label = null
 var is_chaos_card: bool = false
 var background_panel: Panel = null
 var price_tween: Tween = null
+var _price_has_arrow: bool = false
 
 const NON_SCALING_PRICE_UPGRADES := {"hp_refill": true, "ammo_refill": true}
 const RARITY_COLORS := {
@@ -132,6 +133,14 @@ func _refresh() -> void:
 				price_label.modulate = Color.WHITE
 			else:
 				price_label.modulate = Color(1.0, 0.3, 0.3)  # Red if can't afford
+
+			# If price is above base (arrow state) and we haven't shown the flash yet, flash it
+			if price > base_price:
+				if not _price_has_arrow:
+					flash_price_increase()
+					_price_has_arrow = true
+			else:
+				_price_has_arrow = false
 	
 	if coin_icon:
 		coin_icon.visible = (price > 0)
@@ -154,28 +163,25 @@ func flash_price_increase() -> void:
 	"""Call this when price increases to show yellow flash with arrow."""
 	if not price_label or price <= base_price:
 		return
-
 	# Kill any running price tween
 	if price_tween and price_tween.is_running():
 		price_tween.kill()
 
-	# Show yellow with arrow
+	# Show yellow with arrow immediately on the label (only the label flashes)
 	price_label.text = str(price) + " ↑"
-	price_label.modulate = Color(1.0, 0.8, 0.2)
+	var flash_color := Color(1.0, 0.8, 0.2)
+	price_label.modulate = flash_color
+	# Mark flashing so other updates don't override the flash
+	price_label.set_meta("price_flash_active", true)
 
-	# Create tween: wait, then fade to correct color based on affordability
-	price_tween = create_tween()
-	price_tween.tween_interval(0.3)
-
-	# Determine final color based on affordability
-	var final_color = Color.WHITE if GameState.coins >= price else Color(1.0, 0.3, 0.3)
-	price_tween.tween_property(price_label, "modulate", final_color, 0.3)
-
-	price_tween.tween_callback(func():
-		if price_label:
-			price_label.text = str(price)
-			_update_price_color()
-	)
+	# Wait a short moment then restore final color/text on the label
+	var final_color: Color = Color.WHITE if GameState.coins >= price else Color(1.0, 0.3, 0.3)
+	await get_tree().create_timer(0.35).timeout
+	if price_label:
+		price_label.modulate = final_color
+		price_label.text = str(price)
+		_update_price_color()
+		price_label.set_meta("price_flash_active", false)
 
 func _update_button_state() -> void:
 	if not buy_button:
@@ -305,6 +311,9 @@ func set_rarity(new_rarity: UpgradesDB.Rarity) -> void:
 
 func _update_price_color():
 	if not price_label:
+		return
+	# If a flash is active, don't override the color
+	if price_label.has_meta("price_flash_active") and price_label.get_meta("price_flash_active"):
 		return
 	var affordable := (upgrade_id != "") and (GameState.coins >= price)
 	price_label.modulate = Color.WHITE if affordable else Color(1, 0.3, 0.3)

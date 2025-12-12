@@ -333,6 +333,26 @@ func start_new_run() -> void:
 	acquired_upgrades.clear()
 	upgrade_purchase_counts.clear()
 
+	# Reset UNLOCKS and synergy flags so unlocks do NOT persist across runs
+	unlocked_shotgun = false
+	unlocked_sniper = false
+	unlocked_shuriken = false
+	unlocked_turret = false
+	unlocked_dash = false
+	unlocked_invis = false
+
+	# Reset synergy/unlock-related runtime flags
+	synergy_flamethrower_bubble_unlocked = false
+	synergy_grenade_dash_unlocked = false
+	has_invis_shuriken_synergy = false
+	has_sniper_wallpierce_synergy = false
+	has_fireshield_synergy = false
+	has_turret_slowmo_sprinkler_synergy = false
+	has_shotgun_dash_autofire_synergy = false
+	has_shuriken_bubble_nova_synergy = false
+	has_dash_grenade_synergy = false
+	dash_grenade_synergy_grenades = 0
+
 	primary_crit_chance = 0.0
 	primary_crit_mult = 1.0
 	primary_stationary_damage_mult = 1.0

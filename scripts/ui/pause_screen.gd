@@ -96,9 +96,15 @@ func _on_restart_pressed() -> void:
 	hide_pause()
 	get_tree().paused = false
 	GameState.start_new_run()
+	# Wait one frame so the new run state fully propagates before loading the scene
+	await get_tree().process_frame
 	get_tree().change_scene_to_file("res://scenes/level_1.tscn")
 
 func _on_quit_pressed() -> void:
 	hide_pause()
 	get_tree().paused = false
+	# Ensure run state is cleared when quitting to the start screen
+	GameState.start_new_run()
+	# Wait one frame so the new run state fully propagates before loading the start screen
+	await get_tree().process_frame
 	get_tree().change_scene_to_file("res://scenes/start_screen.tscn")
