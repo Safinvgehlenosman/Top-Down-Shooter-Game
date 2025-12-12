@@ -142,6 +142,11 @@ func _notify_ui_fuel_changed() -> void:
 		return
 	var ui = get_tree().get_first_node_in_group("ui")
 	if ui and ui.has_method("show_alt_weapon_fuel"):
+		# Turret does not use the fuel UI — keep it hidden like NONE
+		if weapon_id == "turret" or alt_weapon == GameState.AltWeaponType.TURRET:
+			if ui.has_method("hide_alt_weapon_fuel"):
+				ui.hide_alt_weapon_fuel()
+			return
 		var is_continuous := (ammo_mode == "continuous")
 		var shots_for_ui := max_ammo if ammo_mode == "clip" else 100
 		ui.show_alt_weapon_fuel(weapon_id, float(max_ammo), float(ammo), shots_for_ui, is_continuous)

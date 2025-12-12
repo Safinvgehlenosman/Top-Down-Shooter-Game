@@ -24,9 +24,9 @@ func configure(data: Dictionary) -> void:
 	
 	# Map "fire_rate" (from ALT_WEAPON_DATA) to "fire_interval" (turret's variable)
 	if data.has("fire_rate"):
-		fire_interval = data["fire_rate"]
+		fire_interval = float(data["fire_rate"]) * float(GameState.turret_fire_rate_mult)
 	else:
-		fire_interval = data.get("fire_interval", fire_interval)
+		fire_interval = float(data.get("fire_interval", fire_interval)) * float(GameState.turret_fire_rate_mult)
 	
 	turret_range = data.get("range", turret_range)
 
@@ -35,7 +35,8 @@ func configure(data: Dictionary) -> void:
 	spread_rad = deg_to_rad(spread_deg)
 
 	bullet_scene = data.get("bullet_scene", bullet_scene)
-	bullet_speed = data.get("bullet_speed", bullet_speed)
+	# Apply GameState bullet speed multiplier (clamped in GameState)
+	bullet_speed = float(data.get("bullet_speed", bullet_speed)) * float(GameState.turret_bullet_speed_mult)
 	damage       = data.get("damage", damage)
 
 func _process(delta: float) -> void:

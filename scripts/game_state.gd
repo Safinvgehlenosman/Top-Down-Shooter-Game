@@ -40,6 +40,9 @@ var turret_accuracy_mult: float = 1.0
 var turret_homing_angle_deg: float = 0.0
 var turret_homing_turn_speed: float = 0.0
 var turret_damage_mult: float = 1.0
+var turret_fire_rate_mult: float = 1.0
+var turret_bullet_speed_add: float = 0.0  # additive percent; final multiplier = clamp(1.0 + add, 1.0, 2.0)
+var turret_bullet_speed_mult: float = 1.0
 
 # --- PRIMARY WEAPON UPGRADE STATS ---
 var primary_damage_mult: float = 1.0
@@ -388,6 +391,22 @@ func start_new_run() -> void:
 					print("[UPGRADE DEBUG] sniper_phasing_rounds aggregated: wall phasing enabled, damage mult applied")
 
 		# Debug: report sniper aggregated values for verification
+		# TURRET aggregated (only when unlocked)
+		if unlocked_turret:
+			# Multiply damage and cooldown multipliers if provided on the upgrade
+			turret_damage_mult *= float(upgrade.get("turret_damage_mult", 1.0))
+			turret_fire_rate_mult *= float(upgrade.get("turret_fire_rate_mult", 1.0))
+			# Accuracy multiplier reduces spread (lower = better accuracy)
+			turret_accuracy_mult *= float(upgrade.get("turret_accuracy_mult", 1.0))
+			# Bullet speed additions are additive; clamp applied after aggregation
+			turret_bullet_speed_add += float(upgrade.get("turret_bullet_speed_add", 0.0))
+			# Epic unique: homing rounds set explicit angle/turn values
+			if upgrade.get("effect", "") == "turret_homing_rounds":
+				turret_homing_angle_deg = float(upgrade.get("turret_homing_angle_deg", turret_homing_angle_deg))
+				turret_homing_turn_speed = float(upgrade.get("turret_homing_turn_speed", turret_homing_turn_speed))
+				print("[UPGRADE DEBUG] turret_homing_rounds aggregated: angle %.1f°, turn %.2f" % [turret_homing_angle_deg, turret_homing_turn_speed])
+
+		# Debug: report sniper aggregated values for verification
 		print("[UPGRADE DEBUG] Sniper damage mult: %.2f" % sniper_damage_mult)
 		print("[UPGRADE DEBUG] Sniper cooldown mult: %.2f" % sniper_fire_rate_mult)
 		print("[UPGRADE DEBUG] Sniper wall phasing: %s" % str(sniper_wall_phasing))
@@ -401,6 +420,9 @@ func start_new_run() -> void:
 	# -----------------------------
 	# APPLY MULTIPLIERS TO BASE STATS
 	# -----------------------------
+	# Finalize turret bullet speed multiplier (clamped to prevent physics issues)
+	turret_bullet_speed_mult = clamp(1.0 + turret_bullet_speed_add, 1.0, 2.0)
+	print("[UPGRADE DEBUG] Turret bullet speed add: %.2f -> final mult: %.2f" % [turret_bullet_speed_add, turret_bullet_speed_mult])
 	max_health = int(round(GameConfig.player_max_health * max_hp_mult))
 	set_health(max_health)
 
@@ -444,6 +466,9 @@ func start_new_run() -> void:
 	turret_homing_angle_deg = 0.0
 	turret_homing_turn_speed = 0.0
 	turret_damage_mult = 1.0
+	# Reset turret runtime multipliers
+	turret_fire_rate_mult = 1.0
+	turret_bullet_speed_add = 0.0
 
 	# Reset shotgun multipliers
 	shotgun_pellets = GameConfig.alt_fire_bullet_count
@@ -504,6 +529,11 @@ func start_new_run() -> void:
 	print("  Move Speed Mult: %.2fx" % move_speed_mult)
 	print("  Max HP Mult: %.2fx" % max_hp_mult)
 	print("  Damage Taken Mult: %.2fx" % damage_taken_mult)
+	print("  Turret damage mult: %.2f" % turret_damage_mult)
+	print("  Turret cooldown mult: %.2f" % turret_fire_rate_mult)
+	print("  Turret bullet speed mult: %.2f" % turret_bullet_speed_mult)
+	print("  Turret accuracy mult: %.2f" % turret_accuracy_mult)
+	print("  Turret homing enabled: %s (angle: %.1f°, turn: %.2f)" % [str(turret_homing_angle_deg > 0.0), turret_homing_angle_deg, turret_homing_turn_speed])
 	# Regen Per Second removed from debug output
 
 	_emit_all_signals()
@@ -1127,6 +1157,47 @@ func apply_upgrade(upgrade_id: String) -> void:
 		# ==============================
 		# TURRET EFFECTS
 		# ==============================
+		"turret_damage_mult":
+			if unlocked_turret:
+				var old_mult = turret_damage_mult
+				turret_damage_mult *= float(upgrade.get("turret_damage_mult", 1.0))
+				print("[UPGRADE DEBUG] turret_damage_mult: %.2fx -> %.2fx" % [old_mult, turret_damage_mult])
+			else:
+				print("[UPGRADE DEBUG] turret_damage_mult skipped (turret locked)")
+
+		"turret_fire_rate_mult":
+			if unlocked_turret:
+				var old_fr = turret_fire_rate_mult
+				turret_fire_rate_mult *= float(upgrade.get("turret_fire_rate_mult", 1.0))
+				print("[UPGRADE DEBUG] turret_fire_rate_mult: %.2fx -> %.2fx" % [old_fr, turret_fire_rate_mult])
+			else:
+				print("[UPGRADE DEBUG] turret_fire_rate_mult skipped (turret locked)")
+
+		"turret_bullet_speed_add":
+			if unlocked_turret:
+				var add_v = float(upgrade.get("turret_bullet_speed_add", 0.0))
+				turret_bullet_speed_add += add_v
+				print("[UPGRADE DEBUG] turret_bullet_speed_add: +%.2f (total add: %.2f)" % [add_v, turret_bullet_speed_add])
+			else:
+				print("[UPGRADE DEBUG] turret_bullet_speed_add skipped (turret locked)")
+
+		"turret_accuracy_mult":
+			if unlocked_turret:
+				var old_acc = turret_accuracy_mult
+				turret_accuracy_mult *= float(upgrade.get("turret_accuracy_mult", 1.0))
+				print("[UPGRADE DEBUG] turret_accuracy_mult: %.2fx -> %.2fx" % [old_acc, turret_accuracy_mult])
+			else:
+				print("[UPGRADE DEBUG] turret_accuracy_mult skipped (turret locked)")
+
+		"turret_homing_rounds":
+			if unlocked_turret:
+				# One-time purchase: set soft-homing configuration
+				turret_homing_angle_deg = float(upgrade.get("turret_homing_angle_deg", 6.0))
+				turret_homing_turn_speed = float(upgrade.get("turret_homing_turn_speed", 90.0))
+				print("[UPGRADE DEBUG] turret_homing_rounds applied: angle %.1f°, turn %.2f" % [turret_homing_angle_deg, turret_homing_turn_speed])
+			else:
+				print("[UPGRADE DEBUG] turret_homing_rounds skipped (turret locked)")
+
 		"turret_fire_rate":
 			# EXPONENTIAL SCALING: Multiply fire rate cooldown by constant per tier
 			if ALT_WEAPON_DATA.has(AltWeaponType.TURRET):
