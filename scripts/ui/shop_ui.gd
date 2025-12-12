@@ -232,26 +232,275 @@ func _roll_shop_offers() -> Array:
 	
 	all_upgrades = loadout_filtered
 	print("[Shop] Built shop pool with %d upgrades" % all_upgrades.size())
+	# Debug dump of pool contents
+	var _pool_ids := []
+	for au in all_upgrades:
+		_pool_ids.append({"id": au.get("id", ""), "rarity": au.get("rarity", -1), "category": au.get("category", ""), "requires_weapon": au.get("requires_weapon", ""), "requires_ability": au.get("requires_ability", ""), "unlock_weapon": au.get("unlock_weapon", ""), "unlock_ability": au.get("unlock_ability", "")})
+	print("[DEBUG Pool] ", _pool_ids)
 
 	var max_cards = min(5, cards_container.get_child_count())
 
-	for i in range(max_cards):
+	# ---- NEW: Separate unlock selection phase (choose at most one unlock) ----
+	# Build explicit unlock pools from the master pool
+	var weapon_unlocks := []
+	var ability_unlocks := []
+	for u in all_upgrades:
+		if _is_unlock(u):
+			if str(u.get("unlock_weapon", "")).strip_edges() != "":
+				weapon_unlocks.append(u)
+			elif str(u.get("unlock_ability", "")).strip_edges() != "" or str(u.get("category", "")).strip_edges().to_lower() == "ability":
+				ability_unlocks.append(u)
+
+	# Respect requirements and ownership: filter pools
+	weapon_unlocks = _filter_upgrades(weapon_unlocks, null, [], {})
+	ability_unlocks = _filter_upgrades(ability_unlocks, null, [], {})
+
+	# Remove already-owned unlocks
+	var weapon_candidates := []
+	for w in weapon_unlocks:
+		var wid = w.get("id", "")
+		if wid == "":
+			continue
+		if GameState.has_upgrade(wid):
+			continue
+		# Also skip if weapon already unlocked via GameState helpers
+		if GameState.get_unlocked_weapons().has(w.get("unlock_weapon", "")):
+			continue
+		weapon_candidates.append(w)
+
+	var ability_candidates := []
+	for a in ability_unlocks:
+		var aid = a.get("id", "")
+		if aid == "":
+			continue
+		if GameState.has_upgrade(aid):
+			continue
+		if GameState.get_unlocked_abilities().has(a.get("unlock_ability", "")):
+			continue
+		ability_candidates.append(a)
+
+	# Decide needs
+	var needs_weapon := GameState.get_unlocked_weapons().size() == 0
+	var needs_ability := GameState.get_unlocked_abilities().size() == 0
+	var chosen_unlock = null
+	var chosen_type: String = ""
+	if needs_weapon and needs_ability:
+		# 70% ability, 30% weapon
+		if randi() % 100 < 70:
+			if not ability_candidates.is_empty():
+				ability_candidates.shuffle()
+				chosen_unlock = ability_candidates[0]
+				chosen_type = "ability"
+			elif not weapon_candidates.is_empty():
+				weapon_candidates.shuffle()
+				chosen_unlock = weapon_candidates[0]
+				chosen_type = "weapon"
+		else:
+			if not weapon_candidates.is_empty():
+				weapon_candidates.shuffle()
+				chosen_unlock = weapon_candidates[0]
+				chosen_type = "weapon"
+	elif needs_weapon:
+		if not weapon_candidates.is_empty():
+			weapon_candidates.shuffle()
+			chosen_unlock = weapon_candidates[0]
+			chosen_type = "weapon"
+	elif needs_ability:
+		if not ability_candidates.is_empty():
+			ability_candidates.shuffle()
+			chosen_unlock = ability_candidates[0]
+			chosen_type = "ability"
+
+	if chosen_unlock != null and typeof(chosen_unlock) == TYPE_DICTIONARY:
+		print("[DEBUG Guarantee] chosen_unlock:", chosen_unlock.get("id", ""), "type:", chosen_type)
+	else:
+		print("[DEBUG Guarantee] chosen_unlock: null type:", chosen_type)
+
+	# Build normal pool excluding ALL unlocks
+	var normal_pool := []
+	for u in all_upgrades:
+		if not _is_unlock(u):
+			normal_pool.append(u)
+
+	# Roll normal upgrades (exclude unlocks entirely)
+	var slots = max_cards
+	if chosen_unlock != null:
+		slots -= 1
+	for i in range(slots):
 		var rarity := _roll_rarity(rarity_weights)
-		var candidates := _filter_upgrades(all_upgrades, rarity, taken_ids, taken_bases)
+		var candidates := _filter_upgrades(normal_pool, rarity, taken_ids, taken_bases)
+		print("[DEBUG Roll] slot:", i, "rarity:", rarity, "candidates:", candidates.size())
 		if candidates.is_empty():
-			candidates = _filter_upgrades(all_upgrades, null, taken_ids, taken_bases)
+			candidates = _filter_upgrades(normal_pool, null, taken_ids, taken_bases)
+			print("[DEBUG Roll] fallback to any rarity, candidates:", candidates.size())
 		if candidates.is_empty():
-			break
+			print("[DEBUG Roll] no candidates for slot", i, "- skipping slot")
+			continue
 		candidates.shuffle()
-		
-		# Pick first candidate (already filtered by _filter_upgrades to exclude taken bases)
-		var chosen: Dictionary = candidates[0]
-		result.append(chosen)
-		taken_ids.append(chosen["id"])
-		var chosen_base := _get_base_upgrade_id(chosen)
-		taken_bases[chosen_base] = true
+		var pick: Dictionary = candidates[0]
+		result.append(pick)
+		taken_ids.append(pick["id"])
+		var base_pick := _get_base_upgrade_id(pick)
+		taken_bases[base_pick] = true
+
+	# Fill to slots if needed (still excluding unlocks)
+	while result.size() < slots:
+		var filler_candidates := _filter_upgrades(normal_pool, null, taken_ids, taken_bases)
+		if filler_candidates.is_empty():
+			filler_candidates = _filter_upgrades(normal_pool, null, taken_ids, {})
+		if filler_candidates.is_empty():
+			break
+		filler_candidates.shuffle()
+		var chosen_fill = filler_candidates[0]
+		result.append(chosen_fill)
+		taken_ids.append(chosen_fill["id"])
+		var base_fill := _get_base_upgrade_id(chosen_fill)
+		taken_bases[base_fill] = true
+
+	# Insert chosen unlock at a random index if selected
+	if chosen_unlock != null:
+		var insert_index = randi() % (result.size() + 1)
+		result.insert(insert_index, chosen_unlock)
+		taken_ids.append(chosen_unlock.get("id", ""))
+		taken_bases[_get_base_upgrade_id(chosen_unlock)] = true
+
+	# Debug: final offers
+	var _final_offer_ids := []
+	var unlock_count := 0
+	for o in result:
+		_final_offer_ids.append(o.get("id", ""))
+		if _is_unlock(o):
+			unlock_count += 1
+	print("[DEBUG Shop] final_offers:", _final_offer_ids, " unlock_count:", unlock_count)
 
 	return result
+
+func _is_unlock(up: Dictionary) -> bool:
+	return (str(up.get("unlock_weapon", "")).strip_edges() != "") or (str(up.get("unlock_ability", "")).strip_edges() != "")
+
+
+func _is_unlock_like(up: Dictionary) -> bool:
+	# Treat explicit unlocks OR ability-category upgrades as "unlock-like"
+	if _is_unlock(up):
+		return true
+	var cat := str(up.get("category", "")).strip_edges().to_lower()
+	if cat == "ability":
+		return true
+	return false
+
+
+func _apply_unlock_guarantee(offers: Array, all_upgrades: Array, taken_ids: Array, taken_bases: Dictionary, max_cards: int) -> Array:
+	# Debug: incoming offers
+	var _incoming_ids := []
+	for o in offers:
+		_incoming_ids.append(o.get("id", ""))
+	print("[DEBUG Guarantee] incoming_offers:", _incoming_ids)
+
+	# Enforce: at most one unlock-like (weapon unlock OR ability upgrade) present
+	var unlock_indices := []
+	for i in range(offers.size()):
+		if _is_unlock_like(offers[i]):
+			unlock_indices.append(i)
+
+	# If more than one unlock, remove extras (keep first)
+	if unlock_indices.size() > 1:
+		for j in range(unlock_indices.size() - 1, 0, -1):
+			offers.remove_at(unlock_indices[j])
+
+	# Decide whether we must guarantee an unlock
+	var has_weapon_owned := GameState.get_unlocked_weapons().size() > 0
+	var has_ability_owned := GameState.get_unlocked_abilities().size() > 0
+	var need_type := ""
+	if not has_weapon_owned and not has_ability_owned:
+		# Neither owned: bias toward ability unlocks (70% ability, 30% weapon)
+		if randi() % 100 < 70:
+			need_type = "ability"
+		else:
+			need_type = "weapon"
+	elif has_weapon_owned and not has_ability_owned:
+		need_type = "ability"
+	elif has_ability_owned and not has_weapon_owned:
+		need_type = "weapon"
+
+	print("[DEBUG Guarantee] has_weapon_owned:", has_weapon_owned, " has_ability_owned:", has_ability_owned, " need_type:", need_type)
+	if need_type == "":
+		print("[DEBUG Guarantee] no guarantee needed")
+		return offers
+
+	# Check if offers already contain desired unlock-like item
+	for o in offers:
+		if need_type == "weapon" and str(o.get("unlock_weapon", "")).strip_edges() != "":
+			print("[DEBUG Guarantee] desired weapon unlock already present:", o.get("id", ""))
+			return offers
+		if need_type == "ability":
+			# ability satisfied by either explicit ability-unlock or any ability-category upgrade
+			if str(o.get("unlock_ability", "")).strip_edges() != "" or str(o.get("category", "")).strip_edges().to_lower() == "ability":
+				print("[DEBUG Guarantee] desired ability-like already present:", o.get("id", ""))
+				return offers
+
+	# Find candidates from all_upgrades matching desired type
+	var unlock_pool := []
+	for u in all_upgrades:
+		# Accept explicit unlocks OR ability-category upgrades for ability needs
+		if need_type == "weapon":
+			if str(u.get("unlock_weapon", "")).strip_edges() == "":
+				continue
+			unlock_pool.append(u)
+		elif need_type == "ability":
+			if str(u.get("unlock_ability", "")).strip_edges() != "":
+				unlock_pool.append(u)
+			elif str(u.get("category", "")).strip_edges().to_lower() == "ability":
+				# treat ability-category upgrades as valid ability candidates
+				unlock_pool.append(u)
+
+	# Filter pool via existing filters to respect requirements and stackability
+	var candidates := _filter_upgrades(unlock_pool, null, taken_ids, taken_bases)
+	if candidates.is_empty():
+		# If none available for this type, try the opposite type as fallback
+		var other_type = "ability" if need_type == "weapon" else "weapon"
+		unlock_pool.clear()
+		for u in all_upgrades:
+			if other_type == "weapon":
+				if str(u.get("unlock_weapon", "")).strip_edges() == "":
+					continue
+				unlock_pool.append(u)
+			else:
+				# ability fallback: accept explicit ability-unlocks or any ability-category upgrade
+				if str(u.get("unlock_ability", "")).strip_edges() != "":
+					unlock_pool.append(u)
+				elif str(u.get("category", "")).strip_edges().to_lower() == "ability":
+					unlock_pool.append(u)
+		candidates = _filter_upgrades(unlock_pool, null, taken_ids, taken_bases)
+		if candidates.is_empty():
+			print("[DEBUG Guarantee] no candidates found for either type")
+			return offers
+
+	candidates.shuffle()
+	print("[DEBUG Guarantee] unlock candidates size:", candidates.size())
+	var chosen_unlock: Dictionary = candidates[0]
+	print("[DEBUG Guarantee] chosen_unlock:", chosen_unlock.get("id", ""))
+
+	# If there's room, append; otherwise replace first non-unlock offer
+	if offers.size() < max_cards:
+		offers.append(chosen_unlock)
+	else:
+		var replaced := false
+		for i in range(offers.size()):
+			if not _is_unlock(offers[i]):
+				offers[i] = chosen_unlock
+				replaced = true
+				break
+		if not replaced:
+			# All offers are unlocks? replace last one
+			offers[offers.size() - 1] = chosen_unlock
+
+	# Debug: resulting offers after guarantee
+	var _out_ids := []
+	for o in offers:
+		_out_ids.append(o.get("id", ""))
+	print("[DEBUG Guarantee] resulting_offers:", _out_ids)
+
+	return offers
 
 func _get_equipped_weapon_name() -> String:
 	"""Convert GameState alt_weapon enum to lowercase string name."""
@@ -396,10 +645,14 @@ func _roll_rarity(weights: Dictionary = {}) -> UpgradesDB.Rarity:
 
 func _filter_upgrades(all_upgrades: Array, wanted_rarity: Variant, taken_ids: Array[String], taken_bases: Dictionary) -> Array:
 	var res: Array = []
+	var _considered := 0
+	var _skipped := 0
 
 	for u in all_upgrades:
 		var id: String = u.get("id", "")
 		if id == "" or id in taken_ids:
+			print("[DEBUG Filter] skip: empty_or_taken id=", id)
+			_skipped += 1
 			continue
 		
 		# Debug synergy filtering
@@ -408,6 +661,8 @@ func _filter_upgrades(all_upgrades: Array, wanted_rarity: Variant, taken_ids: Ar
 
 		# ⭐ EXCLUDE CHAOS UPGRADES FROM NORMAL SHOPS/CHESTS
 		if u.get("effect") == "chaos_challenge":
+			print("[DEBUG Filter] skip: chaos_challenge id=", id)
+			_skipped += 1
 			continue
 		
 		# ⭐ EXCLUDE HP UPGRADES DURING ACTIVE CHAOS CHALLENGE
@@ -416,9 +671,13 @@ func _filter_upgrades(all_upgrades: Array, wanted_rarity: Variant, taken_ids: Ar
 				continue
 
 		if wanted_rarity != null and u.get("rarity", UpgradesDB.Rarity.COMMON) != wanted_rarity:
+			print("[DEBUG Filter] skip: rarity_mismatch id=", id, "want:", wanted_rarity, "have:", u.get("rarity"))
+			_skipped += 1
 			continue
 
 		if not _upgrade_meets_requirements(u):
+			print("[DEBUG Filter] skip: requirements_failed id=", id)
+			_skipped += 1
 			if u.get("rarity", 0) == UpgradesDB.Rarity.SYNERGY:
 				print("[SYNERGY DEBUG] Synergy %s FAILED requirements" % u.get("id", ""))
 			continue
@@ -430,11 +689,15 @@ func _filter_upgrades(all_upgrades: Array, wanted_rarity: Variant, taken_ids: Ar
 		# Skip non-stackable upgrades that the player already owns
 		var stackable := bool(u.get("stackable", true))
 		if not stackable and GameState.has_upgrade(id):
+			print("[DEBUG Filter] skip: non_stackable_owned id=", id)
+			_skipped += 1
 			continue
 
 		# Enforce base uniqueness (skip if base already used)
 		var base_id := _get_base_upgrade_id(u)
 		if taken_bases.has(base_id):
+			print("[DEBUG Filter] skip: base_used id=", id, "base=", base_id)
+			_skipped += 1
 			continue
 
 		# EXTRA SAFETY: Explicitly block ability/weapon upgrades unless the player
@@ -444,41 +707,51 @@ func _filter_upgrades(all_upgrades: Array, wanted_rarity: Variant, taken_ids: Ar
 		# default to true for items without a weapon requirement
 		var weapon_ok := true
 		if req_weapon_str != "":
-			weapon_ok = false
-			# Equipped match
-			if req_weapon_str == _get_equipped_weapon_name():
-				weapon_ok = true
-			# Unlocked match
-			match req_weapon_str:
-				"shotgun": weapon_ok = weapon_ok or GameState.unlocked_shotgun
-				"sniper": weapon_ok = weapon_ok or GameState.unlocked_sniper
-				"shuriken": weapon_ok = weapon_ok or GameState.unlocked_shuriken
-				"turret": weapon_ok = weapon_ok or GameState.unlocked_turret
-				_:
-					pass
+			# Special-case: "none" means only show when NO weapon is equipped
+			if req_weapon_str == "none":
+				weapon_ok = (_get_equipped_weapon_name() == "")
+			else:
+				weapon_ok = false
+				# Equipped match
+				if req_weapon_str == _get_equipped_weapon_name():
+					weapon_ok = true
+				# Unlocked match
+				match req_weapon_str:
+					"shotgun": weapon_ok = weapon_ok or GameState.unlocked_shotgun
+					"sniper": weapon_ok = weapon_ok or GameState.unlocked_sniper
+					"shuriken": weapon_ok = weapon_ok or GameState.unlocked_shuriken
+					"turret": weapon_ok = weapon_ok or GameState.unlocked_turret
+					_:
+						pass
 			if not weapon_ok:
+				print("[DEBUG Filter] skip: weapon_req_not_met id=", id, "req=", req_weapon_str)
+				_skipped += 1
 				continue
 
 		var req_ability_str: String = str(u.get("requires_ability", "")).strip_edges().to_lower()
 		# default to true for items without an ability requirement
 		var ability_ok := true
 		if req_ability_str != "":
-			ability_ok = false
-			# Equipped match
-			if req_ability_str == _get_equipped_ability_name():
-				ability_ok = true
-			# Unlocked match
-			match req_ability_str:
-				"dash": ability_ok = ability_ok or GameState.unlocked_dash
-				"invis": ability_ok = ability_ok or GameState.unlocked_invis
-				_:
-					pass
+			# Special-case: "none" means only show when NO ability is equipped
+			if req_ability_str == "none":
+				ability_ok = (_get_equipped_ability_name() == "")
+			else:
+				ability_ok = false
+				# Equipped match
+				if req_ability_str == _get_equipped_ability_name():
+					ability_ok = true
+				# Unlocked match
+				match req_ability_str:
+					"dash": ability_ok = ability_ok or GameState.unlocked_dash
+					"invis": ability_ok = ability_ok or GameState.unlocked_invis
+					_:
+						pass
 			if not ability_ok:
+				print("[DEBUG Filter] skip: ability_req_not_met id=", id, "req=", req_ability_str)
+				_skipped += 1
 				continue
 
-			# Temporary debug: log why ability/weapon-restricted upgrades are included/excluded
-			if req_weapon_str != "" or req_ability_str != "":
-				print("[SHOP DEBUG] Candidate: %s | requires_weapon=%s | requires_ability=%s | passes_requirements=%s | weapon_ok=%s | ability_ok=%s" % [u.get("id", ""), req_weapon_str, req_ability_str, str(_upgrade_meets_requirements(u)), str(weapon_ok), str(ability_ok)])
+
 
 		# Additional safety: Some ability upgrades don't include an explicit
 		# `requires_ability` field (e.g. `dash_distance_up_1`). For upgrades
@@ -502,13 +775,19 @@ func _filter_upgrades(all_upgrades: Array, wanted_rarity: Variant, taken_ids: Ar
 					_:
 						pass
 				if not (equipped_ok3 or unlocked_ok3):
+					print("[DEBUG Filter] skip: inferred_ability_req_not_met id=", id, "inferred=", inferred_req)
+					_skipped += 1
 					continue
+
+		# Passed all filters: add to results
 		res.append(u)
+		_considered += 1
 		
 		# Debug when synergy passes all filters
 		if u.get("rarity", 0) == UpgradesDB.Rarity.SYNERGY:
 			pass
 
+	print("[DEBUG Filter] considered:", _considered, "skipped:", _skipped)
 	return res
 
 func _upgrade_meets_requirements(u: Dictionary) -> bool:
@@ -703,25 +982,18 @@ func _on_card_purchased() -> void:
 	
 	# Flash coin label red when spending money
 	flash_coin_label_red()
-	
-	_refresh_from_state_full()
-	# Refresh all cards to update prices and dynamic text
-	var purchased_card_id = null
-	# Find the purchased card (the one with disabled button after purchase)
+	# Refresh core UI elements (coins/hp/labels)
+	_update_coin_label()
+	_update_hp_from_state()
+	_update_level_label()
+	_update_ability_bar()
+
+	# Update each card's lightweight state without re-running setup()
 	for card in cards_container.get_children():
-		if card.visible and card.has_method("setup") and card.buy_button and card.buy_button.disabled:
-			purchased_card_id = card.upgrade_id
-			break
-	for card in cards_container.get_children():
-		if card.visible and card.has_method("setup"):
-			var upgrade_data := UpgradesDB.get_by_id(card.upgrade_id)
-			if not upgrade_data.is_empty():
-				var upgrade_copy = upgrade_data.duplicate()
-				var calculated_price = _calculate_upgrade_price(upgrade_copy)
-				upgrade_copy["price"] = calculated_price
-				var flash = (card.upgrade_id == purchased_card_id)
-				card.setup(upgrade_copy)
-	_update_card_button_states()
+		if card.visible and card.has_method("refresh_state_from_gamestate"):
+			card.refresh_state_from_gamestate()
+			if card.has_method("_update_button_state"):
+				card._update_button_state()
 
 func _on_continue_pressed() -> void:
 	# Only allow continue in normal shop mode, not chest mode
@@ -988,6 +1260,9 @@ func _setup_chest_cards() -> void:
 		var base_chosen := _get_base_upgrade_id(chosen)
 		taken_bases[base_chosen] = true
 	
+	# Apply guarantee rules for chest offers (same policy as shop)
+	offers = _apply_unlock_guarantee(offers, all_upgrades, taken_ids, taken_bases, 5)
+
 	# Sort by rarity
 	offers = _sort_offers_by_rarity(offers)
 	

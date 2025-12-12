@@ -42,6 +42,9 @@ const UPGRADE_DEFS: Array = [
 	# flamethrower_unlock and grenade_unlock removed
 	{"id": "shuriken_unlock", "text": "Unlock Shuriken", "rarity": Rarity.COMMON, "price": 300, "category": "generic", "pool": "shop", "icon_path": "", "effect": "none", "value": 0, "requires_weapon": "none", "requires_ability": "", "enabled": true, "unlock_weapon": "shuriken", "unlock_ability": ""},
 	{"id": "turret_unlock", "text": "Unlock Turret", "rarity": Rarity.COMMON, "price": 350, "category": "generic", "pool": "shop", "icon_path": "", "effect": "none", "value": 0, "requires_weapon": "none", "requires_ability": "", "enabled": true, "unlock_weapon": "turret", "unlock_ability": ""},
+	# Ability unlocks (explicit entries so unlock_ability is set)
+	{"id": "dash_unlock", "text": "Unlock Dash", "rarity": Rarity.COMMON, "price": 250, "category": "generic", "pool": "shop", "icon_path": "", "effect": "none", "value": 0, "requires_weapon": "", "requires_ability": "", "enabled": true, "unlock_weapon": "", "unlock_ability": "dash", "stackable": false},
+	{"id": "invis_unlock", "text": "Unlock Invisibility", "rarity": Rarity.COMMON, "price": 300, "category": "generic", "pool": "shop", "icon_path": "", "effect": "none", "value": 0, "requires_weapon": "", "requires_ability": "", "enabled": true, "unlock_weapon": "", "unlock_ability": "invis", "stackable": false},
 	# ...existing code...
 	# --- PRIMARY WEAPON UPGRADES ---
 	{"id": "primary_damage_up_1", "text": "Hollow Point Rounds (+20% Primary Damage)", "rarity": Rarity.UNCOMMON, "price": 180, "category": "primary", "pool": "shop", "icon_path": "", "effect": "primary_damage", "primary_damage": 1.20, "enabled": true},

@@ -28,6 +28,7 @@ var is_chaos_card: bool = false
 var background_panel: Panel = null
 var price_tween: Tween = null
 var _price_has_arrow: bool = false
+var is_unlock_card: bool = false
 
 const NON_SCALING_PRICE_UPGRADES := {"hp_refill": true, "ammo_refill": true}
 const RARITY_COLORS := {
@@ -83,6 +84,12 @@ func setup(data: Dictionary) -> void:
 	is_chaos_card = false
 	
 	upgrade_id = data.get("id", "")
+	# Determine if this card represents an unlock (weapon or ability)
+	is_unlock_card = false
+	if str(data.get("unlock_weapon", "")).strip_edges() != "" or str(data.get("unlock_ability", "")).strip_edges() != "":
+		is_unlock_card = true
+	elif upgrade_id.ends_with("_unlock"):
+		is_unlock_card = true
 	base_price = int(data.get("price", 0))
 	price = GameState.get_upgrade_price(upgrade_id, base_price) if not NON_SCALING_PRICE_UPGRADES.has(upgrade_id) else base_price
 	icon = data.get("icon", null)
@@ -99,6 +106,12 @@ func setup(data: Dictionary) -> void:
 		_create_tooltip(data)
 	
 	_refresh()
+	# Debug: indicate unlock cards
+	print("[CARD]", upgrade_id, "is_unlock=", is_unlock_card)
+
+	# Ensure card reflects current GameState ownership without resetting visuals
+	if has_method("refresh_state_from_gamestate"):
+		refresh_state_from_gamestate()
 	_apply_rarity_visuals()
 	_update_price_color()
 
@@ -213,7 +226,11 @@ func _update_button_state() -> void:
 		if desc_label:
 			desc_label.text = text + "\n[Already have one]"
 	elif owned_block:
-		modulate = Color(0.6, 0.6, 0.6, 0.8)
+		# Owned non-unlock upgrades get a subtle grey but not the permanent unlock style
+		if not is_unlock_card:
+			modulate = Color(1, 1, 1, 1)
+		else:
+			modulate = Color(0.6, 0.6, 0.6, 0.8)
 	else:
 		modulate = Color.WHITE
 
@@ -245,6 +262,22 @@ func _on_buy_pressed() -> void:
 	else:
 		_refresh()
 	_update_price_color()
+
+	# Immediately update this card's visuals; only lock/grey permanently for unlock cards
+	if is_unlock_card:
+		if buy_button:
+			buy_button.disabled = true
+		modulate = Color(0.6, 0.6, 0.6, 0.8)
+		if desc_label:
+			desc_label.text = text + "\n[Purchased]"
+	else:
+		# Non-unlock: disable button if now owned/non-stackable, but don't change modulate permanently
+		if buy_button:
+			buy_button.disabled = true
+		# leave modulate as-is; refresh to reflect price/affordability
+		_refresh()
+
+	print("[CARD PURCHASED]", upgrade_id, "is_unlock=", is_unlock_card)
 
 func _create_tooltip(upgrade: Dictionary) -> void:
 	tooltip_label = Label.new()
@@ -320,3 +353,45 @@ func _update_price_color():
 
 func _on_coins_changed():
 	_update_price_color()
+
+
+func refresh_state_from_gamestate() -> void:
+	"""Update only the button/disabled/modulate state based on GameState ownership.
+	Does not reset text, icon, or rarity visuals."""
+	if upgrade_id == "":
+		return
+
+	var owned := GameState.has_upgrade(upgrade_id)
+	var stackable := bool(UpgradesDB.get_by_id(upgrade_id).get("stackable", true))
+
+	if is_unlock_card:
+		# If this is an unlock card and owned, permanently grey and disable
+		if owned:
+			if buy_button:
+				buy_button.disabled = true
+			modulate = Color(0.6, 0.6, 0.6, 0.8)
+			if desc_label and not desc_label.text.find("[Purchased]") >= 0:
+				desc_label.text = desc_label.text + "\n[Purchased]"
+			return
+		else:
+			# Not yet owned: ensure normal visuals
+			if buy_button:
+				buy_button.disabled = not (GameState.coins >= price)
+			modulate = Color.WHITE
+			return
+
+	# Non-unlock cards: reflect ownership by disabling if non-stackable, but do not change modulate permanently
+	if owned and not stackable:
+		if buy_button:
+			buy_button.disabled = true
+		# keep visuals white
+		modulate = Color.WHITE
+		if desc_label and not desc_label.text.find("[Purchased]") >= 0:
+			desc_label.text = desc_label.text + "\n[Purchased]"
+		return
+
+	# Default: update affordability
+	if buy_button:
+		var affordable := GameState.coins >= price
+		buy_button.disabled = not affordable
+	# do not change modulate
