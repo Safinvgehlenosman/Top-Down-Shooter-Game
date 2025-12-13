@@ -1072,6 +1072,20 @@ func play_death_sequence() -> void:
 			if animated_sprite.sprite_frames.has_animation("death"):
 				var death_last_frame = animated_sprite.sprite_frames.get_frame_count("death") - 1
 				animated_sprite.frame = death_last_frame
+
+				# Fade out hit light then remove it after death animation finishes
+				if hit_light:
+					var fade_time: float = 0.6
+					var elapsed: float = 0.0
+					var start_energy: float = float(hit_light.energy)
+					while elapsed < fade_time:
+						await get_tree().create_timer(0.06).timeout
+						elapsed += 0.06
+						var frac: float = min(elapsed / fade_time, 1.0)
+						hit_light.energy = lerp(start_energy, 0.0, frac)
+					# ensure fully off then remove
+					if hit_light and hit_light.is_inside_tree():
+						hit_light.queue_free()
 	
 	# Spawn loot
 	_spawn_loot()
