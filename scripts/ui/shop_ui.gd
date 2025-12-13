@@ -161,7 +161,18 @@ func _setup_cards() -> void:
 		if card.purchased.is_connected(_on_chest_card_purchased):
 			card.purchased.disconnect(_on_chest_card_purchased)
 
-	var offers := _roll_shop_offers()
+	var offers := []
+	# Reuse stored offers for this shop-room visit if already generated
+	if GameState and GameState.shop_offers_generated and GameState.current_shop_offers.size() > 0:
+		offers = GameState.current_shop_offers.duplicate()
+		print("[Shop] Reusing stored offers (size=%d)" % offers.size())
+	else:
+		offers = _roll_shop_offers()
+		# Store the generated offers so re-opening the shop in the same room
+		# doesn't reroll them.
+		if GameState:
+			GameState.current_shop_offers = offers.duplicate()
+			GameState.shop_offers_generated = true
 	
 	# Apply calculated prices to all offers (duplicate to avoid read-only state)
 	for i in range(offers.size()):

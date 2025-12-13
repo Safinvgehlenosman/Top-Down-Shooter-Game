@@ -151,6 +151,9 @@ var ALT_WEAPON_DATA := {
 # Current alt weapon for this run
 var alt_weapon: int = AltWeaponType.NONE
 
+# Baseline copy of ALT_WEAPON_DATA captured at autoload ready
+var _ALT_WEAPON_DATA_BASE: Dictionary = {}
+
 # -------------------------------------------------------------------
 # ABILITIES
 # -------------------------------------------------------------------
@@ -270,6 +273,11 @@ var ability_bubble_duration_bonus: float = 0.0
 # non-stackable upgrades and to query ownership.
 var acquired_upgrades: Array = []
 
+# Persistent storage for current shop-room offers (generate once per shop visit)
+var current_shop_offers: Array = []
+# Flag indicating whether offers have been generated for the current shop visit
+var shop_offers_generated: bool = false
+
 # Track how many times each upgrade has been purchased this run (for price scaling)
 var upgrade_purchase_counts: Dictionary = {}
 
@@ -314,7 +322,17 @@ var debug_noclip: bool = false
 var _last_run_init_frame: int = -1
 
 
+func _ready() -> void:
+	# Seed RNG early from the autoload so random items/floors are not deterministic
+	randomize()
+
+	# Capture deep baseline of ALT_WEAPON_DATA so run-modified values can be restored
+	_ALT_WEAPON_DATA_BASE = ALT_WEAPON_DATA.duplicate(true)
+
+
 func start_new_run() -> void:
+	# Diagnostic: log invocation and coin state
+	print("[RESET] start_new_run CALLED frame=", Engine.get_frames_drawn(), " coins_before=", coins)
 	# Prevent duplicate initialization within same frame (UI calls may duplicate)
 	var _current_frame := Engine.get_frames_drawn()
 	if _last_run_init_frame == _current_frame:
@@ -324,11 +342,27 @@ func start_new_run() -> void:
 	# Reset run-scoped state
 	_reset_run_state()
 
+	# Restore baseline ALT weapon data to ensure alt-weapon runtime mutations do not persist between runs
+	if _ALT_WEAPON_DATA_BASE.is_empty():
+		# If baseline wasn't captured for any reason, capture current state now
+		_ALT_WEAPON_DATA_BASE = ALT_WEAPON_DATA.duplicate(true)
+	else:
+		ALT_WEAPON_DATA = _ALT_WEAPON_DATA_BASE.duplicate(true)
+
 
 func _reset_run_state() -> void:
 	# Called to clear all run-scoped variables so runs never leak state.
 	# Keep this minimal and explicit — add any new run-scoped vars here.
 	# Note: Do NOT clear persistent runtime settings (audio, fullscreen, debug flags).
+	print("[RESET] _reset_run_state called")
+
+	# Restore ALT weapon baseline so any runtime mutations are reverted
+	if not _ALT_WEAPON_DATA_BASE.is_empty():
+		ALT_WEAPON_DATA = _ALT_WEAPON_DATA_BASE.duplicate(true)
+
+	# Reset equipped loadout to defaults
+	alt_weapon = AltWeaponType.NONE
+	ability = AbilityType.NONE
 	# Reset ability & cooldowns
 	ability = AbilityType.NONE
 	ability_cooldown_left = 0.0
@@ -363,6 +397,14 @@ func _reset_run_state() -> void:
 	primary_crit_chance = 0.0
 	primary_crit_mult = 1.0
 	primary_stationary_damage_mult = 1.0
+
+	# Reset primary weapon multipliers and flags (ensure base values)
+	primary_damage_mult = 1.0
+	primary_fire_rate_mult = 1.0
+	primary_bullet_speed_mult = 1.0
+	has_burst_shot = false
+	primary_burst_count_add = 0
+	primary_trailing_shot_count = 0
 
 	# Reset multipliers and runtime bonuses to defaults
 	move_speed_mult = 1.0
@@ -412,12 +454,29 @@ func _reset_run_state() -> void:
 	# Reset player/runtime flags
 	player_invisible = false
 
+	# Reset explosion/combustion runtime flags (applied by upgrades)
+	combustion_active = false
+	death_explosion_radius = 0.0
+	death_explosion_damage_mult = 0.0
+
+	# Reset trailing-shot runtime counter
+	primary_trailing_shot_count = 0
+
+	# Reset chaos/challenge runtime flags
+	primary_fire_disabled = false
+	coin_pickups_disabled = false
+	original_max_health = 0
+	original_move_speed = 0.0
+
 	# Reset debug flags that are run-scoped
 	debug_infinite_ammo = false
 
 	# Reset other small runtime-only values
 	primary_burst_delay = 0.0
 	primary_burst_count_add = 0
+
+	# Visual runtime bonus
+	primary_bullet_size_bonus_percent = 0.0
 
 	# Reset last init frame guard so menu restarts behave predictably
 	_last_run_init_frame = -1
@@ -613,8 +672,15 @@ func end_run_to_menu() -> void:
 	# RESET RUN ECONOMY / FLAGS
 	# -----------------------------
 	coins = 0
+	# Notify UI/shop immediately so coin displays update after a restart
+	coins_changed.emit(coins)
+	print("[RESET] coins after reset = %d" % coins)
 	player_invisible = false
 	upgrade_purchase_counts.clear()
+
+	# Clear shop-offer persistence for new runs
+	current_shop_offers.clear()
+	shop_offers_generated = false
 
 	alt_weapon = AltWeaponType.NONE
 	ability = AbilityType.NONE
@@ -666,6 +732,8 @@ func change_health(delta: int) -> void:
 
 
 func add_coins(delta: int) -> void:
+	print("[COINS] add_coins(", delta, ") BEFORE=", coins, " frame=", Engine.get_frames_drawn())
+	print_stack()
 	if coin_pickups_disabled:
 		coins_changed.emit(coins)
 		return
@@ -677,6 +745,8 @@ func can_afford(cost: int) -> bool:
 	return coins >= cost
 
 func spend_coins(cost: int) -> bool:
+	print("[COINS] spend_coins(", cost, ") BEFORE=", coins, " frame=", Engine.get_frames_drawn())
+	print_stack()
 	if coins < cost:
 		return false
 	coins -= cost
@@ -781,6 +851,15 @@ func record_upgrade_purchase(upgrade_id: String) -> void:
 	"""Increment purchase count for this upgrade ID."""
 	var current_count: int = upgrade_purchase_counts.get(upgrade_id, 0)
 	upgrade_purchase_counts[upgrade_id] = current_count + 1
+
+
+func clear_shop_offers() -> void:
+	"""Clear cached shop offers for the current shop-room visit.
+	This only resets the per-visit cache so future shop-room entries
+	will generate fresh offers.
+	"""
+	current_shop_offers.clear()
+	shop_offers_generated = false
 
 # -------------------------------------------------------------------
 # APPLY UPGRADE ENTRYPOINT

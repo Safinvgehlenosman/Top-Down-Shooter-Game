@@ -286,6 +286,12 @@ func load_shop_room() -> void:
 	in_hub = false
 	remaining_enemies = 0
 	door_has_spawned = false
+
+	# Prepare per-visit shop offers storage: clear any previous offers so
+	# the next chest/shop interaction will generate a fresh set for this room.
+	if GameState:
+		GameState.current_shop_offers.clear()
+		GameState.shop_offers_generated = false
 	
 	# Disable super magnet
 	_disable_super_magnet()
@@ -1287,7 +1293,12 @@ func _on_enemy_died(enemy: Node2D = null) -> void:
 	
 	# B2: When all enemies are dead, break crates and spawn the exit door
 	if remaining_enemies == 0:
-		print("[CRATES] Room cleared → breaking all crates")
+		# If we were previously in a shop, clear the per-visit shop offers cache
+		var _was_in_shop := in_shop
+		in_shop = false
+		if _was_in_shop and GameState and GameState.has_method("clear_shop_offers"):
+			GameState.clear_shop_offers()
+		# Break crates and spawn the exit door for this room
 		_break_all_crates_in_room()
 		_spawn_exit_door()
 
@@ -1529,6 +1540,11 @@ func on_player_reached_exit() -> void:
 		# Leaving the shop: go to a new combat room and increase the level
 		# Fade music back to global
 		_crossfade_to_global_music()
+
+		# Clear the per-visit shop offers cache when actually leaving the shop room.
+		# This ensures the next shop room generates a fresh set of offers.
+		if GameState and GameState.has_method("clear_shop_offers"):
+			GameState.clear_shop_offers()
 		
 		current_level += 1
 		_update_level_ui()

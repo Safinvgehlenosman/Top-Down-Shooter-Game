@@ -1,4 +1,4 @@
-[gd_scene load_steps=39 format=3 uid="uid://c7fcp73v6wu5d"]
+[gd_scene load_steps=38 format=3 uid="uid://c7fcp73v6wu5d"]
 
 [ext_resource type="Script" uid="uid://b7yr6kx17nvlm" path="res://scripts/ui/ui.gd" id="1_qsv74"]
 [ext_resource type="Script" uid="uid://bun2ukfdgaq3m" path="res://scripts/ui/screen_flash.gd" id="2_7dvkv"]
@@ -24,7 +24,6 @@
 [ext_resource type="Texture2D" uid="uid://bgdl4dx2jbnh0" path="res://assets/Affinity/FULLSCREENBUTTON.png" id="21_fsl8s"]
 [ext_resource type="Texture2D" uid="uid://brflkgxc2wxdb" path="res://assets/blueslime.png" id="21_x4rqp"]
 [ext_resource type="Texture2D" uid="uid://3g07t4ytrolp" path="res://assets/Affinity/arrow.png" id="21_ycmcx"]
-[ext_resource type="Texture2D" uid="uid://s5nb030brv5o" path="res://assets/Affinity/RESTARTBUTTON.png" id="22_5ls34"]
 [ext_resource type="Texture2D" uid="uid://bphraonej5m30" path="res://assets/iceslime.png" id="22_6bb67"]
 [ext_resource type="Texture2D" uid="uid://be8cka83qpakq" path="res://assets/Affinity/QUITBUTTON.png" id="23_6bb67"]
 [ext_resource type="Texture2D" uid="uid://csw36agbxaibb" path="res://assets/ghostslime.png" id="23_mgb8n"]
@@ -193,38 +192,7 @@ script = ExtResource("3_vdcm2")
 
 [node name="DeathScreen" type="CanvasLayer" parent="." groups=["death_screen"]]
 layer = 20
-visible = false
 script = ExtResource("4_6rmj2")
-
-[node name="RestartButton" type="Button" parent="DeathScreen"]
-process_mode = 3
-self_modulate = Color(1, 1, 1, 0)
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -521.0
-offset_top = 481.00006
-offset_right = -246.0
-offset_bottom = 531.00006
-grow_horizontal = 2
-scale = Vector2(1.2, 1.2)
-theme_override_fonts/font = ExtResource("6_qsv74")
-text = "Statistics"
-script = ExtResource("19_ukrhx")
-
-[node name="TextureRect" type="TextureRect" parent="DeathScreen/RestartButton"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 2.0
-offset_top = -1.000061
-offset_right = 277.0
-offset_bottom = 48.99994
-grow_horizontal = 2
-grow_vertical = 2
-scale = Vector2(0.5, 0.5)
-texture = ExtResource("22_5ls34")
 
 [node name="QuitButton" type="Button" parent="DeathScreen"]
 process_mode = 3
@@ -374,15 +342,14 @@ script = ExtResource("7_h1mc3")
 
 [node name="ContinueButton" type="Button" parent="PauseScreen"]
 process_mode = 3
-visible = false
 self_modulate = Color(1, 1, 1, 0)
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -521.0
-offset_top = 354.0
-offset_right = -246.0
-offset_bottom = 404.0
+offset_left = -520.0
+offset_top = 416.0
+offset_right = -245.0
+offset_bottom = 466.0
 grow_horizontal = 2
 scale = Vector2(1.2, 1.2)
 theme_override_colors/font_color = Color(0.8745098, 0.8745098, 0.8745098, 1)
@@ -414,10 +381,10 @@ self_modulate = Color(1, 1, 1, 0)
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -521.0
-offset_top = 416.0
-offset_right = -246.0
-offset_bottom = 466.0
+offset_left = -520.0
+offset_top = 478.0
+offset_right = -245.0
+offset_bottom = 528.0
 grow_horizontal = 2
 scale = Vector2(1.2, 1.2)
 theme_override_colors/font_color = Color(0.8745098, 0.8745098, 0.8745098, 1)
@@ -439,40 +406,6 @@ scale = Vector2(0.5, 0.5)
 texture = ExtResource("21_fsl8s")
 
 [node name="SFX_Squish" type="AudioStreamPlayer" parent="PauseScreen/FullscreenButton"]
-stream = ExtResource("29_x4rqp")
-bus = &"SFX"
-
-[node name="RestartButton" type="Button" parent="PauseScreen"]
-process_mode = 3
-self_modulate = Color(1, 1, 1, 0)
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -521.0
-offset_top = 481.00006
-offset_right = -246.0
-offset_bottom = 531.00006
-grow_horizontal = 2
-scale = Vector2(1.2, 1.2)
-theme_override_fonts/font = ExtResource("6_qsv74")
-text = "Statistics"
-script = ExtResource("19_ukrhx")
-
-[node name="TextureRect" type="TextureRect" parent="PauseScreen/RestartButton"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 1.0
-offset_top = -2.0
-offset_right = 276.0
-offset_bottom = 48.0
-grow_horizontal = 2
-grow_vertical = 2
-scale = Vector2(0.5, 0.5)
-texture = ExtResource("22_5ls34")
-
-[node name="SFX_Squish" type="AudioStreamPlayer" parent="PauseScreen/RestartButton"]
 stream = ExtResource("29_x4rqp")
 bus = &"SFX"
 
