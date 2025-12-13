@@ -274,6 +274,20 @@ func _filter_by_rarity(rarity: int) -> Array:
 		# Check if upgrade meets player requirements
 		if not _meets_requirements(upgrade):
 			continue
+
+		# Skip non-stackable upgrades that the player already owns
+		var up_id: String = upgrade.get("id", "")
+		var stackable := bool(upgrade.get("stackable", true))
+		if not stackable and GameState.has_upgrade(up_id):
+			continue
+
+		# Skip upgrades that have a max_stack and are already at cap
+		if upgrade.has("max_stack"):
+			var maxs := int(upgrade.get("max_stack", 0))
+			if maxs > 0:
+				var current := GameState.get_upgrade_stack_count(up_id)
+				if current >= maxs:
+					continue
 		
 		filtered.append(upgrade)
 	

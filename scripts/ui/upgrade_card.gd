@@ -30,6 +30,7 @@ var price_tween: Tween = null
 var _price_has_arrow: bool = false
 var is_unlock_card: bool = false
 var count_as_purchase: bool = true
+var adjusted_base_price: int = 0
 
 const NON_SCALING_PRICE_UPGRADES := {"hp_refill": true, "ammo_refill": true}
 const RARITY_COLORS := {
@@ -92,7 +93,15 @@ func setup(data: Dictionary) -> void:
 	elif upgrade_id.ends_with("_unlock"):
 		is_unlock_card = true
 	base_price = int(data.get("price", 0))
-	price = GameState.get_upgrade_price(upgrade_id, base_price) if not NON_SCALING_PRICE_UPGRADES.has(upgrade_id) else base_price
+	# Apply global half-price tweak for non-scaled items as well
+	adjusted_base_price = 0
+	if base_price > 0:
+		adjusted_base_price = int(round(base_price * 0.5))
+	# Determine price (non-scaling upgrades use adjusted base price)
+	if not NON_SCALING_PRICE_UPGRADES.has(upgrade_id):
+		price = GameState.get_upgrade_price(upgrade_id, base_price)
+	else:
+		price = adjusted_base_price
 	icon = data.get("icon", null)
 	text = data.get("text", "")
 	rarity = data.get("rarity", UpgradesDB.Rarity.COMMON)
@@ -283,7 +292,10 @@ func _on_buy_pressed() -> void:
 	emit_signal("purchased")
 	
 	# Recalculate price after purchase
-	price = GameState.get_upgrade_price(upgrade_id, base_price) if not NON_SCALING_PRICE_UPGRADES.has(upgrade_id) else base_price
+	if not NON_SCALING_PRICE_UPGRADES.has(upgrade_id):
+		price = GameState.get_upgrade_price(upgrade_id, base_price)
+	else:
+		price = adjusted_base_price
 	
 	# If price increased, flash it
 	if price > old_price:

@@ -46,8 +46,10 @@ CoinScene = ExtResource("2_gstla")
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(0, -5)
 sprite_frames = ExtResource("4_gc73b")
-animation = &"death"
+animation = &"spawn"
 autoplay = "moving"
+frame = 2
+frame_progress = 0.42942488
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -4)

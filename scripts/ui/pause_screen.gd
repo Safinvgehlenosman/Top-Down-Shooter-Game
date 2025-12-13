@@ -29,6 +29,10 @@ func _ready() -> void:
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
+		# Don't open pause if ShopUI is visible; shop owns ESC while open
+		var shop_ui = get_tree().get_first_node_in_group("shop")
+		if shop_ui and shop_ui.visible:
+			return
 		toggle_pause()
 		get_viewport().set_input_as_handled()
 

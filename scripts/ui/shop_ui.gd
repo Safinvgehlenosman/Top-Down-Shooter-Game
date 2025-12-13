@@ -144,9 +144,10 @@ func _on_card_hovered(hovered_card: Control, is_hovered: bool) -> void:
 
 func _calculate_upgrade_price(upgrade: Dictionary) -> int:
 	"""Return price from upgrade data (loaded from CSV), reduced by 15%."""
-	var base_price = upgrade.get("price", 50)
-	var final_price = base_price * 1.0 # shop_price_mult removed
-	return int(final_price)
+	var base_price = int(upgrade.get("price", 50))
+	# Apply global pre-release price tweak: halve all upgrade prices
+	var final_price = base_price * 0.5
+	return int(round(final_price))
 
 
 func _setup_cards() -> void:
@@ -569,30 +570,12 @@ func _get_rarity_weights_for_level(level: int) -> Dictionary:
 	# Level 30+: 25/48/18/9
 	
 	var common := 50.0
-	var uncommon := 35.0
-	var rare := 12.0
-	var epic := 3.0
-	
-	if level >= 30:
-		common = 25.0
-		uncommon = 48.0
-		rare = 18.0
-		epic = 9.0
-	elif level >= 20:
-		common = 30.0
-		uncommon = 45.0
-		rare = 18.0
-		epic = 7.0
-	elif level >= 10:
-		common = 40.0
-		uncommon = 40.0
-		rare = 16.0
-		epic = 4.0
-	elif level >= 5:
-		common = 45.0
-		uncommon = 38.0
-		rare = 14.0
-		epic = 3.0
+	# Set shop rarity weights to requested polished values:
+	# common 50%, uncommon 30%, rare 20%, epic 10%
+	# Values are treated as relative weights and normalized below.
+	var uncommon := 30.0
+	var rare := 20.0
+	var epic := 10.0
 	# else: use initial values (level 1-4)
 
 	# Only add synergy to pool if:
@@ -697,6 +680,16 @@ func _filter_upgrades(all_upgrades: Array, wanted_rarity: Variant, taken_ids: Ar
 			_skipped += 1
 			continue
 
+		# Skip upgrades that have a max_stack and are already at cap
+		if u.has("max_stack"):
+			var maxs := int(u.get("max_stack", 0))
+			if maxs > 0:
+				var current := GameState.get_upgrade_stack_count(id)
+				if current >= maxs:
+					print("[DEBUG Filter] skip: at_max_stack id=", id, "cur=", current, "max=", maxs)
+					_skipped += 1
+					continue
+
 		# Enforce base uniqueness (skip if base already used)
 		var base_id := _get_base_upgrade_id(u)
 		if taken_bases.has(base_id):
@@ -800,9 +793,13 @@ func _upgrade_meets_requirements(u: Dictionary) -> bool:
 		var _tags = u.get("tags", [])
 		for _t in _tags:
 			var _tn := String(_t).strip_edges().to_lower()
-			if _tn == "ability_dash" and GameState.ability != ABILITY_DASH:
+			# Ability-tagged upgrades should only appear if the ability is either
+			# currently equipped OR the ability has been unlocked. Previously this
+			# required the ability to be actively equipped which allowed some
+			# incorrect offers in chests/shops.
+			if _tn == "ability_dash" and not (GameState.ability == ABILITY_DASH or GameState.unlocked_dash):
 				return false
-			if _tn == "ability_invis" and GameState.ability != ABILITY_INVIS:
+			if _tn == "ability_invis" and not (GameState.ability == ABILITY_INVIS or GameState.unlocked_invis):
 				return false
 	# Use new CSV schema fields if available
 	if u.has("requires_weapon") and u["requires_weapon"] != "":
@@ -1069,26 +1066,13 @@ func _input(event: InputEvent) -> void:
 	if not visible:
 		return
 	if event.is_action_pressed("ui_cancel"):
+		# When shop is open, ESC should behave like the Continue button.
+		# Call the same handler the Continue button uses; this preserves
+		# existing behavior. If we're in chest mode, also close the chest.
+		_on_continue_pressed()
 		if is_chest_mode:
-			# Close chest (unpause and restore UI)
 			_close_chest_mode()
-		else:
-			# Close normal shop: hide UI and reset cards
-			_reset_all_cards()
-			visible = false
-			Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
-			var coin_ui = get_node_or_null("Coins")
-			if coin_ui:
-				coin_ui.visible = true
-			var hp_ui = get_node_or_null("PlayerInfo")
-			if hp_ui:
-				hp_ui.visible = true
-			var ammo_ui = get_node_or_null("Ammo")
-			if ammo_ui:
-				ammo_ui.visible = true
-			var level_ui = get_node_or_null("Level")
-			if level_ui:
-				level_ui.visible = true
+		# Ensure pause/upstream handlers never receive this ESC
 		get_viewport().set_input_as_handled()
 
 
@@ -1183,6 +1167,9 @@ func open_as_chest(chest: Node2D = null) -> void:
 	# Animate cards in
 	call_deferred("_animate_cards_in")
 
+	# Claim input so ESC/Cancel is owned by the shop while open
+	get_viewport().set_input_as_handled()
+
 
 func open_as_chest_with_loot(loot: Array) -> void:
 	"""Open shop in chest mode with predefined loot from chest."""
@@ -1229,6 +1216,9 @@ func open_as_chest_with_loot(loot: Array) -> void:
 	# Animate cards in
 	call_deferred("_animate_cards_in")
 
+	# Claim input so ESC/Cancel is owned by the shop while open
+	get_viewport().set_input_as_handled()
+
 
 func _setup_chest_cards() -> void:
 	"""Generate CHEST_CARD_COUNT free upgrades with chest rarity weights."""
@@ -1248,7 +1238,8 @@ func _setup_chest_cards() -> void:
 			card.purchased.disconnect(_on_chest_card_purchased)
 	
 	var chest_weights := _get_chest_rarity_weights()
-	var all_upgrades: Array = UpgradesDB.get_all()
+	# Use shop pool so chests don't pull non-shop upgrades
+	var all_upgrades: Array = UpgradesDB.filter_by_pool("shop")
 	var taken_ids: Array[String] = []
 	var taken_bases := {}
 	var offers: Array = []
@@ -1261,7 +1252,7 @@ func _setup_chest_cards() -> void:
 
 		# Fallback: try other rarities from the SAME filtered pool (do not bypass requirements)
 		if candidates.is_empty():
-			candidates = _filter_upgrades(all_upgrades, -1, taken_ids, taken_bases)
+			candidates = _filter_upgrades(all_upgrades, null, taken_ids, taken_bases)
 		if candidates.is_empty():
 			break
 
