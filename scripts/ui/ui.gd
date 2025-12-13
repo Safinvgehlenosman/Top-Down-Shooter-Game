@@ -80,6 +80,13 @@ func _ready() -> void:
 	# Get player reference
 	player = get_tree().get_first_node_in_group("player")
 
+	# Defensive UI visibility refresh (ensure ammo visibility matches current state)
+	refresh_ui_visibility()
+
+
+
+
+
 
 func set_player(p: Node2D) -> void:
 	"""Set player reference for door arrow."""
@@ -211,6 +218,37 @@ func _refresh_from_state_full() -> void:
 	_update_hp_from_state()
 	_update_level_label()
 	_update_ability_bar()
+
+
+func refresh_ui_visibility() -> void:
+	"""Refresh visibility of top-level UI elements based on current state.
+	Ensures Ammo is only visible when a valid ammo-using alt weapon is active.
+	"""
+	# Ammo visibility: hide when NONE or TURRET, or when in hub/shop
+	var ammo_should_show := true
+	var aw := GameState.alt_weapon
+	if aw == ALT_WEAPON_NONE or aw == ALT_WEAPON_TURRET:
+		ammo_should_show = false
+	if is_in_hub:
+		ammo_should_show = false
+
+	if ammo_container:
+		ammo_container.visible = ammo_should_show
+
+	# Always show primary UI elements when refreshing (PauseScreen may call this)
+	if coin_label:
+		coin_label.visible = true
+	if level_label:
+		level_label.visible = true
+	if ability_label or ability_progress_bar:
+		if ability_progress_bar:
+			ability_progress_bar.visible = true
+		if ability_label:
+			ability_label.visible = true
+
+	# Door arrow visibility handled by its own updater
+	if door_arrow_root:
+		_update_door_arrow()
 
 
 func _update_coin_label() -> void:

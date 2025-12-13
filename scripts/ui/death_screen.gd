@@ -3,6 +3,9 @@ func _show_main_ui() -> void:
 	var ui = get_parent()
 	if not ui:
 		return
+	if ui and ui.has_method("refresh_ui_visibility"):
+		ui.refresh_ui_visibility()
+		return
 	for element_name in ["Ammo", "Coins", "Level", "PlayerInfo", "DoorArrowRoot"]:
 		var element = ui.get_node_or_null(element_name)
 		if element:

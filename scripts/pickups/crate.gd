@@ -8,6 +8,7 @@ var hit_flash_timer: float = 0.0
 var base_modulate: Color
 
 var destroyed: bool = false
+var is_room_clear_break: bool = false
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var collision: CollisionShape2D = $CollisionShape2D          # Area2D hitbox
@@ -24,6 +25,9 @@ func force_break() -> void:
 	"""Force break the crate (called on room clear)."""
 	if destroyed:
 		return
+
+	# Mark this break as coming from a room-clear so loot logic can allow hearts
+	is_room_clear_break = true
 	# Trigger death through health component
 	if health_component and health_component.has_method("kill"):
 		health_component.kill()
@@ -105,6 +109,14 @@ func _spawn_loot() -> void:
 		rolled_hearts = 1
 	else:
 		rolled_coins = 1
+
+	# --- SAFETY GUARD: Crates must NEVER drop hearts during normal breaks.
+	# Hearts are only granted by end-of-room / end-of-level systems elsewhere.
+	# Convert any rolled hearts into coins to preserve probability mass, but
+	# allow hearts when this crate was broken due to a room-clear (force_break()).
+	if rolled_hearts > 0 and not is_room_clear_break:
+		rolled_coins += rolled_hearts * COINS_PER_EXTRA_HEART
+		rolled_hearts = 0
 
 	# --- Per-room and missing-HP gating:
 	var missing_hp := int(max(0, int(GameState.max_health - GameState.health)))
