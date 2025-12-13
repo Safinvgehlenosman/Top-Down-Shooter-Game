@@ -321,20 +321,26 @@ func start_new_run() -> void:
 		return
 	_last_run_init_frame = _current_frame
 
-	# If you removed burst upgrades, keep these defaults "off"
-	has_burst_shot = false
-	primary_burst_count = 1
-	primary_burst_count_add = 0
-	primary_burst_delay = 0.0
+	# Reset run-scoped state
+	_reset_run_state()
 
-	# reset trailing shot stacks
-	primary_trailing_shot_count = 0
 
-	# Clear acquired/purchase state so runs start fresh (no persistent upgrades)
+func _reset_run_state() -> void:
+	# Called to clear all run-scoped variables so runs never leak state.
+	# Keep this minimal and explicit — add any new run-scoped vars here.
+	# Note: Do NOT clear persistent runtime settings (audio, fullscreen, debug flags).
+	# Reset ability & cooldowns
+	ability = AbilityType.NONE
+	ability_cooldown_left = 0.0
+	ability_active_left = 0.0
+	ability_pending_cooldown = 0.0
+	ability_cooldown_mult = 1.0
+
+	# Clear upgrade ownership & purchase tracking
 	acquired_upgrades.clear()
 	upgrade_purchase_counts.clear()
 
-	# Reset UNLOCKS and synergy flags so unlocks do NOT persist across runs
+	# Reset unlocks and synergy flags
 	unlocked_shotgun = false
 	unlocked_sniper = false
 	unlocked_shuriken = false
@@ -342,7 +348,6 @@ func start_new_run() -> void:
 	unlocked_dash = false
 	unlocked_invis = false
 
-	# Reset synergy/unlock-related runtime flags
 	synergy_flamethrower_bubble_unlocked = false
 	synergy_grenade_dash_unlocked = false
 	has_invis_shuriken_synergy = false
@@ -354,9 +359,73 @@ func start_new_run() -> void:
 	has_dash_grenade_synergy = false
 	dash_grenade_synergy_grenades = 0
 
+	# Reset primary weapon runtime stats
 	primary_crit_chance = 0.0
 	primary_crit_mult = 1.0
 	primary_stationary_damage_mult = 1.0
+
+	# Reset multipliers and runtime bonuses to defaults
+	move_speed_mult = 1.0
+	max_hp_mult = 1.0
+	damage_taken_mult = 1.0
+	alt_fuel_max_bonus = 0
+
+	primary_damage_base = 1.0
+	primary_damage_bonus = 0.0
+	primary_damage = 1.0
+	primary_burst_count = 1
+	primary_extra_burst = 0
+
+	primary_pierce_mult = 1.0
+	primary_pierce = 0
+
+	shuriken_chain_count_mult = 1.0
+	shuriken_chain_radius_mult = 1.0
+	shuriken_speed_chain_mult = 1.0
+	shuriken_blade_split_chance = 0.0
+	shuriken_damage_mult = 1.0
+	shuriken_fire_rate_mult = 1.0
+	shuriken_bounce_bonus = 0
+	shuriken_seek_count_bonus = 0
+
+	turret_accuracy_mult = 1.0
+	turret_homing_angle_deg = 0.0
+	turret_homing_turn_speed = 0.0
+	turret_damage_mult = 1.0
+	turret_fire_rate_mult = 1.0
+	turret_bullet_speed_add = 0.0
+
+	shotgun_pellets = GameConfig.alt_fire_bullet_count
+	shotgun_pellets_bonus = 0
+	shotgun_damage_mult = 1.0
+	shotgun_fire_rate_mult = 1.0
+	shotgun_mag_mult = 1.0
+
+	sniper_damage_mult = 1.0
+	sniper_fire_rate_mult = 1.0
+	sniper_mag_mult = 1.0
+	sniper_burst_count = 1
+	sniper_wall_phasing = false
+
+	shotgun_spread_bonus_percent = 0.0
+
+	# Reset player/runtime flags
+	player_invisible = false
+
+	# Reset debug flags that are run-scoped
+	debug_infinite_ammo = false
+
+	# Reset other small runtime-only values
+	primary_burst_delay = 0.0
+	primary_burst_count_add = 0
+
+	# Reset last init frame guard so menu restarts behave predictably
+	_last_run_init_frame = -1
+
+
+func end_run_to_menu() -> void:
+	# Public method to end the current run and clear run-scoped state before returning to menu.
+	_reset_run_state()
 
 	# -----------------------------
 	# APPLY OWNED UPGRADES (AGGREGATION)

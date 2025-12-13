@@ -29,6 +29,7 @@ var background_panel: Panel = null
 var price_tween: Tween = null
 var _price_has_arrow: bool = false
 var is_unlock_card: bool = false
+var count_as_purchase: bool = true
 
 const NON_SCALING_PRICE_UPGRADES := {"hp_refill": true, "ammo_refill": true}
 const RARITY_COLORS := {
@@ -112,6 +113,9 @@ func setup(data: Dictionary) -> void:
 	# Ensure card reflects current GameState ownership without resetting visuals
 	if has_method("refresh_state_from_gamestate"):
 		refresh_state_from_gamestate()
+
+	# Respect chest mode marker so chest picks don't count as purchases
+	count_as_purchase = not bool(data.get("chest_mode", false))
 	_apply_rarity_visuals()
 	_update_price_color()
 
@@ -268,7 +272,8 @@ func _on_buy_pressed() -> void:
 		return
 	
 	if not NON_SCALING_PRICE_UPGRADES.has(upgrade_id):
-		GameState.record_upgrade_purchase(upgrade_id)
+		if count_as_purchase:
+			GameState.record_upgrade_purchase(upgrade_id)
 	
 	UpgradesDB.apply_upgrade(upgrade_id)
 	

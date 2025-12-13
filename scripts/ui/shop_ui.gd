@@ -52,6 +52,7 @@ func _get_base_upgrade_id(up: Dictionary) -> String:
 # Chest mode flag
 var is_chest_mode: bool = false
 var active_chest: Node2D = null  # Reference to the chest that opened this shop
+const CHEST_CARD_COUNT: int = 3
 
 # New UI structure - use get_node_or_null for safety
 @onready var hp_progress_bar: TextureProgressBar = get_node_or_null("PlayerInfo/HPFill")
@@ -794,6 +795,15 @@ func _filter_upgrades(all_upgrades: Array, wanted_rarity: Variant, taken_ids: Ar
 	return res
 
 func _upgrade_meets_requirements(u: Dictionary) -> bool:
+	# Defensive tag-based checks for ability-specific upgrades
+	if u.has("tags"):
+		var _tags = u.get("tags", [])
+		for _t in _tags:
+			var _tn := String(_t).strip_edges().to_lower()
+			if _tn == "ability_dash" and GameState.ability != ABILITY_DASH:
+				return false
+			if _tn == "ability_invis" and GameState.ability != ABILITY_INVIS:
+				return false
 	# Use new CSV schema fields if available
 	if u.has("requires_weapon") and u["requires_weapon"] != "":
 		var equipped_weapon := _get_equipped_weapon_name()
@@ -1221,7 +1231,7 @@ func open_as_chest_with_loot(loot: Array) -> void:
 
 
 func _setup_chest_cards() -> void:
-	"""Generate 5 free upgrades with chest rarity weights."""
+	"""Generate CHEST_CARD_COUNT free upgrades with chest rarity weights."""
 	var children := cards_container.get_children()
 	
 	# ⭐ FORCE RESET: Set ALL cards to full opacity FIRST (prevents transparency bugs)
@@ -1243,19 +1253,20 @@ func _setup_chest_cards() -> void:
 	var taken_bases := {}
 	var offers: Array = []
 	
-	# Generate 5 upgrades
-	for i in range(5):
+	# Generate CHEST_CARD_COUNT upgrades
+	for i in range(CHEST_CARD_COUNT):
 		var rarity := _roll_rarity(chest_weights)
+		# Always filter candidates through _filter_upgrades to enforce requirements
 		var candidates := _filter_upgrades(all_upgrades, rarity, taken_ids, taken_bases)
-		
-		# Fallback: any rarity if we ran out
+
+		# Fallback: try other rarities from the SAME filtered pool (do not bypass requirements)
 		if candidates.is_empty():
 			candidates = _filter_upgrades(all_upgrades, -1, taken_ids, taken_bases)
 		if candidates.is_empty():
 			break
-		
+
 		candidates.shuffle()
-		
+
 		# Pick first candidate (already filtered by _filter_upgrades to exclude taken bases)
 		var chosen: Dictionary = candidates[0]
 		offers.append(chosen)
@@ -1264,13 +1275,13 @@ func _setup_chest_cards() -> void:
 		taken_bases[base_chosen] = true
 	
 	# Apply guarantee rules for chest offers (same policy as shop)
-	offers = _apply_unlock_guarantee(offers, all_upgrades, taken_ids, taken_bases, 5)
+	offers = _apply_unlock_guarantee(offers, all_upgrades, taken_ids, taken_bases, CHEST_CARD_COUNT)
 
 	# Sort by rarity
 	offers = _sort_offers_by_rarity(offers)
 	
-	# Assign to positions: center (2), middle (1,3), outer (0,4)
-	var position_order = [2, 1, 3, 0, 4]
+	# Assign to positions: center (2), middle (1,3) for 3-card chest
+	var position_order = [2, 1, 3]
 	# Reuse children array from above
 	var used_positions = []  # Track which positions we've used
 	
@@ -1289,6 +1300,7 @@ func _setup_chest_cards() -> void:
 		# Make a copy and set price to 0 for chest mode
 		var upgrade_data = offers[i].duplicate()
 		upgrade_data["price"] = 0
+		upgrade_data["chest_mode"] = true
 		card.setup(upgrade_data)
 		
 		if not card.purchased.is_connected(_on_chest_card_purchased):
@@ -1342,6 +1354,7 @@ func _setup_chest_cards_with_loot(loot: Array) -> void:
 				
 				var upgrade_data = sorted_loot[0].duplicate()
 				upgrade_data["price"] = 0
+				upgrade_data["chest_mode"] = true
 				card.setup(upgrade_data)
 				
 				if not card.purchased.is_connected(_on_chest_card_purchased):
@@ -1356,9 +1369,8 @@ func _setup_chest_cards_with_loot(loot: Array) -> void:
 						child.visible = false
 		return
 	
-	# Normal multi-card logic
-	# Assign to positions: center (2), middle (1,3), outer (0,4)
-	var position_order = [2, 1, 3, 0, 4]
+	# Normal multi-card logic for chest loot (center, middles for 3-card chest)
+	var position_order = [2, 1, 3]
 	var used_positions = []
 	
 	for i in range(position_order.size()):
@@ -1376,6 +1388,7 @@ func _setup_chest_cards_with_loot(loot: Array) -> void:
 		# Make a copy and set price to 0 for chest mode
 		var upgrade_data = sorted_loot[i].duplicate()
 		upgrade_data["price"] = 0
+		upgrade_data["chest_mode"] = true
 		card.setup(upgrade_data)
 		
 		if not card.purchased.is_connected(_on_chest_card_purchased):

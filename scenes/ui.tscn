@@ -130,9 +130,9 @@ texture = ExtResource("3_vsj0x")
 [node name="AbilityProgressBar" type="TextureProgressBar" parent="PlayerInfo"]
 z_index = -1
 layout_mode = 0
-offset_top = 133.33333
+offset_top = 126.666664
 offset_right = 700.0
-offset_bottom = 533.3333
+offset_bottom = 526.6667
 value = 50.0
 texture_progress = ExtResource("7_qsv74")
 
