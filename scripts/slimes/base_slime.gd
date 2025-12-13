@@ -412,6 +412,9 @@ func _try_contact_damage() -> void:
 
 	for body in hitbox.get_overlapping_bodies():
 		if body.is_in_group("player") and body.has_method("take_damage"):
+			# Apply knockback on player when contact damage occurs (player.apply_knockback exists)
+			if body.has_method("apply_knockback"):
+				body.apply_knockback(global_position)
 			body.take_damage(contact_damage)
 			contact_timer = contact_interval
 			break
