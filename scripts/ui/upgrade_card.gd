@@ -152,13 +152,8 @@ func _refresh() -> void:
 		if price > 0:
 			# Always show just the price number
 			price_label.text = str(price)
+			# Centralized price color
 			_update_price_color()
-			
-			# Set color based on affordability
-			if GameState.coins >= price:
-				price_label.modulate = Color.WHITE
-			else:
-				price_label.modulate = Color(1.0, 0.3, 0.3)  # Red if can't afford
 
 			# If price is above base (arrow state) and we haven't shown the flash yet, flash it
 			if price > base_price:
@@ -206,8 +201,27 @@ func flash_price_increase() -> void:
 	if price_label:
 		price_label.modulate = final_color
 		price_label.text = str(price)
+		# Ensure final state is computed from authoritative logic
 		_update_price_color()
 		price_label.set_meta("price_flash_active", false)
+
+
+func flash_purchase() -> void:
+	# Flash yellow briefly on successful purchase, then recalc final color.
+	if not price_label:
+		return
+	# Kill any running price tween
+	if price_tween and price_tween.is_running():
+		price_tween.kill()
+
+	price_label.set_meta("price_flash_active", true)
+	price_label.text = str(price)
+	price_label.modulate = Color(1.0, 0.8, 0.2)
+	await get_tree().create_timer(0.35).timeout
+	if price_label:
+		price_label.text = str(price)
+		price_label.set_meta("price_flash_active", false)
+		_update_price_color()
 
 func _update_button_state() -> void:
 	if not buy_button:
@@ -249,27 +263,9 @@ func _update_button_state() -> void:
 	else:
 		modulate = Color.WHITE
 
-	# ALWAYS update price label color for non-owned / purchasable cards.
-	# Respect active price flash so we don't stomp it.
+	# Price color controlled centrally
 	if price_label:
-		var flash_active = false
-		if price_label.has_meta("price_flash_active"):
-			flash_active = bool(price_label.get_meta("price_flash_active"))
-		if not flash_active:
-			# Skip affordability color changes for permanently owned/unlock cards
-			var owned := GameState.has_upgrade(upgrade_id)
-			var skip_price_update := false
-			if (is_unlock_card and owned) or (owned and not stackable):
-				skip_price_update = true
-			if not skip_price_update:
-				if GameState.coins < price:
-					price_label.modulate = Color(1, 0.2, 0.2)
-				else:
-					# Affordable: if price is above base, use the existing "expensive" yellow, else white
-					if price > base_price:
-						price_label.modulate = Color(1.0, 0.8, 0.2)
-					else:
-						price_label.modulate = Color.WHITE
+		_update_price_color()
 
 func _on_buy_pressed() -> void:
 	if upgrade_id == "" or GameState.coins < price:
@@ -297,12 +293,8 @@ func _on_buy_pressed() -> void:
 	else:
 		price = adjusted_base_price
 	
-	# If price increased, flash it
-	if price > old_price:
-		flash_price_increase()
-	else:
-		_refresh()
-	_update_price_color()
+	# Flash to indicate successful purchase (deterministic behavior)
+	flash_purchase()
 
 	# Immediately update this card's visuals; only lock/grey permanently for unlock cards
 	if is_unlock_card:
@@ -389,8 +381,29 @@ func _update_price_color():
 	# If a flash is active, don't override the color
 	if price_label.has_meta("price_flash_active") and price_label.get_meta("price_flash_active"):
 		return
-	var affordable := (upgrade_id != "") and (GameState.coins >= price)
-	price_label.modulate = Color.WHITE if affordable else Color(1, 0.3, 0.3)
+	# Determine ownership / caps
+	var owned := false
+	var stackable := true
+	var maxed := false
+	if upgrade_id != "":
+		owned = GameState.has_upgrade(upgrade_id)
+		var u := UpgradesDB.get_by_id(upgrade_id)
+		if not u.is_empty():
+			stackable = bool(u.get("stackable", true))
+			if u.has("max_stack"):
+				var purchases := int(GameState.upgrade_purchase_counts.get(upgrade_id, 0))
+				maxed = purchases >= int(u.get("max_stack", 0))
+
+	# If permanently owned/non-stackable or maxed, price label should be gray
+	if (owned and not stackable) or maxed or (is_unlock_card and owned):
+		price_label.modulate = Color(0.6, 0.6, 0.6, 1.0)
+		return
+
+	# Affordability: red if cannot afford, white otherwise
+	if GameState.coins < price:
+		price_label.modulate = Color(1.0, 0.2, 0.2, 1.0)
+	else:
+		price_label.modulate = Color(1.0, 1.0, 1.0, 1.0)
 
 func _on_coins_changed():
 	_update_price_color()
@@ -423,16 +436,28 @@ func refresh_state_from_gamestate() -> void:
 
 	# Non-unlock cards: reflect ownership by disabling if non-stackable, but do not change modulate permanently
 	if owned and not stackable:
-		if buy_button:
-			buy_button.disabled = true
-		# keep visuals white
-		modulate = Color.WHITE
-		if desc_label and not desc_label.text.find("[Purchased]") >= 0:
-			desc_label.text = desc_label.text + "\n[Purchased]"
-		return
+		# Single-use epic upgrades should grey out like unlocks; other non-stackable remain white
+		if rarity == UpgradesDB.Rarity.EPIC:
+			if buy_button:
+				buy_button.disabled = true
+			modulate = Color(0.6, 0.6, 0.6, 0.8)
+			if desc_label and not desc_label.text.find("[Purchased]") >= 0:
+				desc_label.text = desc_label.text + "\n[Purchased]"
+			return
+		else:
+			if buy_button:
+				buy_button.disabled = true
+			# keep visuals white for non-epic single-use items
+			modulate = Color.WHITE
+			if desc_label and not desc_label.text.find("[Purchased]") >= 0:
+				desc_label.text = desc_label.text + "\n[Purchased]"
+			return
 
 	# Default: update affordability
 	if buy_button:
 		var affordable := GameState.coins >= price
 		buy_button.disabled = not affordable
 	# do not change modulate
+
+	# Ensure price label reflects final computed state
+	_update_price_color()

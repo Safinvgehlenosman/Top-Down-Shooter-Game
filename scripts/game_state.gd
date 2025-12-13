@@ -190,6 +190,10 @@ func set_ability(new_ability: int) -> void:
 
 var max_health: int = 0
 var health: int = 0
+# Global run-scoped heart budget (used by crate drops to avoid heart spam)
+var hearts_remaining_budget: int = 0
+# Hearts spawned in the current room (reset when a new room is loaded)
+var hearts_spawned_this_room: int = 0
 # --- General upgrade stat aggregation ---
 var move_speed_mult: float = 1.0
 var max_hp_mult: float = 1.0
@@ -215,6 +219,27 @@ var primary_burst_delay: float = 0.0
 
 # Primary bullet size (this one can stay multiplicative as it's visual only)
 var primary_bullet_size_bonus_percent: float = 0.0
+
+
+# -------------------------------------------------------------------
+# Heart budget helpers (crate drops)
+# -------------------------------------------------------------------
+func recompute_hearts_budget(heart_heal_min: int) -> void:
+	# missing HP-based budget: ceil(missing_hp / heart_heal_min)
+	if heart_heal_min <= 0:
+		hearts_remaining_budget = 0
+		return
+	var missing_hp := int(max(0, max_health - health))
+	# ceiling division without ceil()
+	hearts_remaining_budget = int((missing_hp + heart_heal_min - 1) / heart_heal_min)
+
+
+func consume_heart_budget(count: int) -> int:
+	if count <= 0:
+		return 0
+	var allowed: int = int(clamp(count, 0, hearts_remaining_budget))
+	hearts_remaining_budget = max(0, hearts_remaining_budget - allowed)
+	return allowed
 
 # Synergy flags (data-only placeholders for later wiring)
 var synergy_flamethrower_bubble_unlocked: bool = false
@@ -411,6 +436,11 @@ func _reset_run_state() -> void:
 	max_hp_mult = 1.0
 	damage_taken_mult = 1.0
 	alt_fuel_max_bonus = 0
+
+	# Reset global crate heart budget
+	hearts_remaining_budget = 0
+	# Reset per-room heart spawn counter
+	hearts_spawned_this_room = 0
 
 	primary_damage_base = 1.0
 	primary_damage_bonus = 0.0

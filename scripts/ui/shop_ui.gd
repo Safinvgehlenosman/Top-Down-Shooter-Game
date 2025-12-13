@@ -691,8 +691,8 @@ func _filter_upgrades(all_upgrades: Array, wanted_rarity: Variant, taken_ids: Ar
 			_skipped += 1
 			continue
 
-		# Skip upgrades that have a max_stack and are already at cap
-		if u.has("max_stack"):
+		# Skip upgrades that have a max_stack and are already at cap (only for stackable upgrades)
+		if stackable and u.has("max_stack"):
 			var maxs := int(u.get("max_stack", 0))
 			if maxs > 0:
 				var current := GameState.get_upgrade_stack_count(id)

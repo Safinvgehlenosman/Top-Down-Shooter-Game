@@ -226,8 +226,7 @@ var last_room_index: int = -1
 
 func _ready() -> void:
 	randomize()
-	# Debug: initial alpha flag state (avoid top-level prints)
-	print("[ALPHA FLAG] initial has_spawned_alpha_this_level = %s" % [has_spawned_alpha_this_level])
+	# initial alpha flag state (no debug)
 
 	# Death screen
 	if death_screen_path != NodePath():
@@ -324,9 +323,6 @@ func load_shop_room() -> void:
 	
 	# Reset alpha slime tracking
 	has_spawned_alpha_this_level = false
-	print("[ALPHA FLAG] reset to false in _load_room_internal()")
-	print("[ALPHA FLAG] reset to false in load_hub_room()")
-	print("[ALPHA FLAG] reset to false in load_shop_room()")
 	
 	# Instance shop room
 	current_room = shop_room_scene.instantiate()
@@ -481,6 +477,9 @@ func _load_room_internal() -> void:
 
 	current_room = scene_for_level.instantiate()
 	room_container.add_child(current_room)
+
+	# Reset per-room heart spawn counter so crates in the new room follow room-cap rules
+	GameState.hearts_spawned_this_room = 0
 	
 	# Collect spawn markers from room
 	_collect_room_spawn_points()
@@ -832,23 +831,7 @@ func _spawn_enemies_over_time(enemy_list: Array, spawn_points: Array[Node2D], du
 	
 	print("[SPAWN] Staggered spawn complete: %d enemies over %.1fs" % [spawned_enemies.size(), duration])
 	
-	# --- ALPHA VARIANT SPAWNING ---
-	if not spawned_enemies.is_empty():
-		for enemy in spawned_enemies:
-			if not is_instance_valid(enemy) or not enemy.has_method("make_alpha"):
-				continue
-			# Only enable alpha variants on level >= 5
-			if current_level >= 5:
-				# Debug: show roll and chance for alpha spawn (staggered spawn)
-				var _alpha_roll := randf()
-				var _alpha_chance := 1.0
-				print("[ALPHA ROLL] staggered spawn: enemy=%s roll=%.4f chance=%.4f" % [enemy.name, _alpha_roll, _alpha_chance])
-				if _alpha_roll < _alpha_chance:
-					print("[ALPHA APPLY] staggered spawn: applying alpha to %s" % enemy.name)
-					enemy.make_alpha()
-					print("[ALPHA SPAWNED] staggered: %s is now alpha" % enemy.name)
-			else:
-				print("[ALPHA SKIP] staggered spawn skipped for %s (level %d < 5)" % [enemy.name, current_level])
+	# Alpha variant spawning handled elsewhere; no debug roll here
 	
 	# --- CHAOS CHEST DROPPER MARKING ---
 	# Only mark chaos chest droppers (normal chests use kill-index system)
@@ -901,19 +884,7 @@ func _spawn_enemy_at(pos: Vector2, enemy_scene: PackedScene = null) -> Node2D:
 	if enemy.has_signal("died"):
 		enemy.died.connect(_on_enemy_died.bind(enemy))
 
-	# --- DEBUG: Alpha variant attempt for all spawn paths (waves + initial) ---
-	if enemy and enemy.has_method("make_alpha") and not has_spawned_alpha_this_level:
-		if current_level >= 5:
-			var _alpha_roll := randf()
-			var _alpha_chance := 1.0
-			print("[ALPHA ROLL] _spawn_enemy_at: enemy=%s roll=%.4f chance=%.4f" % [enemy.name, _alpha_roll, _alpha_chance])
-			if _alpha_roll < _alpha_chance:
-				print("[ALPHA APPLY] _spawn_enemy_at: applying alpha to %s" % enemy.name)
-				enemy.make_alpha()
-				has_spawned_alpha_this_level = true
-				print("[ALPHA SPAWNED] _spawn_enemy_at: %s is now alpha" % enemy.name)
-		else:
-			print("[ALPHA SKIP] _spawn_enemy_at skipped for %s (level %d < 5)" % [enemy.name, current_level])
+	# Alpha application for single-spawn path removed (handled in wave/initial spawn logic)
 	
 	return enemy
 
@@ -962,25 +933,7 @@ func _spawn_initial_enemies(level: int) -> void:
 		if enemy:
 			spawned_enemies.append(enemy)
 	
-	# Handle alpha variant
-	if not has_spawned_alpha_this_level and not spawned_enemies.is_empty():
-		for enemy in spawned_enemies:
-			if not is_instance_valid(enemy) or not enemy.has_method("make_alpha"):
-				continue
-			# Only enable alpha variants on level >= 5
-			if current_level >= 5:
-				# Debug: show roll and chance for alpha spawn (initial spawn)
-				var _alpha_roll := randf()
-				var _alpha_chance := 1.0
-				print("[ALPHA ROLL] initial spawn: enemy=%s roll=%.4f chance=%.4f" % [enemy.name, _alpha_roll, _alpha_chance])
-				if _alpha_roll < _alpha_chance:
-					print("[ALPHA APPLY] initial spawn: applying alpha to %s" % enemy.name)
-					enemy.make_alpha()
-					has_spawned_alpha_this_level = true
-					print("[ALPHA SPAWNED] initial: %s is now alpha" % enemy.name)
-					break
-			else:
-				print("[ALPHA SKIP] initial spawn skipped for %s (level %d < 5)" % [enemy.name, current_level])
+	# Alpha handling removed from initial spawn (alpha selection centralized elsewhere)
 	
 	# Handle chest droppers
 	var should_spawn_chaos := chaos_chest_spawned_this_cycle and GameState.active_chaos_challenge.is_empty()
