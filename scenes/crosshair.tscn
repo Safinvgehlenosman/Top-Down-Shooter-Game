@@ -9,6 +9,7 @@ z_index = 4096
 script = ExtResource("1_norqy")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
+modulate = Color(1, 0.51025575, 0.44386888, 1)
 position = Vector2(0, -5)
 texture = ExtResource("2_qnjby")
 region_rect = Rect2(72, 104, 16, 16)

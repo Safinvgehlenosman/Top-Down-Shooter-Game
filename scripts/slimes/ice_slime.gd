@@ -38,6 +38,10 @@ func _physics_process(delta: float) -> void:
 	if is_dead or player == null:
 		return
 
+	# Do not shoot while spawning or when AI is disabled
+	if is_spawning or not ai_enabled:
+		return
+
 	shoot_timer -= delta
 	if shoot_timer > 0.0:
 		return

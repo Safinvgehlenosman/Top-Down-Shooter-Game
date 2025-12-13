@@ -36,11 +36,11 @@ fill_to = Vector2(0.76495725, 0.7777778)
 scale = Vector2(0.8, 0.8)
 collision_layer = 4
 script = ExtResource("1_7qf5q")
-speed = 100.0
+speed = 200.0
 max_health = 10
 vision_radius = 90.0
 alpha_material = ExtResource("2_nbb4n")
-wander_speed = 50.0
+	wander_speed = 100.0
 CoinScene = ExtResource("2_ullxd")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
