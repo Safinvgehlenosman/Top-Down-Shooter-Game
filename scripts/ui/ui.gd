@@ -29,6 +29,10 @@ const ALT_WEAPON_TURRET = GameState.AltWeaponType.TURRET
 
 var coin_animation_cooldown: float = 0.0
 var is_in_hub: bool = true  # Start as true, game_manager will set to false when entering run
+var ability_bar_display_value: float = 0.0
+var ability_bar_prev_max: float = 0.0
+var ability_bar_smooth_speed: float = 12.0
+var ability_bar_mode: String = ""
 
 
 func _ready() -> void:
@@ -50,6 +54,9 @@ func _ready() -> void:
 	# hide ability bar by default
 	if ability_progress_bar:
 		ability_progress_bar.visible = false
+		# Force smooth Range behaviour to avoid stepped visuals
+		ability_progress_bar.step = 0.0
+		ability_progress_bar.rounded = false
 
 	# hide chaos pact indicator by default
 	if chaos_pact_indicator:
@@ -131,7 +138,7 @@ func _process(_delta: float) -> void:
 	
 	# Update displays
 	_update_hp_from_state()
-	_update_ability_bar()
+	_update_ability_bar(_delta)
 	_update_level_label()
 	_update_chaos_pact_indicator()
 
@@ -297,7 +304,7 @@ func _update_level_label() -> void:
 		level_label.text = str(gm.current_level)
 
 
-func _update_ability_bar() -> void:
+func _update_ability_bar(_delta: float = 0.0) -> void:
 	# Check if node exists
 	if not ability_progress_bar:
 		return
@@ -316,14 +323,37 @@ func _update_ability_bar() -> void:
 			ability_label.visible = false
 		return
 
+	# Ensure we have a reasonable delta for smoothing (avoid snapping when _delta==0)
+	var dt: float = _delta
+	if dt <= 0.0:
+		dt = 1.0 / 60.0
+
 	# If Invis ability is currently active, show remaining active duration
+	var new_mode: String = "hidden"
 	if GameState.ability == GameState.AbilityType.INVIS and GameState.ability_active_left > 0.0:
 		var invis_data = GameState.ABILITY_DATA.get(GameState.AbilityType.INVIS, {})
 		var duration: float = invis_data.get("duration", 0.0)
 		# Configure bar to represent remaining active time (drains to 0)
 		ability_progress_bar.visible = true
 		ability_progress_bar.max_value = duration
-		ability_progress_bar.value = GameState.ability_active_left
+		# Compute target value and mode
+		var target_value: float = GameState.ability_active_left
+		new_mode = "invis_active"
+		# If mode changed, snap once and record max
+		if new_mode != ability_bar_mode:
+			ability_bar_mode = new_mode
+			ability_bar_display_value = target_value
+			ability_bar_prev_max = ability_progress_bar.max_value
+		# If max changed significantly, clamp display value to new range
+		if not is_equal_approx(ability_progress_bar.max_value, ability_bar_prev_max) and ability_bar_prev_max > 0.0:
+			ability_bar_display_value = clamp(ability_bar_display_value, 0.0, ability_progress_bar.max_value)
+		ability_bar_prev_max = ability_progress_bar.max_value
+		# Smooth toward target using stable dt (avoids snap when _delta==0)
+		var alpha := 1.0 - exp(-ability_bar_smooth_speed * dt)
+		ability_bar_display_value = lerp(ability_bar_display_value, target_value, alpha)
+		ability_progress_bar.value = clamp(ability_bar_display_value, 0.0, ability_progress_bar.max_value)
+		# Ensure our visual value overrides any other writers this frame by setting deferred
+		call_deferred("_set_ability_bar_value_deferred", ability_bar_display_value)
 		if ability_label:
 			ability_label.visible = true
 			ability_label.text = "%.1f s" % [GameState.ability_active_left]
@@ -350,9 +380,26 @@ func _update_ability_bar() -> void:
 	
 	# Bar fills as cooldown recovers
 	ability_progress_bar.max_value = actual_max_cd
+	# Compute target and mode
 	var cd_left: float = GameState.ability_cooldown_left
 	var bar_value: float = actual_max_cd - cd_left
-	ability_progress_bar.value = bar_value
+	var target_value_cd: float = bar_value
+	new_mode = "cooldown"
+	# If mode changed, snap display to target to avoid clunk, record max
+	if new_mode != ability_bar_mode:
+		ability_bar_mode = new_mode
+		ability_bar_display_value = target_value_cd
+		ability_bar_prev_max = ability_progress_bar.max_value
+	# If max changed significantly, clamp display value
+	if not is_equal_approx(ability_progress_bar.max_value, ability_bar_prev_max) and ability_bar_prev_max > 0.0:
+		ability_bar_display_value = clamp(ability_bar_display_value, 0.0, ability_progress_bar.max_value)
+	ability_bar_prev_max = ability_progress_bar.max_value
+	# Smooth toward cooldown target using stable dt
+	var alpha_cd := 1.0 - exp(-ability_bar_smooth_speed * dt)
+	ability_bar_display_value = lerp(ability_bar_display_value, target_value_cd, alpha_cd)
+	ability_progress_bar.value = clamp(ability_bar_display_value, 0.0, ability_progress_bar.max_value)
+	# Also defer set to avoid being overwritten by other UI scripts in the same frame
+	call_deferred("_set_ability_bar_value_deferred", ability_bar_display_value)
 	
 	# Update ability cooldown label
 	if ability_label:
@@ -421,6 +468,11 @@ func _update_chaos_pact_indicator() -> void:
 	# Debug output when state changes
 	if is_active != was_visible:
 		pass
+
+
+func _set_ability_bar_value_deferred(val: float) -> void:
+	if ability_progress_bar:
+		ability_progress_bar.value = clamp(val, 0.0, ability_progress_bar.max_value)
 
 # --------------------------------------------------------------------
 # HUB MODE (Hide in-run UI when in hub)

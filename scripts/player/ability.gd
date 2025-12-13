@@ -156,7 +156,13 @@ func _start_invis(data: Dictionary) -> void:
 	# ✅ Store in GameState
 
 	GameState.ability_active_left = duration
-	GameState.ability_cooldown_left = actual_cooldown
+	# If this ability has an active duration, defer starting the cooldown until the active phase ends
+	if duration > 0.0:
+		GameState.ability_pending_cooldown = actual_cooldown
+		GameState.ability_cooldown_left = 0.0
+	else:
+		GameState.ability_pending_cooldown = 0.0
+		GameState.ability_cooldown_left = actual_cooldown
 
 	invis_running = true
 	GameState.set_player_invisible(true)
@@ -220,7 +226,13 @@ func _start_dash(data: Dictionary) -> void:
 
 	# Store in GameState
 	GameState.ability_active_left = duration
-	GameState.ability_cooldown_left = actual_cooldown
+	# If this dash has an active duration, defer cooldown until the dash ends
+	if duration > 0.0:
+		GameState.ability_pending_cooldown = actual_cooldown
+		GameState.ability_cooldown_left = 0.0
+	else:
+		GameState.ability_pending_cooldown = 0.0
+		GameState.ability_cooldown_left = actual_cooldown
 
 	is_dashing = true
 	dash_ghost_timer = 0.0
@@ -315,6 +327,10 @@ func _end_ability() -> void:
 			gun.modulate = original_gun_modulate
 
 	GameState.ability_active_left = 0.0
+	# If there is a pending cooldown (set at cast time), activate it now
+	if "ability_pending_cooldown" in GameState and GameState.ability_pending_cooldown > 0.0:
+		GameState.ability_cooldown_left = GameState.ability_pending_cooldown
+		GameState.ability_pending_cooldown = 0.0
 
 
 # ==============================

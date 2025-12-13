@@ -160,6 +160,7 @@ enum AbilityType { NONE, DASH, INVIS }
 var ability: AbilityType = AbilityType.NONE
 var ability_cooldown_left: float = 0.0
 var ability_active_left: float = 0.0
+var ability_pending_cooldown: float = 0.0
 var ability_cooldown_mult: float = 1.0
 
 const ABILITY_DATA := {
