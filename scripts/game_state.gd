@@ -356,6 +356,8 @@ func _ready() -> void:
 
 
 func start_new_run() -> void:
+	# Ensure global time scale is restored when a new run starts
+	Engine.time_scale = 1.0
 	# Diagnostic: log invocation and coin state
 	print("[RESET] start_new_run CALLED frame=", Engine.get_frames_drawn(), " coins_before=", coins)
 	# Prevent duplicate initialization within same frame (UI calls may duplicate)

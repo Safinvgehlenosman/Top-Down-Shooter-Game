@@ -225,6 +225,8 @@ var last_room_index: int = -1
 
 
 func _ready() -> void:
+	# Defensive reset: ensure normal time scale on scene load
+	Engine.time_scale = 1.0
 	randomize()
 	# initial alpha flag state (no debug)
 
