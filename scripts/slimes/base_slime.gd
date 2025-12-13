@@ -162,6 +162,11 @@ func make_alpha() -> void:
 		return  # Already alpha, don't apply again
 	
 	is_alpha = true
+	# Debug: log pre-state
+	if health_component:
+		print("[ALPHA DBG] BEFORE make_alpha: slime.max_health=%s, health_comp.max=%s, health_comp.health=%s, animated_sprite=%s, alpha_material=%s" % [str(max_health), str(health_component.max_health), str(health_component.health), str(animated_sprite != null), str(alpha_material != null)])
+	else:
+		print("[ALPHA DBG] BEFORE make_alpha: slime.max_health=%s, NO health_component, animated_sprite=%s, alpha_material=%s" % [str(max_health), str(animated_sprite != null), str(alpha_material != null)])
 	
 	# Visual changes: 1.5x scale
 	scale = Vector2(1.5, 1.5)
@@ -176,6 +181,10 @@ func make_alpha() -> void:
 		health_component.max_health = max_health
 		health_component.health = max_health
 		_update_hp_bar()
+		# Debug: log post-state
+		print("[ALPHA DBG] AFTER make_alpha: slime.max_health=%s, health_comp.max=%s, health_comp.health=%s" % [str(max_health), str(health_component.max_health), str(health_component.health)])
+	else:
+		print("[ALPHA DBG] AFTER make_alpha: NO health_component to update")
 	
 	# Stat changes: 1.5x damage
 	contact_damage = int(round(contact_damage * 1.5))
