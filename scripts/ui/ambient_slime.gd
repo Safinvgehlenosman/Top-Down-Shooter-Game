@@ -13,11 +13,13 @@ signal slime_killed
 var speed: float = 0.0
 var direction: int = 1
 var screen_width: float = 0.0
-var spawn_delay: float = 3.0
+var spawn_delay: float = 0.0
 var is_dying: bool = false
 
 func _ready() -> void:
 	sprite.visible = false
+	# Ensure ambient slimes become visible after 0.2s to avoid being missed
+	spawn_delay = 0.2
 	
 	screen_width = get_viewport_rect().size.x
 	direction = 1 if randf() > 0.5 else -1
