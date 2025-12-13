@@ -245,7 +245,12 @@ func _spawn_damage_number(damage: int) -> void:
 	var damage_number := DamageNumberScene.instantiate()
 	
 	# Calculate spawn position
-	var spawn_offset := Vector2(randf_range(-8, 8), -20)
+	# Offset damage numbers slightly higher for the player so they're not hidden by the sprite
+	var is_owner_player := (owner != null and owner.is_in_group("player")) or use_gamestate
+	var y_offset := -20
+	if is_owner_player:
+		y_offset = -32
+	var spawn_offset := Vector2(randf_range(-8, 8), y_offset)
 	var spawn_pos: Vector2 = owner.global_position + spawn_offset
 	
 	# ⭐ KEY FIX: Set position BEFORE adding to tree to prevent glitch
