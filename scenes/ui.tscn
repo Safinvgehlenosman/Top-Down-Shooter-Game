@@ -1,4 +1,4 @@
-[gd_scene load_steps=40 format=3 uid="uid://c7fcp73v6wu5d"]
+[gd_scene load_steps=39 format=3 uid="uid://c7fcp73v6wu5d"]
 
 [ext_resource type="Script" uid="uid://b7yr6kx17nvlm" path="res://scripts/ui/ui.gd" id="1_qsv74"]
 [ext_resource type="Script" uid="uid://bun2ukfdgaq3m" path="res://scripts/ui/screen_flash.gd" id="2_7dvkv"]
@@ -19,7 +19,6 @@
 [ext_resource type="Texture2D" uid="uid://bqa41ebeio3l3" path="res://assets/Affinity/abilitybar.png" id="7_qsv74"]
 [ext_resource type="Texture2D" uid="uid://cbw2m6t388jw0" path="res://assets/Affinity/hpbar.png" id="8_h1mc3"]
 [ext_resource type="PackedScene" uid="uid://bngmwso5qhlyx" path="res://scenes/vhs_layer.tscn" id="11_vdcm2"]
-[ext_resource type="Texture2D" uid="uid://bmabpmaugk40l" path="res://assets/Affinity/chaospact.png" id="15_h1mc3"]
 [ext_resource type="Script" uid="uid://cj3kifwr8j22y" path="res://scenes/button.gd" id="19_ukrhx"]
 [ext_resource type="Texture2D" uid="uid://df8xpnll1ling" path="res://assets/Affinity/CONTINUEBUTTON.png" id="20_ukrhx"]
 [ext_resource type="Texture2D" uid="uid://bgdl4dx2jbnh0" path="res://assets/Affinity/FULLSCREENBUTTON.png" id="21_fsl8s"]
@@ -630,14 +629,6 @@ theme_override_font_sizes/font_size = 96
 text = "NU"
 
 [node name="VHSLayer" parent="." instance=ExtResource("11_vdcm2")]
-
-[node name="ChaosPact" type="TextureRect" parent="."]
-offset_left = 942.0
-offset_top = 542.0
-offset_right = 1642.0
-offset_bottom = 942.0
-scale = Vector2(0.3, 0.3)
-texture = ExtResource("15_h1mc3")
 
 [node name="DoorArrowRoot" type="Control" parent="."]
 modulate = Color(1, 0, 0.11372549, 0.3372549)

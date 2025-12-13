@@ -315,6 +315,19 @@ func _update_ability_bar() -> void:
 		if ability_label:
 			ability_label.visible = false
 		return
+
+	# If Invis ability is currently active, show remaining active duration
+	if GameState.ability == GameState.AbilityType.INVIS and GameState.ability_active_left > 0.0:
+		var invis_data = GameState.ABILITY_DATA.get(GameState.AbilityType.INVIS, {})
+		var duration: float = invis_data.get("duration", 0.0)
+		# Configure bar to represent remaining active time (drains to 0)
+		ability_progress_bar.visible = true
+		ability_progress_bar.max_value = duration
+		ability_progress_bar.value = GameState.ability_active_left
+		if ability_label:
+			ability_label.visible = true
+			ability_label.text = "%.1f s" % [GameState.ability_active_left]
+		return
 	
 	# Get BASE cooldown
 	var base_cd: float = data.get("cooldown", 0.0)
