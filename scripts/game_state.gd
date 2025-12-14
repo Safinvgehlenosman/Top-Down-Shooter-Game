@@ -290,6 +290,7 @@ var invis_gunslinger_enabled: bool = false
 
 # economy
 var coins: int = 0
+var run_coins_collected: int = 0
 var total_kills: int = 0
 var current_level: int = 1
 
@@ -706,6 +707,8 @@ func end_run_to_menu() -> void:
 	# RESET RUN ECONOMY / FLAGS
 	# -----------------------------
 	coins = 0
+	# Track coins collected this run (pickups only)
+	run_coins_collected = 0
 	# Reset run kill counter
 	total_kills = 0
 	# Notify UI/shop immediately so coin displays update after a restart
@@ -775,6 +778,10 @@ func add_coins(delta: int) -> void:
 		return
 	var gain := int(round(delta))
 	coins = max(coins + gain, 0)
+	# Increment run-collected only for positive pickups
+	if gain > 0:
+		run_coins_collected += gain
+		print("[COINS] pickup", gain, "| balance=", coins, "| run_collected=", run_coins_collected)
 	coins_changed.emit(coins)
 
 func add_kill(amount: int = 1) -> void:
@@ -793,6 +800,7 @@ func spend_coins(cost: int) -> bool:
 		return false
 	coins -= cost
 	coins_changed.emit(coins)
+	print("[COINS] spent", cost, "| balance=", coins, "| run_collected=", run_coins_collected)
 	return true
 
 # -------------------------------------------------------------------

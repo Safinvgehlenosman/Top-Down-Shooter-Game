@@ -194,6 +194,7 @@ script = ExtResource("3_vdcm2")
 layer = 20
 visible = false
 script = ExtResource("4_6rmj2")
+gameplay_level_label_path = NodePath("../Level/LevelLabel")
 
 [node name="QuitButton" type="Button" parent="DeathScreen"]
 process_mode = 3

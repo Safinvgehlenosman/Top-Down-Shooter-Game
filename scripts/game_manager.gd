@@ -194,8 +194,6 @@ var is_in_death_sequence: bool = false
 var exit_door: Area2D
 var door_open: bool = false
 
-@onready var restart_button: Button = $"../UI/PauseScreen/RestartButton"
-@onready var death_restart_button: Button = $"../UI/DeathScreen/RestartButton"
 
 # 🔁 Track last used room index so we don't repeat it
 var last_room_index: int = -1
@@ -1753,8 +1751,6 @@ func _show_death_screen_after_timer(timer: SceneTreeTimer) -> void:
 		death_screen.visible = true
 		if death_screen.has_method("show_death_screen"):
 			death_screen.show_death_screen()  # ← Call the proper method!
-		elif death_restart_button:
-			death_restart_button.grab_focus()
 
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 

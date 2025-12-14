@@ -2,7 +2,6 @@ extends CanvasLayer
 
 @onready var continue_button: Button = $ContinueButton
 @onready var fullscreen_button: Button = $FullscreenButton
-@onready var restart_button: Button = $RestartButton
 @onready var quit_button: Button = $QuitButton
 
 var buttons: Array[Button] = []
@@ -17,12 +16,10 @@ func _ready() -> void:
 		continue_button.pressed.connect(_on_continue_pressed)
 	if fullscreen_button:
 		fullscreen_button.pressed.connect(_on_fullscreen_pressed)
-	if restart_button:
-		restart_button.pressed.connect(_on_restart_pressed)
 	if quit_button:
 		quit_button.pressed.connect(_on_quit_pressed)
 	
-	buttons = [continue_button, fullscreen_button, restart_button, quit_button]
+	buttons = [continue_button, fullscreen_button, quit_button]
 	for b in buttons:
 		if b:
 			b.focus_mode = Control.FOCUS_ALL
@@ -94,7 +91,37 @@ func _show_main_ui() -> void:
 			element.visible = true
 
 func _on_continue_pressed() -> void:
-	hide_pause()
+	print("[Pause] Continue pressed - before unpause paused=", get_tree().paused)
+	# Ensure game is unpaused
+	get_tree().paused = false
+	# Hide this pause menu
+	visible = false
+	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+
+	# Restore main UI visibility: prefer parent refresh method
+	var ui = get_parent()
+	if ui and ui.has_method("refresh_ui_visibility"):
+		print("[Pause] calling ui.refresh_ui_visibility()")
+		ui.refresh_ui_visibility()
+		# Also ensure parent container nodes are visible (refresh may only toggle inner labels)
+		for container_name in ["PlayerInfo", "HPFill", "Coins", "Level", "DoorArrowRoot"]:
+			var c = ui.get_node_or_null(container_name)
+			if c:
+				c.visible = true
+				print("[Pause] restored container ->", container_name)
+			else:
+				print("[Pause] container missing ->", container_name)
+	else:
+		# Explicitly restore core UI elements
+		for element_name in ["HPFill", "PlayerInfo", "Coins", "Level", "DoorArrowRoot"]:
+			var element = ui.get_node_or_null(element_name) if ui else null
+			if element:
+				element.visible = true
+				print("[Pause] restored visible ->", element_name)
+			else:
+				print("[Pause] missing UI element ->", element_name)
+
+	print("[Pause] Continue done - after unpause paused=", get_tree().paused)
 
 func _on_fullscreen_pressed() -> void:
 	if DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN:

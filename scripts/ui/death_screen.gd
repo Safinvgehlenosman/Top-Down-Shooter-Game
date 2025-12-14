@@ -6,6 +6,7 @@ extends CanvasLayer
 
 @export var quit_button_path: NodePath = ^"QuitButton"
 @export var restart_button_path: NodePath = ^"RestartButton" # optional
+@export var gameplay_level_label_path: NodePath
 
 const MIN_DURATION := 0.5
 const MAX_DURATION := 1.5
@@ -17,6 +18,7 @@ const BETWEEN_DELAY := 0.25
 
 @onready var quit_button: Button = get_node_or_null(quit_button_path) as Button
 @onready var restart_button: Button = get_node_or_null(restart_button_path) as Button
+@onready var gameplay_level_label: Label = get_node_or_null(gameplay_level_label_path) as Label
 
 var _active_tween: Tween
 
@@ -30,6 +32,10 @@ func _ready() -> void:
 	print("[DeathScreen] slimes_label=", slimes_label, " path=", slimes_label_path)
 	print("[DeathScreen] level_label=", level_label, " path=", level_label_path)
 	print("[DeathScreen] quit_button=", quit_button, " restart_button=", restart_button)
+	if gameplay_level_label:
+		print("[DeathScreen] gameplay_level_label found ->", gameplay_level_label, " text=", gameplay_level_label.text)
+	else:
+		print("[DeathScreen] gameplay_level_label NOT found for path=", gameplay_level_label_path)
 
 	_reset_visuals()
 
@@ -47,6 +53,12 @@ func _ready() -> void:
 func show_death_screen(coins: int = -1, slimes: int = -1, level: int = -1) -> void:
 	print("[DeathScreen] show_death_screen called  args coins=", coins, " slimes=", slimes, " level=", level)
 	print("[DeathScreen] paused before=", get_tree().paused)
+
+	# Debug: report GameState presence and some common keys
+	var gs_node := get_node_or_null("/root/GameState")
+	print("[DeathScreen] GameState node present=", gs_node != null)
+	if gs_node:
+		print("[DeathScreen] GameState.run_coins_collected=", gs_node.get("run_coins_collected"), " coins=", gs_node.get("coins"), " total_kills=", gs_node.get("total_kills"), " current_level=", gs_node.get("current_level"))
 
 	# Ensure this overlay still animates while paused
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -66,7 +78,7 @@ func show_death_screen(coins: int = -1, slimes: int = -1, level: int = -1) -> vo
 		restart_button.disabled = true
 
 	# Prefer passed-in values, otherwise read from GameState
-	var final_coins := coins if coins >= 0 else _gs_int(["coins_collected", "coins", "total_coins"])
+	var final_coins := coins if coins >= 0 else _gs_int(["run_coins_collected", "coins_collected", "coins", "total_coins"])
 	var final_slimes := slimes if slimes >= 0 else _gs_int(["total_kills", "kills", "slimes_killed"])
 	var final_level := level if level >= 0 else _gs_int(["current_level", "level", "level_index"])
 
@@ -119,7 +131,13 @@ func _reveal_sequence(final_coins: int, final_slimes: int, final_level: int) -> 
 	print("[DeathScreen] reveal level ->", final_level)
 	if level_label:
 		level_label.visible = true
-		level_label.text = "Level reached: %d" % final_level
+		# Prefer reading the gameplay UI label to avoid mismatches
+		print("[DeathScreen] gameplay_level_label before parse ->", gameplay_level_label)
+		if gameplay_level_label:
+			print("[DeathScreen] gameplay_level_label.text ->", gameplay_level_label.text)
+		var parsed_level := _parse_gameplay_level()
+		print("[DeathScreen] parsed_level result ->", parsed_level, " final_level_arg=", final_level)
+		level_label.text = "Level reached: %d" % parsed_level
 
 
 func _count_up_label(label: Label, fmt: String, target: int) -> void:
@@ -157,7 +175,9 @@ func _gs_int(keys: Array[String]) -> int:
 
 	for k in keys:
 		var v = gs.get(k)
+		print("[DeathScreen][_gs_int] trying key=", k, " -> ", v)
 		if v != null:
+			print("[DeathScreen][_gs_int] returning key=", k, " value=", v)
 			return int(v)
 
 	# If not found in GameState, try GameManager.current_level as last resort
@@ -167,6 +187,29 @@ func _gs_int(keys: Array[String]) -> int:
 		return int(gm.get("current_level"))
 
 	print("[DeathScreen] GameState missing keys: ", keys)
+	return 0
+
+
+func _parse_gameplay_level() -> int:
+	if gameplay_level_label == null:
+		print("[DeathScreen] _parse_gameplay_level: gameplay_level_label is null")
+		return 0
+
+	var txt := str(gameplay_level_label.text)
+	print("[DeathScreen] _parse_gameplay_level: label_text=", txt)
+	var digits := ""
+	for ch in txt:
+		if ch >= "0" and ch <= "9":
+			digits += ch
+		elif digits != "":
+			break
+
+	if digits != "":
+		var val := int(digits)
+		print("[DeathScreen] parsed gameplay level=", val)
+		return val
+
+	print("[DeathScreen] failed to parse numeric level from label text")
 	return 0
 
 
