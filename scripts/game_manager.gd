@@ -250,6 +250,9 @@ func _ready() -> void:
 
 	current_level = 1
 	_update_level_ui()
+	# Mirror current level into GameState for UI/DeathScreen
+	if has_node("/root/GameState"):
+		GameState.current_level = current_level
 	load_hub_room()
 
 

@@ -212,6 +212,31 @@ func _apply_damage(amount: float, ignore_invincibility: bool) -> void:
 
 	if is_damage and health <= 0:
 		is_dead = true
+		# If this component belongs to an enemy (not using GameState for player), count a kill
+		if not use_gamestate:
+			var target := owner if owner else self
+			# Only count real enemies (avoid crates/pickups)
+			if target and target.is_in_group("enemy"):
+				var already = target.get_meta("kill_counted", false)
+				if already:
+					print("[KILLS] skipped duplicate kill:", target.name)
+				else:
+					# Safe call to GameState (autoload)
+					if has_node("/root/GameState") or (typeof(GameState) != TYPE_NIL):
+						if GameState.has_method("add_kill"):
+							GameState.add_kill(1)
+							target.set_meta("kill_counted", true)
+							print("[KILLS] counted enemy kill:", target.name, " total=", GameState.total_kills)
+						else:
+							print("[KILLS] GameState.add_kill() missing")
+					else:
+						print("[KILLS] GameState singleton not found")
+			else:
+				var dbg_name = target.name if target else "null"
+				var groups := []
+				if target:
+					groups = target.get_groups()
+				print("[KILLS] skipped non-enemy:", dbg_name, " groups=", groups)
 		emit_signal("died")
 
 

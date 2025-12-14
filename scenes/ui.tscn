@@ -192,6 +192,7 @@ script = ExtResource("3_vdcm2")
 
 [node name="DeathScreen" type="CanvasLayer" parent="." groups=["death_screen"]]
 layer = 20
+visible = false
 script = ExtResource("4_6rmj2")
 
 [node name="QuitButton" type="Button" parent="DeathScreen"]
@@ -333,6 +334,45 @@ theme_override_constants/shadow_outline_size = 5
 theme_override_fonts/font = ExtResource("5_vsj0x")
 theme_override_font_sizes/font_size = 96
 text = "ED"
+
+[node name="CoinsCollected" type="Label" parent="DeathScreen"]
+visible = false
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -120.0
+offset_top = 256.0
+offset_right = 102.0
+offset_bottom = 279.0
+grow_horizontal = 2
+theme_override_fonts/font = ExtResource("6_qsv74")
+text = "Coins collected: 0"
+
+[node name="SlimesKilled" type="Label" parent="DeathScreen"]
+visible = false
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -120.0
+offset_top = 296.0
+offset_right = 102.0
+offset_bottom = 319.0
+grow_horizontal = 2
+theme_override_fonts/font = ExtResource("6_qsv74")
+text = "Slimes killed: 0"
+
+[node name="LevelReached" type="Label" parent="DeathScreen"]
+visible = false
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -120.0
+offset_top = 336.0
+offset_right = 102.0
+offset_bottom = 359.0
+grow_horizontal = 2
+theme_override_fonts/font = ExtResource("6_qsv74")
+text = "Level reached: 0"
 
 [node name="PauseScreen" type="CanvasLayer" parent="." groups=["pause"]]
 process_mode = 3

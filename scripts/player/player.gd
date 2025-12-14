@@ -347,6 +347,11 @@ func die() -> void:
 	if gm and gm.has_method("on_player_died"):
 		gm.on_player_died()
 
+	# Show DeathScreen UI if present (reads final values from GameState)
+	var ds := get_tree().current_scene.get_node_or_null("DeathScreen")
+	if ds and ds.has_method("show_death_screen"):
+		ds.show_death_screen()
+
 # --------------------------------------------------------------------
 # UI BARS
 # --------------------------------------------------------------------

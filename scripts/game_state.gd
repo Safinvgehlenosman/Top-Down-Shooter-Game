@@ -290,6 +290,8 @@ var invis_gunslinger_enabled: bool = false
 
 # economy
 var coins: int = 0
+var total_kills: int = 0
+var current_level: int = 1
 
 # Bonus seconds added to the Shield Bubble ability duration by upgrades
 var ability_bubble_duration_bonus: float = 0.0
@@ -704,6 +706,8 @@ func end_run_to_menu() -> void:
 	# RESET RUN ECONOMY / FLAGS
 	# -----------------------------
 	coins = 0
+	# Reset run kill counter
+	total_kills = 0
 	# Notify UI/shop immediately so coin displays update after a restart
 	coins_changed.emit(coins)
 	print("[RESET] coins after reset = %d" % coins)
@@ -772,6 +776,12 @@ func add_coins(delta: int) -> void:
 	var gain := int(round(delta))
 	coins = max(coins + gain, 0)
 	coins_changed.emit(coins)
+
+func add_kill(amount: int = 1) -> void:
+	if amount <= 0:
+		return
+	total_kills += int(amount)
+	print("[KILLS] add_kill() total_kills=", total_kills)
 
 func can_afford(cost: int) -> bool:
 	return coins >= cost
