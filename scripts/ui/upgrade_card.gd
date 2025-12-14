@@ -312,6 +312,33 @@ func _on_buy_pressed() -> void:
 
 	print("[CARD PURCHASED]", upgrade_id, "is_unlock=", is_unlock_card)
 
+	# Check upgrade data for unlocks and queue hints immediately
+	var up := UpgradesDB.get_by_id(upgrade_id)
+	if up.size() > 0:
+		var uw := str(up.get("unlock_weapon", "")).strip_edges()
+		var ua := str(up.get("unlock_ability", "")).strip_edges()
+		var hint_node := _get_hint_popup()
+		if hint_node == null:
+			# Nothing to do if no hint system available
+			return
+		if not hint_node.has_method("queue_hint"):
+			print("[HINT][upgrade_card] ERROR: HintPopup has no queue_hint() method")
+			return
+		if ua != "":
+			hint_node.call_deferred("queue_hint", "ABILITY UNLOCKED", "Press SPACE to use it")
+			print("[HINT][upgrade_card] queued ability hint")
+		if uw != "":
+			var instr := "New weapon unlocked"
+			match uw:
+				"sniper", "shotgun", "shuriken":
+					instr = "Press RMB to shoot"
+				"turret":
+					instr = "Turret shoots automatically"
+				_:
+					instr = "New weapon unlocked"
+			hint_node.call_deferred("queue_hint", "ALT WEAPON UNLOCKED", instr)
+			print("[HINT][upgrade_card] queued weapon hint type=", uw)
+
 func _create_tooltip(upgrade: Dictionary) -> void:
 	tooltip_label = Label.new()
 	tooltip_label.name = "TooltipLabel"
@@ -348,6 +375,18 @@ func _create_tooltip(upgrade: Dictionary) -> void:
 	tooltip_label.position = Vector2(10, -70)
 	tooltip_label.visible = false
 	visual_root.add_child(tooltip_label)
+
+
+func _get_hint_popup() -> Node:
+	var root := get_tree().get_root()
+	var hint := root.get_node_or_null("Level1/UI/HintPopup")
+	if hint == null:
+		hint = root.find_node("HintPopup", true, false)
+	if hint != null:
+		print("[HINT][upgrade_card] HintPopup found at: ", hint.get_path())
+	else:
+		print("[HINT][upgrade_card] ERROR: HintPopup not found")
+	return hint
 
 func _on_mouse_entered() -> void:
 	if is_chaos_card and tooltip_label:

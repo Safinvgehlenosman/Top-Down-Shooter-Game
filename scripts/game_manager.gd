@@ -443,6 +443,27 @@ func start_run_from_hub() -> void:
 	
 	if game_ui:
 		game_ui.visible = true
+
+	# If we are closing shop UI, queue any unlock hints (weapon/ability)
+	# This runs even when called from shop continue flow.
+	if has_node("/root/GameState") and GameState:
+		var queued := false
+		var ui := game_ui
+		var hint_node := ui.get_node_or_null("HintPopup") if ui else null
+		if hint_node and hint_node.has_method("queue_hint"):
+			if GameState.shop_unlocked_weapon_this_visit and not GameState.shown_weapon_hint:
+				hint_node.queue_hint("ALT WEAPON UNLOCKED", "Press RMB to shoot")
+				GameState.shown_weapon_hint = true
+				print("[HINT] queued weapon hint")
+				queued = true
+			if GameState.shop_unlocked_ability_this_visit and not GameState.shown_ability_hint:
+				hint_node.queue_hint("ABILITY UNLOCKED", "Press SPACE to activate")
+				GameState.shown_ability_hint = true
+				print("[HINT] queued ability hint")
+				queued = true
+		# Clear per-visit flags after queuing
+		GameState.shop_unlocked_weapon_this_visit = false
+		GameState.shop_unlocked_ability_this_visit = false
 	
 	await get_tree().create_timer(0.2).timeout
 	FadeTransition.fade_out()
@@ -1603,6 +1624,10 @@ func _open_shop() -> void:
 		
 		shop_ui.visible = true
 		if shop_ui.has_method("open_as_shop"):
+			# Reset per-visit shop-unlock flags when entering a shop visit
+			if has_node("/root/GameState"):
+				GameState.shop_unlocked_weapon_this_visit = false
+				GameState.shop_unlocked_ability_this_visit = false
 			shop_ui.open_as_shop()
 		elif shop_ui.has_method("refresh_from_state"):
 			shop_ui._setup_cards()

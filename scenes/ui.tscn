@@ -1,4 +1,4 @@
-[gd_scene load_steps=38 format=3 uid="uid://c7fcp73v6wu5d"]
+[gd_scene load_steps=39 format=3 uid="uid://c7fcp73v6wu5d"]
 
 [ext_resource type="Script" uid="uid://b7yr6kx17nvlm" path="res://scripts/ui/ui.gd" id="1_qsv74"]
 [ext_resource type="Script" uid="uid://bun2ukfdgaq3m" path="res://scripts/ui/screen_flash.gd" id="2_7dvkv"]
@@ -36,6 +36,7 @@
 [ext_resource type="Texture2D" uid="uid://dhy2mkk0ojya7" path="res://assets/Affinity/PAUSEMENU.png" id="30_fsl8s"]
 [ext_resource type="Texture2D" uid="uid://dq6e5td6ibnp4" path="res://assets/redlime.png" id="32_fsl8s"]
 [ext_resource type="Texture2D" uid="uid://xyta8eli1ed" path="res://assets/poisonslime.png" id="33_x4rqp"]
+[ext_resource type="Script" uid="uid://d0oopm0qax6n2" path="res://scripts/ui/hint_popup.gd" id="37_x4rqp"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_gng4c"]
 shader = ExtResource("29_ymt3a")
@@ -635,3 +636,37 @@ offset_bottom = 158.0
 grow_horizontal = 2
 grow_vertical = 2
 texture = ExtResource("21_ycmcx")
+
+[node name="HintPopup" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = 288.0
+offset_top = -40.0
+offset_right = 328.0
+grow_horizontal = 2
+grow_vertical = 0
+script = ExtResource("37_x4rqp")
+
+[node name="Title" type="Label" parent="HintPopup"]
+layout_mode = 0
+offset_left = -4.0
+offset_top = -24.0
+offset_right = 60.0
+offset_bottom = -1.0
+theme_override_fonts/font = ExtResource("5_vsj0x")
+text = "TEXT"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Instruction" type="Label" parent="HintPopup"]
+layout_mode = 0
+offset_right = 56.0
+offset_bottom = 23.0
+theme_override_fonts/font = ExtResource("6_qsv74")
+text = "TEXT"
+horizontal_alignment = 1
+vertical_alignment = 1

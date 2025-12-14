@@ -54,6 +54,12 @@ var is_chest_mode: bool = false
 var active_chest: Node2D = null  # Reference to the chest that opened this shop
 const CHEST_CARD_COUNT: int = 3
 
+# Local per-visit hint flags (reset when shop opens/scene resets)
+var unlocked_weapon_this_visit: bool = false
+var unlocked_ability_this_visit: bool = false
+var last_unlocked_weapon_id: String = ""
+var last_unlocked_ability_id: String = ""
+var last_unlocked_weapon_type: String = ""
 # New UI structure - use get_node_or_null for safety
 @onready var hp_progress_bar: TextureProgressBar = get_node_or_null("PlayerInfo/HPFill")
 @onready var hp_label: Label = get_node_or_null("PlayerInfo/HP")
@@ -79,6 +85,10 @@ func _ready() -> void:
 	_refresh_from_state_full()
 
 	continue_button.pressed.connect(_on_continue_pressed)
+
+	# Reset local per-visit hint flags when shop opens
+	unlocked_weapon_this_visit = false
+	unlocked_ability_this_visit = false
 
 	# Initialize all cards to non-hovered state
 	await get_tree().process_frame
@@ -109,6 +119,27 @@ func _process(_delta: float) -> void:
 	_update_hp_from_state()
 	_update_ability_bar()
 	_update_level_label()
+
+
+func _get_hint_popup() -> Node:
+	# Try known absolute paths first
+	var root := get_tree().get_root()
+	var hint := root.get_node_or_null("Level1/UI/HintPopup")
+	if hint:
+		print("[HINT][shop_ui] HintPopup found at: ", hint.get_path())
+		return hint
+	# Common alternative
+	hint = root.get_node_or_null("Main/UI/HintPopup")
+	if hint:
+		print("[HINT][shop_ui] HintPopup found at: ", hint.get_path())
+		return hint
+	# Final fallback: search the tree for a node named HintPopup
+	hint = root.find_node("HintPopup", true, false)
+	if hint:
+		print("[HINT][shop_ui] HintPopup found at: ", hint.get_path())
+		return hint
+	print("[HINT][shop_ui] HintPopup not found in scene tree")
+	return null
 
 
 # -------------------------------------------------------------------
@@ -1016,12 +1047,77 @@ func _on_card_purchased() -> void:
 			if card.has_method("_update_button_state"):
 				card._update_button_state()
 
+	# Detect newly purchased unlock cards and set local per-visit flags
+	for card in cards_container.get_children():
+		if not card:
+			continue
+		# Only process card-like nodes that expose refresh_state
+		if not card.has_method("refresh_state_from_gamestate"):
+			continue
+		# Only consider unlock cards
+		if not bool(card.is_unlock_card):
+			continue
+		# Skip if already processed
+		if card.has_meta("shop_purchase_processed") and card.get_meta("shop_purchase_processed"):
+			continue
+		# Consider it purchased if the buy button is now disabled
+		var bought_now := false
+		if card.has_method("get_node_or_null"):
+			var b := card.get_node_or_null("VisualRoot/Button")
+			if b and b.disabled:
+				bought_now = true
+		else:
+			if card.buy_button and card.buy_button.disabled:
+				bought_now = true
+		if not bought_now:
+			continue
+		# Inspect upgrade data via UpgradesDB
+		# Upgrade unlock hints are handled at purchase-time in upgrade_card.gd
+		# Mark processed so we don't double-handle
+		card.set_meta("shop_purchase_processed", true)
+
 func _on_continue_pressed() -> void:
 	# Only allow continue in normal shop mode, not chest mode
 	if is_chest_mode:
 		return
 	
 	var gm := get_tree().get_first_node_in_group("game_manager")
+	# Before leaving shop, queue any local per-visit hints into the HintPopup
+	var hint := _get_hint_popup()
+	if hint == null:
+		print("[HINT][shop_ui] Error: HintPopup not found; skipping hint queue")
+	else:
+		if not hint.has_method("queue_hint"):
+			print("[HINT][shop_ui] Error: HintPopup found but has no queue_hint() method; skipping")
+		else:
+			# Queue weapon hint with type-specific instruction
+			if unlocked_weapon_this_visit and not GameState.shown_weapon_hint:
+				var title := "ALT WEAPON UNLOCKED"
+				var instr := "New weapon unlocked"
+				match last_unlocked_weapon_type:
+					"sniper", "shotgun", "shuriken":
+						instr = "Press RMB to shoot"
+					"turret":
+						instr = "Turret shoots automatically"
+					_:
+						instr = "New weapon unlocked"
+				hint.queue_hint(title, instr)
+				GameState.shown_weapon_hint = true
+				print("[HINT][shop_ui] queued weapon hint via HintPopup type=", last_unlocked_weapon_type)
+
+			# Queue ability hint as before
+			if unlocked_ability_this_visit and not GameState.shown_ability_hint:
+				hint.queue_hint("Ability Unlocked", "A new ability was unlocked! Equip it from the abilities menu.")
+				GameState.shown_ability_hint = true
+				print("[HINT][shop_ui] queued ability hint via HintPopup")
+
+	# Clear local per-visit flags and last-unlocked data after queuing
+	unlocked_weapon_this_visit = false
+	unlocked_ability_this_visit = false
+	last_unlocked_weapon_id = ""
+	last_unlocked_ability_id = ""
+	last_unlocked_weapon_type = ""
+
 	if gm and gm.has_method("load_next_level"):
 		gm.load_next_level()
 

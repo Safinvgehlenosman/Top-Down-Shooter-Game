@@ -306,6 +306,13 @@ var current_shop_offers: Array = []
 # Flag indicating whether offers have been generated for the current shop visit
 var shop_offers_generated: bool = false
 
+# Per-visit shop unlock flags (reset when opening shop)
+var shop_unlocked_weapon_this_visit: bool = false
+var shop_unlocked_ability_this_visit: bool = false
+
+# Run-scoped: whether we've shown the one-time hints this run
+var shown_weapon_hint: bool = false
+var shown_ability_hint: bool = false
 # Track how many times each upgrade has been purchased this run (for price scaling)
 var upgrade_purchase_counts: Dictionary = {}
 
@@ -711,6 +718,9 @@ func end_run_to_menu() -> void:
 	run_coins_collected = 0
 	# Reset run kill counter
 	total_kills = 0
+	# Reset one-time hint flags for run
+	shown_weapon_hint = false
+	shown_ability_hint = false
 	# Notify UI/shop immediately so coin displays update after a restart
 	coins_changed.emit(coins)
 	print("[RESET] coins after reset = %d" % coins)
@@ -901,6 +911,18 @@ func record_upgrade_purchase(upgrade_id: String) -> void:
 	"""Increment purchase count for this upgrade ID."""
 	var current_count: int = upgrade_purchase_counts.get(upgrade_id, 0)
 	upgrade_purchase_counts[upgrade_id] = current_count + 1
+
+	# Detect unlocks and mark per-visit flags so UI can show hints when shop closes
+	var u := UpgradesDB.get_by_id(upgrade_id)
+	if not u.is_empty():
+		var uw := str(u.get("unlock_weapon", "")).strip_edges()
+		if uw != "":
+			shop_unlocked_weapon_this_visit = true
+			print("[HINT] detected weapon unlock ->", upgrade_id)
+		var ua := str(u.get("unlock_ability", "")).strip_edges()
+		if ua != "":
+			shop_unlocked_ability_this_visit = true
+			print("[HINT] detected ability unlock ->", upgrade_id)
 
 
 func clear_shop_offers() -> void:
