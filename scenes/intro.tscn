@@ -673,11 +673,14 @@ animations = [{
 "speed": 15.0
 }]
 
-[node name="Intro" type="Node2D"]
+[node name="Intro" type="Control"]
+layout_mode = 3
+anchors_preset = 0
 script = ExtResource("1_4bx60")
 
 [node name="FadeOut" type="ColorRect" parent="."]
 modulate = Color(0, 0, 0, 1)
+layout_mode = 0
 offset_right = 1152.0
 offset_bottom = 649.0
 
@@ -700,6 +703,7 @@ frame = 92
 frame_progress = 1.0
 
 [node name="Label" type="Label" parent="."]
+layout_mode = 0
 offset_left = 479.0
 offset_top = 385.0
 offset_right = 667.0

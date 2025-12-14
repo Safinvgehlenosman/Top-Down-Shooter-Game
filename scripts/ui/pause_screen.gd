@@ -3,9 +3,12 @@ extends CanvasLayer
 @onready var continue_button: Button = $ContinueButton
 @onready var fullscreen_button: Button = $FullscreenButton
 @onready var quit_button: Button = $QuitButton
+@onready var credits_button: Button = $CreditsButton
+@onready var credits_screen: CanvasLayer = get_node_or_null("CreditsScreen")
 
 var buttons: Array[Button] = []
 var focused_index: int = 0
+var _pause_vis_backup: Array = []
 
 func _ready() -> void:
 	visible = false
@@ -18,6 +21,15 @@ func _ready() -> void:
 		fullscreen_button.pressed.connect(_on_fullscreen_pressed)
 	if quit_button:
 		quit_button.pressed.connect(_on_quit_pressed)
+
+	# Credits handling: show/hide in-place while paused
+	if credits_button:
+		if not credits_button.pressed.is_connected(_on_credits_pressed):
+			credits_button.pressed.connect(_on_credits_pressed)
+
+	# Ensure CreditsScreen starts hidden
+	if credits_screen:
+		credits_screen.visible = false
 	
 	buttons = [continue_button, fullscreen_button, quit_button]
 	for b in buttons:
@@ -122,6 +134,52 @@ func _on_continue_pressed() -> void:
 				print("[Pause] missing UI element ->", element_name)
 
 	print("[Pause] Continue done - after unpause paused=", get_tree().paused)
+
+
+func _on_credits_pressed() -> void:
+	_show_credits()
+
+
+func _show_credits() -> void:
+	if not credits_screen:
+		credits_screen = get_node_or_null("CreditsScreen")
+	if not credits_screen:
+		push_warning("[PAUSE] CreditsScreen node not found")
+		return
+
+	# Backup visibility of all children so we can restore exactly
+	_pause_vis_backup.clear()
+	for child in get_children():
+		var entry := {"path": child.get_path(), "visible": child.visible}
+		# Don't hide the credits screen itself
+		if child == credits_screen:
+			continue
+		_pause_vis_backup.append(entry)
+		child.visible = false
+
+	credits_screen.visible = true
+	print("[PAUSE] Showing credits")
+	# Remain paused
+	get_tree().paused = true
+
+
+func _show_pause_menu() -> void:
+	# Hide credits overlay first
+	if credits_screen:
+		credits_screen.visible = false
+
+	# Restore previous visibility
+	for entry in _pause_vis_backup:
+		var node = get_node_or_null(entry["path"])
+		if node:
+			node.visible = entry["visible"]
+
+	_pause_vis_backup.clear()
+	# Ensure the pause menu (this) is visible and focused
+	visible = true
+	print("[PAUSE] Returning to pause menu")
+	if continue_button:
+		continue_button.grab_focus()
 
 func _on_fullscreen_pressed() -> void:
 	if DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN:

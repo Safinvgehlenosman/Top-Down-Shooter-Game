@@ -1,0 +1,139 @@
+[gd_scene load_steps=9 format=3 uid="uid://bmdwnfo7ukn3q"]
+
+[ext_resource type="Texture2D" uid="uid://bpau4n40hr5si" path="res://assets/Affinity/TITLE.png" id="1_8n838"]
+[ext_resource type="Script" uid="uid://5kgbprvd506u" path="res://scenes/title.gd" id="2_m2eu1"]
+[ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="3_1amdp"]
+[ext_resource type="FontFile" uid="uid://4xsaqwwtj2c1" path="res://assets/Fonts/PixelOperator8.ttf" id="4_o17qv"]
+[ext_resource type="Script" uid="uid://cj3kifwr8j22y" path="res://scenes/button.gd" id="5_ie4wh"]
+[ext_resource type="Texture2D" uid="uid://cjfkoy1tkitl7" path="res://assets/Affinity/BACKBUTTON.png" id="6_ao64o"]
+[ext_resource type="AudioStream" uid="uid://6jgtwphqqvnt" path="res://assets/Audios/SlimeLand.wav" id="7_ylu4a"]
+[ext_resource type="Script" uid="uid://caq1nc558uhcp" path="res://scripts/ui/credits_screen.gd" id="8_credits"]
+
+[node name="CreditsScreen" type="CanvasLayer"]
+process_mode = 2
+script = ExtResource("8_credits")
+
+[node name="Background" type="Sprite2D" parent="."]
+z_index = -4096
+position = Vector2(600, 392)
+scale = Vector2(1.0229167, 0.9407408)
+texture = ExtResource("1_8n838")
+
+[node name="Title" type="Node2D" parent="."]
+position = Vector2(488, 56)
+script = ExtResource("2_m2eu1")
+
+[node name="SL" type="Label" parent="Title"]
+modulate = Color(0.36078432, 0, 0.5921569, 1)
+texture_filter = 1
+offset_left = -248.0
+offset_top = 8.0
+offset_right = -56.0
+offset_bottom = 104.0
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.19215687)
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 5
+theme_override_fonts/font = ExtResource("3_1amdp")
+theme_override_font_sizes/font_size = 96
+text = "CR"
+
+[node name="IME" type="Label" parent="Title"]
+texture_filter = 1
+offset_left = -72.0
+offset_top = 8.0
+offset_right = 204.0
+offset_bottom = 104.0
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.19215687)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 5
+theme_override_fonts/font = ExtResource("3_1amdp")
+theme_override_font_sizes/font_size = 96
+text = "E"
+
+[node name="SPR" type="Label" parent="Title"]
+modulate = Color(0, 0.85490197, 0.8901961, 1)
+texture_filter = 1
+offset_left = 24.0
+offset_top = 8.0
+offset_right = 312.0
+offset_bottom = 104.0
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.19215687)
+theme_override_constants/shadow_outline_size = 5
+theme_override_fonts/font = ExtResource("3_1amdp")
+theme_override_font_sizes/font_size = 96
+text = "DI"
+
+[node name="EE" type="Label" parent="Title"]
+modulate = Color(1, 0.34901962, 0, 1)
+texture_filter = 1
+offset_left = 168.0
+offset_top = 8.0
+offset_right = 360.0
+offset_bottom = 104.00001
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.19215687)
+theme_override_constants/shadow_outline_size = 5
+theme_override_fonts/font = ExtResource("3_1amdp")
+theme_override_font_sizes/font_size = 96
+text = "TS"
+
+[node name="QuitButton" type="Button" parent="."]
+process_mode = 3
+self_modulate = Color(1, 1, 1, 0)
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -522.0
+offset_top = 544.0
+offset_right = -247.0
+offset_bottom = 594.0
+grow_horizontal = 2
+scale = Vector2(1.2, 1.2)
+theme_override_fonts/font = ExtResource("4_o17qv")
+text = "Quit"
+script = ExtResource("5_ie4wh")
+
+[node name="TextureRect" type="TextureRect" parent="QuitButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 0.99993896
+offset_right = 275.0
+offset_bottom = 50.99994
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("6_ao64o")
+
+[node name="SFX_Squish" type="AudioStreamPlayer" parent="QuitButton"]
+stream = ExtResource("7_ylu4a")
+bus = &"SFX"
+
+[node name="Label" type="Label" parent="."]
+offset_left = 328.0
+offset_top = 184.0
+offset_right = 724.0
+offset_bottom = 542.0
+theme_override_fonts/font = ExtResource("4_o17qv")
+text = "Game
+Design, Programming & Pixel Art
+Safin
+
+Music
+Free Sci-Fi Music Pack
+by alkakrab (itch.io)
+Free for commercial use
+
+Sprites & Assets
+3booodpro’s First Asset Pack
+by 3boood_pro (itch.io)
+
+16x16 Assorted RPG Icons
+by Shade (itch.io)
+Creative Commons / Free to use
+
+Engine
+Godot Engine 4.x"
+horizontal_alignment = 1
+vertical_alignment = 1

@@ -75,6 +75,10 @@ signal coins_changed(coins: int)
 signal alt_weapon_changed(new_alt_weapon: int)
 signal player_invisible_changed(is_invisible: bool)
 
+# Credits/scene-router helpers
+var return_scene_path: String = ""
+var return_show_pause: bool = false
+
 # -------------------------------------------------------------------
 # ALT WEAPONS
 # -------------------------------------------------------------------

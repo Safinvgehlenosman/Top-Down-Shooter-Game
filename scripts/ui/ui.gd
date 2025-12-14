@@ -83,12 +83,24 @@ func _ready() -> void:
 	# Get player reference
 	player = get_tree().get_first_node_in_group("player")
 
+	# PauseScreen handles its own Credits button in-place
+
 	# Defensive UI visibility refresh (ensure ammo visibility matches current state)
 	# Capture default level label color for restore
 	if level_label:
 		_level_default_color = level_label.modulate
 		_level_last_themed_state = false
 	refresh_ui_visibility()
+
+	# If we returned from Credits and need to show pause, do it now
+	if GameState.return_show_pause:
+		var pm := get_tree().get_first_node_in_group("pause")
+		if pm:
+			pm.visible = true
+			print("[CREDITS] auto-open pause")
+		get_tree().paused = true
+		GameState.return_show_pause = false
+		GameState.return_scene_path = ""
 
 
 
@@ -357,6 +369,9 @@ func _update_level_label() -> void:
 			else:
 				level_label.modulate = _level_default_color
 			print("[UI] Level ", lvl, " themed=", themed, " -> color updated")
+
+
+# Credits are handled inside the PauseScreen now; no scene changes performed here.
 
 
 func _update_ability_bar(_delta: float = 0.0) -> void:

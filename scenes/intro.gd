@@ -1,4 +1,4 @@
-extends Node2D
+extends Control
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var label: Label = $Label
