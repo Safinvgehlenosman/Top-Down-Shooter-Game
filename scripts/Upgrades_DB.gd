@@ -107,10 +107,10 @@ const UPGRADE_DEFS: Array = [
 	{"id": "general_move_speed_2", "text": "Swift Feet II (+20% Move Speed)", "rarity": Rarity.RARE, "price": 220, "category": "general", "pool": "shop", "icon_path": "", "effect": "move_speed_mult", "move_speed_mult": 1.20, "enabled": true},
 	{"id": "general_max_hp_1", "text": "Hardened Body (+10% Max HP)", "rarity": Rarity.COMMON, "price": 100, "category": "general", "pool": "shop", "icon_path": "", "effect": "max_hp_mult", "max_hp_mult": 1.10, "enabled": true},
 	# Uncommon variant: +20% Max HP
-	{"id": "general_max_hp_2", "text": "Hardened Body II (+20% Max HP)", "rarity": Rarity.UNCOMMON, "price": 220, "category": "general", "pool": "shop", "icon_path": "res://assets/Separated/singleheart.png", "effect": "max_hp_mult", "max_hp_mult": 1.20, "enabled": true},
+	{"id": "general_max_hp_2", "text": "Hardened Body II (+20% Max HP)", "rarity": Rarity.UNCOMMON, "price": 220, "category": "general", "pool": "shop", "icon_path": "", "effect": "max_hp_mult", "max_hp_mult": 1.20, "enabled": true},
 	{"id": "general_damage_reduction_1", "text": "Thick Skin (10% Damage Reduction)", "rarity": Rarity.RARE, "price": 250, "category": "general", "pool": "shop", "icon_path": "", "effect": "damage_taken_mult", "damage_taken_mult": 0.9, "enabled": true},
 	# Epic damage reduction: 20% less damage taken (multiplier 0.80)
-	{"id": "general_damage_reduction_2", "text": "Fortified Hide (20% Damage Reduction)", "rarity": Rarity.EPIC, "price": 650, "category": "general", "pool": "shop", "icon_path": "res://assets/Separated/singleheart.png", "effect": "damage_taken_mult", "damage_taken_mult": 0.80, "enabled": true},
+	{"id": "general_damage_reduction_2", "text": "Fortified Hide (20% Damage Reduction)", "rarity": Rarity.EPIC, "price": 650, "category": "general", "pool": "shop", "icon_path": "", "effect": "damage_taken_mult", "damage_taken_mult": 0.80, "enabled": true},
 	# Regen upgrades removed
 ]
 

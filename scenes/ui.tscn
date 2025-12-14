@@ -49,6 +49,7 @@ shader_parameter/intensity = 2.0
 shader_parameter/color = Color(0, 0, 0, 0.59607846)
 
 [node name="UI" type="CanvasLayer" groups=["ui"]]
+visible = false
 script = ExtResource("1_qsv74")
 weapon_fuel_progress_texture = Array[Texture2D]([ExtResource("2_rlppe"), ExtResource("3_ycmcx"), ExtResource("4_kupmu"), ExtResource("5_catpy"), ExtResource("6_41akx")])
 
