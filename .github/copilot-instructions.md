@@ -1,5 +1,5 @@
 PROJECT CONTEXT
-Engine: Godot 4.5.1 (GDScript)
+Engine: Godot 4.5.1 (GDScript) MAKE SURE YOU USE GODOT 4 CODE AND API'SNOT GODOT 3.
 Project root contains `project.godot`, `export_presets.cfg`, and `assets/`, `scenes/`, `scripts/`.
 
 This project is in a STABILIZATION PHASE.

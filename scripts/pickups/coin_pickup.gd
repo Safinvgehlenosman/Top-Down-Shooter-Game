@@ -156,26 +156,30 @@ func _get_coin_value_for_level() -> int:
 	var min_value: int
 	var max_value: int
 	
-	# Doubled coin value ranges (x2 from original)
+	# Doubled again: increase all ranges (x2 from current)
 	if level <= 5:
-		min_value = 20  # was 10
-		max_value = 30  # was 15
+		min_value = 40  # was 20 (doubled)
+		max_value = 60  # was 30 (doubled)
 	elif level <= 10:
-		min_value = 32  # was 16
-		max_value = 40  # was 20
+		min_value = 64  # was 32 (doubled)
+		max_value = 80  # was 40 (doubled)
 	elif level <= 15:
-		min_value = 42  # was 21
-		max_value = 50  # was 25
+		min_value = 84  # was 42 (doubled)
+		max_value = 100 # was 50 (doubled)
 	elif level <= 20:
-		min_value = 52  # was 26
-		max_value = 60  # was 30
+		min_value = 104 # was 52 (doubled)
+		max_value = 120 # was 60 (doubled)
 	elif level <= 25:
-		min_value = 62  # was 31
-		max_value = 70  # was 35
+		min_value = 124 # was 62 (doubled)
+		max_value = 140 # was 70 (doubled)
 	else:
-		# Level 26+
-		min_value = 72  # was 36
-		max_value = 80  # was 40
+		# Level 26+: continue scaling upward instead of capping
+		# Base (level 26) uses the doubled 26+ values; each level beyond adds +10 to the base before doubling effect
+		var extra_levels = max(0, level - 26)
+		var base_min := 72  # previous (single-doubled) base for L26
+		var base_max := 80  # previous (single-doubled) base for L26
+		min_value = (base_min + extra_levels * 10) * 2
+		max_value = (base_max + extra_levels * 10) * 2
 	
 	# Return random value in range
 	var value = randi_range(min_value, max_value)

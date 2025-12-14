@@ -307,6 +307,13 @@ theme_override_fonts/font = ExtResource("16_2banv")
 theme_override_font_sizes/font_size = 32
 text = "0"
 
+[node name="VersionLabel" type="Label" parent="StartScreen"]
+offset_left = 928.0
+offset_top = 616.0
+offset_right = 1092.0
+offset_bottom = 639.0
+theme_override_fonts/font = ExtResource("1_o7i0r")
+
 [node name="TextureRect" type="Sprite2D" parent="."]
 z_index = -4096
 position = Vector2(600, 392)

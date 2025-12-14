@@ -1289,6 +1289,11 @@ func _on_enemy_died(enemy: Node2D = null) -> void:
 	
 	# Track total kills in this room
 	enemy_death_counter += 1
+	# GLOBAL: increment persistent total kills and persist
+	if has_node('/root/Stats'):
+		Stats.total_kills += 1
+		Stats.save_to_disk()
+		print("[STATS]", " kills=", Stats.total_kills, " deaths=", Stats.total_deaths, " high=", Stats.highest_level)
 	
 	# Check chest drop based on kill index
 	if chest_should_spawn_this_level \
@@ -1564,6 +1569,11 @@ func on_player_reached_exit() -> void:
 		
 		current_level += 1
 		_update_level_ui()
+		# Persist highest level reached
+		if has_node('/root/Stats'):
+			Stats.highest_level = max(Stats.highest_level, current_level)
+			Stats.save_to_disk()
+			print("[STATS]", " kills=", Stats.total_kills, " deaths=", Stats.total_deaths, " high=", Stats.highest_level)
 		_check_chaos_chest_spawn()  # ⭐ Check for chaos chest spawn
 		
 		# Load combat room with fade transition
@@ -1762,6 +1772,12 @@ func on_player_died() -> void:
 	var t := get_tree().create_timer(GameConfig.death_slowmo_duration)
 	_show_death_screen_after_timer(t)
 
+	# Persist death to stats
+	if has_node('/root/Stats'):
+		Stats.total_deaths += 1
+		Stats.save_to_disk()
+		print("[STATS]", " kills=", Stats.total_kills, " deaths=", Stats.total_deaths, " high=", Stats.highest_level)
+
 
 func _show_death_screen_after_timer(timer: SceneTreeTimer) -> void:
 	await timer.timeout
@@ -1786,6 +1802,7 @@ func _clear_room_transient_objects() -> void:
 	for n in nodes:
 		if is_instance_valid(n):
 			n.queue_free()
+
 
 
 # --- CHAOS CHEST SPAWN LOGIC ---------------------------------------

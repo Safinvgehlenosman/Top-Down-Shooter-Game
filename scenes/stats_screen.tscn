@@ -1,0 +1,245 @@
+[gd_scene load_steps=17 format=3 uid="uid://dusi5hmsi1vxb"]
+
+[ext_resource type="Script" uid="uid://clw10km7w5qvx" path="res://scripts/ui/stats_screen.gd" id="1_2r4mi"]
+[ext_resource type="FontFile" uid="uid://4xsaqwwtj2c1" path="res://assets/Fonts/PixelOperator8.ttf" id="3_6f3f2"]
+[ext_resource type="Script" uid="uid://cj3kifwr8j22y" path="res://scenes/button.gd" id="4_iuk21"]
+[ext_resource type="Texture2D" uid="uid://cjfkoy1tkitl7" path="res://assets/Affinity/BACKBUTTON.png" id="5_0nfyg"]
+[ext_resource type="AudioStream" uid="uid://6jgtwphqqvnt" path="res://assets/Audios/SlimeLand.wav" id="6_k7nb5"]
+[ext_resource type="Shader" uid="uid://dvsnojk5qp2bx" path="res://shaders/main.gdshader" id="7_h7mr2"]
+[ext_resource type="Texture2D" uid="uid://buu0qihcmu4d0" path="res://assets/Separated/Slime.png" id="8_oslrn"]
+[ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="9_o2pv8"]
+[ext_resource type="Texture2D" uid="uid://h8v2n05n2ryy" path="res://assets/fireslime.png" id="10_xokw0"]
+[ext_resource type="Texture2D" uid="uid://dsok60txc11jj" path="res://assets/purpleslime.png" id="11_rlgsq"]
+[ext_resource type="Shader" uid="uid://cgmteokvsd2g4" path="res://shaders/vignette.gdshader" id="12_drc4n"]
+[ext_resource type="Script" uid="uid://5kgbprvd506u" path="res://scenes/title.gd" id="13_t3c5k"]
+[ext_resource type="FontFile" uid="uid://dj68f2ekgi03i" path="res://assets/Fonts/PixelOperator8-Bold.ttf" id="14_vx54r"]
+[ext_resource type="Texture2D" uid="uid://bpau4n40hr5si" path="res://assets/Affinity/TITLE.png" id="15_w7x8g"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hm208"]
+shader = ExtResource("7_h7mr2")
+shader_parameter/scanline_intensity = 0.0
+shader_parameter/noise_intensity = 0.150000007125
+shader_parameter/distortion = 0.0010000000475
+shader_parameter/time_scale = 0.50000002375
+shader_parameter/vignette_strength = 0.4
+shader_parameter/vignette_radius = 0.9
+shader_parameter/vignette_softness = 0.35
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ecdxc"]
+shader = ExtResource("12_drc4n")
+shader_parameter/radius = 0.13200000627
+shader_parameter/softness = 1.0
+shader_parameter/intensity = 2.0
+shader_parameter/color = Color(0, 0, 0, 0.59607846)
+
+[node name="StatsScreen" type="Node2D" groups=["pause"]]
+process_mode = 3
+
+[node name="StatsScreen" type="CanvasLayer" parent="."]
+script = ExtResource("1_2r4mi")
+
+[node name="BackButton" type="Button" parent="StatsScreen"]
+process_mode = 3
+self_modulate = Color(1, 1, 1, 0)
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -522.0
+offset_top = 544.0
+offset_right = -247.00003
+offset_bottom = 594.0
+grow_horizontal = 2
+scale = Vector2(1.2, 1.2)
+theme_override_fonts/font = ExtResource("3_6f3f2")
+text = "Quit"
+script = ExtResource("4_iuk21")
+
+[node name="TextureRect" type="TextureRect" parent="StatsScreen/BackButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 0.99993896
+offset_right = 275.0
+offset_bottom = 50.99994
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("5_0nfyg")
+
+[node name="SFX_Squish" type="AudioStreamPlayer" parent="StatsScreen/BackButton"]
+stream = ExtResource("6_k7nb5")
+bus = &"SFX"
+
+[node name="VHSLayer" type="CanvasLayer" parent="StatsScreen"]
+process_mode = 3
+visible = false
+
+[node name="VHSOverlay" type="ColorRect" parent="StatsScreen/VHSLayer"]
+process_mode = 3
+material = SubResource("ShaderMaterial_hm208")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 0)
+
+[node name="Sprite2D" type="Sprite2D" parent="StatsScreen"]
+visible = false
+position = Vector2(860.00006, 569.00006)
+rotation = 0.14579165
+scale = Vector2(20, 20)
+texture = ExtResource("8_oslrn")
+region_enabled = true
+region_rect = Rect2(10, 12, 12, 9)
+
+[node name="Sprite2D4" type="Sprite2D" parent="StatsScreen"]
+visible = false
+position = Vector2(417, 452)
+rotation = -0.0673296
+scale = Vector2(29.999998, 29.999998)
+texture = ExtResource("9_o2pv8")
+region_enabled = true
+region_rect = Rect2(12, 8, 11, 16)
+
+[node name="Sprite2D2" type="Sprite2D" parent="StatsScreen"]
+visible = false
+z_index = -1
+position = Vector2(1074, 567)
+rotation = 0.04165517
+scale = Vector2(22.5, 22.5)
+texture = ExtResource("10_xokw0")
+region_enabled = true
+region_rect = Rect2(138, 12, 12, 9)
+
+[node name="Sprite2D3" type="Sprite2D" parent="StatsScreen"]
+visible = false
+z_index = -2
+position = Vector2(1021, 424)
+rotation = 0.06891273
+scale = Vector2(25, 25)
+texture = ExtResource("11_rlgsq")
+region_enabled = true
+region_rect = Rect2(138, 12, 12, 9)
+
+[node name="ColorRect" type="ColorRect" parent="StatsScreen"]
+visible = false
+material = SubResource("ShaderMaterial_ecdxc")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Title" type="Node2D" parent="StatsScreen"]
+position = Vector2(384, 56)
+script = ExtResource("13_t3c5k")
+
+[node name="SL" type="Label" parent="StatsScreen/Title"]
+modulate = Color(0.36078432, 0, 0.5921569, 1)
+texture_filter = 1
+offset_left = -248.0
+offset_top = 8.0
+offset_right = -56.0
+offset_bottom = 104.0
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.19215687)
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 5
+theme_override_fonts/font = ExtResource("14_vx54r")
+theme_override_font_sizes/font_size = 96
+text = "ST"
+
+[node name="IME" type="Label" parent="StatsScreen/Title"]
+texture_filter = 1
+offset_left = -72.0
+offset_top = 8.0
+offset_right = 204.0
+offset_bottom = 104.0
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.19215687)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 5
+theme_override_fonts/font = ExtResource("14_vx54r")
+theme_override_font_sizes/font_size = 96
+text = "ATI"
+
+[node name="SPR" type="Label" parent="StatsScreen/Title"]
+modulate = Color(0, 0.85490197, 0.8901961, 1)
+texture_filter = 1
+offset_left = 192.0
+offset_top = 8.0
+offset_right = 480.0
+offset_bottom = 104.0
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.19215687)
+theme_override_constants/shadow_outline_size = 5
+theme_override_fonts/font = ExtResource("14_vx54r")
+theme_override_font_sizes/font_size = 96
+text = "ST"
+
+[node name="EE" type="Label" parent="StatsScreen/Title"]
+modulate = Color(1, 0.34901962, 0, 1)
+texture_filter = 1
+offset_left = 368.0
+offset_top = 8.0
+offset_right = 632.0
+offset_bottom = 104.00001
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.19215687)
+theme_override_constants/shadow_outline_size = 5
+theme_override_fonts/font = ExtResource("14_vx54r")
+theme_override_font_sizes/font_size = 96
+text = "ICS"
+
+[node name="SlimeContainer" type="Node2D" parent="StatsScreen"]
+
+[node name="KillCounter" type="Label" parent="StatsScreen"]
+visible = false
+offset_left = 16.0
+offset_top = 592.0
+offset_right = 208.0
+offset_bottom = 663.0
+theme_override_fonts/font = ExtResource("14_vx54r")
+theme_override_font_sizes/font_size = 32
+text = "0"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="StatsScreen"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -133.0
+offset_right = 20.0
+offset_bottom = 133.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="StatsScreen/VBoxContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_6f3f2")
+theme_override_font_sizes/font_size = 32
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Label2" type="Label" parent="StatsScreen/VBoxContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_6f3f2")
+theme_override_font_sizes/font_size = 32
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Label3" type="Label" parent="StatsScreen/VBoxContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_6f3f2")
+theme_override_font_sizes/font_size = 32
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TextureRect" type="Sprite2D" parent="."]
+z_index = -4096
+position = Vector2(600, 392)
+scale = Vector2(1.0229167, 0.9407408)
+texture = ExtResource("15_w7x8g")

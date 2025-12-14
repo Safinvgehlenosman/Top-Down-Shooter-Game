@@ -1,9 +1,12 @@
 extends CanvasLayer
 
-@onready var start_button: Button = $StartButton
-@onready var quit_button: Button = $QuitButton
-@onready var fullscreen_button: Button = $FullscreenButton
-@onready var kill_counter: Label = $KillCounter
+@onready var start_button: Button = get_node_or_null("StartButton")
+@onready var quit_button: Button = get_node_or_null("QuitButton")
+@onready var fullscreen_button: Button = get_node_or_null("FullscreenButton")
+@onready var kill_counter: Label = get_node_or_null("KillCounter")
+@onready var stats_button: Button = get_node_or_null("StatsButton")
+@onready var version_label: Label = get_node_or_null("VersionLabel")
+
 
 @export var button_paths: Array[NodePath] = []
 @export var ambient_slime_scene: PackedScene
@@ -17,14 +20,36 @@ var buttons: Array[Button] = []
 var focused_index: int = 0
 
 func _ready() -> void:
-	start_button.pressed.connect(_on_start_button_pressed)
-	quit_button.pressed.connect(_on_quit_button_pressed)
-	fullscreen_button.pressed.connect(_on_fullscreen_button_pressed)
+	if version_label:
+		var v = ProjectSettings.get_setting("application/config/version", "DEV")
+		version_label.text = "Version: v%s" % str(v)
+
+	if start_button:
+		start_button.pressed.connect(_on_start_button_pressed)
+	else:
+		push_error("[StartScreen] Missing StartButton node at path 'StartButton'")
+
+	if quit_button:
+		quit_button.pressed.connect(_on_quit_button_pressed)
+	else:
+		push_error("[StartScreen] Missing QuitButton node at path 'QuitButton'")
+
+	if fullscreen_button:
+		fullscreen_button.pressed.connect(_on_fullscreen_button_pressed)
+	else:
+		push_error("[StartScreen] Missing FullscreenButton node at path 'FullscreenButton'")
+
+	if stats_button:
+		stats_button.pressed.connect(_on_stats_button_pressed)
+	else:
+		push_error("[StartScreen] Missing StatsButton node at path 'StatsButton'")
+
 	_schedule_next_spawn()
 
-	
+
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-	start_button.grab_focus()
+	if start_button:
+		start_button.grab_focus()
 	_setup_menu_buttons()
 	
 	var video_player = get_node_or_null("VideoStreamPlayer")
@@ -74,9 +99,13 @@ func _on_menu_slime_killed() -> void:
 	menu_kills += 1
 	
 	if menu_kills >= 5:
-		kill_counter.visible = true
+		if kill_counter:
+			kill_counter.visible = true
+		else:
+			push_error("[StartScreen] Missing KillCounter node at path 'KillCounter'")
 	
-	kill_counter.text = str(menu_kills)
+	if kill_counter:
+		kill_counter.text = str(menu_kills)
 
 func _setup_menu_buttons() -> void:
 	buttons.clear()
@@ -123,3 +152,7 @@ func _on_fullscreen_button_pressed() -> void:
 		w.mode = Window.MODE_WINDOWED
 	else:
 		w.mode = Window.MODE_FULLSCREEN
+
+func _on_stats_button_pressed() -> void:
+	# Open the StatsScreen scene
+	get_tree().change_scene_to_file("res://scenes/stats_screen.tscn")
