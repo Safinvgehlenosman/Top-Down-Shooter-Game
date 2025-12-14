@@ -174,11 +174,10 @@ func _on_card_hovered(hovered_card: Control, is_hovered: bool) -> void:
 # -------------------------------------------------------------------
 
 func _calculate_upgrade_price(upgrade: Dictionary) -> int:
-	"""Return price from upgrade data (loaded from CSV), reduced by 15%."""
+	"""Return price from upgrade data (loaded from CSV)."""
 	var base_price = int(upgrade.get("price", 50))
-	# Apply global pre-release price tweak: halve all upgrade prices
-	var final_price = base_price * 0.5
-	return int(round(final_price))
+	# Use upgrade price as defined (no global halving)
+	return base_price
 
 
 func _setup_cards() -> void:
@@ -790,6 +789,14 @@ func _filter_upgrades(all_upgrades: Array, wanted_rarity: Variant, taken_ids: Ar
 				_skipped += 1
 				continue
 
+		# Optional: requires another upgrade to be owned first
+		var req_upgrade_str: String = str(u.get("requires_upgrade", "")).strip_edges()
+		if req_upgrade_str != "":
+			if not GameState.has_upgrade(req_upgrade_str):
+				print("[DEBUG Filter] skip: requires_upgrade_not_owned id=", id, "requires=", req_upgrade_str)
+				_skipped += 1
+				continue
+
 
 
 		# Additional safety: Some ability upgrades don't include an explicit
@@ -901,6 +908,12 @@ func _upgrade_meets_requirements(u: Dictionary) -> bool:
 			else:
 				if u.get("rarity", 0) == UpgradesDB.Rarity.SYNERGY:
 					print("[SYNERGY DEBUG] %s ability requirement '%s' PASSED" % [u.get("id", ""), required_ability])
+
+	# Optional: requires another upgrade to be owned first (legacy/extended schema)
+	if u.has("requires_upgrade") and u["requires_upgrade"] != "":
+		var required_upgrade_id := str(u["requires_upgrade"]).strip_edges()
+		if not GameState.has_upgrade(required_upgrade_id):
+			return false
 	
 	# Legacy: Exact weapon requirement (old schema with int values)
 	if u.has("requires_alt_weapon"):

@@ -5,6 +5,19 @@ const BulletScene_SHOTGUN := preload("res://scenes/bullets/shotgun_bullet.tscn")
 const BulletScene_SNIPER  := preload("res://scenes/bullets/sniper_bullet.tscn")
 const DashGhostScene := preload("res://scenes/dash_ghost.tscn")
 
+# Fixed turret & muzzle positions (brute-force 2-state).
+# Replace the Vector2(0, 0) defaults with inspector values:
+# TURRET_POS_RIGHT := Vector2(<X>, <Y>)
+# TURRET_POS_LEFT  := TURRET_POS_RIGHT + Vector2(8, 0)
+const TURRET_POS_RIGHT := Vector2(-5, -5)
+const TURRET_POS_LEFT  := TURRET_POS_RIGHT + Vector2(15, 0)
+
+# Muzzle local positions (barrel tip). Replace placeholders:
+# MUZZLE_POS_RIGHT := Vector2(<MX>, <MY>)
+# MUZZLE_POS_LEFT  := Vector2(<MLX>, <MLY>)
+const MUZZLE_POS_RIGHT := Vector2(0, 0)
+const MUZZLE_POS_LEFT  := Vector2(0, 0)
+
 var dash_ghost_interval: float = 0.03
 var dash_ghost_timer: float = 0.0
 
@@ -14,6 +27,8 @@ var dash_ghost_timer: float = 0.0
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var visual: Node2D = $AnimatedSprite2D
 @onready var muzzle: Marker2D = $Gun/Muzzle
+
+@onready var turret_node: Node2D = null
 
 # Runtime stats (filled from GameConfig / GameState in _ready)
 var speed: float
@@ -44,6 +59,11 @@ var base_visual_rot: float = 0.0
 var walk_time: float = 0.0
 var gun_sprite: Node = null
 var base_gun_pos: Vector2 = Vector2.ZERO
+var backpack_sprite: Node = null
+var base_backpack_pos: Vector2 = Vector2.ZERO
+@export var turret_back_offset: Vector2 = Vector2(-10, -6)
+@export var turret_left_extra_offset: Vector2 = Vector2(800000000, 0)
+var base_turret_pos: Vector2 = Vector2.ZERO
 
 # --- AIM / INPUT MODE ------------------------------------------------
 
@@ -60,6 +80,9 @@ var aim_dir: Vector2 = Vector2.RIGHT
 # one shared cursor for mouse + controller
 var aim_cursor_pos: Vector2 = Vector2.ZERO
 var last_mouse_pos: Vector2 = Vector2.ZERO
+# Track last facing to print once when it changes
+var _prev_facing_left = null
+var _last_facing_left: bool = false
 
 func grant_spawn_invincibility(duration: float) -> void:
 	if health_component and health_component.has_method("grant_spawn_invincibility"):
@@ -144,6 +167,32 @@ func _ready() -> void:
 				gun_sprite = c
 				break
 
+	# Try to find a backpack sprite under the visual node so we can mirror it
+	if visual:
+		for c in visual.get_children():
+			if c is Sprite2D or c is AnimatedSprite2D:
+				var lname := c.name.to_lower()
+				if lname.contains("back") or lname.contains("pack"):
+					backpack_sprite = c
+					break
+
+		# Record backpack base local pos if we found one
+		if backpack_sprite:
+			base_backpack_pos = backpack_sprite.position
+
+	# If backpack exists under the Turret node (scene has Backpack as a child of Turret), pick that up too
+	if has_node("Turret"):
+		var tnode := $Turret
+		# Keep a direct reference for faster updates
+		turret_node = tnode
+		# Record turret base local pos so we can apply visual sway offsets
+		if turret_node:
+			base_turret_pos = turret_node.position
+		if tnode and tnode.has_node("Backpack"):
+			backpack_sprite = tnode.get_node("Backpack")
+			if backpack_sprite:
+				base_backpack_pos = backpack_sprite.position
+
 
 # --------------------------------------------------------------------
 # PROCESS
@@ -203,18 +252,25 @@ func _process(delta: float) -> void:
 			else:
 				gun_sprite.scale = gun_sprite.scale.lerp(desired_scale, clamp(delta * 8.0, 0.0, 1.0))
 
+		# --- Turret: fixed positions per facing (no sway) ---
+		# Centralized turret attachment update (runs every frame while turret exists)
+		_update_turret_attachment()
+
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
 		return
 
-    # Regeneration removed
+	# Regeneration removed
 
 	_update_timers(delta)
 	_process_movement(delta)
 	_update_aim_direction(delta)
-	_process_aim()
-	
+	_process_aim(delta)
+			# centralized turret update function defined below
+			# (keeps turret local transform in sync even if turret is spawned later)
+			# function implementation below
+	_update_turret_attachment()
 	gun.update_timers(delta)
 
 	var is_shooting := Input.is_action_pressed("shoot")
@@ -228,6 +284,9 @@ func _physics_process(delta: float) -> void:
 
 	# Update animation and facing based on current velocity and mouse position
 	_update_animation_and_facing()
+
+	# Also ensure turret attachment is kept in sync while turret exists
+	_update_turret_attachment()
 
 
 func _on_gun_recoil_requested(dir: Vector2, strength: float) -> void:
@@ -318,7 +377,7 @@ func _update_aim_direction(delta: float) -> void:
 	else:
 		aim_dir = Vector2.RIGHT
 
-func _process_aim() -> void:
+func _process_aim(delta: float) -> void:
 	# Facing based on mouse position (not movement). Mirror gun so it stays on correct side.
 	var mouse_pos: Vector2 = get_global_mouse_position()
 	var facing_left: bool = mouse_pos.x < global_position.x
@@ -336,10 +395,36 @@ func _process_aim() -> void:
 			if gun_sprite is Sprite2D or gun_sprite is AnimatedSprite2D:
 				gun_sprite.flip_v = facing_left
 
+		# Also flip backpack art if present so it stays visually correct
+		if backpack_sprite:
+			if backpack_sprite is Sprite2D or backpack_sprite is AnimatedSprite2D:
+				backpack_sprite.flip_v = facing_left
+
+		# Mirror backpack local position so it sits on correct side of the body
+		if backpack_sprite:
+			var speed_val: float = velocity.length()
+			var max_speed: float = 1.0
+			if GameState != null:
+				max_speed = max(0.0001, GameState.move_speed)
+			var t: float = clamp(speed_val / max_speed, 0.0, 1.0)
+			var walk_time_local := walk_time
+			var side: float = sin(walk_time_local) * lerp(0.0, 2.5, t)
+			var bob: float = abs(cos(walk_time_local)) * lerp(0.0, 1.5, t)
+			var mirror_base_x_b: float = -abs(base_backpack_pos.x) if facing_left else abs(base_backpack_pos.x)
+			var backpack_target: Vector2 = Vector2(mirror_base_x_b + side * 0.3, base_backpack_pos.y - bob * 0.2)
+			backpack_sprite.position = backpack_sprite.position.lerp(backpack_target, clamp(delta * 10.0, 0.0, 1.0))
+
+			# Turret attachment handled centrally by _update_turret_attachment()
+
+		# Flip & rotate entire Turret node so it sits on the correct side
+		# NOTE: Turret visual transforms (flip/rotation) are handled only on the Backpack sprite.
+		# Do not change Turret node scale/rotation here.
+
 
 func _on_player_invis_changed(is_invisible: bool) -> void:
 	# Called when GameState's invis flag changes; refresh animation immediately
-	print("[ANIM-SIGNAL] player_invisible_changed ->", is_invisible)
+	# Debug suppressed
+	# print("[ANIM-SIGNAL] player_invisible_changed ->", is_invisible)
 	_update_animation_and_facing()
 
 # Crosshair follows shared cursor (mouse + controller)
@@ -386,8 +471,7 @@ func _update_animation_and_facing() -> void:
 		# fallback: ability type + active timer (covers cases where flag isn't set)
 		elif GameState.ability == GameState.AbilityType.INVIS and GameState.ability_active_left > 0.0:
 			is_invis_active = true
-		# Diagnostic: print raw GameState invis-related values when debug enabled
-		print("[ANIM-STATE] GameState.player_invisible=", GameState.player_invisible, " ability=", str(GameState.ability), " ability_active_left=", GameState.ability_active_left)
+				# Diagnostic: GameState invisibility info suppressed to reduce log spam
 
 	# Pick desired animation name
 	var desired_anim: String
@@ -399,7 +483,8 @@ func _update_animation_and_facing() -> void:
 	# Safe fallbacks: if invis animations missing, fall back to non-invis variants
 	var frames = animated_sprite.sprite_frames
 	if frames:
-		print("[ANIM] speed=", speed_val, " invis=", is_invis_active, " desired=", desired_anim, " has_frames=", frames != null, " has_anim=", frames.has_animation(desired_anim), " current=", animated_sprite.animation)
+		# Suppress frequent animation diagnostics to reduce log spam
+		# print("[ANIM] speed=", speed_val, " invis=", is_invis_active, " desired=", desired_anim, " has_frames=", frames != null, " has_anim=", frames.has_animation(desired_anim), " current=", animated_sprite.animation)
 		if not frames.has_animation(desired_anim):
 			if is_invis_active:
 				var fallback := "move" if speed_val > 1.0 else "idle"
@@ -416,7 +501,8 @@ func _update_animation_and_facing() -> void:
 					desired_anim = animated_sprite.animation
 
 	if desired_anim != animated_sprite.animation and desired_anim != "":
-		print("[ANIM] switching to ", desired_anim)
+		# Suppressed animation switching log
+		# print("[ANIM] switching to ", desired_anim)
 		animated_sprite.play(desired_anim)
 
 	# Facing is handled in _process_aim() (mouse-based flip)
@@ -548,6 +634,8 @@ func sync_from_gamestate() -> void:
 			var data: Dictionary = GameState.ALT_WEAPON_DATA.get(GameState.alt_weapon, {})
 			if not data.is_empty() and turret.has_method("configure"):
 				turret.configure(data)
+				# Ensure attachment transforms apply immediately after configure/spawn
+				_update_turret_attachment()
 		else:
 			turret.visible = false
 
@@ -573,3 +661,54 @@ func set_weapon_enabled(enabled: bool) -> void:
 		var turret = $Turret
 		if not enabled:
 			turret.visible = false
+
+
+# --------------------------------------------------------------------
+# Turret attachment helper
+# --------------------------------------------------------------------
+func _update_turret_attachment() -> void:
+	# Ensure turret_node reference is valid (turret may be instanced later)
+	if turret_node == null or not is_instance_valid(turret_node):
+		if has_node("Turret"):
+			turret_node = $Turret
+		else:
+			return
+
+	var tnode: Node = turret_node
+	if tnode == null:
+		return
+
+	# Resolve backpack and muzzle lazily (they live under TurretHead/VisualRoot)
+	var t_backpack := tnode.get_node_or_null("TurretHead/VisualRoot/Backpack")
+	var t_muzzle := tnode.get_node_or_null("TurretHead/VisualRoot/Muzzle")
+
+	# IMPORTANT: derive facing from the same thing that flips the player sprite
+	var facing_left: bool = false
+	if animated_sprite != null:
+		facing_left = animated_sprite.flip_h
+	else:
+		# fallback to direct node lookup
+		if has_node("AnimatedSprite2D"):
+			facing_left = $AnimatedSprite2D.flip_h
+
+	# Hardcoded two-state placement
+	if facing_left:
+		# LEFT state (use inspector constant)
+		tnode.position = TURRET_POS_LEFT
+	else:
+		# RIGHT state (canonical)
+		tnode.position = TURRET_POS_RIGHT
+
+	# Debug-protection: in debug builds verify no other code overwrites turret position
+	if OS.is_debug_build():
+		var _expected_pos: Vector2 = tnode.position
+		# Wait one frame and then verify the position is unchanged
+		await get_tree().process_frame
+		if is_instance_valid(tnode) and tnode.position != _expected_pos:
+			print("[TURRET PROTECT] turret.position was overwritten! expected=", _expected_pos, " got=", tnode.position)
+			print_stack()
+
+	# One-time debug print only when facing changes
+	if facing_left != _last_facing_left:
+		print("[TURRET ATTACH] facing_left=", facing_left, " turret_pos=", tnode.position, " backpack_exists=", (t_backpack != null))
+		_last_facing_left = facing_left

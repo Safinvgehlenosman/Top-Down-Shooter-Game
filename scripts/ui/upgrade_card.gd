@@ -121,10 +121,10 @@ func setup(data: Dictionary) -> void:
 	elif upgrade_id.ends_with("_unlock"):
 		is_unlock_card = true
 	base_price = int(data.get("price", 0))
-	# Apply global half-price tweak for non-scaled items as well
+	# Use base price for non-scaled items (no global halving)
 	adjusted_base_price = 0
 	if base_price > 0:
-		adjusted_base_price = int(round(base_price * 0.5))
+		adjusted_base_price = base_price
 	# Determine price (non-scaling upgrades use adjusted base price)
 	if not NON_SCALING_PRICE_UPGRADES.has(upgrade_id):
 		price = GameState.get_upgrade_price(upgrade_id, base_price)

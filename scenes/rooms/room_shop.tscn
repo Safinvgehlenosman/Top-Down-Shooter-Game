@@ -1,13 +1,10 @@
-[gd_scene load_steps=20 format=3 uid="uid://bklmc5x41aw7q"]
+[gd_scene load_steps=10 format=3 uid="uid://bklmc5x41aw7q"]
 
 [ext_resource type="Script" uid="uid://maxvyl6l376d" path="res://scenes/rooms/room_01.gd" id="1_axluv"]
 [ext_resource type="Texture2D" uid="uid://ddnj3o5q184op" path="res://assets/TilesetSheet.png" id="2_rarxk"]
-[ext_resource type="Texture2D" uid="uid://cicvt3bcr4i6o" path="res://assets/Separated/shopkeeper.png" id="3_rarxk"]
-[ext_resource type="Texture2D" uid="uid://bqi1quc2f0tx1" path="res://assets/SpriteSheet.png" id="4_cp5x1"]
 [ext_resource type="PackedScene" uid="uid://da26oiy1gxaxy" path="res://scenes/chest.tscn" id="4_kjxm2"]
 [ext_resource type="Script" uid="uid://dq84uw0tyintf" path="res://scripts/shop_chest.gd" id="5_5chtl"]
-[ext_resource type="AudioStream" uid="uid://dxpkrsr6bjeyf" path="res://assets/Audios/Shop.mp3" id="6_5chtl"]
-[ext_resource type="PackedScene" uid="uid://bwwnn447rlcaj" path="res://scenes/slimes/dps_dummy_slime.tscn" id="8_cp5x1"]
+[ext_resource type="AudioStream" uid="uid://dklh1dxkvgyos" path="res://assets/Audios/shopping-centre-lounge-259489.mp3" id="5_kjxm2"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_kjxm2"]
 texture = ExtResource("2_rarxk")
@@ -503,54 +500,6 @@ fill = 1
 fill_from = Vector2(0.517094, 0.52136755)
 fill_to = Vector2(0.76495725, 0.7777778)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_5chtl"]
-atlas = ExtResource("3_rarxk")
-region = Rect2(0, 32, 32, 32)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_kjxm2"]
-atlas = ExtResource("3_rarxk")
-region = Rect2(32, 32, 32, 32)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_cp5x1"]
-atlas = ExtResource("3_rarxk")
-region = Rect2(64, 32, 32, 32)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_88ph6"]
-atlas = ExtResource("3_rarxk")
-region = Rect2(96, 32, 32, 32)
-
-[sub_resource type="SpriteFrames" id="SpriteFrames_1usa3"]
-animations = [{
-"frames": [{
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_5chtl")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_kjxm2")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_cp5x1")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_88ph6")
-}],
-"loop": true,
-"name": &"default",
-"speed": 2.0
-}]
-
-[sub_resource type="Gradient" id="Gradient_3v2ag"]
-offsets = PackedFloat32Array(0.016129032, 0.8064516, 1)
-colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0)
-
-[sub_resource type="GradientTexture2D" id="GradientTexture2D_rarxk"]
-gradient = SubResource("Gradient_3v2ag")
-width = 256
-height = 256
-fill = 1
-fill_from = Vector2(0.517094, 0.52136755)
-fill_to = Vector2(0.76495725, 0.7777778)
-
 [node name="RoomShop" type="Node2D"]
 script = ExtResource("1_axluv")
 room_type = "shop"
@@ -578,43 +527,18 @@ texture_scale = 0.3
 position = Vector2(-620, 6)
 
 [node name="DoorSpawn" type="Marker2D" parent="SpawnPoints" groups=["door_spawn"]]
-position = Vector2(836.00006, 146)
+position = Vector2(788, 146)
 scale = Vector2(1.2, 1.2)
-
-[node name="ShopNPC" type="AnimatedSprite2D" parent="."]
-position = Vector2(148, 54)
-scale = Vector2(1.2, 1.2)
-sprite_frames = SubResource("SpriteFrames_1usa3")
-autoplay = "default"
-frame_progress = 0.05634827
-
-[node name="PointLight2D" type="PointLight2D" parent="ShopNPC"]
-position = Vector2(0, 3)
-color = Color(0.9254902, 0.8745098, 0.39215687, 1)
-shadow_enabled = true
-texture = SubResource("GradientTexture2D_rarxk")
-texture_scale = 0.5
-
-[node name="Shadow" type="Sprite2D" parent="ShopNPC"]
-modulate = Color(0, 0, 0, 0.11764706)
-z_index = -1
-position = Vector2(7.1054274e-15, 7.499999)
-scale = Vector2(0.76282054, 0.75000006)
-texture = ExtResource("4_cp5x1")
-region_enabled = true
-region_rect = Rect2(201.99591, 204.99461, 12.041901, 5.0242004)
 
 [node name="Chest" parent="." instance=ExtResource("4_kjxm2")]
 position = Vector2(168, 57)
 script = ExtResource("5_5chtl")
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
-stream = ExtResource("6_5chtl")
+stream = ExtResource("5_kjxm2")
+volume_db = -10.0
 bus = &"BG"
 parameters/looping = true
 
 [node name="PlayerSpawn" type="Marker2D" parent="." groups=["player_spawn"]]
-position = Vector2(168, 128)
-
-[node name="DpsDummySlime" parent="." instance=ExtResource("8_cp5x1")]
-position = Vector2(124, 154)
+position = Vector2(168, 100)

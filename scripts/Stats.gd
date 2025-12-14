@@ -5,7 +5,6 @@ var total_deaths:int = 0
 var highest_level:int = 0
 
 func _ready() -> void:
-	print(OS.get_user_data_dir())
 	load_from_disk()
 	save_to_disk()
 

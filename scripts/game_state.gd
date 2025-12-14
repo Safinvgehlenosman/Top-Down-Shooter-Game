@@ -903,10 +903,7 @@ func get_upgrade_price(upgrade_id: String, base_price: int) -> int:
 	
 	# Exponential scaling: base_price * (multiplier ^ times_purchased)
 	var scaled_price: float = float(base_price) * pow(multiplier, float(times_purchased))
-	# Apply global price adjustment for pre-release polish: halve all upgrade prices.
-	# NOTE: Keep free upgrades (price == 0) as free.
-	if scaled_price > 0.0:
-		scaled_price *= 0.5
+	# Prices are now used as defined in the upgrade data (no global halving)
 	# Return integer price (rounded)
 	return int(round(scaled_price))
 

@@ -192,7 +192,7 @@ region_enabled = true
 region_rect = Rect2(201.99591, 204.99461, 12.041901, 5.0242004)
 
 [node name="Gun" type="Node2D" parent="."]
-position = Vector2(0.8333336, -4.1666665)
+position = Vector2(0.8333333, -4.1666665)
 scale = Vector2(0.8, 0.8)
 script = ExtResource("3_qhqgy")
 
@@ -226,29 +226,33 @@ texture = SubResource("GradientTexture2D_d2wvv")
 texture_scale = 0.5
 
 [node name="Turret" type="Node2D" parent="."]
-visible = false
+position = Vector2(-5, -5)
 script = ExtResource("6_fjrip")
 
-[node name="Backpack" type="Sprite2D" parent="Turret"]
+[node name="TurretHead" type="Node2D" parent="Turret"]
+position = Vector2(-2.4666655, 0.4333334)
+
+[node name="VisualRoot" type="Node2D" parent="Turret/TurretHead"]
+
+[node name="Backpack" type="Sprite2D" parent="Turret/TurretHead/VisualRoot"]
 z_index = -2
-position = Vector2(-4.9999995, -5)
 rotation = -1.5707964
 scale = Vector2(0.5, 0.5)
 texture = ExtResource("6_tuyoq")
 region_enabled = true
-region_rect = Rect2(12, 13, 9, 8)
+region_rect = Rect2(9, 9, 14, 14)
 
-[node name="TurretHead" type="Sprite2D" parent="Turret"]
+[node name="TurretSprite" type="Sprite2D" parent="Turret/TurretHead/VisualRoot"]
 z_index = -1
-position = Vector2(-6.6666675, -5.8333335)
+position = Vector2(-1.6666682, -0.8333335)
 rotation = 3.1415927
 scale = Vector2(0.7, 0.7)
 texture = ExtResource("6_tuyoq")
 region_enabled = true
 region_rect = Rect2(41, 10, 12, 6)
 
-[node name="Muzzle" type="Marker2D" parent="Turret/TurretHead"]
-position = Vector2(-3.5714273, 3.8601104e-07)
+[node name="Muzzle" type="Marker2D" parent="Turret/TurretHead/VisualRoot"]
+position = Vector2(0.79999924, -0.43333328)
 scale = Vector2(1.4285713, 1.4285713)
 
 [node name="SFX_Shoot" type="AudioStreamPlayer2D" parent="Turret"]

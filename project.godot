@@ -14,7 +14,7 @@ config/name="Slime Spree"
 config/version="0.2.0"
 run/main_scene="uid://btcojwer2m1mu"
 config/features=PackedStringArray("4.5", "Forward Plus")
-config/icon="uid://bofoinckm5yc"
+config/icon="uid://dbcj4g7cm7nv0"
 
 [autoload]
 

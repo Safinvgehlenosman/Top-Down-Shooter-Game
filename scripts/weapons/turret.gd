@@ -1,8 +1,12 @@
 extends Node2D
 
-@onready var head: Node2D = $TurretHead
-@onready var muzzle: Marker2D = $TurretHead/Muzzle
-@onready var sfx_shoot: AudioStreamPlayer2D = $SFX_Shoot  # NEW
+# Strict 2-node setup: TurretHead rotates; VisualRoot only flips (visuals)
+@onready var turret_head: Node2D = $TurretHead as Node2D
+@onready var muzzle: Marker2D = $TurretHead/VisualRoot/Muzzle as Marker2D
+@onready var visual_root: Node2D = $TurretHead/VisualRoot as Node2D
+@onready var sfx_shoot: AudioStreamPlayer2D = $SFX_Shoot as AudioStreamPlayer2D
+
+@export var back_offset: Vector2 = Vector2(-10, -6)
 
 var fire_interval: float = 0.8
 var turret_range: float = 100.0
@@ -12,10 +16,31 @@ var bullet_speed: float = 100.0
 var damage: int = 1
 
 var fire_timer: float = 0.0
+var _turret_root_warned: bool = false
 
 
 func _ready() -> void:
 	add_to_group("turret")
+
+	# Fail fast if critical nodes missing to avoid repeated null errors during play
+	if turret_head == null or muzzle == null:
+		push_error("[TURRET] Missing TurretHead or Muzzle node; disabling turret processing.")
+		set_process(false)
+		set_physics_process(false)
+		return
+
+	# Reset visual transforms to a sane baseline so facing is handled externally
+	if turret_head != null:
+		turret_head.scale = Vector2.ONE
+		turret_head.rotation = 0.0
+	if visual_root != null:
+		visual_root.scale = Vector2.ONE
+		visual_root.rotation = 0.0
+		# Do not set Backpack.rotation — backpack rotation must be owned by visuals and not programmatically rotated.
+		var backpack := visual_root.get_node_or_null("Backpack")
+		if backpack:
+			# Keep backpack orientation unchanged here; any flip should use flip_h only and be handled by Player
+			pass
 
 
 # Called from Player.sync_from_gamestate()
@@ -43,6 +68,14 @@ func _process(delta: float) -> void:
 	if bullet_scene == null:
 		return
 
+	# Safety clamp: turret root must never rotate. Warn once if external code sets rotation.
+	if abs(rotation) > 0.001:
+		if not _turret_root_warned:
+			push_error("[TURRET WARNING] root rotation non-zero: %f" % rotation)
+			_turret_root_warned = true
+		# Clamp back to zero to enforce invariant
+		rotation = 0.0
+
 
 
 	fire_timer -= delta
@@ -51,9 +84,11 @@ func _process(delta: float) -> void:
 	if target == null:
 		return
 
-	# Aim at enemy
-	head.look_at(target.global_position)
-	head.rotation += deg_to_rad(180)
+	# Aim at enemy (only when turret_head is valid)
+	if turret_head != null:
+		turret_head.look_at(target.global_position)
+
+	# Visual flipping not handled here; visuals are static and backpack rotation is set in _ready()
 
 	# Auto fire
 	if fire_timer <= 0.0:
@@ -113,6 +148,11 @@ func _fire_at(target: Node2D) -> void:
 
 		return
 	
+	# Guard muzzle usage
+	if muzzle == null:
+		push_error("[TURRET] muzzle missing in _fire_at")
+		return
+
 	var dir := (target.global_position - muzzle.global_position).normalized()
 
 	# Apply accuracy spread (improves with upgrades)
@@ -140,5 +180,3 @@ func _fire_at(target: Node2D) -> void:
 		sfx_shoot.pitch_scale = randf_range(1.1, 1.3)  # Slightly higher, mechanical
 		sfx_shoot.volume_db = -6.0  # Quieter (fires often)
 		sfx_shoot.play()
-
-

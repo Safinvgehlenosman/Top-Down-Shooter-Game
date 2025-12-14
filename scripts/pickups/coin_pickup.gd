@@ -118,13 +118,15 @@ func _on_body_entered(body: Node2D) -> void:
 		is_collected = true
 
 		# Get coin value based on level (randomized ranges)
-		var coin_value: int = _get_coin_value_for_level()
+		var base_value: int = _get_coin_value_for_level()
+		var coin_value: int = base_value
 		
 		# ⭐ If coin pickups are disabled by chaos challenge, set value to 0
 		if GameState.coin_pickups_disabled:
-
 			coin_value = 0
-		
+		else:
+			# Apply global coin multiplier (x1.50)
+			coin_value = int(round(float(base_value) * 1.50))
 
 		# Actually add coins to the player's total
 		GameState.add_coins(coin_value)
