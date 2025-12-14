@@ -54,7 +54,7 @@ const UPGRADE_DEFS: Array = [
 	{"id": "primary_kill_shot", "text": "Kill Shot (10% Crit Chance, 2.5x Crit)", "rarity": Rarity.RARE, "price": 400, "category": "primary", "pool": "shop", "icon_path": "", "effect": "primary_crit", "primary_crit_chance_add": 0.10, "primary_crit_mult": 2.50, "enabled": true},
 	{"id": "primary_weak_spotter", "text": "Weak Spotter (+5% Crit, 2x Crit)", "rarity": Rarity.RARE, "price": 350, "category": "primary", "pool": "shop", "icon_path": "", "effect": "primary_crit", "primary_crit_chance_add": 0.05, "primary_crit_mult": 2.00, "enabled": true},
 	{"id": "primary_steady_aim", "text": "Steady Aim (+30% Damage While Stationary)", "rarity": Rarity.RARE, "price": 340, "category": "primary", "pool": "shop", "icon_path": "", "effect": "primary_stationary_damage", "primary_stationary_damage": 1.30, "enabled": true},
-	{"id": "primary_trailing_shot", "text": "Trailing Shot", "rarity": Rarity.EPIC, "price": 600, "category": "primary", "pool": "shop", "icon_path": "", "effect": "primary_trailing_shot", "enabled": true, "stackable": true, "description": "Fires one additional projectile that trails slightly behind your main shot. Stackable."},
+	{"id": "primary_trailing_shot", "text": "Trailing Shot (+1 Projectile)", "rarity": Rarity.EPIC, "price": 600, "category": "primary", "pool": "shop", "icon_path": "", "effect": "primary_trailing_shot", "enabled": true, "stackable": true, "description": "Fires one additional projectile that trails slightly behind your main shot. Stackable."},
 	# REMOVED: primary_twinshot_burst
 	# --- NEW GENERAL UPGRADES ---
 	# --- NEW SHOTGUN-SPECIFIC UPGRADES ---

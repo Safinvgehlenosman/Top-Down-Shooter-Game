@@ -63,12 +63,30 @@ offset_bottom = 182.0
 texture = ExtResource("3_33rkj")
 expand_mode = 2
 
-[node name="Icon" type="TextureRect" parent="VisualRoot"]
+[node name="IconSlot" type="CenterContainer" parent="VisualRoot"]
 layout_mode = 0
 offset_left = 22.0
 offset_top = 146.0
 offset_right = 68.2
 offset_bottom = 190.0
+mouse_filter = 2
+[node name="Icon" type="TextureRect" parent="VisualRoot/IconSlot"]
+layout_mode = 0
+anchors_preset = 15
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 0.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+[node name="Icon" type="TextureRect" parent="VisualRoot/IconSlot"]
+layout_mode = 0
+anchors_preset = 15
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 0.0
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5

@@ -12,7 +12,8 @@ signal purchased
 @onready var outline: TextureRect = $VisualRoot/Outline
 @onready var price_label: Label = $VisualRoot/PriceArea/TextureRect/PriceLabel
 @onready var coin_icon: TextureRect = $VisualRoot/PriceArea/TextureRect/CoinIcon
-@onready var icon_rect: TextureRect = $VisualRoot/Icon
+@onready var icon_rect: TextureRect = get_node_or_null("VisualRoot/IconSlot/Icon") as TextureRect
+@onready var icon_slot: CenterContainer = get_node_or_null("VisualRoot/IconSlot") as CenterContainer
 @onready var desc_label: Label = $VisualRoot/Label
 @onready var buy_button: Button = $VisualRoot/Button
 @onready var sfx_collect: AudioStreamPlayer = $SFX_Collect
@@ -42,9 +43,28 @@ const RARITY_COLORS := {
 	UpgradesDB.Rarity.SYNERGY: Color(0.0, 1.0, 1.0, 0.9),
 }
 
+# Icon resource constants (paths or resource identifiers)
+const PRIMARY_GUN_ICON_TEX := "res://assets/SpriteSheet.png"
+const SHOTGUN_ICON_TEX := "res://assets/bullets/shotgunbullet.png"
+const SNIPER_ICON_TEX := "res://assets/bullets/sniperbullet.png"
+const SHURIKEN_ICON_TEX := "res://assets/bullets/shuriken.png"
+const TURRET_ICON_TEX := "res://assets/bullets/turretbullet.png"
+const HEART_ICON_TEX := "res://assets/Separated/singleheart.png"
+const SPEED_DASH_ICON_TEX := "res://assets/speeddashicon.png"
+const INVIS_ICON_TEX := "res://assets/invisicon.png"
+const DEFAULT_ICON_TEX := "res://assets/Separated/singleheart.png"
+
+# Track missing-icon prints so we only print once per upgrade id
+var _icon_missing_reported: Dictionary = {}
+
+
 func _ready() -> void:
 	await get_tree().process_frame
 	original_position = position
+
+	# Prefer nearest filtering for crisp UI icons
+	if icon_rect:
+		icon_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	
 	if buy_button:
 		if not buy_button.mouse_entered.is_connected(_on_hover):
@@ -58,6 +78,14 @@ func _ready() -> void:
 		var gs = Engine.get_singleton("GameState")
 		if gs.has_signal("coins_changed"):
 			gs.connect("coins_changed", Callable(self, "_on_coins_changed"))
+
+	# Ensure slot + icon sizing and crisp filter
+	if icon_slot:
+		icon_slot.custom_minimum_size = Vector2(32, 32)
+	if icon_rect:
+		icon_rect.custom_minimum_size = Vector2(32, 32)
+		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
 func _on_hover() -> void:
 	var center = Vector2(1, 1)
@@ -103,6 +131,9 @@ func setup(data: Dictionary) -> void:
 	else:
 		price = adjusted_base_price
 	icon = data.get("icon", null)
+
+	# Resolve icon automatically (or respect explicit icon_path)
+	_apply_icon(data)
 	text = data.get("text", "")
 	rarity = data.get("rarity", UpgradesDB.Rarity.COMMON)
 	
@@ -409,6 +440,140 @@ func _apply_rarity_visuals() -> void:
 		outline.material = rarity_outline_materials[idx]
 	else:
 		outline.material = null
+
+
+func _load_tex_safe(path: String) -> Texture2D:
+	if not path or str(path).strip_edges() == "":
+		return null
+	# ResourceLoader.exists accepts a path string
+	if not ResourceLoader.exists(path):
+		return null
+	var res = load(path)
+	if res and res is Texture2D:
+		return res
+	# Not a texture
+	return null
+
+
+func _get_icon_texture(u: Dictionary) -> Texture2D:
+	# Respect explicit icon_path if present
+	var override_path := str(u.get("icon_path", "")).strip_edges()
+	if override_path != "":
+		var otex := _load_tex_safe(override_path)
+		if otex:
+			return otex
+
+	# Weapon unlock/requirement mapping (bullets/projectiles)
+	var req_weapon := str(u.get("requires_weapon", "")).strip_edges()
+	var uw := str(u.get("unlock_weapon", "")).strip_edges()
+	var weapon_key := uw if uw != "" else req_weapon
+	if weapon_key != "":
+		match weapon_key:
+			"shotgun": return _load_tex_safe(SHOTGUN_ICON_TEX)
+			"sniper": return _load_tex_safe(SNIPER_ICON_TEX)
+			"shuriken": return _load_tex_safe(SHURIKEN_ICON_TEX)
+			"turret": return _load_tex_safe(TURRET_ICON_TEX)
+
+	# Invis-related
+	var ua := str(u.get("unlock_ability", "")).strip_edges()
+	var ra := str(u.get("requires_ability", "")).strip_edges()
+	var id := str(u.get("id", ""))
+	if ua == "invis" or ra == "invis" or id.find("invis") >= 0:
+		return _load_tex_safe(INVIS_ICON_TEX)
+
+	# Speed/dash-related
+	if id.find("move_speed") >= 0 or id.find("dash") >= 0 or ua == "dash" or ra == "dash":
+		return _load_tex_safe(SPEED_DASH_ICON_TEX)
+
+	# Primary category -> gun sprite (use player gun atlas region)
+	var category := str(u.get("category", ""))
+	if category == "primary":
+		var atlas := _load_tex_safe(PRIMARY_GUN_ICON_TEX)
+		if atlas:
+			var at := AtlasTexture.new()
+			at.atlas = atlas
+			# region matches player.tscn region_rect = Rect2(8, 104, 16, 16)
+			at.region = Rect2(8, 104, 16, 16)
+			return at
+
+	# HP/defensive
+	if category == "general":
+		if id.find("max_hp") >= 0 or id.find("damage_reduction") >= 0 or id == "max_hp_plus_1":
+			return _load_tex_safe(HEART_ICON_TEX)
+
+	# Fallback default
+	return _load_tex_safe(DEFAULT_ICON_TEX)
+
+
+func _get_icon_scale(u: Dictionary, tex: Texture2D) -> float:
+	# Visual multipliers to normalize perceived size (tweakable)
+	const SCALE_HEART := 1.0
+	const SCALE_BULLET := 1.8
+	const SCALE_PRIMARY := 2.0
+	const SCALE_SPEED := 1.4
+	const SCALE_INVIS := 1.4
+
+	var id := str(u.get("id", ""))
+	var category := str(u.get("category", ""))
+	var uw := str(u.get("unlock_weapon", "")).strip_edges()
+	var reqw := str(u.get("requires_weapon", "")).strip_edges()
+	var weapon_key := uw if uw != "" else reqw
+
+	# Heart / HP
+	if category == "general" and (id.find("max_hp") >= 0 or id.find("damage_reduction") >= 0 or id == "max_hp_plus_1"):
+		return SCALE_HEART
+
+	# Weapon bullets
+	if weapon_key != "":
+		match weapon_key:
+			"shotgun", "sniper", "shuriken", "turret":
+				return SCALE_BULLET
+
+	# Primary gun
+	if category == "primary":
+		return SCALE_PRIMARY
+
+	# Speed / dash
+	if id.find("move_speed") >= 0 or id.find("dash") >= 0 or str(u.get("unlock_ability", "")) == "dash" or str(u.get("requires_ability", "")) == "dash":
+		return SCALE_SPEED
+
+	# Invis
+	if id.find("invis") >= 0 or str(u.get("unlock_ability", "")) == "invis" or str(u.get("requires_ability", "")) == "invis":
+		return SCALE_INVIS
+
+	# Default
+	return 1.0
+
+
+func _apply_icon(u: Dictionary) -> void:
+	# One central place to decide which icon to show for an upgrade card.
+	if icon_rect == null:
+		push_warning("Icon node not found (expected VisualRoot/IconSlot/Icon)")
+		return
+	# Resolve texture via helper that centralizes mapping rules
+	var tex := _get_icon_texture(u)
+	var id := str(u.get("id", ""))
+	var category := str(u.get("category", ""))
+	if tex:
+		icon_rect.texture = tex
+		# enforce nearest filter + layout rules
+		icon_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		# visual normalization scale
+		var mult := _get_icon_scale(u, tex)
+		icon_rect.scale = Vector2(mult, mult)
+		icon_rect.visible = true
+		icon = tex
+		return
+
+	# nothing resolved: clear and print once
+	icon = null
+	icon_rect.texture = null
+	icon_rect.visible = false
+	if not _icon_missing_reported.has(id):
+		print("[ICON] missing icon for id=", id)
+		_icon_missing_reported[id] = true
 
 func set_rarity(new_rarity: UpgradesDB.Rarity) -> void:
 	rarity = new_rarity
