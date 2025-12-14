@@ -12,6 +12,7 @@ var dash_ghost_timer: float = 0.0
 @onready var health_component: Node = $Health
 @onready var ability_component: Node = $Ability
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var visual: Node2D = $AnimatedSprite2D
 @onready var muzzle: Marker2D = $Gun/Muzzle
 
 # Runtime stats (filled from GameConfig / GameState in _ready)
@@ -36,6 +37,13 @@ var invincible_timer: float = 0.0
 
 var is_dead: bool = false
 var weapon_enabled: bool = true  # Disabled in hub
+
+# Visual sway state (affects visuals only)
+var base_visual_pos: Vector2 = Vector2.ZERO
+var base_visual_rot: float = 0.0
+var walk_time: float = 0.0
+var gun_sprite: Node = null
+var base_gun_pos: Vector2 = Vector2.ZERO
 
 # --- AIM / INPUT MODE ------------------------------------------------
 
@@ -119,13 +127,81 @@ func _ready() -> void:
 	aim_cursor_pos = get_global_mouse_position()
 	last_mouse_pos = get_viewport().get_mouse_position()
 
+	# Listen for invisibility changes so we can react immediately (ability may update GameState after player physics)
+	if GameState != null and GameState.has_signal("player_invisible_changed"):
+		GameState.player_invisible_changed.connect(Callable(self, "_on_player_invis_changed"))
+
+	# Record visual base transform (visual is the AnimatedSprite2D by default)
+	if visual:
+		base_visual_pos = visual.position
+		base_visual_rot = visual.rotation
+
+	# Record gun base pos and find the gun sprite child (do not assume specific child name)
+	if gun:
+		base_gun_pos = gun.position
+		for c in gun.get_children():
+			if c is Sprite2D or c is AnimatedSprite2D:
+				gun_sprite = c
+				break
+
 
 # --------------------------------------------------------------------
 # PROCESS
 # --------------------------------------------------------------------
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	_update_crosshair()
+
+	# --- Walk sway (visuals only) ---
+	if visual:
+		# facing used to mirror gun/pivot correctly
+		var mouse_pos: Vector2 = get_global_mouse_position()
+		var facing_left: bool = mouse_pos.x < global_position.x
+
+		var speed_val: float = velocity.length()
+		var max_speed: float = 1.0
+		if GameState != null:
+			max_speed = max(0.0001, GameState.move_speed)
+		var t: float = clamp(speed_val / max_speed, 0.0, 1.0)
+
+		if t > 0.0:
+			walk_time += delta * lerp(6.0, 10.0, t)
+		else:
+			# decay walk_time back to 0 when idle
+			walk_time = lerp(walk_time, 0.0, clamp(delta * 6.0, 0.0, 1.0))
+
+		var side: float = sin(walk_time) * lerp(0.0, 2.5, t)
+		var bob: float = abs(cos(walk_time)) * lerp(0.0, 1.5, t)
+		var rot: float = sin(walk_time) * deg_to_rad(lerp(0.0, 3.0, t))
+
+		var target_pos: Vector2 = base_visual_pos + Vector2(side, -bob)
+		var target_rot: float = base_visual_rot + rot
+
+		# Smoothly interpolate visuals towards target (returns to neutral when idle)
+		visual.position = visual.position.lerp(target_pos, clamp(delta * 10.0, 0.0, 1.0))
+		visual.rotation = lerp_angle(visual.rotation, target_rot, clamp(delta * 10.0, 0.0, 1.0))
+
+		# --- Gun sway (synced with body sway, visuals only) ---
+		if gun:
+			# smaller amplitude so gun sway is subtle compared to body
+			var gun_side_mult: float = 0.6
+			var gun_bob_mult: float = 0.5
+			var gun_scale_mult: float = lerp(0.0, 0.03, t) # tiny scale pulse
+
+			# Mirror base gun X depending on facing (keep gun on correct side)
+			var mirror_base_x: float = -abs(base_gun_pos.x) if facing_left else abs(base_gun_pos.x)
+
+			var gun_target_pos: Vector2 = Vector2(mirror_base_x + side * gun_side_mult, base_gun_pos.y - bob * gun_bob_mult)
+			# Smoothly move gun local position toward target
+			gun.position = gun.position.lerp(gun_target_pos, clamp(delta * 10.0, 0.0, 1.0))
+
+			# Tiny scale pulse synced to step; return to Vector2.ONE when idle
+			var desired_scale: Vector2 = Vector2.ONE + Vector2(gun_scale_mult, gun_scale_mult)
+			if gun_sprite == null:
+				# If gun node itself is a Sprite2D/AnimatedSprite2D it may have scale
+				gun.scale = gun.scale.lerp(desired_scale, clamp(delta * 8.0, 0.0, 1.0))
+			else:
+				gun_sprite.scale = gun_sprite.scale.lerp(desired_scale, clamp(delta * 8.0, 0.0, 1.0))
 
 
 func _physics_process(delta: float) -> void:
@@ -149,6 +225,9 @@ func _physics_process(delta: float) -> void:
 	if weapon_enabled:
 		gun.handle_primary_fire(is_shooting, aim_dir)
 		gun.handle_alt_fire(is_alt_fire, aim_cursor_pos)
+
+	# Update animation and facing based on current velocity and mouse position
+	_update_animation_and_facing()
 
 
 func _on_gun_recoil_requested(dir: Vector2, strength: float) -> void:
@@ -240,15 +319,28 @@ func _update_aim_direction(delta: float) -> void:
 		aim_dir = Vector2.RIGHT
 
 func _process_aim() -> void:
-	# Flip player sprite
-	if aim_dir.x > 0.0:
-		animated_sprite.flip_h = false
-	elif aim_dir.x < 0.0:
-		animated_sprite.flip_h = true
+	# Facing based on mouse position (not movement). Mirror gun so it stays on correct side.
+	var mouse_pos: Vector2 = get_global_mouse_position()
+	var facing_left: bool = mouse_pos.x < global_position.x
 
-	# Rotate gun to face aim_dir (works for mouse + controller)
+	animated_sprite.flip_h = facing_left
+
+	# Rotate gun to face the mouse and mirror its local X offset so it visually sticks
 	if has_node("Gun"):
-		gun.rotation = aim_dir.angle()
+		var aim_vec: Vector2 = mouse_pos - global_position
+		if aim_vec.length() > 0.001:
+			gun.rotation = aim_vec.angle()
+
+		# Flip gun art if present. Use vertical flip as a reasonable default for top-down art.
+		if gun_sprite:
+			if gun_sprite is Sprite2D or gun_sprite is AnimatedSprite2D:
+				gun_sprite.flip_v = facing_left
+
+
+func _on_player_invis_changed(is_invisible: bool) -> void:
+	# Called when GameState's invis flag changes; refresh animation immediately
+	print("[ANIM-SIGNAL] player_invisible_changed ->", is_invisible)
+	_update_animation_and_facing()
 
 # Crosshair follows shared cursor (mouse + controller)
 func _update_crosshair() -> void:
@@ -258,6 +350,76 @@ func _update_crosshair() -> void:
 
 	crosshair.global_position = aim_cursor_pos
 
+
+func _update_animation() -> void:
+	# Switch between 'idle' and 'move' based on actual velocity magnitude.
+	# Do not restart the animation if it's already playing.
+	if not animated_sprite:
+		return
+
+	var speed_val: float = velocity.length()
+	var desired_anim: String = "move" if speed_val > 1.0 else "idle"
+
+	if animated_sprite.animation != desired_anim:
+		animated_sprite.play(desired_anim)
+
+	# Optional horizontal flipping based on movement direction
+	if velocity.x > 0.1:
+		animated_sprite.flip_h = false
+	elif velocity.x < -0.1:
+		animated_sprite.flip_h = true
+func _update_animation_and_facing() -> void:
+	# Switch between idle/move and invis variants based on velocity and invisibility.
+	# Play only when the animation actually changes. Facing is driven by mouse X.
+	if not animated_sprite:
+		return
+
+	var speed_val: float = velocity.length()
+
+	# Determine invisibility from existing project state:
+	# Prefer explicit GameState.player_invisible, but also consider ability timers
+	var is_invis_active: bool = false
+	if GameState != null:
+		# explicit flag (preferred)
+		if GameState.player_invisible:
+			is_invis_active = true
+		# fallback: ability type + active timer (covers cases where flag isn't set)
+		elif GameState.ability == GameState.AbilityType.INVIS and GameState.ability_active_left > 0.0:
+			is_invis_active = true
+		# Diagnostic: print raw GameState invis-related values when debug enabled
+		print("[ANIM-STATE] GameState.player_invisible=", GameState.player_invisible, " ability=", str(GameState.ability), " ability_active_left=", GameState.ability_active_left)
+
+	# Pick desired animation name
+	var desired_anim: String
+	if is_invis_active:
+		desired_anim = "invis_move" if speed_val > 1.0 else "invis_idle"
+	else:
+		desired_anim = "move" if speed_val > 1.0 else "idle"
+
+	# Safe fallbacks: if invis animations missing, fall back to non-invis variants
+	var frames = animated_sprite.sprite_frames
+	if frames:
+		print("[ANIM] speed=", speed_val, " invis=", is_invis_active, " desired=", desired_anim, " has_frames=", frames != null, " has_anim=", frames.has_animation(desired_anim), " current=", animated_sprite.animation)
+		if not frames.has_animation(desired_anim):
+			if is_invis_active:
+				var fallback := "move" if speed_val > 1.0 else "idle"
+				if frames.has_animation(fallback):
+					desired_anim = fallback
+				else:
+					# No valid animation found; preserve current
+					desired_anim = animated_sprite.animation
+			else:
+				# For non-invis, ensure at least 'idle' exists
+				if frames.has_animation("idle"):
+					desired_anim = "idle"
+				else:
+					desired_anim = animated_sprite.animation
+
+	if desired_anim != animated_sprite.animation and desired_anim != "":
+		print("[ANIM] switching to ", desired_anim)
+		animated_sprite.play(desired_anim)
+
+	# Facing is handled in _process_aim() (mouse-based flip)
 # --------------------------------------------------------------------
 # FEEDBACK (HIT / HEAL)
 # --------------------------------------------------------------------
