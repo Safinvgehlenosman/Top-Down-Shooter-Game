@@ -14,6 +14,9 @@ extends CanvasLayer
 @onready var door_arrow_root: Control = $DoorArrowRoot
 @onready var door_arrow: TextureRect = $DoorArrowRoot/DoorArrow
 
+var _level_default_color: Color = Color.WHITE
+var _level_last_themed_state: bool = false
+
 # Fuel bar configuration (assign in inspector)
 @export var weapon_fuel_progress_texture: Array[Texture2D] = []
 
@@ -81,6 +84,10 @@ func _ready() -> void:
 	player = get_tree().get_first_node_in_group("player")
 
 	# Defensive UI visibility refresh (ensure ammo visibility matches current state)
+	# Capture default level label color for restore
+	if level_label:
+		_level_default_color = level_label.modulate
+		_level_last_themed_state = false
 	refresh_ui_visibility()
 
 
@@ -339,7 +346,17 @@ func _update_level_label() -> void:
 		return
 	var gm := get_tree().get_first_node_in_group("game_manager")
 	if gm and "current_level" in gm:
-		level_label.text = str(gm.current_level)
+		var lvl := int(gm.current_level)
+		level_label.text = str(lvl)
+		# Update themed styling
+		var themed := is_themed_level(lvl)
+		if themed != _level_last_themed_state:
+			_level_last_themed_state = themed
+			if themed:
+				level_label.modulate = Color(1.0, 0.0, 0.0)
+			else:
+				level_label.modulate = _level_default_color
+			print("[UI] Level ", lvl, " themed=", themed, " -> color updated")
 
 
 func _update_ability_bar(_delta: float = 0.0) -> void:
@@ -506,6 +523,10 @@ func _update_chaos_pact_indicator() -> void:
 	# Debug output when state changes
 	if is_active != was_visible:
 		pass
+
+
+func is_themed_level(lvl: int) -> bool:
+	return lvl >= 10 and (lvl % 5) == 0
 
 
 func _set_ability_bar_value_deferred(val: float) -> void:
