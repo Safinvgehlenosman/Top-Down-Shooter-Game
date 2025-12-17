@@ -49,7 +49,6 @@ shader_parameter/intensity = 2.0
 shader_parameter/color = Color(0, 0, 0, 0.59607846)
 
 [node name="UI" type="CanvasLayer" groups=["ui"]]
-visible = false
 script = ExtResource("1_qsv74")
 weapon_fuel_progress_texture = Array[Texture2D]([ExtResource("2_rlppe"), ExtResource("3_ycmcx"), ExtResource("4_kupmu"), ExtResource("5_catpy"), ExtResource("6_41akx")])
 
@@ -523,6 +522,7 @@ stream = ExtResource("29_x4rqp")
 bus = &"SFX"
 
 [node name="Sprite2D" type="Sprite2D" parent="PauseScreen"]
+visible = false
 position = Vector2(860.00006, 569.00006)
 rotation = 0.14579165
 scale = Vector2(20, 20)
@@ -540,6 +540,7 @@ region_enabled = true
 region_rect = Rect2(12, 8, 11, 16)
 
 [node name="Sprite2D2" type="Sprite2D" parent="PauseScreen"]
+visible = false
 position = Vector2(1064.0001, 559.99994)
 rotation = 0.04165517
 scale = Vector2(22.5, 22.5)
@@ -548,6 +549,7 @@ region_enabled = true
 region_rect = Rect2(138, 10, 12, 11)
 
 [node name="Sprite2D3" type="Sprite2D" parent="PauseScreen"]
+visible = false
 z_index = -2
 position = Vector2(1021, 424)
 rotation = 0.06891273
@@ -642,6 +644,31 @@ text = "NU"
 
 [node name="CreditsScreen" parent="PauseScreen" instance=ExtResource("38_y6fpy")]
 visible = false
+
+[node name="BrightnessContainer" type="HBoxContainer" parent="PauseScreen"]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -304.0
+offset_top = -40.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="Label" type="Label" parent="PauseScreen/BrightnessContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("5_vsj0x")
+text = "BRIGHTNESS"
+
+[node name="BrightnessSlider" type="HSlider" parent="PauseScreen/BrightnessContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+min_value = 0.1
+max_value = 1.9
+step = 0.01
+value = 1.0
 
 [node name="VHSLayer" parent="." instance=ExtResource("11_vdcm2")]
 

@@ -112,6 +112,10 @@ func _on_continue_pressed() -> void:
 
 	# Restore main UI visibility: prefer parent refresh method
 	var ui = get_parent()
+	if ui and ui.has_method("set_in_hub"):
+		# Ensure UI is in gameplay mode (same path used by GameManager)
+		ui.set_in_hub(false)
+
 	if ui and ui.has_method("refresh_ui_visibility"):
 		print("[Pause] calling ui.refresh_ui_visibility()")
 		ui.refresh_ui_visibility()

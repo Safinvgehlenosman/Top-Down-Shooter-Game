@@ -25,6 +25,13 @@ var exit_door: Node2D = null
 var player: Node2D = null
 var in_shop: bool = false
 
+# Brightness UI/runtime cache
+var _brightness_slider = null
+var _brightness_value_label = null
+var _cached_world_environment = null
+var _cached_canvas_modulate = null
+var _base_canvas_brightness: float = 1.0
+
 # Use GameState enums directly
 const ABILITY_NONE = GameState.AbilityType.NONE
 const ALT_WEAPON_NONE = GameState.AltWeaponType.NONE
@@ -102,6 +109,53 @@ func _ready() -> void:
 		GameState.return_show_pause = false
 		GameState.return_scene_path = ""
 
+	# --- Brightness slider UI (linked from scene) ---
+	# Prefer existing nodes placed in the PauseScreen or anywhere in the current scene.
+	var bc = get_node_or_null("PauseScreen/BrightnessContainer")
+	if not bc:
+		bc = get_node_or_null("BrightnessContainer")
+	if not bc:
+		var root = get_tree().current_scene
+		if root:
+			bc = root.find_node("BrightnessContainer", true, false)
+	if bc:
+		_brightness_slider = bc.get_node_or_null("BrightnessSlider")
+		_brightness_value_label = bc.get_node_or_null("BrightnessValue")
+		# Ensure slider uses desired range for good visible effect (multiplier around base)
+		if _brightness_slider:
+			_brightness_slider.min_value = 0.1
+			_brightness_slider.max_value = 1.9
+			_brightness_slider.step = 0.01
+			# find CanvasModulate base brightness if available
+			var cm_tmp := _find_canvas_modulate()
+			if cm_tmp:
+				_cached_canvas_modulate = cm_tmp
+				# assume greyscale; average channels for safety
+				_base_canvas_brightness = (cm_tmp.color.r + cm_tmp.color.g + cm_tmp.color.b) / 3.0
+			# default slider multiplier
+			if _brightness_slider.value == 0.0:
+				_brightness_slider.value = 1.0
+		if _brightness_slider:
+			_brightness_slider.connect("value_changed", Callable(self, "_on_brightness_slider_changed"))
+
+		# Default slider multiplier/value (no persistence)
+		if _brightness_slider:
+			_brightness_slider.value = 1.0
+		if _brightness_value_label:
+			_brightness_value_label.text = "100%"
+		# Apply initial brightness based on CanvasModulate base if present
+		if _cached_canvas_modulate and _base_canvas_brightness > 0.0 and _brightness_slider:
+			_apply_brightness(_base_canvas_brightness * _brightness_slider.value)
+		elif _brightness_slider:
+			_apply_brightness(_brightness_slider.value)
+
+		# If present, reposition helper will keep it near bottom-right on resize
+		if get_viewport():
+			get_viewport().connect("size_changed", Callable(self, "_position_brightness_container"))
+			_position_brightness_container()
+	else:
+		print("BrightnessContainer not found in scene; slider not linked")
+
 
 
 
@@ -126,6 +180,119 @@ func clear_exit_door() -> void:
 	exit_door = null
 	if door_arrow_root:
 		door_arrow_root.visible = false
+
+
+# --------------------------------------------------------------------
+# BRIGHTNESS: Find/apply and persist brightness via WorldEnvironment
+# --------------------------------------------------------------------
+func _search_for_world_environment(node: Node) -> Node:
+	if node is WorldEnvironment:
+		return node
+	for c in node.get_children():
+		var found = _search_for_world_environment(c)
+		if found:
+			return found
+	return null
+
+
+func _search_for_canvas_modulate(node: Node) -> CanvasModulate:
+	if node is CanvasModulate:
+		return node
+	for c in node.get_children():
+		var found = _search_for_canvas_modulate(c)
+		if found:
+			return found
+	return null
+
+
+func _find_canvas_modulate() -> CanvasModulate:
+	if _cached_canvas_modulate and is_instance_valid(_cached_canvas_modulate):
+		return _cached_canvas_modulate
+	var root = get_tree().current_scene
+	if not root:
+		return null
+	var cm = root.get_node_or_null("CanvasModulate")
+	if cm:
+		_cached_canvas_modulate = cm
+		return cm
+	# recursive search
+	var found = _search_for_canvas_modulate(root)
+	if found:
+		_cached_canvas_modulate = found
+	return found
+
+
+func _find_world_environment() -> Node:
+	if _cached_world_environment and is_instance_valid(_cached_world_environment):
+		return _cached_world_environment
+	var root = get_tree().current_scene
+	if not root:
+		return null
+	var we = root.get_node_or_null("WorldEnvironment")
+	if we:
+		_cached_world_environment = we
+		return we
+	# recursive search
+	var found = _search_for_world_environment(root)
+	if found:
+		_cached_world_environment = found
+	return found
+
+
+func _apply_brightness(value: float) -> void:
+	# Prefer CanvasModulate if present
+	var cm := _find_canvas_modulate()
+	if cm:
+		var b := value
+		cm.color = Color(b, b, b, 1.0)
+		print("Brightness set to: ", b, " (CanvasModulate)")
+		return
+
+	# Fallback: WorldEnvironment adjustments
+	var we = _find_world_environment()
+	if we and we.environment:
+		var env = we.environment
+		# Safely inspect available properties via get_property_list()
+		var props := {}
+		for p in env.get_property_list():
+			if typeof(p) == TYPE_DICTIONARY and p.has("name"):
+				props[p["name"]] = true
+
+		# Prefer adjustment if available
+		if props.has("adjustment_enabled"):
+			env.adjustment_enabled = true
+			if props.has("adjustment_brightness"):
+				env.adjustment_brightness = value
+			elif props.has("tonemap_exposure"):
+				env.tonemap_exposure = value
+		else:
+			# Fallback to tonemap exposure if adjustment not present
+			if props.has("tonemap_exposure"):
+				env.tonemap_exposure = value
+		print("Brightness set to: ", value, " (WorldEnvironment)")
+	else:
+		print("Brightness: CanvasModulate and WorldEnvironment not found; value:", value)
+
+
+func _position_brightness_container() -> void:
+	var bc = get_node_or_null("BrightnessContainer")
+	if not bc:
+		return
+	var vp_size := get_viewport().get_visible_rect().size
+	# keep same offsets used when creating the container
+	bc.position = Vector2(vp_size.x - 276 - 16, vp_size.y - 56 - 16)
+
+
+func _on_brightness_slider_changed(value: float) -> void:
+	if _brightness_value_label:
+		_brightness_value_label.text = str(int(round(value * 100))) + "%"
+	# If we have a CanvasModulate base, treat slider as multiplier around base
+	if _cached_canvas_modulate and _base_canvas_brightness > 0.0:
+		var final_b := _base_canvas_brightness * value
+		_apply_brightness(final_b)
+	else:
+		_apply_brightness(value)
+		# No persistence: only apply current value
 
 func _on_exit_door_spawned(door: Node2D) -> void:
 	"""Handle exit door spawned signal from GameManager (stores reference only)."""
